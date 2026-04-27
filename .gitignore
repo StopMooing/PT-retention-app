@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Screenshots and OS shortcuts
+*.png
+*.jpg
+*.jpeg
+Claude
+Google Chrome
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
