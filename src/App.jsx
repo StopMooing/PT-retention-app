@@ -23,12 +23,7 @@ const statusConfig = {
 }
 
 function getInitials(name) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join('')
+  return name.split(' ').filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('')
 }
 
 function computeStatus(lastCheckIn) {
@@ -45,7 +40,7 @@ function computeStatus(lastCheckIn) {
 
 function formatDate(dateStr) {
   if (!dateStr) return null
-  return new Date(dateStr).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+  return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function daysSince(dateStr) {
@@ -67,9 +62,10 @@ function StatusBadge({ status }) {
   )
 }
 
-function Avatar({ name }) {
+function Avatar({ name, size = 'sm' }) {
+  const dim = size === 'lg' ? 'w-12 h-12 text-base' : 'w-10 h-10 text-sm'
   return (
-    <div className="w-10 h-10 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center font-semibold text-sm select-none flex-shrink-0">
+    <div className={`${dim} rounded-full bg-gray-100 text-gray-700 flex items-center justify-center font-semibold select-none flex-shrink-0`}>
       {getInitials(name)}
     </div>
   )
@@ -82,6 +78,177 @@ function StatCard({ label, value, sub }) {
       <p className="text-2xl font-bold text-gray-900">{value}</p>
       {sub && <p className="text-xs text-gray-400">{sub}</p>}
     </div>
+  )
+}
+
+function ScoreDots({ score }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <div key={n} className={`w-4 h-4 rounded-sm ${n <= score ? 'bg-gray-900' : 'bg-gray-100'}`} />
+      ))}
+    </div>
+  )
+}
+
+function CopyLinkButton({ clientId }) {
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy(e) {
+    e.stopPropagation()
+    const url = `${window.location.origin}/checkin/${clientId}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copy check-in link"
+      className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors"
+    >
+      {copied ? (
+        <>
+          <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="text-emerald-600">Copied</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <span>Copy link</span>
+        </>
+      )}
+    </button>
+  )
+}
+
+function ClientPanel({ client, onClose }) {
+  const [checkins, setCheckins] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    // Let the DOM paint first, then slide in
+    const raf = requestAnimationFrame(() => setVisible(true))
+
+    async function fetchCheckins() {
+      const { data } = await supabase
+        .from('checkins')
+        .select('*')
+        .eq('client_id', client.id)
+        .order('submitted_at', { ascending: false })
+      setCheckins(data ?? [])
+      setLoading(false)
+    }
+    fetchCheckins()
+
+    return () => cancelAnimationFrame(raf)
+  }, [client.id])
+
+  function handleClose() {
+    setVisible(false)
+    setTimeout(onClose, 280)
+  }
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 transition-opacity duration-300"
+        style={{ backgroundColor: 'rgba(0,0,0,0.4)', opacity: visible ? 1 : 0 }}
+        onClick={handleClose}
+      />
+
+      {/* Drawer */}
+      <div
+        className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col transition-transform duration-300"
+        style={{ transform: visible ? 'translateX(0)' : 'translateX(100%)' }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar name={client.full_name} size="lg" />
+            <div className="min-w-0">
+              <h2 className="text-base font-bold text-gray-900 m-0 truncate">{client.full_name}</h2>
+              <p className="text-xs text-gray-400 m-0 mt-0.5 truncate">{client.goal}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleClose}
+            className="flex-shrink-0 ml-3 w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Client meta */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+          <div>
+            <p className="text-xs text-gray-400 m-0">Phone</p>
+            <p className="text-sm font-medium text-gray-800 m-0 mt-0.5">{client.phone || '—'}</p>
+          </div>
+          <StatusBadge status={client.status} />
+        </div>
+
+        {/* Check-in history */}
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 flex-shrink-0">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider m-0">Check-in History</h3>
+          {!loading && <span className="text-xs text-gray-400">{checkins.length} total</span>}
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="px-6 py-12 text-center text-sm text-gray-400">Loading…</div>
+          ) : checkins.length === 0 ? (
+            <div className="px-6 py-12 text-center flex flex-col items-center gap-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-900 m-0">No check-ins yet</p>
+                <p className="text-xs text-gray-400 mt-1">Send this client their check-in link to get started.</p>
+              </div>
+              <CopyLinkButton clientId={client.id} />
+            </div>
+          ) : (
+            <ul className="divide-y divide-gray-100 list-none m-0 p-0">
+              {checkins.map((checkin) => (
+                <li key={checkin.id} className="px-6 py-5">
+                  <p className="text-xs font-semibold text-gray-900 m-0 mb-4">
+                    {formatDate(checkin.submitted_at)}
+                  </p>
+
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-400 w-16 flex-shrink-0">Training</span>
+                      <ScoreDots score={checkin.training_score} />
+                      <span className="text-xs text-gray-400 tabular-nums">{checkin.training_score}/5</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-gray-400 w-16 flex-shrink-0">Energy</span>
+                      <ScoreDots score={checkin.energy_score} />
+                      <span className="text-xs text-gray-400 tabular-nums">{checkin.energy_score}/5</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3">
+                    {checkin.blocker ? (
+                      <div className="bg-gray-50 rounded-lg px-3.5 py-2.5">
+                        <p className="text-xs text-gray-500 m-0 leading-relaxed">{checkin.blocker}</p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-300 m-0">Nothing reported</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -142,46 +309,12 @@ function AddClientModal({ onClose, onSave }) {
   )
 }
 
-function CopyLinkButton({ clientId }) {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy() {
-    const url = `${window.location.origin}/checkin/${clientId}`
-    navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      title="Copy check-in link"
-      className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors"
-    >
-      {copied ? (
-        <>
-          <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="text-emerald-600">Copied</span>
-        </>
-      ) : (
-        <>
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          <span>Copy link</span>
-        </>
-      )}
-    </button>
-  )
-}
-
 function Dashboard({ user }) {
   const [clients, setClients] = useState([])
-  const [checkinsMap, setCheckinsMap] = useState({}) // clientId → { lastCheckIn, sessionsThisMonth }
+  const [checkinsMap, setCheckinsMap] = useState({})
   const [loadingClients, setLoadingClients] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [selectedClient, setSelectedClient] = useState(null)
 
   const ptInitials = (user.email || '?').split('@')[0].slice(0, 2).toUpperCase()
 
@@ -202,7 +335,6 @@ function Dashboard({ user }) {
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
 
-    // Fetch all check-ins for this PT's clients
     const { data: checkins } = await supabase
       .from('checkins')
       .select('client_id, submitted_at')
@@ -224,15 +356,12 @@ function Dashboard({ user }) {
 
   useEffect(() => {
     fetchData()
-
-    // Realtime: refresh check-in map when a new check-in arrives
     const channel = supabase
       .channel('checkins-watch')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checkins' }, () => {
         fetchData()
       })
       .subscribe()
-
     return () => supabase.removeChannel(channel)
   }, [user.id])
 
@@ -248,7 +377,6 @@ function Dashboard({ user }) {
     return null
   }
 
-  // Merge clients with live check-in data and computed status
   const enrichedClients = clients.map((c) => {
     const stats = checkinsMap[c.id]
     const lastCheckIn = stats?.lastCheckIn ?? null
@@ -264,9 +392,15 @@ function Dashboard({ user }) {
   const drifting = enrichedClients.filter((c) => c.status === 'Drifting').length
   const atRisk = enrichedClients.filter((c) => c.status === 'At Risk').length
 
+  // Keep selectedClient in sync when enrichedClients refreshes
+  const selectedEnriched = selectedClient
+    ? enrichedClients.find((c) => c.id === selectedClient.id) ?? selectedClient
+    : null
+
   return (
     <div className="min-h-screen bg-gray-50" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {showModal && <AddClientModal onClose={() => setShowModal(false)} onSave={handleAddClient} />}
+      {selectedEnriched && <ClientPanel client={selectedEnriched} onClose={() => setSelectedClient(null)} />}
 
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -321,7 +455,11 @@ function Dashboard({ user }) {
                 const cfg = statusConfig[client.status]
                 const days = daysSince(client.lastCheckIn)
                 return (
-                  <li key={client.id} className="px-6 py-5 flex items-center gap-4">
+                  <li
+                    key={client.id}
+                    onClick={() => setSelectedClient(client)}
+                    className="px-6 py-5 flex items-center gap-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
                     <Avatar name={client.full_name} />
 
                     <div className="flex-1 min-w-0">
