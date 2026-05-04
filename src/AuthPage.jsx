@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
 
-export default function AuthPage() {
-  const [mode, setMode] = useState('login') // 'login' | 'signup'
+export default function AuthPage({ defaultMode = 'login' }) {
+  const [mode, setMode] = useState(defaultMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')

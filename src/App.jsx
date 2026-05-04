@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabase'
 import AuthPage from './AuthPage'
 import CheckInPage from './CheckInPage'
+import LandingPage from './LandingPage'
 
 const statusConfig = {
   Engaged: {
@@ -521,7 +522,11 @@ export default function App() {
   return (
     <Routes>
       <Route path="/checkin/:clientId" element={<CheckInPage />} />
-      <Route path="*" element={session ? <Dashboard user={session.user} /> : <AuthPage />} />
+      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+      <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="login" />} />
+      <Route path="/signup" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="signup" />} />
+      <Route path="/dashboard" element={session ? <Dashboard user={session.user} /> : <Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
