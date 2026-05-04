@@ -17,22 +17,17 @@ export default function AuthPage() {
     setLoading(true)
 
     if (mode === 'signup') {
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      })
       if (signUpError) {
         setError(signUpError.message)
         setLoading(false)
         return
       }
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({ id: data.user.id, full_name: fullName, email })
-        if (profileError) {
-          setError(profileError.message)
-          setLoading(false)
-          return
-        }
-      }
+      // Profile is created automatically by a database trigger on auth.users
       setMessage('Account created! Check your email to confirm, then log in.')
       setMode('login')
     } else {
