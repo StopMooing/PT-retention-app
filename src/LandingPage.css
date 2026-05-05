@@ -125,12 +125,30 @@
   background: #e5e5e5;
 }
 
+.lp-problem-card:hover {
+  background-color: #111111 !important;
+}
+
+.lp-stat-border {
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
 @media (max-width: 768px) {
   .lp-mockup { display: none !important; }
   .lp-hero-grid { grid-template-columns: 1fr !important; }
+
+  .lp-statsbar-section { padding: 48px 24px !important; }
+  .lp-statsbar-inner { grid-template-columns: repeat(2, 1fr) !important; gap: 32px !important; }
+  .lp-stat-border { border-right: none !important; }
+  .lp-stat-item { padding-left: 0 !important; padding-right: 0 !important; }
+
+  .lp-problem-section { padding: 80px 24px !important; }
   .lp-problem-grid { grid-template-columns: 1fr !important; }
-  .lp-solution-grid { grid-template-columns: 1fr !important; }
-  .lp-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .lp-problem-card { padding: 36px 28px !important; }
+
+  .lp-solution-section { padding: 80px 24px !important; }
+  .lp-solution-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
+
   .lp-section-pad { padding: 80px 24px !important; }
   .lp-hero-pad { padding: 120px 24px 80px !important; }
   .lp-footer-inner { flex-direction: column !important; gap: 16px !important; text-align: center !important; }

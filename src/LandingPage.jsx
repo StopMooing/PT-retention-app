@@ -223,61 +223,75 @@ function Divider() {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-const problems = [
+const problemCards = [
   {
-    num: '01',
-    title: 'The silent cancellation',
-    desc: 'A client cancels out of nowhere. No warning signs. No chance to intervene.',
+    num: '1',
+    eyebrow: 'Silent',
+    eyebrowColor: '#EF4444',
+    accentColor: '#EF4444',
+    title: 'The cancellation you never saw coming',
+    body: 'A client messages to cancel. No warning. No friction. You thought the relationship was solid. The truth is the signals were there weeks ago. You just had no way to see them.',
   },
   {
-    num: '02',
-    title: 'The communication drop-off',
-    desc: "Messages slow down. Check-ins get ignored. By the time you notice, they're already halfway out.",
+    num: '2',
+    eyebrow: 'Gradual',
+    eyebrowColor: '#F59E0B',
+    accentColor: '#F59E0B',
+    title: 'The slow fade that costs you thousands',
+    body: 'It starts with a skipped check-in. Then slower replies. Then a missed session. Each one feels minor. Together they mean a client who is already mentally gone while you are still planning their next program.',
   },
   {
-    num: '03',
-    title: 'The revenue blindspot',
-    desc: "You don't know which clients are at risk until they're gone. Every cancellation is a surprise.",
+    num: '3',
+    eyebrow: 'Invisible',
+    eyebrowColor: '#EF4444',
+    accentColor: '#EF4444',
+    title: 'The revenue blindspot hiding in plain sight',
+    body: 'One unexpected cancellation a month is $2,700 AUD gone every year. Multiply that across your roster and the number gets uncomfortable fast. You cannot stop what you cannot measure.',
   },
 ]
 
-const solutions = [
+const featureItems = [
   {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013 5.67a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L9.09 11.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/>
-      </svg>
-    ),
     title: 'Automated weekly check-ins',
-    desc: 'Each client gets a personal 60-second check-in link. Three questions. You get the signal.',
-  },
-  {
+    body: 'Each client receives a personalised 60-second check-in link every week. Three questions about training, energy and blockers. You get the signal without lifting a finger.',
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="14" height="17" rx="2"/>
+        <rect x="8" y="2" width="5" height="4" rx="1"/>
+        <line x1="6" y1="10" x2="14" y2="10"/>
+        <line x1="6" y1="13" x2="14" y2="13"/>
+        <line x1="6" y1="16" x2="11" y2="16"/>
       </svg>
     ),
+  },
+  {
     title: 'Green, amber, red at a glance',
-    desc: 'Your dashboard updates in real time. No spreadsheets. No guessing. Just clarity.',
-  },
-  {
+    body: 'Your dashboard scores every client in real time based on their responses and behaviour. Engaged. Drifting. At Risk. You see the full picture before problems become cancellations.',
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-        <path d="M13.73 21a2 2 0 01-3.46 0"/>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="12" width="3" height="7" rx="1"/>
+        <rect x="8.5" y="6" width="3" height="13" rx="1"/>
+        <rect x="14" y="9" width="3" height="10" rx="1"/>
       </svg>
     ),
-    title: "Alerts before it's too late",
-    desc: 'The moment a client starts drifting, you know. Reach out and save the relationship.',
+  },
+  {
+    title: 'Alerts before it is too late',
+    body: 'The moment a client\'s engagement score drops below your threshold, you are notified immediately. Not next week. Right now. While the relationship is still worth saving.',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 2 C6.5 2 4 4.5 4 8 L4 13 L2 15 L18 15 L16 13 L16 8 C16 4.5 13.5 2 10 2 Z"/>
+        <path d="M8 15 C8 16.1 8.9 17 10 17 C11.1 17 12 16.1 12 15"/>
+      </svg>
+    ),
   },
 ]
 
-const stats = [
-  { value: '2 min', label: 'Average check-in time per client' },
-  { value: '94%',  label: 'Response rate from clients' },
-  { value: '3×',   label: 'Fewer surprise cancellations' },
-  { value: '£400', label: 'Avg. monthly revenue saved' },
+const statsData = [
+  { value: '2 min',    label: 'Average check-in time per client' },
+  { value: '94%',      label: 'Response rate from clients' },
+  { value: '3x',       label: 'Fewer surprise cancellations' },
+  { value: '$600 AUD', label: 'Avg. monthly revenue protected' },
 ]
 
 export default function LandingPage() {
@@ -411,114 +425,105 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <Divider />
-
-      {/* ── Stats ── */}
-      <section style={{ padding: '80px 32px' }} className="lp-section-pad">
-        <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 12, overflow: 'hidden' }}
-            className="lp-stats-grid"
-          >
-            {stats.map(({ value, label }, i) => (
-              <FadeIn key={i} delay={i * 60}>
-                <div style={{ background: '#09090b', padding: '36px 32px', textAlign: 'center' }}>
-                  <p style={{ margin: '0 0 6px', fontSize: 'clamp(2rem, 3vw, 2.75rem)', fontWeight: 800, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1 }}>{value}</p>
-                  <p style={{ margin: 0, fontSize: 13, color: '#52525b', lineHeight: 1.5 }}>{label}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
+      {/* ── Stats Bar ── */}
+      <section style={{
+        backgroundColor: '#0A0A0A',
+        borderTop: '1px solid rgba(255,255,255,0.06)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        paddingTop: 56,
+        paddingBottom: 56,
+        paddingLeft: 48,
+        paddingRight: 48,
+        width: '100%',
+      }} className="lp-statsbar-section">
+        <div className="lp-statsbar-inner" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
+          {statsData.map(({ value, label }, i) => (
+            <div
+              key={i}
+              className={`lp-stat-item${i < 3 ? ' lp-stat-border' : ''}`}
+              style={{ paddingLeft: i === 0 ? 0 : 40, paddingRight: 40 }}
+            >
+              <span style={{ fontSize: 44, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', lineHeight: 1, display: 'block', marginBottom: 8 }}>{value}</span>
+              <span style={{ fontSize: 13, color: '#52525B', fontWeight: 400, lineHeight: 1.5, display: 'block' }}>{label}</span>
+            </div>
+          ))}
         </div>
       </section>
-
-      <Divider />
 
       {/* ── Problem ── */}
-      <section style={{ background: '#09090b', padding: '120px 32px' }} className="lp-section-pad">
-        <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+      <section className="lp-problem-section" style={{ backgroundColor: '#000000', paddingTop: 160, paddingBottom: 160, paddingLeft: 48, paddingRight: 48, width: '100%' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <FadeIn>
-            <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: '#52525b', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#3F3F46', display: 'block', marginBottom: 24 }}>
               The Problem
-            </p>
-            <h2 style={{
-              margin: '0 0 72px',
-              fontSize: 'clamp(2rem, 3.5vw, 3rem)',
-              fontWeight: 800,
-              color: '#fff',
-              letterSpacing: '-0.04em',
-              lineHeight: 1.08,
-            }}>
+            </span>
+            <h2 style={{ fontSize: 'clamp(40px, 5.5vw, 64px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05, color: '#FFFFFF', maxWidth: 640, margin: '0 0 24px' }}>
               Every PT knows this feeling.
             </h2>
+            <p style={{ fontSize: 18, fontWeight: 400, color: '#71717A', lineHeight: 1.75, maxWidth: 480, margin: '0 0 80px' }}>
+              The signs are always there. You just never had a way to see them.
+            </p>
           </FadeIn>
 
-          <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 12, overflow: 'hidden' }}
-            className="lp-problem-grid"
-          >
-            {problems.map((p, i) => (
-              <FadeIn key={p.num} delay={i * 80}>
-                <div style={{ background: '#09090b', padding: '40px 36px', height: '100%' }}>
-                  <p style={{ margin: '0 0 24px', fontSize: 42, fontWeight: 900, color: 'rgba(255,255,255,0.06)', letterSpacing: '-0.05em', lineHeight: 1 }}>{p.num}</p>
-                  <p style={{ margin: '0 0 12px', fontSize: 16, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>{p.title}</p>
-                  <p style={{ margin: 0, fontSize: 14, color: '#52525b', lineHeight: 1.7 }}>{p.desc}</p>
+          <div className="lp-problem-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            {problemCards.map((card, i) => (
+              <FadeIn key={card.num} delay={i * 80}>
+                <div className="lp-problem-card" style={{
+                  backgroundColor: '#0A0A0A',
+                  paddingTop: 48,
+                  paddingBottom: 48,
+                  paddingLeft: 40,
+                  paddingRight: 40,
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderTop: `2px solid ${card.accentColor}`,
+                  transition: 'background-color 200ms ease',
+                  height: '100%',
+                  boxSizing: 'border-box',
+                }}>
+                  <span style={{ position: 'absolute', bottom: -24, right: 24, fontSize: '10rem', fontWeight: 900, lineHeight: 1, color: 'rgba(255,255,255,0.03)', zIndex: 0, userSelect: 'none', pointerEvents: 'none' }}>{card.num}</span>
+                  <div style={{ position: 'relative', zIndex: 1 }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 20, display: 'block', color: card.eyebrowColor }}>{card.eyebrow}</span>
+                    <p style={{ margin: '0 0 16px', fontSize: 22, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{card.title}</p>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 400, color: '#71717A', lineHeight: 1.75 }}>{card.body}</p>
+                  </div>
                 </div>
               </FadeIn>
             ))}
           </div>
         </div>
       </section>
-
-      <Divider />
 
       {/* ── Solution ── */}
-      <section style={{ background: '#09090b', padding: '120px 32px' }} className="lp-section-pad">
-        <div style={{ maxWidth: 1120, margin: '0 auto' }}>
+      <section className="lp-solution-section" style={{ backgroundColor: '#000000', paddingTop: 160, paddingBottom: 160, paddingLeft: 48, paddingRight: 48, width: '100%', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <FadeIn>
-            <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: '#52525b', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#3F3F46', display: 'block', marginBottom: 24 }}>
               The Solution
-            </p>
-            <h2 style={{
-              margin: '0 0 80px',
-              fontSize: 'clamp(2rem, 3.5vw, 3rem)',
-              fontWeight: 800,
-              color: '#fff',
-              letterSpacing: '-0.04em',
-              lineHeight: 1.08,
-              maxWidth: 640,
-            }}>
-              Know who needs you —<br />before it's too late.
+            </span>
+            <h2 style={{ fontSize: 'clamp(40px, 5.5vw, 64px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05, color: '#FFFFFF', maxWidth: 700, margin: '0 0 24px' }}>
+              Know exactly who needs you before it is too late.
             </h2>
+            <p style={{ fontSize: 18, fontWeight: 400, color: '#71717A', lineHeight: 1.75, maxWidth: 520, margin: '0 0 96px' }}>
+              StopMooing runs quietly in the background. Watching engagement. Scoring behaviour. Alerting you at exactly the right moment while there is still time to act.
+            </p>
           </FadeIn>
 
-          <div
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 40 }}
-            className="lp-solution-grid"
-          >
-            {solutions.map((s, i) => (
+          <div className="lp-solution-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 48, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 48 }}>
+            {featureItems.map((feature, i) => (
               <FadeIn key={i} delay={i * 80}>
-                <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 28 }}>
-                  <div style={{
-                    width: 36, height: 36, borderRadius: 8,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#a1a1aa',
-                    marginBottom: 20,
-                  }}>
-                    {s.icon}
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, flexShrink: 0 }}>
+                    {feature.icon}
                   </div>
-                  <p style={{ margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em' }}>{s.title}</p>
-                  <p style={{ margin: 0, fontSize: 14, color: '#52525b', lineHeight: 1.7 }}>{s.desc}</p>
+                  <p style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#FFFFFF', letterSpacing: '-0.01em', lineHeight: 1.3 }}>{feature.title}</p>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 400, color: '#71717A', lineHeight: 1.75 }}>{feature.body}</p>
                 </div>
               </FadeIn>
             ))}
           </div>
         </div>
       </section>
-
-      <Divider />
 
       {/* ── CTA ── */}
       <section style={{ background: '#09090b', padding: '160px 32px', textAlign: 'center' }} className="lp-section-pad">
