@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, NavLink, Outlet } from 'react-router-dom'
 import { supabase } from './supabase'
 import AuthPage from './AuthPage'
 import CheckInPage from './CheckInPage'
 import LandingPage from './LandingPage'
+import ExerciseLibrary from './ExerciseLibrary'
+import ProgramBuilder from './ProgramBuilder'
+import ClientWorkout from './ClientWorkout'
 
 const statusConfig = {
   Engaged: {
@@ -310,14 +313,56 @@ function AddClientModal({ onClose, onSave }) {
   )
 }
 
+function ProtectedLayout({ user, userRole }) {
+  const initials = (user.email || '?').split('@')[0].slice(0, 2).toUpperCase()
+  const activeLink = 'text-sm text-green-600 font-semibold border-b-2 border-green-600 pb-0.5'
+  const inactiveLink = 'text-sm text-gray-600 hover:text-green-600 font-medium transition-colors duration-150'
+
+  return (
+    <div className="h-screen flex flex-col overflow-hidden" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <header className="bg-white border-b border-gray-200 flex-shrink-0">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-black font-bold text-lg tracking-tight">StopMooing</span>
+            <span className="text-gray-200 select-none">|</span>
+            {userRole === 'pt' && (
+              <>
+                <NavLink to="/dashboard"        className={({ isActive }) => isActive ? activeLink : inactiveLink}>Dashboard</NavLink>
+                <NavLink to="/exercise-library" className={({ isActive }) => isActive ? activeLink : inactiveLink}>Exercise Library</NavLink>
+                <NavLink to="/program-builder"  className={({ isActive }) => isActive ? activeLink : inactiveLink}>Program Builder</NavLink>
+              </>
+            )}
+            {userRole === 'client' && (
+              <NavLink to="/my-workout" className={({ isActive }) => isActive ? activeLink : inactiveLink}>My Workout</NavLink>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-500">{user.email}</span>
+            <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
+              {initials}
+            </div>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+      </header>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <Outlet />
+      </div>
+    </div>
+  )
+}
+
 function Dashboard({ user }) {
   const [clients, setClients] = useState([])
   const [checkinsMap, setCheckinsMap] = useState({})
   const [loadingClients, setLoadingClients] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState(null)
-
-  const ptInitials = (user.email || '?').split('@')[0].slice(0, 2).toUpperCase()
 
   async function fetchData() {
     const { data: clientData, error } = await supabase
@@ -399,24 +444,9 @@ function Dashboard({ user }) {
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className="h-full overflow-y-auto bg-gray-50">
       {showModal && <AddClientModal onClose={() => setShowModal(false)} onSave={handleAddClient} />}
       {selectedEnriched && <ClientPanel client={selectedEnriched} onClose={() => setSelectedClient(null)} />}
-
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <span className="text-black font-bold text-lg tracking-tight">StopMooing</span>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">{user.email}</span>
-            <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-              {ptInitials}
-            </div>
-            <button onClick={() => supabase.auth.signOut()} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
 
       <main className="max-w-5xl mx-auto px-6 py-10">
         <div className="mb-8 flex items-center justify-between">
@@ -508,6 +538,8 @@ function Dashboard({ user }) {
 
 export default function App() {
   const [session, setSession] = useState(undefined)
+  const [userRole, setUserRole] = useState(null)
+  const [roleLoading, setRoleLoading] = useState(true)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
@@ -517,15 +549,62 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  if (session === undefined) return null
+  useEffect(() => {
+    if (session === undefined) return
+    async function fetchRole() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          const { data } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+          setUserRole(data?.role ?? null)
+        } else {
+          setUserRole(null)
+        }
+      } finally {
+        setRoleLoading(false)
+      }
+    }
+    fetchRole()
+  }, [session])
+
+  if (session === undefined || roleLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <p className="text-sm text-gray-400">Loading...</p>
+      </div>
+    )
+  }
+
+  const roleRedirect = userRole === 'pt'
+    ? <Navigate to="/dashboard" replace />
+    : userRole === 'client'
+    ? <Navigate to="/my-workout" replace />
+    : <Navigate to="/login" replace />
 
   return (
     <Routes>
       <Route path="/checkin/:clientId" element={<CheckInPage />} />
-      <Route path="/" element={session ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
-      <Route path="/login" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="login" />} />
-      <Route path="/signup" element={session ? <Navigate to="/dashboard" replace /> : <AuthPage defaultMode="signup" />} />
-      <Route path="/dashboard" element={session ? <Dashboard user={session.user} /> : <Navigate to="/" replace />} />
+      <Route path="/" element={session ? roleRedirect : <LandingPage />} />
+      <Route path="/login" element={session ? roleRedirect : <AuthPage defaultMode="login" />} />
+      <Route path="/signup" element={session ? roleRedirect : <AuthPage defaultMode="signup" />} />
+      {session && (
+        <Route element={<ProtectedLayout user={session.user} userRole={userRole} />}>
+          <Route path="/dashboard" element={
+            userRole === 'pt' ? <Dashboard user={session.user} /> : <Navigate to="/my-workout" replace />
+          } />
+          <Route path="/exercise-library" element={
+            userRole === 'pt' ? <ExerciseLibrary user={session.user} /> : <Navigate to="/my-workout" replace />
+          } />
+          <Route path="/program-builder" element={
+            userRole === 'pt' ? <ProgramBuilder user={session.user} /> : <Navigate to="/my-workout" replace />
+          } />
+          <Route path="/my-workout" element={<ClientWorkout />} />
+        </Route>
+      )}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

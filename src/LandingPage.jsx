@@ -1,574 +1,583 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import './LandingPage.css'
-
-// ─── Tokens ──────────────────────────────────────────────────────────────────
-
-const font = '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-
-// ─── FadeIn ──────────────────────────────────────────────────────────────────
-
-function FadeIn({ children, delay = 0, style = {} }) {
-  const ref = useRef(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.12 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-
-  return (
-    <div
-      ref={ref}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(20px)',
-        transition: `opacity 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.6s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  )
-}
-
-// ─── DashboardMockup ─────────────────────────────────────────────────────────
-
-const mockClients = [
-  { initials: 'SM', name: 'Sarah Mitchell',  goal: 'Weight Loss',       last: 'Today',      sessions: 4, status: 'Engaged',  color: '#16A34A', bg: '#F0FDF4', border: '#86EFAC' },
-  { initials: 'JO', name: 'James Okafor',    goal: 'Muscle Gain',       last: '5 days ago', sessions: 2, status: 'Drifting', color: '#D97706', bg: '#FFFBEB', border: '#FCD34D' },
-  { initials: 'PN', name: 'Priya Nair',      goal: 'Marathon Training', last: 'Yesterday',  sessions: 6, status: 'Engaged',  color: '#16A34A', bg: '#F0FDF4', border: '#86EFAC' },
-  { initials: 'TB', name: 'Tom Bergström',   goal: 'General Fitness',   last: '18 days ago',sessions: 1, status: 'At Risk',  color: '#DC2626', bg: '#FEF2F2', border: '#FCA5A5' },
-]
-
-function DashboardMockup() {
-  return (
-    <div
-      className="lp-mockup"
-      style={{
-        borderRadius: 12,
-        overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,0.1)',
-        boxShadow: '0 40px 100px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)',
-        fontFamily: '"Inter", system-ui, sans-serif',
-        userSelect: 'none',
-      }}
-    >
-      {/* Browser chrome */}
-      <div style={{
-        background: '#161618',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        padding: '10px 14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-      }}>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57' }} />
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFBD2E' }} />
-          <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840' }} />
-        </div>
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-          <div style={{
-            background: '#222224',
-            borderRadius: 6,
-            padding: '4px 18px',
-            fontSize: 11,
-            color: '#52525b',
-            letterSpacing: '0.01em',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.4 }}>
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-4H7l5-8v4h4l-5 8z" fill="#fff"/>
-            </svg>
-            app.stopmooing.com/dashboard
-          </div>
-        </div>
-      </div>
-
-      {/* Dashboard */}
-      <div style={{ background: '#fafafa' }}>
-
-        {/* App header */}
-        <div style={{
-          background: '#fff',
-          borderBottom: '1px solid #f0f0f0',
-          padding: '10px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#000', animation: 'lp-pulse 2s ease-in-out infinite' }} />
-            <span style={{ fontWeight: 700, fontSize: 13, color: '#000', letterSpacing: '-0.02em' }}>StopMooing</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 10, color: '#a1a1aa' }}>pt@stopmooing.com</span>
-            <div style={{
-              width: 24, height: 24, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #000 0%, #333 100%)',
-              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 7, fontWeight: 700,
-            }}>LV</div>
-          </div>
-        </div>
-
-        <div style={{ padding: '16px 20px' }}>
-
-          {/* Page title */}
-          <div style={{ marginBottom: 16 }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#0a0a0a', letterSpacing: '-0.02em' }}>Client Dashboard</p>
-            <p style={{ margin: '2px 0 0', fontSize: 10, color: '#a1a1aa' }}>4 active clients · Updated just now</p>
-          </div>
-
-          {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
-            {[
-              { label: 'Total',    value: '8',  sub: 'clients',   color: '#0a0a0a' },
-              { label: 'Engaged',  value: '5',  sub: 'on track',  color: '#16A34A' },
-              { label: 'Drifting', value: '2',  sub: 'at risk',   color: '#D97706' },
-              { label: 'At Risk',  value: '1',  sub: 'critical',  color: '#DC2626' },
-            ].map(({ label, value, sub, color }) => (
-              <div key={label} style={{
-                background: '#fff',
-                border: '1px solid #e4e4e7',
-                borderRadius: 8,
-                padding: '10px 12px',
-              }}>
-                <p style={{ margin: 0, fontSize: 8, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginBottom: 4 }}>{label}</p>
-                <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color, lineHeight: 1, letterSpacing: '-0.04em' }}>{value}</p>
-                <p style={{ margin: '2px 0 0', fontSize: 8, color: '#a1a1aa' }}>{sub}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Client list */}
-          <div style={{ background: '#fff', border: '1px solid #e4e4e7', borderRadius: 10, overflow: 'hidden' }}>
-            <div style={{
-              padding: '9px 14px',
-              borderBottom: '1px solid #f4f4f5',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}>
-              <span style={{ fontSize: 10, fontWeight: 600, color: '#3f3f46', letterSpacing: '-0.01em' }}>All Clients</span>
-              <span style={{ fontSize: 9, color: '#a1a1aa' }}>4 of 8 shown</span>
-            </div>
-
-            {mockClients.map((c, i) => (
-              <div
-                key={i}
-                style={{
-                  padding: '10px 14px',
-                  borderBottom: i < mockClients.length - 1 ? '1px solid #f9f9f9' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                }}
-              >
-                <div style={{
-                  width: 28, height: 28, borderRadius: '50%',
-                  background: '#f4f4f5',
-                  color: '#52525b',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 8, fontWeight: 700, flexShrink: 0,
-                  letterSpacing: '0.02em',
-                }}>{c.initials}</div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: '#0a0a0a', letterSpacing: '-0.01em' }}>{c.name}</p>
-                  <p style={{ margin: '1px 0 0', fontSize: 8, color: '#a1a1aa' }}>{c.goal} · Last check-in: {c.last}</p>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                  <span style={{ fontSize: 8, color: '#a1a1aa' }}>{c.sessions} sessions</span>
-                  <span style={{
-                    fontSize: 8,
-                    fontWeight: 600,
-                    padding: '2px 7px',
-                    borderRadius: 20,
-                    background: c.bg,
-                    color: c.color,
-                    border: `1px solid ${c.border}`,
-                  }}>{c.status}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Divider ─────────────────────────────────────────────────────────────────
-
-function Divider() {
-  return <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.06)' }} />
-}
-
-// ─── Page ────────────────────────────────────────────────────────────────────
-
-const problemCards = [
-  {
-    num: '1',
-    eyebrow: 'Silent',
-    eyebrowColor: '#EF4444',
-    accentColor: '#EF4444',
-    title: 'The cancellation you never saw coming',
-    body: 'A client messages to cancel. No warning. No friction. You thought the relationship was solid. The truth is the signals were there weeks ago. You just had no way to see them.',
-  },
-  {
-    num: '2',
-    eyebrow: 'Gradual',
-    eyebrowColor: '#F59E0B',
-    accentColor: '#F59E0B',
-    title: 'The slow fade that costs you thousands',
-    body: 'It starts with a skipped check-in. Then slower replies. Then a missed session. Each one feels minor. Together they mean a client who is already mentally gone while you are still planning their next program.',
-  },
-  {
-    num: '3',
-    eyebrow: 'Invisible',
-    eyebrowColor: '#EF4444',
-    accentColor: '#EF4444',
-    title: 'The revenue blindspot hiding in plain sight',
-    body: 'One unexpected cancellation a month is $2,700 AUD gone every year. Multiply that across your roster and the number gets uncomfortable fast. You cannot stop what you cannot measure.',
-  },
-]
-
-const featureItems = [
-  {
-    title: 'Automated weekly check-ins',
-    body: 'Each client receives a personalised 60-second check-in link every week. Three questions about training, energy and blockers. You get the signal without lifting a finger.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="4" width="14" height="17" rx="2"/>
-        <rect x="8" y="2" width="5" height="4" rx="1"/>
-        <line x1="6" y1="10" x2="14" y2="10"/>
-        <line x1="6" y1="13" x2="14" y2="13"/>
-        <line x1="6" y1="16" x2="11" y2="16"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Green, amber, red at a glance',
-    body: 'Your dashboard scores every client in real time based on their responses and behaviour. Engaged. Drifting. At Risk. You see the full picture before problems become cancellations.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="12" width="3" height="7" rx="1"/>
-        <rect x="8.5" y="6" width="3" height="13" rx="1"/>
-        <rect x="14" y="9" width="3" height="10" rx="1"/>
-      </svg>
-    ),
-  },
-  {
-    title: 'Alerts before it is too late',
-    body: 'The moment a client\'s engagement score drops below your threshold, you are notified immediately. Not next week. Right now. While the relationship is still worth saving.',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10 2 C6.5 2 4 4.5 4 8 L4 13 L2 15 L18 15 L16 13 L16 8 C16 4.5 13.5 2 10 2 Z"/>
-        <path d="M8 15 C8 16.1 8.9 17 10 17 C11.1 17 12 16.1 12 15"/>
-      </svg>
-    ),
-  },
-]
-
-const statsData = [
-  { value: '2 min',    label: 'Average check-in time per client' },
-  { value: '94%',      label: 'Response rate from clients' },
-  { value: '3x',       label: 'Fewer surprise cancellations' },
-  { value: '$600 AUD', label: 'Avg. monthly revenue protected' },
-]
+import { useNavigate } from 'react-router-dom'
+import { Dumbbell, ClipboardCheck, Utensils, BarChart2, CreditCard, TrendingUp, CheckCircle2, ChevronRight, Menu, X } from 'lucide-react'
 
 export default function LandingPage() {
-  const [scrolled, setScrolled] = useState(false)
-
-  useEffect(() => {
-    function onScroll() {
-      setScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
+  const navigate = useNavigate()
 
   return (
-    <div style={{ background: '#09090b', fontFamily: font, color: '#fff', WebkitFontSmoothing: 'antialiased' }}>
+    <div className="scroll-smooth" style={{ backgroundColor: '#0a0a0a' }}>
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeInUp 0.6s ease forwards; }
+        .fade-in-delay-1 { animation: fadeInUp 0.6s ease 0.1s forwards; opacity: 0; }
+        .fade-in-delay-2 { animation: fadeInUp 0.6s ease 0.2s forwards; opacity: 0; }
+        .fade-in-delay-3 { animation: fadeInUp 0.6s ease 0.3s forwards; opacity: 0; }
+      `}</style>
 
-      {/* ── Header ── */}
-      <header style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrolled ? 'rgba(9,9,11,0.85)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(255,255,255,0.06)' : '1px solid transparent',
-        transition: 'background 0.3s, border-color 0.3s, backdrop-filter 0.3s',
-      }}>
-        <div style={{
-          maxWidth: 1120, margin: '0 auto', padding: '0 32px',
-          height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <span style={{ color: '#fff', fontWeight: 800, fontSize: 17, letterSpacing: '-0.03em' }}>StopMooing</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <Link to="/login" className="lp-header-signin">Sign in</Link>
-            <Link to="/signup" className="lp-header-btn">Get started</Link>
+      {/* NAV */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10 h-16 flex items-center">
+        <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
+          <span className="text-white font-bold text-xl tracking-tight">StopMooing</span>
+          <div className="flex items-center">
+            <button
+              onClick={() => navigate('/auth')}
+              className="text-zinc-400 hover:text-white text-sm font-medium transition-colors duration-150 mr-3"
+            >
+              Sign in
+            </button>
+            <button
+              onClick={() => navigate('/auth')}
+              className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-all duration-150 shadow-lg shadow-green-900/30 text-sm px-4 py-2"
+            >
+              Get started →
+            </button>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* ── Hero ── */}
-      <section style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: '140px 32px 100px',
-        maxWidth: 1120,
-        margin: '0 auto',
-      }}
-        className="lp-hero-pad"
-      >
-        {/* Live indicator */}
-        <div className="lp-hero-label" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 32 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '5px 12px 5px 8px' }}>
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', animation: 'lp-pulse 2s ease-in-out infinite' }} />
-            <span style={{ fontSize: 12, color: '#a1a1aa', fontWeight: 500, letterSpacing: '0.02em' }}>Client Retention for Personal Trainers</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center' }} className="lp-hero-grid">
-
-          {/* Copy */}
-          <div>
-            <h1 style={{ margin: '0 0 24px', lineHeight: 1.04, letterSpacing: '-0.04em' }}>
-              <span
-                className="lp-hero-line-1"
-                style={{
-                  display: 'block',
-                  fontSize: 'clamp(3rem, 5vw, 4.5rem)',
-                  fontWeight: 900,
-                  color: '#fff',
-                }}
-              >
-                Stop losing
+      {/* HERO */}
+      <section className="min-h-screen pt-16 flex items-center" style={{ backgroundColor: '#0a0a0a' }}>
+        <div className="max-w-6xl mx-auto px-6 w-full">
+          <div className="grid grid-cols-2 gap-16 items-center">
+            {/* Left */}
+            <div className="fade-in">
+              <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20">
+                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                Now in beta — join 500+ personal trainers
               </span>
-              <span
-                className="lp-hero-line-2"
-                style={{
-                  display: 'block',
-                  fontSize: 'clamp(3rem, 5vw, 4.5rem)',
-                  fontWeight: 900,
-                  color: '#52525b',
-                }}
-              >
-                clients you never
-              </span>
-              <span
-                className="lp-hero-line-1"
-                style={{
-                  display: 'block',
-                  fontSize: 'clamp(3rem, 5vw, 4.5rem)',
-                  fontWeight: 900,
-                  color: '#fff',
-                }}
-              >
-                saw coming.
-              </span>
-            </h1>
 
-            <p className="lp-hero-sub" style={{
-              margin: '0 0 40px',
-              color: '#71717a',
-              fontSize: 18,
-              lineHeight: 1.7,
-              maxWidth: 460,
-            }}>
-              StopMooing spots disengaged clients weeks before they cancel. Weekly check-ins. Real-time alerts. Your income, protected.
-            </p>
+              <h1 className="mt-6">
+                <span className="block text-6xl font-black text-white leading-none tracking-tight">Run Your Entire</span>
+                <span className="block text-6xl font-black text-white leading-none tracking-tight">PT Business</span>
+                <span className="block text-6xl font-black text-green-500 leading-none tracking-tight">From One Place.</span>
+              </h1>
 
-            <div className="lp-hero-cta" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <Link to="/signup" className="lp-btn-primary">
-                Start for free
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </Link>
-              <Link to="/login" className="lp-btn-secondary">Sign in</Link>
+              <p className="mt-6 text-zinc-400 text-xl leading-relaxed max-w-lg">
+                Training programs. Check-ins. Nutrition. Habit coaching. Payments. One platform that replaces everything.
+              </p>
+
+              <div className="mt-10 flex gap-3">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="bg-white/10 border border-white/20 text-white placeholder-zinc-500 rounded-xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-72"
+                />
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-all duration-150 shadow-lg shadow-green-900/30 px-6 py-3 text-sm"
+                >
+                  Start for free →
+                </button>
+              </div>
+              <p className="mt-3 text-zinc-500 text-xs">Free to start · No credit card required · Cancel anytime</p>
+
+              <div className="mt-14 pt-8 border-t border-white/10 grid grid-cols-4 gap-6">
+                {[
+                  { num: '500+', label: 'Personal trainers' },
+                  { num: '2 min', label: 'Avg check-in time' },
+                  { num: '3x', label: 'Fewer cancellations' },
+                  { num: '$600 AUD', label: 'Revenue protected monthly' },
+                ].map((s) => (
+                  <div key={s.label} className="flex flex-col">
+                    <span className="text-3xl font-black text-white">{s.num}</span>
+                    <span className="text-xs text-zinc-500 mt-1 uppercase tracking-wide">{s.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <p style={{ margin: '20px 0 0', fontSize: 13, color: '#3f3f46' }}>Free to start · No credit card required</p>
-          </div>
+            {/* Right — dashboard mockup */}
+            <div className="relative fade-in-delay-1">
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-5 shadow-2xl shadow-black/50">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-white font-bold text-sm">StopMooing</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
+                    <span className="text-green-500 text-xs font-medium">Live</span>
+                  </span>
+                </div>
 
-          {/* Mockup */}
-          <div style={{ position: 'relative' }}>
-            <div style={{
-              position: 'absolute', inset: -40,
-              background: 'radial-gradient(ellipse at center, rgba(99,102,241,0.12) 0%, transparent 70%)',
-              pointerEvents: 'none',
-            }} />
-            <DashboardMockup />
-          </div>
+                {/* 2x2 stat tiles */}
+                <div className="grid grid-cols-2 gap-2 mb-4">
+                  {[
+                    { num: '8', label: 'Total clients', color: 'text-white' },
+                    { num: '5', label: 'Engaged', color: 'text-green-500' },
+                    { num: '2', label: 'Drifting', color: 'text-yellow-500' },
+                    { num: '1', label: 'At Risk', color: 'text-red-500' },
+                  ].map((t) => (
+                    <div key={t.label} className="bg-black/40 rounded-xl p-3">
+                      <div className={`text-2xl font-black ${t.color}`}>{t.num}</div>
+                      <div className="text-zinc-500 text-xs">{t.label}</div>
+                    </div>
+                  ))}
+                </div>
 
+                {/* Client rows */}
+                <div className="space-y-2">
+                  {[
+                    { init: 'SM', name: 'Sarah Mitchell', bg: 'bg-blue-600', status: 'Engaged', badge: 'bg-green-600/20 text-green-400' },
+                    { init: 'JO', name: 'James Okafor', bg: 'bg-purple-600', status: 'Drifting', badge: 'bg-yellow-600/20 text-yellow-400' },
+                    { init: 'PN', name: 'Priya Nair', bg: 'bg-emerald-600', status: 'Engaged', badge: 'bg-green-600/20 text-green-400' },
+                    { init: 'TB', name: 'Tom Bergström', bg: 'bg-orange-600', status: 'At Risk', badge: 'bg-red-600/20 text-red-400' },
+                  ].map((c) => (
+                    <div key={c.name} className="flex items-center justify-between bg-black/20 rounded-xl px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${c.bg}`}>{c.init}</div>
+                        <span className="text-white text-xs font-medium">{c.name}</span>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>{c.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Floating alert */}
+              <div className="absolute -top-4 -right-6 bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 shadow-xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-red-400 text-sm">🔔</span>
+                  <span className="text-white text-xs font-semibold">Tom is at risk</span>
+                </div>
+                <div className="text-zinc-500 text-xs mt-0.5">Last check-in: 18 days ago</div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── Stats Bar ── */}
-      <section style={{
-        backgroundColor: '#0A0A0A',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        paddingTop: 56,
-        paddingBottom: 56,
-        paddingLeft: 48,
-        paddingRight: 48,
-        width: '100%',
-      }} className="lp-statsbar-section">
-        <div className="lp-statsbar-inner" style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0 }}>
-          {statsData.map(({ value, label }, i) => (
-            <div
-              key={i}
-              className={`lp-stat-item${i < 3 ? ' lp-stat-border' : ''}`}
-              style={{ paddingLeft: i === 0 ? 0 : 40, paddingRight: 40 }}
-            >
-              <span style={{ fontSize: 44, fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.03em', lineHeight: 1, display: 'block', marginBottom: 8 }}>{value}</span>
-              <span style={{ fontSize: 13, color: '#52525B', fontWeight: 400, lineHeight: 1.5, display: 'block' }}>{label}</span>
+      {/* FEATURE ICON STRIP */}
+      <section className="bg-white/[0.03] border-y border-white/10 py-8">
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between flex-wrap gap-8">
+          {[
+            { icon: <Dumbbell size={18} />, label: 'Training Programs' },
+            { icon: <ClipboardCheck size={18} />, label: 'Client Check-ins' },
+            { icon: <Utensils size={18} />, label: 'Nutrition Tracking' },
+            { icon: <BarChart2 size={18} />, label: 'Habit Coaching' },
+            { icon: <CreditCard size={18} />, label: 'Payments' },
+            { icon: <TrendingUp size={18} />, label: 'Progress Analytics' },
+          ].map((f) => (
+            <div key={f.label} className="flex items-center gap-2.5">
+              <span className="text-green-500">{f.icon}</span>
+              <span className="text-zinc-400 text-sm font-medium">{f.label}</span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── Problem ── */}
-      <section className="lp-problem-section" style={{ backgroundColor: '#000000', paddingTop: 160, paddingBottom: 160, paddingLeft: 48, paddingRight: 48, width: '100%' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <FadeIn>
-            <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#3F3F46', display: 'block', marginBottom: 24 }}>
-              The Problem
-            </span>
-            <h2 style={{ fontSize: 'clamp(40px, 5.5vw, 64px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05, color: '#FFFFFF', maxWidth: 640, margin: '0 0 24px' }}>
-              Every PT knows this feeling.
-            </h2>
-            <p style={{ fontSize: 18, fontWeight: 400, color: '#71717A', lineHeight: 1.75, maxWidth: 480, margin: '0 0 80px' }}>
-              The signs are always there. You just never had a way to see them.
-            </p>
-          </FadeIn>
+      {/* FEATURE BLOCK 1 — RETENTION */}
+      <section className="py-32" style={{ backgroundColor: '#0a0a0a' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-2 gap-20 items-center">
+            {/* Left — text */}
+            <div className="fade-in">
+              <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20">
+                Client Retention
+              </span>
+              <h2 className="mt-5 text-4xl font-bold text-white leading-tight tracking-tight">
+                Know exactly who needs you before it's too late.
+              </h2>
+              <p className="mt-5 text-zinc-400 text-lg leading-relaxed">
+                StopMooing watches your entire client roster around the clock. Automated weekly check-ins. Real-time engagement scoring. Instant alerts the moment someone starts drifting — while there's still time to save the relationship.
+              </p>
+              <ul className="mt-8 space-y-3">
+                {[
+                  'Automated weekly check-in links sent to every client — no manual work',
+                  'Green, amber, red engagement status visible at a glance on your dashboard',
+                  'Instant email alerts the moment a client\'s score drops to At Risk',
+                  'Full check-in response history stored per client forever',
+                ].map((b) => (
+                  <li key={b} className="flex items-start gap-3">
+                    <CheckCircle2 size={18} className="text-green-500 mt-0.5 shrink-0" />
+                    <span className="text-zinc-300 text-sm leading-relaxed">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <div className="lp-problem-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', backgroundColor: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            {problemCards.map((card, i) => (
-              <FadeIn key={card.num} delay={i * 80}>
-                <div className="lp-problem-card" style={{
-                  backgroundColor: '#0A0A0A',
-                  paddingTop: 48,
-                  paddingBottom: 48,
-                  paddingLeft: 40,
-                  paddingRight: 40,
-                  position: 'relative',
-                  overflow: 'hidden',
-                  borderTop: `2px solid ${card.accentColor}`,
-                  transition: 'background-color 200ms ease',
-                  height: '100%',
-                  boxSizing: 'border-box',
-                }}>
-                  <span style={{ position: 'absolute', bottom: -24, right: 24, fontSize: '10rem', fontWeight: 900, lineHeight: 1, color: 'rgba(255,255,255,0.03)', zIndex: 0, userSelect: 'none', pointerEvents: 'none' }}>{card.num}</span>
-                  <div style={{ position: 'relative', zIndex: 1 }}>
-                    <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 20, display: 'block', color: card.eyebrowColor }}>{card.eyebrow}</span>
-                    <p style={{ margin: '0 0 16px', fontSize: 22, fontWeight: 700, color: '#FFFFFF', letterSpacing: '-0.02em', lineHeight: 1.2 }}>{card.title}</p>
-                    <p style={{ margin: 0, fontSize: 15, fontWeight: 400, color: '#71717A', lineHeight: 1.75 }}>{card.body}</p>
-                  </div>
+            {/* Right — mockup */}
+            <div className="fade-in-delay-1">
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/40">
+                <div>
+                  <div className="text-white font-semibold text-sm">Client Dashboard</div>
+                  <div className="text-zinc-500 text-xs mt-0.5">4 active clients · Updated just now</div>
                 </div>
-              </FadeIn>
+
+                <div className="flex gap-2 mt-4">
+                  {[
+                    { label: '8 Total', cls: 'bg-white/10 text-zinc-300' },
+                    { label: '5 Engaged', cls: 'bg-green-600/20 text-green-400' },
+                    { label: '2 Drifting', cls: 'bg-yellow-600/20 text-yellow-400' },
+                    { label: '1 At Risk', cls: 'bg-red-600/20 text-red-400' },
+                  ].map((p) => (
+                    <span key={p.label} className={`text-xs font-semibold px-3 py-1 rounded-full ${p.cls}`}>{p.label}</span>
+                  ))}
+                </div>
+
+                <div className="mt-5 space-y-1">
+                  {[
+                    { name: 'Sarah Mitchell', init: 'SM', bg: 'bg-blue-600', goal: 'Weight Loss', status: 'Engaged', badge: 'bg-green-600/20 text-green-400' },
+                    { name: 'James Okafor', init: 'JO', bg: 'bg-purple-600', goal: 'Muscle Gain', status: 'Drifting', badge: 'bg-yellow-600/20 text-yellow-400' },
+                    { name: 'Priya Nair', init: 'PN', bg: 'bg-emerald-600', goal: 'Marathon Training', status: 'Engaged', badge: 'bg-green-600/20 text-green-400' },
+                    { name: 'Tom Bergström', init: 'TB', bg: 'bg-orange-600', goal: 'General Fitness', status: 'At Risk', badge: 'bg-red-600/20 text-red-400' },
+                  ].map((c) => (
+                    <div key={c.name} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${c.bg}`}>{c.init}</div>
+                        <span className="text-white text-sm font-medium">{c.name}</span>
+                        <span className="text-zinc-500 text-xs ml-1">{c.goal}</span>
+                      </div>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>{c.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURE BLOCK 2 — PROGRAMS */}
+      <section className="py-32 bg-white/[0.02]">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-2 gap-20 items-center">
+            {/* Left — mockup */}
+            <div className="fade-in">
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/40">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-semibold text-sm">Program Builder</span>
+                  <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-lg">+ New Program</span>
+                </div>
+
+                <div className="mt-4 bg-green-600/10 border-l-4 border-green-500 rounded-xl p-4">
+                  <div className="text-white font-semibold text-sm">6 Week Strength Block</div>
+                  <div className="text-zinc-400 text-xs mt-1">3 days · Upper / Lower / Full Body</div>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {[
+                    { n: 1, name: 'Bench Press', muscle: 'Chest', sets: '4 × 6-10 reps' },
+                    { n: 2, name: 'Barbell Row', muscle: 'Back', sets: '3 × 8-12 reps' },
+                    { n: 3, name: 'Shoulder Press', muscle: 'Shoulders', sets: '3 × 8-12 reps' },
+                    { n: 4, name: 'Squat', muscle: 'Legs', sets: '4 × 6-8 reps' },
+                  ].map((e) => (
+                    <div key={e.n} className="flex items-center gap-3 bg-black/30 rounded-xl px-4 py-3">
+                      <div className="w-6 h-6 rounded-full bg-green-600/20 text-green-500 text-xs font-bold flex items-center justify-center shrink-0">{e.n}</div>
+                      <span className="text-white text-sm font-medium flex-1">{e.name}</span>
+                      <span className="bg-green-600/10 text-green-500 text-xs px-2 py-0.5 rounded-full font-medium">{e.muscle}</span>
+                      <span className="text-zinc-500 text-xs ml-2">{e.sets}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right — text */}
+            <div className="fade-in-delay-1">
+              <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20">
+                Program Builder
+              </span>
+              <h2 className="mt-5 text-4xl font-bold text-white leading-tight tracking-tight">
+                Build world-class training programs in minutes.
+              </h2>
+              <p className="mt-5 text-zinc-400 text-lg leading-relaxed">
+                A powerful drag-and-drop program builder with a full exercise library. Create structured multi-week programs, assign them to clients with one click, and let your clients log every set and rep directly inside StopMooing.
+              </p>
+              <ul className="mt-8 space-y-3">
+                {[
+                  'Build structured multi-day, multi-week training programs',
+                  'Full exercise library with muscle group tagging',
+                  'Assign programs to any client with one click',
+                  'Clients log sets, reps and weights from their own view',
+                  'Track client progress and personal bests over time',
+                ].map((b) => (
+                  <li key={b} className="flex items-start gap-3">
+                    <CheckCircle2 size={18} className="text-green-500 mt-0.5 shrink-0" />
+                    <span className="text-zinc-300 text-sm leading-relaxed">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURE BLOCK 3 — NUTRITION & HABITS */}
+      <section className="py-32" style={{ backgroundColor: '#0a0a0a' }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-2 gap-20 items-center">
+            {/* Left — text */}
+            <div className="fade-in">
+              <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20">
+                Nutrition &amp; Habits
+              </span>
+              <h2 className="mt-5 text-4xl font-bold text-white leading-tight tracking-tight">
+                Coach the whole person, not just the workout.
+              </h2>
+              <p className="mt-5 text-zinc-400 text-lg leading-relaxed">
+                Meal plans. Macro targets. Daily habit check-ins. StopMooing gives your clients the structure to build real, lasting change — and gives you the visibility to coach them on everything.
+              </p>
+              <ul className="mt-8 space-y-3">
+                {[
+                  'Create and assign custom meal plans per client',
+                  'Set daily macro and calorie targets',
+                  'Daily habit tracking with streak counters',
+                  'Full habit history visible on your PT dashboard',
+                ].map((b) => (
+                  <li key={b} className="flex items-start gap-3">
+                    <CheckCircle2 size={18} className="text-green-500 mt-0.5 shrink-0" />
+                    <span className="text-zinc-300 text-sm leading-relaxed">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Right — mockup */}
+            <div className="fade-in-delay-1">
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/40">
+                <div className="flex items-center justify-between">
+                  <span className="text-white font-semibold text-sm">Today's Habits</span>
+                  <span className="text-zinc-500 text-xs">Thu 7 May</span>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  {[
+                    { name: 'Morning workout', streak: '🔥 7 day streak', filled: 6 },
+                    { name: 'Hit protein target', streak: '🔥 5 day streak', filled: 5 },
+                    { name: '8hrs sleep', streak: '🔥 4 day streak', filled: 4 },
+                    { name: 'Drink 3L water', streak: '🔥 7 day streak', filled: 7 },
+                  ].map((h) => (
+                    <div key={h.name} className="flex items-center justify-between">
+                      <div>
+                        <div className="text-zinc-300 text-sm font-medium">{h.name}</div>
+                        <div className="text-zinc-500 text-xs mt-0.5">{h.streak}</div>
+                      </div>
+                      <div className="flex gap-1.5">
+                        {Array.from({ length: 7 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={`w-5 h-5 rounded-full ${i < h.filled ? 'bg-green-500' : 'bg-white/10'}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 pt-5 border-t border-white/10 grid grid-cols-3 gap-3">
+                  {[
+                    { label: 'Protein', value: '156g / 180g', pct: 87 },
+                    { label: 'Carbs', value: '210g / 250g', pct: 84 },
+                    { label: 'Fats', value: '58g / 70g', pct: 83 },
+                  ].map((m) => (
+                    <div key={m.label} className="bg-black/40 rounded-xl p-3 text-center">
+                      <div className="text-zinc-500 text-xs uppercase tracking-wide">{m.label}</div>
+                      <div className="text-white font-bold text-lg mt-1">{m.value}</div>
+                      <div className="h-1 rounded-full bg-white/10 mt-2">
+                        <div className="h-1 rounded-full bg-green-500" style={{ width: `${m.pct}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="py-32 bg-white/[0.02]">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20 fade-in">
+              How It Works
+            </span>
+            <h2 className="text-center text-4xl font-bold text-white mt-5 tracking-tight fade-in-delay-1">
+              Set up in minutes. Results from day one.
+            </h2>
+            <p className="text-center text-zinc-400 text-lg mt-4 max-w-2xl mx-auto fade-in-delay-2">
+              No complicated onboarding. No technical knowledge needed. Just add your clients and go.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-6 mt-16">
+            {[
+              {
+                num: '01',
+                heading: 'Add your clients',
+                desc: 'Import your existing roster or add clients one by one. Takes less than 2 minutes and requires zero technical setup.',
+              },
+              {
+                num: '02',
+                heading: 'Build their program',
+                desc: 'Create a personalised training program, assign it directly to the client, and set up their nutrition and habit targets.',
+              },
+              {
+                num: '03',
+                heading: 'Retain more clients',
+                desc: 'Automated check-ins run silently in the background. You get alerted before anyone even thinks about cancelling.',
+              },
+            ].map((s, i) => (
+              <div
+                key={s.num}
+                className={`bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/[0.07] hover:border-white/20 transition-all duration-200 fade-in-delay-${i + 1}`}
+              >
+                <div className="text-7xl font-black text-green-600/20 leading-none">{s.num}</div>
+                <div className="text-white font-bold text-lg mt-6">{s.heading}</div>
+                <p className="text-zinc-400 text-sm mt-3 leading-relaxed">{s.desc}</p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Solution ── */}
-      <section className="lp-solution-section" style={{ backgroundColor: '#000000', paddingTop: 160, paddingBottom: 160, paddingLeft: 48, paddingRight: 48, width: '100%', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <FadeIn>
-            <span style={{ fontSize: 11, fontWeight: 500, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#3F3F46', display: 'block', marginBottom: 24 }}>
-              The Solution
+      {/* PRICING */}
+      <section className="py-32" style={{ backgroundColor: '#0a0a0a' }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20 fade-in">
+              Pricing
             </span>
-            <h2 style={{ fontSize: 'clamp(40px, 5.5vw, 64px)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.05, color: '#FFFFFF', maxWidth: 700, margin: '0 0 24px' }}>
-              Know exactly who needs you before it is too late.
+            <h2 className="text-center text-4xl font-bold text-white mt-5 tracking-tight fade-in-delay-1">
+              Simple pricing. No surprises.
             </h2>
-            <p style={{ fontSize: 18, fontWeight: 400, color: '#71717A', lineHeight: 1.75, maxWidth: 520, margin: '0 0 96px' }}>
-              StopMooing runs quietly in the background. Watching engagement. Scoring behaviour. Alerting you at exactly the right moment while there is still time to act.
+            <p className="text-center text-zinc-400 text-lg mt-4 fade-in-delay-2">
+              One subscription replaces 4-5 separate tools. Cancel anytime.
             </p>
-          </FadeIn>
+          </div>
 
-          <div className="lp-solution-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 48, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 48 }}>
-            {featureItems.map((feature, i) => (
-              <FadeIn key={i} delay={i * 80}>
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, flexShrink: 0 }}>
-                    {feature.icon}
-                  </div>
-                  <p style={{ margin: '0 0 12px', fontSize: 18, fontWeight: 600, color: '#FFFFFF', letterSpacing: '-0.01em', lineHeight: 1.3 }}>{feature.title}</p>
-                  <p style={{ margin: 0, fontSize: 15, fontWeight: 400, color: '#71717A', lineHeight: 1.75 }}>{feature.body}</p>
-                </div>
-              </FadeIn>
-            ))}
+          <div className="grid grid-cols-2 gap-8 mt-16 max-w-3xl mx-auto">
+            {/* Starter */}
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col fade-in-delay-1">
+              <div className="text-white font-bold text-xl">Starter</div>
+              <div className="flex items-end gap-1 mt-4">
+                <span className="text-5xl font-black text-white">$49</span>
+                <span className="text-zinc-500 text-base pb-1">/month</span>
+              </div>
+              <p className="text-zinc-400 text-sm mt-2">Perfect for PTs building their foundation</p>
+              <div className="border-t border-white/10 my-6" />
+              <ul className="space-y-3">
+                {[
+                  'Up to 10 clients',
+                  'Check-in system with automated links',
+                  'Program builder and exercise library',
+                  'Client workout logging',
+                  'Basic dashboard analytics',
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5">
+                    <CheckCircle2 size={16} className="text-green-500 shrink-0" />
+                    <span className="text-zinc-300 text-sm">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto pt-8">
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="border border-white/20 text-white hover:bg-white/10 active:bg-white/15 rounded-xl transition-all duration-150 w-full py-3 text-sm font-semibold text-center"
+                >
+                  Get started free
+                </button>
+              </div>
+            </div>
+
+            {/* Pro */}
+            <div className="bg-green-600 border border-green-500 rounded-2xl p-8 flex flex-col relative overflow-hidden fade-in-delay-2">
+              <div className="absolute inset-0 bg-green-400/10 rounded-2xl pointer-events-none" />
+              <span className="inline-block bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-4 relative">Most Popular</span>
+              <div className="text-white font-bold text-xl relative">Pro</div>
+              <div className="flex items-end gap-1 mt-4 relative">
+                <span className="text-5xl font-black text-white">$99</span>
+                <span className="text-white/70 text-base pb-1">/month</span>
+              </div>
+              <p className="text-white/80 text-sm mt-2 relative">For serious PTs ready to scale their business</p>
+              <div className="border-t border-white/20 my-6 relative" />
+              <ul className="space-y-3 relative">
+                {[
+                  'Unlimited clients',
+                  'Everything in Starter',
+                  'Nutrition and meal plan builder',
+                  'Habit coaching and tracking',
+                  'Automated email alerts for at-risk clients',
+                  'Payments integration',
+                  'Priority support',
+                ].map((f) => (
+                  <li key={f} className="flex items-center gap-2.5">
+                    <CheckCircle2 size={16} className="text-white shrink-0" />
+                    <span className="text-white text-sm">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-auto pt-8 relative">
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="bg-white text-green-700 font-bold w-full py-3 text-sm rounded-xl hover:bg-green-50 transition-all duration-150 text-center"
+                >
+                  Start free trial →
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── CTA ── */}
-      <section style={{ background: '#09090b', padding: '160px 32px', textAlign: 'center' }} className="lp-section-pad">
-        <div style={{ maxWidth: 1120, margin: '0 auto' }}>
-          <FadeIn>
-            <p style={{ margin: '0 0 16px', fontSize: 11, fontWeight: 700, color: '#52525b', letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-              Get started today
-            </p>
-            <h2 style={{
-              margin: '0 0 16px',
-              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)',
-              fontWeight: 900,
-              color: '#fff',
-              letterSpacing: '-0.04em',
-              lineHeight: 1.04,
-            }}>
-              Ready to stop the churn?
-            </h2>
-            <p style={{ margin: '0 0 48px', fontSize: 18, color: '#52525b', lineHeight: 1.6 }}>
-              Join personal trainers using StopMooing to protect their income.
-            </p>
-            <Link to="/signup" className="lp-cta-btn">
-              Create your free account
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7"/>
-              </svg>
-            </Link>
-            <p style={{ margin: '20px 0 0', fontSize: 13, color: '#3f3f46' }}>Free to start · No credit card required</p>
-          </FadeIn>
+      {/* FINAL CTA */}
+      <section className="py-32 bg-[#0a0a0a] relative overflow-hidden">
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-green-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-green-600/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 max-w-2xl mx-auto px-6 text-center">
+          <h2 className="text-white font-black text-6xl leading-tight tracking-tight fade-in">
+            Ready to stop the churn?
+          </h2>
+          <p className="mt-5 text-zinc-400 text-lg fade-in-delay-1">
+            Join personal trainers already using StopMooing to protect their income.
+          </p>
+          <div className="mt-10 flex gap-3 justify-center flex-wrap fade-in-delay-2">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="bg-white/10 border border-white/20 text-white placeholder-zinc-500 rounded-xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-72"
+            />
+            <button
+              onClick={() => navigate('/auth')}
+              className="bg-white text-gray-900 font-bold px-6 py-3 rounded-xl hover:bg-zinc-100 transition-all duration-150 text-sm"
+            >
+              Start for free →
+            </button>
+          </div>
+          <p className="text-zinc-600 text-xs mt-3">Free to start · No credit card required · Cancel anytime</p>
+          <button
+            onClick={() => navigate('/auth')}
+            className="mt-6 inline-block text-white font-black text-2xl hover:text-green-500 transition-colors duration-150 tracking-tight"
+          >
+            CREATE YOUR FREE ACCOUNT →
+          </button>
         </div>
       </section>
 
-      <Divider />
-
-      {/* ── Footer ── */}
-      <footer style={{ background: '#09090b', padding: '32px 32px' }}>
-        <div
-          style={{ maxWidth: 1120, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
-          className="lp-footer-inner"
-        >
-          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.03em', color: '#fff' }}>StopMooing</span>
-          <p style={{ margin: 0, fontSize: 13, color: '#3f3f46' }}>Built for personal trainers.</p>
+      {/* FOOTER */}
+      <footer className="bg-black border-t border-white/10 py-12">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-white font-bold text-lg">StopMooing</span>
+              <span className="text-zinc-500 text-sm mt-1">Built for personal trainers.</span>
+            </div>
+            <div className="flex gap-6">
+              <button onClick={() => navigate('/auth')} className="text-zinc-400 hover:text-white text-sm transition-colors duration-150">Sign in</button>
+              <button onClick={() => navigate('/auth')} className="text-zinc-400 hover:text-white text-sm transition-colors duration-150">Get started</button>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-white/10 flex items-center justify-between">
+            <span className="text-zinc-600 text-xs">© 2026 StopMooing. All rights reserved.</span>
+            <div className="flex gap-6">
+              <button className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors duration-150">Privacy Policy</button>
+              <button className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors duration-150">Terms of Service</button>
+            </div>
+          </div>
         </div>
       </footer>
-
     </div>
   )
 }
