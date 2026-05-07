@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, NavLink, Outlet } from 'react-router-dom'
+import { Utensils } from 'lucide-react'
 import { supabase } from './supabase'
 import AuthPage from './AuthPage'
 import CheckInPage from './CheckInPage'
 import LandingPage from './LandingPage'
 import ExerciseLibrary from './ExerciseLibrary'
 import ProgramBuilder from './ProgramBuilder'
+import NutritionPlanner from './NutritionPlanner'
 import ClientWorkout from './ClientWorkout'
 
 const statusConfig = {
@@ -330,6 +332,9 @@ function ProtectedLayout({ user, userRole }) {
                 <NavLink to="/dashboard"        className={({ isActive }) => isActive ? activeLink : inactiveLink}>Dashboard</NavLink>
                 <NavLink to="/exercise-library" className={({ isActive }) => isActive ? activeLink : inactiveLink}>Exercise Library</NavLink>
                 <NavLink to="/program-builder"  className={({ isActive }) => isActive ? activeLink : inactiveLink}>Program Builder</NavLink>
+                <NavLink to="/nutrition" className={({ isActive }) => `flex items-center gap-1.5 ${isActive ? activeLink : inactiveLink}`}>
+                  <Utensils size={14} />Nutrition
+                </NavLink>
               </>
             )}
             {userRole === 'client' && (
@@ -601,6 +606,9 @@ export default function App() {
           } />
           <Route path="/program-builder" element={
             userRole === 'pt' ? <ProgramBuilder user={session.user} /> : <Navigate to="/my-workout" replace />
+          } />
+          <Route path="/nutrition" element={
+            userRole === 'pt' ? <NutritionPlanner /> : <Navigate to="/my-workout" replace />
           } />
           <Route path="/my-workout" element={<ClientWorkout />} />
         </Route>
