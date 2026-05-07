@@ -1,8 +1,6 @@
-import { useNavigate } from 'react-router-dom'
 import { Dumbbell, ClipboardCheck, Utensils, BarChart2, CreditCard, TrendingUp, CheckCircle2, ChevronRight, Menu, X } from 'lucide-react'
 
 export default function LandingPage() {
-  const navigate = useNavigate()
 
   return (
     <div className="scroll-smooth" style={{ backgroundColor: '#0a0a0a' }}>
@@ -22,18 +20,8 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
           <span className="text-white font-bold text-xl tracking-tight">StopMooing</span>
           <div className="flex items-center">
-            <button
-              onClick={() => navigate('/auth')}
-              className="text-zinc-400 hover:text-white text-sm font-medium transition-colors duration-150 mr-3"
-            >
-              Sign in
-            </button>
-            <button
-              onClick={() => navigate('/auth')}
-              className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-all duration-150 shadow-lg shadow-green-900/30 text-sm px-4 py-2"
-            >
-              Get started →
-            </button>
+            <a href="/auth" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors duration-150 mr-3">Sign in</a>
+            <a href="/auth" className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-all duration-150 shadow-lg shadow-green-900/30 text-sm px-4 py-2">Get started →</a>
           </div>
         </div>
       </nav>
@@ -65,12 +53,7 @@ export default function LandingPage() {
                   placeholder="Enter your email"
                   className="bg-white/10 border border-white/20 text-white placeholder-zinc-500 rounded-xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-72"
                 />
-                <button
-                  onClick={() => navigate('/auth')}
-                  className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-all duration-150 shadow-lg shadow-green-900/30 px-6 py-3 text-sm"
-                >
-                  Start for free →
-                </button>
+                <a href="/auth" className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-all duration-150 shadow-lg shadow-green-900/30 px-6 py-3 text-sm">Start for free →</a>
               </div>
               <p className="mt-3 text-zinc-500 text-xs">Free to start · No credit card required · Cancel anytime</p>
 
@@ -472,14 +455,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-auto pt-8">
-                <button
-                  onClick={() => navigate('/auth')}
-                  className="border border-white/20 text-white hover:bg-white/10 active:bg-white/15 rounded-xl transition-all duration-150 w-full py-3 text-sm font-semibold text-center"
-                >
-                  Get started free
-                </button>
-              </div>
+              <a href="/auth" className="mt-auto pt-8 border border-white/20 text-white hover:bg-white/10 rounded-xl py-3 text-sm font-semibold text-center block w-full transition-all duration-150">Get started free</a>
             </div>
 
             {/* Pro */}
@@ -509,14 +485,7 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-auto pt-8 relative">
-                <button
-                  onClick={() => navigate('/auth')}
-                  className="bg-white text-green-700 font-bold w-full py-3 text-sm rounded-xl hover:bg-green-50 transition-all duration-150 text-center"
-                >
-                  Start free trial →
-                </button>
-              </div>
+              <a href="/auth" className="mt-auto pt-8 bg-white text-green-700 font-bold rounded-xl py-3 text-sm text-center block w-full hover:bg-green-50 transition-all duration-150">Start free trial →</a>
             </div>
           </div>
         </div>
@@ -539,20 +508,10 @@ export default function LandingPage() {
               placeholder="Enter your email"
               className="bg-white/10 border border-white/20 text-white placeholder-zinc-500 rounded-xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-72"
             />
-            <button
-              onClick={() => navigate('/auth')}
-              className="bg-white text-gray-900 font-bold px-6 py-3 rounded-xl hover:bg-zinc-100 transition-all duration-150 text-sm"
-            >
-              Start for free →
-            </button>
+            <a href="/auth" className="bg-white text-green-700 font-bold px-6 py-3 rounded-xl hover:bg-zinc-100 transition-all duration-150 text-sm">Start for free →</a>
           </div>
           <p className="text-zinc-600 text-xs mt-3">Free to start · No credit card required · Cancel anytime</p>
-          <button
-            onClick={() => navigate('/auth')}
-            className="mt-6 inline-block text-white font-black text-2xl hover:text-green-500 transition-colors duration-150 tracking-tight"
-          >
-            CREATE YOUR FREE ACCOUNT →
-          </button>
+          <a href="/auth" className="mt-6 inline-block text-white font-black text-2xl hover:text-green-500 transition-colors duration-150 tracking-tight">CREATE YOUR FREE ACCOUNT →</a>
         </div>
       </section>
 
@@ -565,8 +524,8 @@ export default function LandingPage() {
               <span className="text-zinc-500 text-sm mt-1">Built for personal trainers.</span>
             </div>
             <div className="flex gap-6">
-              <button onClick={() => navigate('/auth')} className="text-zinc-400 hover:text-white text-sm transition-colors duration-150">Sign in</button>
-              <button onClick={() => navigate('/auth')} className="text-zinc-400 hover:text-white text-sm transition-colors duration-150">Get started</button>
+              <a href="/auth" className="text-zinc-400 hover:text-white text-sm transition-colors duration-150">Sign in</a>
+              <a href="/auth" className="text-zinc-400 hover:text-white text-sm transition-colors duration-150">Get started</a>
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-white/10 flex items-center justify-between">

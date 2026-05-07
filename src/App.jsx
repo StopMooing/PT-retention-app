@@ -584,18 +584,17 @@ export default function App() {
     )
   }
 
-  const roleRedirect = userRole === 'pt'
+  const loggedInRedirect = userRole === 'pt'
     ? <Navigate to="/dashboard" replace />
-    : userRole === 'client'
-    ? <Navigate to="/my-workout" replace />
-    : <Navigate to="/login" replace />
+    : <Navigate to="/my-workout" replace />
 
   return (
     <Routes>
       <Route path="/checkin/:clientId" element={<CheckInPage />} />
-      <Route path="/" element={session ? roleRedirect : <LandingPage />} />
-      <Route path="/login" element={session ? roleRedirect : <AuthPage defaultMode="login" />} />
-      <Route path="/signup" element={session ? roleRedirect : <AuthPage defaultMode="signup" />} />
+      <Route path="/" element={session ? loggedInRedirect : <LandingPage />} />
+      <Route path="/auth" element={session ? loggedInRedirect : <AuthPage />} />
+      <Route path="/login" element={session ? loggedInRedirect : <AuthPage defaultMode="login" />} />
+      <Route path="/signup" element={session ? loggedInRedirect : <AuthPage defaultMode="signup" />} />
       {session && (
         <Route element={<ProtectedLayout user={session.user} userRole={userRole} />}>
           <Route path="/dashboard" element={
