@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate, NavLink, Outlet } from 'react-router-dom'
-import { Utensils } from 'lucide-react'
+import { Routes, Route, Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { LayoutDashboard, Dumbbell, ClipboardList, Utensils, Heart, CreditCard, Settings, LogOut, ChevronRight, Users, Menu, X } from 'lucide-react'
 import { supabase } from './supabase'
 import AuthPage from './AuthPage'
 import CheckInPage from './CheckInPage'
@@ -316,47 +316,190 @@ function AddClientModal({ onClose, onSave }) {
 }
 
 function ProtectedLayout({ user, userRole }) {
-  const initials = (user.email || '?').split('@')[0].slice(0, 2).toUpperCase()
-  const activeLink = 'text-sm text-green-600 font-semibold border-b-2 border-green-600 pb-0.5'
-  const inactiveLink = 'text-sm text-gray-600 hover:text-green-600 font-medium transition-colors duration-150'
+  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [expandedSection, setExpandedSection] = useState(null)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUser(user)
+    })
+  }, [])
+
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', children: null },
+    { id: 'clients',   label: 'Clients',   icon: Users,          path: '/dashboard', children: null },
+    {
+      id: 'library', label: 'Library', icon: Dumbbell, path: null,
+      children: [
+        { label: 'Exercise Library', path: '/exercise-library' },
+        { label: 'Program Builder',  path: '/program-builder'  },
+      ]
+    },
+    { id: 'nutrition', label: 'Nutrition', icon: Utensils,    path: '/nutrition', children: null },
+    { id: 'habits',    label: 'Habits',    icon: Heart,       path: '/habits',    children: null, comingSoon: true },
+    { id: 'payments',  label: 'Payments',  icon: CreditCard,  path: '/payments',  children: null, comingSoon: true },
+  ]
+
+  const pageNames = {
+    '/dashboard':       'Dashboard',
+    '/exercise-library':'Exercise Library',
+    '/program-builder': 'Program Builder',
+    '/nutrition':       'Nutrition Planner',
+    '/habits':          'Habits',
+    '/my-workout':      'My Workout',
+  }
+
+  const isExpanded = sidebarExpanded || mobileSidebarOpen
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <header className="bg-white border-b border-gray-200 flex-shrink-0">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <span className="text-black font-bold text-lg tracking-tight">StopMooing</span>
-            <span className="text-gray-200 select-none">|</span>
-            {userRole === 'pt' && (
-              <>
-                <NavLink to="/dashboard"        className={({ isActive }) => isActive ? activeLink : inactiveLink}>Dashboard</NavLink>
-                <NavLink to="/exercise-library" className={({ isActive }) => isActive ? activeLink : inactiveLink}>Exercise Library</NavLink>
-                <NavLink to="/program-builder"  className={({ isActive }) => isActive ? activeLink : inactiveLink}>Program Builder</NavLink>
-                <NavLink to="/nutrition" className={({ isActive }) => `flex items-center gap-1.5 ${isActive ? activeLink : inactiveLink}`}>
-                  <Utensils size={14} />Nutrition
-                </NavLink>
-              </>
-            )}
-            {userRole === 'client' && (
-              <NavLink to="/my-workout" className={({ isActive }) => isActive ? activeLink : inactiveLink}>My Workout</NavLink>
-            )}
+    <div className="flex h-screen bg-gray-50 overflow-hidden">
+
+      {/* Mobile overlay */}
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 md:relative md:translate-x-0 flex flex-col bg-[#0f0f0f] border-r border-white/10 transition-all duration-300 ease-in-out shrink-0 ${isExpanded ? 'w-60' : 'w-16'} ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        onMouseEnter={() => setSidebarExpanded(true)}
+        onMouseLeave={() => { setSidebarExpanded(false); setExpandedSection(null) }}
+      >
+        {/* Logo */}
+        <div className="flex items-center h-16 border-b border-white/10 px-4 shrink-0 overflow-hidden">
+          <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center shrink-0">
+            <span className="text-white font-black text-sm">S</span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">{user.email}</span>
-            <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
-              {initials}
+          <span className={`ml-3 text-white font-bold text-base whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
+            StopMooing
+          </span>
+        </div>
+
+        {/* Nav items */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4 space-y-1 px-2">
+          {navItems.map((item) => {
+            const ItemIcon = item.icon
+            return (
+              <div key={item.id} className="relative group">
+                {item.comingSoon ? (
+                  <div className={`flex items-center rounded-xl px-2 py-2.5 cursor-not-allowed opacity-40 ${isExpanded ? 'gap-3' : 'justify-center'}`}>
+                    <ItemIcon size={20} className="text-zinc-500 shrink-0" />
+                    {isExpanded && (
+                      <>
+                        <span className="text-zinc-500 text-sm font-medium whitespace-nowrap">{item.label}</span>
+                        <span className="ml-auto text-[10px] bg-white/10 text-zinc-400 px-1.5 py-0.5 rounded-full shrink-0">Soon</span>
+                      </>
+                    )}
+                  </div>
+                ) : item.children ? (
+                  <div>
+                    <button
+                      className={`w-full flex items-center rounded-xl px-2 py-2.5 transition-all duration-150 hover:bg-white/10 ${expandedSection === item.id ? 'bg-white/10' : ''} ${isExpanded ? 'gap-3' : 'justify-center'}`}
+                      onClick={() => { if (isExpanded) setExpandedSection(expandedSection === item.id ? null : item.id) }}
+                    >
+                      <ItemIcon size={20} className="text-zinc-400 shrink-0" />
+                      {isExpanded && (
+                        <>
+                          <span className="text-zinc-300 text-sm font-medium whitespace-nowrap flex-1 text-left">{item.label}</span>
+                          <ChevronRight size={14} className={`text-zinc-500 shrink-0 transition-transform duration-200 ${expandedSection === item.id ? 'rotate-90' : ''}`} />
+                        </>
+                      )}
+                    </button>
+                    {expandedSection === item.id && isExpanded && (
+                      <div className="mt-1 ml-2 space-y-0.5 border-l border-white/10 pl-3">
+                        {item.children.map((child) => (
+                          <NavLink
+                            key={child.path}
+                            to={child.path}
+                            className={({ isActive }) => `block px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 whitespace-nowrap ${isActive ? 'text-green-400 bg-green-600/10' : 'text-zinc-400 hover:text-white hover:bg-white/10'}`}
+                          >
+                            {child.label}
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) => `flex items-center rounded-xl px-2 py-2.5 transition-all duration-150 ${isExpanded ? 'gap-3' : 'justify-center'} ${isActive ? 'bg-green-600/20 text-green-400' : 'text-zinc-400 hover:bg-white/10 hover:text-white'}`}
+                  >
+                    <ItemIcon size={20} className="shrink-0" />
+                    {isExpanded && <span className="text-sm font-medium whitespace-nowrap">{item.label}</span>}
+                  </NavLink>
+                )}
+
+                {/* Tooltip (collapsed only) */}
+                {!isExpanded && (
+                  <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1.5 bg-zinc-800 text-white text-xs font-medium rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none z-50 shadow-lg">
+                    {item.label}
+                    {item.comingSoon && <span className="ml-1.5 text-zinc-400">(Soon)</span>}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Bottom — settings, sign out, user */}
+        <div className="border-t border-white/10 p-2 space-y-1 shrink-0">
+          <div className={`flex items-center rounded-xl px-2 py-2.5 text-zinc-400 hover:bg-white/10 hover:text-white transition-all duration-150 cursor-pointer ${isExpanded ? 'gap-3' : 'justify-center'}`}>
+            <Settings size={20} className="shrink-0" />
+            {isExpanded && <span className="text-sm font-medium">Settings</span>}
+          </div>
+
+          <button
+            onClick={async () => { await supabase.auth.signOut(); navigate('/') }}
+            className={`w-full flex items-center rounded-xl px-2 py-2.5 text-zinc-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-150 ${isExpanded ? 'gap-3' : 'justify-center'}`}
+          >
+            <LogOut size={20} className="shrink-0" />
+            {isExpanded && <span className="text-sm font-medium">Sign Out</span>}
+          </button>
+
+          <div className={`flex items-center rounded-xl px-2 py-2 ${isExpanded ? 'gap-3' : 'justify-center'}`}>
+            <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center shrink-0 text-white text-xs font-bold">
+              {(currentUser?.email || user.email || '?')[0].toUpperCase()}
             </div>
-            <button
-              onClick={() => supabase.auth.signOut()}
-              className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
-            >
-              Sign out
-            </button>
+            {isExpanded && (
+              <span className="text-zinc-400 text-xs truncate max-w-[140px]">{currentUser?.email || user.email}</span>
+            )}
           </div>
         </div>
-      </header>
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <Outlet />
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Top bar */}
+        <div className="bg-white border-b border-gray-200 h-14 flex items-center justify-between px-6 shrink-0">
+          <div className="flex items-center">
+            <button
+              className="md:hidden mr-3 text-gray-500 hover:text-gray-700"
+              onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+            >
+              {mobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+            <h1 className="text-gray-900 font-semibold text-base">{pageNames[location.pathname] || 'StopMooing'}</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+              Live
+            </span>
+            <span className="text-xs text-gray-500 hidden sm:block">{currentUser?.email || user.email}</span>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <div className="flex-1 overflow-y-auto">
+          <Outlet />
+        </div>
       </div>
     </div>
   )
