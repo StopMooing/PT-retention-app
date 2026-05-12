@@ -8,6 +8,7 @@ import LandingPage from './LandingPage'
 import ExerciseLibrary from './ExerciseLibrary'
 import ProgramBuilder from './ProgramBuilder'
 import NutritionPlanner from './NutritionPlanner'
+import HabitTracker from './HabitTracker'
 import ClientWorkout from './ClientWorkout'
 
 const statusConfig = {
@@ -340,7 +341,7 @@ function ProtectedLayout({ user, userRole }) {
       ]
     },
     { id: 'nutrition', label: 'Nutrition', icon: Utensils,    path: '/nutrition', children: null },
-    { id: 'habits',    label: 'Habits',    icon: Heart,       path: '/habits',    children: null, comingSoon: true },
+    { id: 'habits',    label: 'Habits',    icon: Heart,       path: '/habits',    children: null },
     { id: 'payments',  label: 'Payments',  icon: CreditCard,  path: '/payments',  children: null, comingSoon: true },
   ]
 
@@ -751,6 +752,9 @@ export default function App() {
           } />
           <Route path="/nutrition" element={
             userRole === 'pt' ? <NutritionPlanner /> : <Navigate to="/my-workout" replace />
+          } />
+          <Route path="/habits" element={
+            userRole === 'pt' ? <HabitTracker /> : <Navigate to="/my-workout" replace />
           } />
           <Route path="/my-workout" element={<ClientWorkout />} />
         </Route>
