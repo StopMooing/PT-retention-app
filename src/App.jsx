@@ -9,6 +9,7 @@ import ExerciseLibrary from './ExerciseLibrary'
 import ProgramBuilder from './ProgramBuilder'
 import NutritionPlanner from './NutritionPlanner'
 import HabitTracker from './HabitTracker'
+import ClientProfile from './ClientProfile'
 import ClientWorkout from './ClientWorkout'
 
 const statusConfig = {
@@ -352,6 +353,7 @@ function ProtectedLayout({ user, userRole }) {
     '/nutrition':       'Nutrition Planner',
     '/habits':          'Habits',
     '/my-workout':      'My Workout',
+    '/clients':         'Client Profile',
   }
 
   const isExpanded = sidebarExpanded || mobileSidebarOpen
@@ -486,7 +488,7 @@ function ProtectedLayout({ user, userRole }) {
             >
               {mobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <h1 className="text-gray-900 font-semibold text-base">{pageNames[location.pathname] || 'StopMooing'}</h1>
+            <h1 className="text-gray-900 font-semibold text-base">{pageNames[location.pathname] || pageNames[location.pathname.split('/').slice(0, 2).join('/')] || 'StopMooing'}</h1>
           </div>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
@@ -507,6 +509,7 @@ function ProtectedLayout({ user, userRole }) {
 }
 
 function Dashboard({ user }) {
+  const navigate = useNavigate()
   const [clients, setClients] = useState([])
   const [checkinsMap, setCheckinsMap] = useState({})
   const [loadingClients, setLoadingClients] = useState(true)
@@ -637,7 +640,7 @@ function Dashboard({ user }) {
                 return (
                   <li
                     key={client.id}
-                    onClick={() => setSelectedClient(client)}
+                    onClick={() => navigate(`/clients/${client.id}`)}
                     className="px-6 py-5 flex items-center gap-4 hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     <Avatar name={client.full_name} />
@@ -674,6 +677,13 @@ function Dashboard({ user }) {
                     <StatusBadge status={client.status} />
 
                     <CopyLinkButton clientId={client.id} />
+
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/clients/${client.id}`) }}
+                      className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium transition"
+                    >
+                      View Profile <ChevronRight size={14} />
+                    </button>
                   </li>
                 )
               })}
@@ -755,6 +765,9 @@ export default function App() {
           } />
           <Route path="/habits" element={
             userRole === 'pt' ? <HabitTracker /> : <Navigate to="/my-workout" replace />
+          } />
+          <Route path="/clients/:clientId" element={
+            userRole === 'pt' ? <ClientProfile /> : <Navigate to="/my-workout" replace />
           } />
           <Route path="/my-workout" element={<ClientWorkout />} />
         </Route>
