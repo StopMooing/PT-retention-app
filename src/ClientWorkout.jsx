@@ -44,6 +44,10 @@ export default function ClientWorkout() {
   const [savingSet, setSavingSet] = useState(null)
   const [workoutLogId, setWorkoutLogId] = useState(null)
   const [completed, setCompleted] = useState(false)
+  const [weightInput, setWeightInput] = useState("")
+  const [savingWeight, setSavingWeight] = useState(false)
+  const [weightSaved, setWeightSaved] = useState(false)
+  const [todayWeight, setTodayWeight] = useState(null)
   const [completing, setCompleting] = useState(false)
   const workoutLogIdRef = useRef(null)
 
@@ -70,6 +74,18 @@ export default function ClientWorkout() {
 
       if (!asgn) { setLoading(false); return }
       setAssignment(asgn)
+
+      const today = new Date().toISOString().split("T")[0]
+      const { data: todayWeightData } = await supabase
+        .from("body_weight_logs")
+        .select("*")
+        .eq("client_id", clientRow.id)
+        .eq("logged_date", today)
+        .maybeSingle()
+      if (todayWeightData) {
+        setTodayWeight(todayWeightData.weight_kg)
+        setWeightSaved(true)
+      }
 
       const { data: days } = await supabase
         .from('program_workouts')
@@ -154,6 +170,32 @@ export default function ClientWorkout() {
     }
   }
 
+  async function handleLogWeight() {
+    const w = parseFloat(weightInput)
+    if (!w || w <= 0 || w > 500) return
+    setSavingWeight(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const today = new Date().toISOString().split("T")[0]
+      const { error } = await supabase
+        .from("body_weight_logs")
+        .insert({
+          client_id: client.id,
+          logged_by: user.id,
+          weight_kg: w,
+          logged_date: today,
+        })
+      if (error) throw error
+      setTodayWeight(w)
+      setWeightSaved(true)
+      setWeightInput("")
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSavingWeight(false)
+    }
+  }
+
   async function handleCompleteWorkout() {
     const logId = workoutLogIdRef.current
     if (!logId) return
@@ -201,6 +243,61 @@ export default function ClientWorkout() {
         <div className="mb-6">
           <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Welcome back</p>
           <h1 className="text-2xl font-bold text-gray-900 mt-0.5">{client.full_name}</h1>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v4l3 3" />
+              </svg>
+            </div>
+            <span className="text-sm font-semibold text-gray-800">Today's Weight</span>
+            {weightSaved && (
+              <span className="ml-auto text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-full">
+                ✓ Logged {todayWeight} kg
+              </span>
+            )}
+          </div>
+          {weightSaved ? (
+            <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+              <div>
+                <p className="text-xs text-emerald-600 font-medium">Weight logged for today</p>
+                <p className="text-2xl font-black text-emerald-700 mt-0.5">{todayWeight} <span className="text-sm font-medium">kg</span></p>
+              </div>
+              <button
+                onClick={() => { setWeightSaved(false); setTodayWeight(null) }}
+                className="text-xs text-emerald-500 hover:text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg transition font-medium"
+              >
+                Update
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 flex-1">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="20"
+                  max="500"
+                  placeholder="Enter your weight"
+                  value={weightInput}
+                  onChange={e => setWeightInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") handleLogWeight() }}
+                  className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-300 focus:outline-none"
+                />
+                <span className="text-xs text-gray-400 shrink-0">kg</span>
+              </div>
+              <button
+                onClick={handleLogWeight}
+                disabled={savingWeight || !weightInput}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+              >
+                {savingWeight ? "Saving..." : "Log"}
+              </button>
+            </div>
+          )}
         </div>
 
         {!assignment ? (
