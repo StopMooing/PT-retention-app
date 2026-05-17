@@ -2006,7 +2006,7 @@ export default function ClientProfile() {
           <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-500 ${over ? "bg-red-400" : bgColour}`}
-              style={{ width: `${pct}%` }}
+              style={{ width: pct === 0 ? "2px" : `${pct}%` }}
             />
           </div>
           {target > 0 && (
@@ -2034,12 +2034,14 @@ export default function ClientProfile() {
           </div>
           <div className="px-6 py-5">
             {todayFoodLogs.length === 0 && todayWaterMl === 0 ? (
-              <div className="text-center py-6">
-                <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-3">
-                  <Utensils size={20} className="text-gray-200" />
+              <div className="flex items-center gap-4 py-3">
+                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center shrink-0">
+                  <Utensils size={16} className="text-gray-200" />
                 </div>
-                <p className="text-sm text-gray-400 font-medium">Nothing logged today yet</p>
-                <p className="text-xs text-gray-300 mt-1">Food and water entries will appear here once the client starts logging</p>
+                <div>
+                  <p className="text-sm text-gray-400 font-medium">Nothing logged today yet</p>
+                  <p className="text-xs text-gray-300 mt-0.5">Food and water entries will appear here once the client starts logging</p>
+                </div>
               </div>
             ) : (
               <div className="flex flex-col gap-5">
@@ -2054,8 +2056,9 @@ export default function ClientProfile() {
                           cx="50" cy="50" r="40" fill="none"
                           stroke={calPct >= 100 ? "#f97316" : "#6366f1"}
                           strokeWidth="10"
-                          strokeDasharray={`${Math.min(100, calPct) * 2.51} 251`}
+                          strokeDasharray={`${calPct === 0 ? 1 : Math.min(100, calPct) * 2.51} 251`}
                           strokeLinecap="round"
+                          opacity={calPct === 0 ? 0.2 : 1}
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -2091,7 +2094,7 @@ export default function ClientProfile() {
                   <div className="h-2.5 bg-blue-50 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-blue-400 rounded-full transition-all duration-500"
-                      style={{ width: `${waterPct}%` }}
+                      style={{ width: waterPct === 0 ? "2px" : `${waterPct}%` }}
                     />
                   </div>
                   <div className="flex items-center justify-between mt-1">
@@ -2378,7 +2381,7 @@ export default function ClientProfile() {
               <div className="h-3 bg-blue-50 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-to-r from-blue-400 to-blue-500 rounded-full transition-all duration-500"
-                  style={{ width: `${waterPct}%` }}
+                  style={{ width: waterPct === 0 ? "2px" : `${waterPct}%` }}
                 />
               </div>
             </div>
@@ -2505,38 +2508,38 @@ export default function ClientProfile() {
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-7 gap-2 mb-5">
+                <div className="grid grid-cols-7 gap-1 mb-5">
                   {last7Days.map((day, i) => (
-                    <div key={i} className="flex flex-col items-center gap-1.5">
-                      <span className="text-[10px] font-semibold text-gray-400 uppercase">{day.dayName}</span>
+                    <div key={i} className="flex flex-col items-center gap-1">
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{day.dayName}</span>
                       <span className={`text-xs font-bold ${day.isToday ? "text-indigo-600" : "text-gray-500"}`}>{day.dayNum}</span>
-                      <div className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all ${
-                        day.hit   ? "bg-emerald-500 border-emerald-500" :
-                        day.over  ? "bg-red-100 border-red-300" :
-                        day.under ? "bg-amber-100 border-amber-300" :
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${
+                        day.hit     ? "bg-emerald-500 border-emerald-500" :
+                        day.over    ? "bg-red-100 border-red-300" :
+                        day.under   ? "bg-amber-100 border-amber-300" :
                         day.isToday ? "bg-indigo-50 border-indigo-300 border-dashed" :
                         "bg-gray-100 border-gray-200"
                       }`}>
                         {day.hit ? (
-                          <CheckCircle2 size={14} className="text-white" />
+                          <CheckCircle2 size={15} className="text-white" />
                         ) : day.dayTotal ? (
-                          <span className="text-[9px] font-bold text-gray-600">{day.dayTotal.calories}</span>
+                          <span className="text-[10px] font-bold text-gray-600 leading-none">{day.dayTotal.calories}</span>
                         ) : day.isToday ? (
-                          <span className="text-[9px] font-bold text-indigo-400">—</span>
+                          <span className="text-[10px] font-bold text-indigo-300">—</span>
                         ) : (
-                          <span className="text-[9px] text-gray-300">—</span>
+                          <span className="text-[10px] text-gray-300">—</span>
                         )}
                       </div>
                       {day.dayTotal ? (
-                        <span className={`text-[9px] font-semibold ${
-                          day.hit ? "text-emerald-600" :
-                          day.over ? "text-red-500" :
+                        <span className={`text-[10px] font-semibold ${
+                          day.hit   ? "text-emerald-600" :
+                          day.over  ? "text-red-500" :
                           "text-amber-500"
                         }`}>
-                          {day.hit ? "✓" : day.over ? "Over" : "Low"}
+                          {day.hit ? "On target" : day.over ? "Over" : "Low"}
                         </span>
                       ) : (
-                        <span className="text-[9px] text-gray-300">—</span>
+                        <span className="text-[10px] text-gray-300">{day.isToday ? "Today" : "—"}</span>
                       )}
                     </div>
                   ))}
