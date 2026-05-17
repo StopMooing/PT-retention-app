@@ -2777,78 +2777,171 @@ export default function ClientProfile() {
   }
 
   function renderHabits() {
+    const todayStr = new Date().toISOString().split("T")[0]
+
+    const todayCompletedCount = habits.filter(habit =>
+      habitLogs.some(l => l.habit_id === habit.id && l.completed_date === todayStr && l.completed)
+    ).length
+
+    const totalHabits = habits.length
+    const completionPct = totalHabits > 0 ? Math.round((todayCompletedCount / totalHabits) * 100) : 0
+
     return (
       <div className="space-y-4">
+
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-base font-semibold text-gray-800">Habit Tracking</h2>
-          <button onClick={() => navigate("/habits")} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-            <Heart size={14} /> Manage Habits
+          <button
+            onClick={() => navigate("/habits")}
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition"
+          >
+            <ChevronRight size={13} className="text-gray-400" /> Manage in Habit Tracker
           </button>
         </div>
 
-        {habits.length === 0 ? (
-          <div className="border border-dashed border-gray-200 rounded-2xl p-10 text-center bg-white">
-            <Heart size={28} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium text-sm">No habits assigned yet</p>
-            <button onClick={() => navigate("/habits")} className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Go to Habit Tracker</button>
-          </div>
-        ) : (
-          habits.map(habit => {
-            const streak = calculateStreak(habit.id)
-            const bestStreak = calculateBestStreak(habit.id)
-            const weekCount = habitLogs.filter(l => l.habit_id === habit.id && l.completed && l.completed_date >= getDateString(6)).length
-            const monthCount = habitLogs.filter(l => l.habit_id === habit.id && l.completed).length
-
-            return (
-              <SectionCard key={habit.id}>
-                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-xl shrink-0">{habit.icon || "✅"}</div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">{habit.name}</p>
-                      <p className="text-xs text-gray-400">{habit.frequency}</p>
-                    </div>
-                  </div>
-                  {streak > 0 ? (
-                    <span className="flex items-center gap-1 bg-orange-50 border border-orange-100 text-orange-600 text-xs font-bold px-2.5 py-1 rounded-full">
-                      <Flame size={12} /> {streak} day streak
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-300">No streak</span>
-                  )}
+        {totalHabits > 0 && (
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
+                  <Heart size={15} className="text-pink-500" />
                 </div>
-                <div className="px-6 py-4">
-                  <p className="text-xs text-gray-400 mb-2">Last 14 days</p>
-                  <div className="flex gap-1.5 flex-wrap">
+                <span className="text-sm font-semibold text-gray-800">Today's Habits</span>
+              </div>
+              <span className="text-xs text-gray-400">
+                {new Date().toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}
+              </span>
+            </div>
+            <div className="px-6 py-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="flex items-end gap-1.5">
+                    <span className="text-4xl font-black text-gray-900 leading-none">{todayCompletedCount}</span>
+                    <span className="text-xl font-semibold text-gray-300 leading-none mb-0.5">/ {totalHabits}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1.5">habits completed today</p>
+                </div>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className={`text-3xl font-black leading-none ${completionPct === 100 ? "text-emerald-500" : completionPct >= 50 ? "text-amber-500" : "text-red-400"}`}>{completionPct}%</span>
+                  <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${completionPct === 100 ? "bg-emerald-50 text-emerald-600 border-emerald-200" : completionPct >= 50 ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-red-50 text-red-500 border-red-200"}`}>
+                    {completionPct === 100 ? "All done ✓" : completionPct >= 50 ? "In progress" : "Getting started"}
+                  </span>
+                </div>
+              </div>
+              <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${completionPct === 100 ? "bg-emerald-500" : completionPct >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                  style={{ width: completionPct === 0 ? "0%" : `${completionPct}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {totalHabits === 0 && (
+          <div className="border border-dashed border-gray-200 rounded-2xl p-12 text-center bg-white">
+            <div className="w-14 h-14 rounded-full bg-pink-50 flex items-center justify-center mx-auto mb-4">
+              <Heart size={24} className="text-pink-300" />
+            </div>
+            <p className="text-gray-700 font-semibold text-base">No habits assigned yet</p>
+            <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">Add habits for {client.full_name} to start tracking their daily consistency and streaks.</p>
+            <button
+              onClick={() => navigate("/habits")}
+              className="mt-5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition shadow-sm"
+            >
+              Go to Habit Tracker
+            </button>
+          </div>
+        )}
+
+        {habits.map(habit => {
+          const streak = calculateStreak(habit.id)
+          const bestStreak = calculateBestStreak(habit.id)
+          const weekCount = habitLogs.filter(l => l.habit_id === habit.id && l.completed && l.completed_date >= getDateString(6)).length
+          const monthCount = habitLogs.filter(l => l.habit_id === habit.id && l.completed).length
+          const completedToday = habitLogs.some(l => l.habit_id === habit.id && l.completed_date === todayStr && l.completed)
+
+          return (
+            <div key={habit.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center text-2xl shrink-0">
+                    {habit.icon || "✅"}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-bold text-gray-900">{habit.name}</p>
+                      {completedToday && (
+                        <span className="flex items-center gap-1 text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 size={10} /> Done today
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-0.5">{habit.frequency}</p>
+                  </div>
+                </div>
+                {streak > 0 ? (
+                  <span className="flex items-center gap-1.5 bg-orange-50 border border-orange-100 text-orange-600 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
+                    <Flame size={13} /> {streak} day streak
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 bg-gray-100 text-gray-400 text-xs font-semibold px-3 py-1.5 rounded-full shrink-0">
+                    No streak yet
+                  </span>
+                )}
+              </div>
+
+              <div className="px-6 py-5">
+                <div className="mb-5">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Last 14 days</p>
+                  <div className="flex gap-2">
                     {Array.from({ length: 14 }, (_, i) => {
                       const daysAgo = 13 - i
                       const dateStr = getDateString(daysAgo)
                       const isToday = daysAgo === 0
                       const completed = habitLogs.some(l => l.habit_id === habit.id && l.completed_date === dateStr && l.completed)
+                      const dayLabel = new Date(dateStr + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short" })
                       return (
-                        <div key={dateStr} title={dateStr} className={`w-5 h-5 rounded-full ${completed ? "bg-emerald-500" : isToday ? "bg-white border-2 border-indigo-300 border-dashed" : "bg-gray-100"}`} />
+                        <div
+                          key={dateStr}
+                          title={`${dayLabel}${completed ? " — Completed" : " — Not completed"}`}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shrink-0 ${completed ? "bg-emerald-500" : isToday ? "bg-white border-2 border-indigo-300 border-dashed" : "bg-gray-100"}`}
+                        >
+                          {completed && <CheckCircle2 size={13} className="text-white" />}
+                        </div>
                       )
                     })}
                   </div>
-                  <div className="mt-5 pt-4 border-t border-gray-50 grid grid-cols-3 gap-4 text-center">
-                    <div className="flex flex-col items-center">
-                      <span className={`text-lg font-black ${weekCount >= habit.target_per_week ? "text-emerald-600" : "text-gray-900"}`}>{weekCount}/{habit.target_per_week}</span>
-                      <span className="text-xs text-gray-400 mt-0.5">This Week</span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-3 pt-4 border-t border-gray-100">
+                  <div className="flex flex-col items-center bg-gray-50 rounded-xl py-3 px-2">
+                    <span className={`text-lg font-black ${habit.target_per_week && weekCount >= habit.target_per_week ? "text-emerald-600" : "text-gray-900"}`}>
+                      {weekCount}{habit.target_per_week ? `/${habit.target_per_week}` : ""}
+                    </span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">This Week</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-gray-50 rounded-xl py-3 px-2">
+                    <span className="text-lg font-black text-gray-900">{monthCount}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">This Month</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-gray-50 rounded-xl py-3 px-2">
+                    <div className="flex items-center gap-0.5">
+                      {streak > 0 && <Flame size={14} className="text-orange-400" />}
+                      <span className="text-lg font-black text-gray-900">{streak}</span>
                     </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-lg font-black text-gray-900">{monthCount}</span>
-                      <span className="text-xs text-gray-400 mt-0.5">This Month</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                      <span className="text-lg font-black text-gray-900">{bestStreak}</span>
-                      <span className="text-xs text-gray-400 mt-0.5">Best Streak</span>
-                    </div>
+                    <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">Streak</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-gray-50 rounded-xl py-3 px-2">
+                    <span className="text-lg font-black text-gray-900">{bestStreak}</span>
+                    <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">Best Ever</span>
                   </div>
                 </div>
-              </SectionCard>
-            )
-          })
-        )}
+              </div>
+            </div>
+          )
+        })}
+
       </div>
     )
   }
