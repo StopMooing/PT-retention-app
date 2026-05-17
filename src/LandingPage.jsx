@@ -110,8 +110,8 @@ export default function LandingPage() {
       </nav>
 
       {/* ─── HERO ─────────────────────────────────────────────── */}
-      <section className="hero-gradient min-h-screen pt-16 flex items-center overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 w-full py-20 lg:py-32">
+      <section className="hero-gradient pt-16 flex items-center overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 w-full py-20 lg:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
             {/* Left */}
@@ -122,9 +122,9 @@ export default function LandingPage() {
               </div>
 
               <h1 className="fade-in-up-1">
-                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">The Complete</span>
-                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">Coaching Platform</span>
-                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black leading-[0.95] tracking-tight gradient-text">Built for PTs.</span>
+                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">More clients.</span>
+                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">Less admin.</span>
+                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black leading-[0.95] tracking-tight gradient-text">Better results.</span>
               </h1>
 
               <p className="mt-8 text-zinc-400 text-lg sm:text-xl leading-relaxed max-w-xl fade-in-up-2">
@@ -146,7 +146,7 @@ export default function LandingPage() {
               <p className="mt-3 text-zinc-600 text-xs fade-in-up-3">Free to start · No credit card required · Cancel anytime</p>
 
               {/* Stats */}
-              <div className="mt-14 pt-8 border-t border-white/[0.08] grid grid-cols-2 sm:grid-cols-4 gap-6 fade-in-up-4">
+              <div className="mt-8 pt-6 border-t border-white/[0.08] grid grid-cols-2 sm:grid-cols-4 gap-6 fade-in-up-4">
                 {[
                   { num: '500+', label: 'Personal trainers' },
                   { num: '2 min', label: 'Avg check-in time' },
@@ -162,7 +162,7 @@ export default function LandingPage() {
             </div>
 
             {/* Right — dashboard mockup */}
-            <div className="hidden lg:block relative fade-in-up-2">
+            <div className="hidden lg:block relative fade-in-up-2 mt-12">
               {/* Main card */}
               <div className="bg-zinc-900/90 border border-white/[0.1] rounded-2xl p-5 shadow-[0_32px_80px_rgba(0,0,0,0.6)] float-card">
                 <div className="flex items-center justify-between mb-5">
@@ -212,7 +212,7 @@ export default function LandingPage() {
               </div>
 
               {/* Floating alert */}
-              <div className="absolute -top-5 -right-5 bg-zinc-800 border border-white/[0.12] rounded-xl px-4 py-3 shadow-2xl float-card-2">
+              <div className="absolute -top-3 right-4 bg-zinc-800 border border-white/[0.12] rounded-xl px-4 py-3 shadow-2xl float-card-2 z-10">
                 <div className="flex items-center gap-2">
                   <span className="text-base">🔔</span>
                   <span className="text-white text-xs font-bold">Tom needs attention</span>
@@ -221,7 +221,7 @@ export default function LandingPage() {
               </div>
 
               {/* AI badge */}
-              <div className="absolute -bottom-5 -left-5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 shadow-2xl ai-glow">
+              <div className="absolute -bottom-3 left-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 shadow-2xl ai-glow z-10">
                 <div className="flex items-center gap-2">
                   <Sparkles size={14} className="text-emerald-400" />
                   <span className="text-emerald-400 text-xs font-bold">AI check-in summary ready</span>
@@ -586,7 +586,8 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 relative">
+            <div className="hidden sm:block absolute top-[2.75rem] left-[calc(16.67%+1.5rem)] right-[calc(16.67%+1.5rem)] h-px bg-gradient-to-r from-transparent via-emerald-200 to-transparent pointer-events-none" />
             {[
               {
                 num: '01',
@@ -607,12 +608,12 @@ export default function LandingPage() {
                 desc: "Know exactly which clients need your attention before it's too late. Automated alerts, check-in summaries and full progress visibility mean you're always one step ahead.",
               },
             ].map((s, i) => (
-              <div key={s.num} className="bg-white border border-gray-200 rounded-2xl p-8 feature-card">
+              <div key={s.num} className="bg-white border border-gray-200 rounded-2xl p-8 feature-card relative">
                 <div className="flex items-center justify-between mb-6">
-                  <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center ring-4 ring-white">
                     {s.icon}
                   </div>
-                  <span className="text-6xl font-black text-gray-100">{s.num}</span>
+                  <span className="text-6xl font-black text-emerald-50">{s.num}</span>
                 </div>
                 <h3 className="text-gray-900 font-bold text-xl">{s.heading}</h3>
                 <p className="text-gray-500 text-sm mt-3 leading-relaxed">{s.desc}</p>
@@ -622,59 +623,63 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── SOCIAL PROOF ────────────────────────────────────── */}
-      <section className="section-white py-20 lg:py-28">
+      {/* ─── SOCIAL PROOF — STATS + STACK ───────────────────── */}
+      <section className="section-white py-20 lg:py-24 border-y border-gray-100">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
-              Trusted by coaches who take their business seriously
+              Built for coaches who mean business
             </h2>
-            <p className="mt-4 text-gray-400 text-lg">Real results from real PTs using PT Blueprint every day</p>
+            <p className="mt-4 text-gray-400 text-lg max-w-xl mx-auto">PT Blueprint replaces the tools you're already paying for — at a fraction of the cost</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
             {[
-              {
-                quote: "I used to spend Sunday nights chasing check-ins. Now PT Blueprint does it automatically and I get a summary on Monday morning. Game changer.",
-                name: "Marcus T.",
-                role: "Online PT · 24 clients",
-                init: "MT",
-                bg: "bg-blue-600",
-                stars: 5,
-              },
-              {
-                quote: "The AI program builder saves me 2-3 hours a week. I still write every program — it just gives me a solid first draft to work from. My clients get better programs, faster.",
-                name: "Jess K.",
-                role: "Gym-based PT · 18 clients",
-                init: "JK",
-                bg: "bg-purple-600",
-                stars: 5,
-              },
-              {
-                quote: "I had a client go At Risk and I genuinely didn't know. PT Blueprint caught it before they cancelled. That's one client retained — that's $400 a month I would have lost.",
-                name: "Dan R.",
-                role: "Online Coach · 31 clients",
-                init: "DR",
-                bg: "bg-emerald-600",
-                stars: 5,
-              },
-            ].map(t => (
-              <div key={t.name} className="bg-gray-50 border border-gray-200 rounded-2xl p-7 feature-card">
-                <div className="flex gap-0.5 mb-5">
-                  {Array.from({ length: t.stars }).map((_, i) => (
-                    <Star key={i} size={14} className="text-amber-400 fill-amber-400" />
-                  ))}
-                </div>
-                <p className="text-gray-700 text-sm leading-relaxed">"{t.quote}"</p>
-                <div className="flex items-center gap-3 mt-6">
-                  <div className={`w-9 h-9 rounded-full ${t.bg} flex items-center justify-center text-white text-xs font-bold`}>{t.init}</div>
-                  <div>
-                    <div className="text-gray-900 text-sm font-bold">{t.name}</div>
-                    <div className="text-gray-400 text-xs">{t.role}</div>
-                  </div>
-                </div>
+              { num: '500+',  label: 'Personal trainers',         sub: 'and growing every week'         },
+              { num: '3x',    label: 'Fewer cancellations',       sub: 'vs platforms with no AI alerts' },
+              { num: '2 min', label: 'Average check-in time',     sub: 'down from 15+ minutes manually' },
+              { num: '$600+', label: 'Revenue protected monthly', sub: 'per coach on average'            },
+            ].map(s => (
+              <div key={s.label} className="bg-gray-50 border border-gray-200 rounded-2xl p-6 text-center feature-card">
+                <div className="text-4xl font-black text-gray-900">{s.num}</div>
+                <div className="text-sm font-bold text-gray-700 mt-2">{s.label}</div>
+                <div className="text-xs text-gray-400 mt-1 leading-snug">{s.sub}</div>
               </div>
             ))}
+          </div>
+
+          <div className="bg-gray-900 rounded-2xl p-8 md:p-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+              <div>
+                <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
+                  Replace your entire stack
+                </div>
+                <h3 className="text-3xl font-black text-white leading-tight">
+                  One tool.<br />Everything covered.
+                </h3>
+                <p className="text-zinc-400 text-base mt-4 leading-relaxed">
+                  Most PTs are paying for 4–5 separate tools that don't talk to each other. PT Blueprint replaces all of them — and adds AI on top.
+                </p>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { tool: 'Program builder',       replaced: 'Trainerize / Google Docs'    },
+                  { tool: 'Nutrition tracking',    replaced: 'MyFitnessPal / spreadsheets' },
+                  { tool: 'Client check-ins',      replaced: 'Manual emails / WhatsApp'    },
+                  { tool: 'Habit coaching',        replaced: 'Separate habit apps'         },
+                  { tool: 'AI program drafting',   replaced: 'Not available elsewhere'     },
+                  { tool: 'Voice client coaching', replaced: 'Not available elsewhere'     },
+                ].map(r => (
+                  <div key={r.tool} className="flex items-center justify-between bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                      <span className="text-white text-sm font-semibold">{r.tool}</span>
+                    </div>
+                    <span className="text-zinc-500 text-xs">replaces {r.replaced}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -759,13 +764,13 @@ export default function LandingPage() {
       </section>
 
       {/* ─── FINAL CTA (dark) ────────────────────────────────── */}
-      <section className="section-dark py-20 lg:py-32 relative overflow-hidden">
+      <section className="section-dark py-16 lg:py-24 relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/[0.06] rounded-full blur-3xl" />
           <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/[0.04] rounded-full blur-3xl" />
         </div>
         <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-8">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-6">
             <Zap size={12} />
             Start today — it's free
           </div>
@@ -775,7 +780,7 @@ export default function LandingPage() {
           <p className="mt-6 text-zinc-400 text-xl leading-relaxed max-w-xl mx-auto">
             Join hundreds of personal trainers using PT Blueprint to coach better, retain more clients, and grow a business they're proud of.
           </p>
-          <div className="mt-12 flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
             <input
               type="email"
               placeholder="Enter your email address"
