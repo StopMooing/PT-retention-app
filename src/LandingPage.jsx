@@ -1,536 +1,845 @@
-import { Dumbbell, ClipboardCheck, Utensils, BarChart2, CreditCard, TrendingUp, CheckCircle2, ChevronRight, Menu, X } from 'lucide-react'
+import { useState } from 'react'
+import { Dumbbell, ClipboardCheck, Utensils, BarChart2, CreditCard, TrendingUp, CheckCircle2, ChevronRight, Sparkles, Mic, Brain, Zap, Users, Calendar, Heart, Shield, ArrowRight, Play, Star } from 'lucide-react'
 
 export default function LandingPage() {
+  const [email, setEmail] = useState("")
+  const [email2, setEmail2] = useState("")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="scroll-smooth" style={{ backgroundColor: '#0a0a0a' }}>
+    <div className="scroll-smooth font-sans antialiased">
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+
         @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: translateY(32px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .fade-in { animation: fadeInUp 0.6s ease forwards; }
-        .fade-in-delay-1 { animation: fadeInUp 0.6s ease 0.1s forwards; opacity: 0; }
-        .fade-in-delay-2 { animation: fadeInUp 0.6s ease 0.2s forwards; opacity: 0; }
-        .fade-in-delay-3 { animation: fadeInUp 0.6s ease 0.3s forwards; opacity: 0; }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes ticker {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-8px); }
+        }
+        @keyframes pulse-ring {
+          0%   { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+          70%  { transform: scale(1);    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .fade-in-up   { animation: fadeInUp 0.7s ease forwards; }
+        .fade-in-up-1 { animation: fadeInUp 0.7s ease 0.1s forwards; opacity: 0; }
+        .fade-in-up-2 { animation: fadeInUp 0.7s ease 0.2s forwards; opacity: 0; }
+        .fade-in-up-3 { animation: fadeInUp 0.7s ease 0.3s forwards; opacity: 0; }
+        .fade-in-up-4 { animation: fadeInUp 0.7s ease 0.4s forwards; opacity: 0; }
+
+        .ticker-track { animation: ticker 28s linear infinite; }
+        .ticker-track:hover { animation-play-state: paused; }
+
+        .float-card { animation: float 4s ease-in-out infinite; }
+        .float-card-2 { animation: float 4s ease-in-out 1s infinite; }
+
+        .pulse-dot { animation: pulse-ring 2s ease-in-out infinite; }
+
+        .hero-gradient {
+          background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16,185,129,0.12) 0%, transparent 60%),
+                      #0a0a0a;
+        }
+
+        .section-light { background: #f8f9fa; }
+        .section-white { background: #ffffff; }
+        .section-dark  { background: #0a0a0a; }
+
+        .feature-card {
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .feature-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 24px 48px rgba(0,0,0,0.08);
+        }
+
+        .gradient-text {
+          background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        .ai-glow {
+          box-shadow: 0 0 0 1px rgba(16,185,129,0.3), 0 8px 32px rgba(16,185,129,0.15);
+        }
+
+        .nav-blur {
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+        }
       `}</style>
 
-      {/* NAV */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-white/10 h-16 flex items-center">
-        <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
-          <span className="text-white font-bold text-xl tracking-tight">StopMooing</span>
-          <div className="flex items-center">
-            <a href="/auth" className="hidden md:inline text-zinc-400 hover:text-white text-sm font-medium transition-colors duration-150 mr-3">Sign in</a>
-            <a href="/auth" className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-all duration-150 shadow-lg shadow-green-900/30 text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2">Get started →</a>
+      {/* ─── NAV ─────────────────────────────────────────────── */}
+      <nav className="fixed top-0 left-0 right-0 z-50 nav-blur bg-black/85 border-b border-white/[0.08] h-16 flex items-center">
+        <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
+              <span className="text-white font-black text-sm">P</span>
+            </div>
+            <span className="text-white font-bold text-lg tracking-tight">PT Blueprint</span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">Features</a>
+            <a href="#ai" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">AI Tools</a>
+            <a href="#how-it-works" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">How it works</a>
+            <a href="#pricing" className="text-zinc-400 hover:text-white text-sm font-medium transition-colors">Pricing</a>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <a href="/auth" className="hidden md:inline text-zinc-400 hover:text-white text-sm font-medium transition-colors">Sign in</a>
+            <a href="/auth" className="bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-semibold rounded-lg transition-all duration-150 text-sm px-4 py-2 shadow-lg shadow-emerald-500/25">
+              Get started free →
+            </a>
           </div>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section className="min-h-screen pt-16 flex items-center" style={{ backgroundColor: '#0a0a0a' }}>
-        <div className="max-w-6xl mx-auto px-6 w-full">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16 items-center">
-            {/* Left */}
-            <div className="fade-in">
-              <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                Now in beta — join 500+ personal trainers
-              </span>
+      {/* ─── HERO ─────────────────────────────────────────────── */}
+      <section className="hero-gradient min-h-screen pt-16 flex items-center overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 w-full py-20 lg:py-32">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-              <h1 className="mt-6">
-                <span className="block text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-none tracking-tight">Run Your Entire</span>
-                <span className="block text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-none tracking-tight">PT Business</span>
-                <span className="block text-4xl sm:text-5xl lg:text-6xl font-black text-green-500 leading-none tracking-tight">From One Place.</span>
+            {/* Left */}
+            <div>
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full fade-in-up mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" />
+                Now in beta — join 500+ personal trainers
+              </div>
+
+              <h1 className="fade-in-up-1">
+                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">The Complete</span>
+                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tight">Coaching Platform</span>
+                <span className="block text-5xl sm:text-6xl lg:text-7xl font-black leading-[0.95] tracking-tight gradient-text">Built for PTs.</span>
               </h1>
 
-              <p className="mt-6 text-zinc-400 text-base sm:text-lg lg:text-xl leading-relaxed max-w-lg">
-                Training programs. Check-ins. Nutrition. Habit coaching. Payments. One platform that replaces everything.
+              <p className="mt-8 text-zinc-400 text-lg sm:text-xl leading-relaxed max-w-xl fade-in-up-2">
+                Programs. Nutrition. Habits. Check-ins. Payments. And AI that works alongside you — not instead of you. One platform to run and grow your entire coaching business.
               </p>
 
-              <div className="mt-10 flex flex-col sm:flex-row gap-3">
+              <div className="mt-10 flex flex-col sm:flex-row gap-3 fade-in-up-3">
                 <input
                   type="email"
-                  placeholder="Enter your email"
-                  className="bg-white/10 border border-white/20 text-white placeholder-zinc-500 rounded-xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-72"
+                  placeholder="Enter your email address"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  className="bg-white/[0.07] border border-white/20 text-white placeholder-zinc-500 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent w-full sm:w-80"
                 />
-                <a href="/auth" className="bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition-all duration-150 shadow-lg shadow-green-900/30 px-6 py-3 text-sm w-full sm:w-auto text-center">Start for free →</a>
+                <a href="/auth" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-lg transition-all duration-150 shadow-lg shadow-emerald-500/30 px-6 py-3 text-sm text-center whitespace-nowrap">
+                  Start for free →
+                </a>
               </div>
-              <p className="mt-3 text-zinc-500 text-xs">Free to start · No credit card required · Cancel anytime</p>
+              <p className="mt-3 text-zinc-600 text-xs fade-in-up-3">Free to start · No credit card required · Cancel anytime</p>
 
-              <div className="mt-14 pt-8 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-6">
+              {/* Stats */}
+              <div className="mt-14 pt-8 border-t border-white/[0.08] grid grid-cols-2 sm:grid-cols-4 gap-6 fade-in-up-4">
                 {[
                   { num: '500+', label: 'Personal trainers' },
                   { num: '2 min', label: 'Avg check-in time' },
                   { num: '3x', label: 'Fewer cancellations' },
-                  { num: '$600 AUD', label: 'Revenue protected monthly' },
-                ].map((s) => (
-                  <div key={s.label} className="flex flex-col">
-                    <span className="text-3xl font-black text-white">{s.num}</span>
-                    <span className="text-xs text-zinc-500 mt-1 uppercase tracking-wide">{s.label}</span>
+                  { num: '$600', label: 'Revenue protected/mo' },
+                ].map(s => (
+                  <div key={s.label}>
+                    <div className="text-2xl sm:text-3xl font-black text-white">{s.num}</div>
+                    <div className="text-xs text-zinc-500 mt-1 uppercase tracking-wide">{s.label}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Right — dashboard mockup */}
-            <div className="hidden lg:block relative fade-in-delay-1">
-              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-5 shadow-2xl shadow-black/50">
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-white font-bold text-sm">StopMooing</span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-                    <span className="text-green-500 text-xs font-medium">Live</span>
-                  </span>
+            <div className="hidden lg:block relative fade-in-up-2">
+              {/* Main card */}
+              <div className="bg-zinc-900/90 border border-white/[0.1] rounded-2xl p-5 shadow-[0_32px_80px_rgba(0,0,0,0.6)] float-card">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <div className="text-white font-bold text-sm">PT Blueprint</div>
+                    <div className="text-zinc-500 text-xs mt-0.5">Client Dashboard</div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 pulse-dot" />
+                    <span className="text-emerald-400 text-xs font-medium">Live</span>
+                  </div>
                 </div>
 
-                {/* 2x2 stat tiles */}
-                <div className="grid grid-cols-2 gap-2 mb-4">
+                <div className="grid grid-cols-4 gap-2 mb-5">
                   {[
-                    { num: '8', label: 'Total clients', color: 'text-white' },
-                    { num: '5', label: 'Engaged', color: 'text-green-500' },
-                    { num: '2', label: 'Drifting', color: 'text-yellow-500' },
-                    { num: '1', label: 'At Risk', color: 'text-red-500' },
-                  ].map((t) => (
-                    <div key={t.label} className="bg-black/40 rounded-xl p-3">
-                      <div className={`text-2xl font-black ${t.color}`}>{t.num}</div>
-                      <div className="text-zinc-500 text-xs">{t.label}</div>
+                    { num: '12', label: 'Total', colour: 'text-white' },
+                    { num: '8',  label: 'Engaged', colour: 'text-emerald-400' },
+                    { num: '3',  label: 'Drifting', colour: 'text-amber-400' },
+                    { num: '1',  label: 'At Risk', colour: 'text-red-400' },
+                  ].map(t => (
+                    <div key={t.label} className="bg-black/40 rounded-xl p-3 text-center">
+                      <div className={`text-xl font-black ${t.colour}`}>{t.num}</div>
+                      <div className="text-zinc-500 text-[10px] mt-0.5">{t.label}</div>
                     </div>
                   ))}
                 </div>
 
-                {/* Client rows */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   {[
-                    { init: 'SM', name: 'Sarah Mitchell', bg: 'bg-blue-600', status: 'Engaged', badge: 'bg-green-600/20 text-green-400' },
-                    { init: 'JO', name: 'James Okafor', bg: 'bg-purple-600', status: 'Drifting', badge: 'bg-yellow-600/20 text-yellow-400' },
-                    { init: 'PN', name: 'Priya Nair', bg: 'bg-emerald-600', status: 'Engaged', badge: 'bg-green-600/20 text-green-400' },
-                    { init: 'TB', name: 'Tom Bergström', bg: 'bg-orange-600', status: 'At Risk', badge: 'bg-red-600/20 text-red-400' },
-                  ].map((c) => (
-                    <div key={c.name} className="flex items-center justify-between bg-black/20 rounded-xl px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white ${c.bg}`}>{c.init}</div>
-                        <span className="text-white text-xs font-medium">{c.name}</span>
+                    { init: 'SM', name: 'Sarah Mitchell', goal: 'Weight loss', bg: 'bg-blue-600',    status: 'Engaged', badge: 'bg-emerald-500/20 text-emerald-400' },
+                    { init: 'JO', name: 'James Okafor',   goal: 'Muscle gain', bg: 'bg-purple-600',  status: 'Drifting', badge: 'bg-amber-500/20 text-amber-400' },
+                    { init: 'PN', name: 'Priya Nair',     goal: 'Marathon',    bg: 'bg-emerald-600', status: 'Engaged', badge: 'bg-emerald-500/20 text-emerald-400' },
+                    { init: 'TB', name: 'Tom Bergström',  goal: 'Fitness',     bg: 'bg-orange-600',  status: 'At Risk', badge: 'bg-red-500/20 text-red-400' },
+                  ].map(c => (
+                    <div key={c.name} className="flex items-center justify-between bg-white/[0.04] rounded-xl px-3 py-2.5">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${c.bg}`}>{c.init}</div>
+                        <div>
+                          <div className="text-white text-xs font-semibold">{c.name}</div>
+                          <div className="text-zinc-500 text-[10px]">{c.goal}</div>
+                        </div>
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>{c.status}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${c.badge}`}>{c.status}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Floating alert */}
-              <div className="absolute -top-4 -right-6 bg-zinc-800 border border-white/10 rounded-xl px-4 py-3 shadow-xl">
+              <div className="absolute -top-5 -right-5 bg-zinc-800 border border-white/[0.12] rounded-xl px-4 py-3 shadow-2xl float-card-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-red-400 text-sm">🔔</span>
-                  <span className="text-white text-xs font-semibold">Tom is at risk</span>
+                  <span className="text-base">🔔</span>
+                  <span className="text-white text-xs font-bold">Tom needs attention</span>
                 </div>
-                <div className="text-zinc-500 text-xs mt-0.5">Last check-in: 18 days ago</div>
+                <div className="text-zinc-500 text-[10px] mt-0.5">Last check-in: 18 days ago</div>
+              </div>
+
+              {/* AI badge */}
+              <div className="absolute -bottom-5 -left-5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3 shadow-2xl ai-glow">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={14} className="text-emerald-400" />
+                  <span className="text-emerald-400 text-xs font-bold">AI check-in summary ready</span>
+                </div>
+                <div className="text-zinc-500 text-[10px] mt-0.5">James Okafor · reviewed just now</div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
-      {/* FEATURE ICON STRIP */}
-      <section className="bg-white/[0.03] border-y border-white/10 py-8">
-        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
-          {[
-            { icon: <Dumbbell size={18} />, label: 'Training Programs' },
-            { icon: <ClipboardCheck size={18} />, label: 'Client Check-ins' },
-            { icon: <Utensils size={18} />, label: 'Nutrition Tracking' },
-            { icon: <BarChart2 size={18} />, label: 'Habit Coaching' },
-            { icon: <CreditCard size={18} />, label: 'Payments' },
-            { icon: <TrendingUp size={18} />, label: 'Progress Analytics' },
-          ].map((f) => (
-            <div key={f.label} className="flex items-center justify-center gap-2.5">
-              <span className="text-green-500">{f.icon}</span>
-              <span className="text-zinc-400 text-sm font-medium">{f.label}</span>
+      {/* ─── TICKER ───────────────────────────────────────────── */}
+      <div className="bg-emerald-500 py-3 overflow-hidden">
+        <div className="ticker-track flex gap-12 whitespace-nowrap w-max">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="flex gap-12 items-center">
+              {[
+                'Training Programs', 'Client Check-ins', 'Nutrition Tracking',
+                'Habit Coaching', 'AI-Powered Tools', 'Progress Analytics',
+                'Automated Alerts', 'Payment Processing', 'Voice Commands',
+              ].map(item => (
+                <span key={item} className="text-white font-semibold text-sm flex items-center gap-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/50 inline-block" />
+                  {item}
+                </span>
+              ))}
             </div>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* FEATURE BLOCK 1 — RETENTION */}
-      <section style={{ backgroundColor: '#0a0a0a' }}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl mx-auto px-6 py-16 lg:py-32">
-          {/* Left — text */}
-          <div className="fade-in">
-            <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20">
-              Client Retention
-            </span>
-            <h2 className="mt-5 text-4xl font-bold text-white leading-tight tracking-tight">
-              Know exactly who needs you before it's too late.
-            </h2>
-            <p className="mt-5 text-zinc-400 text-lg leading-relaxed">
-              StopMooing watches your entire client roster around the clock. Automated weekly check-ins. Real-time engagement scoring. Instant alerts the moment someone starts drifting — while there's still time to save the relationship.
-            </p>
-            <ul className="mt-8 space-y-3">
-              {[
-                'Automated weekly check-in links sent to every client — no manual work',
-                'Green, amber, red engagement status visible at a glance on your dashboard',
-                'Instant email alerts the moment a client\'s score drops to At Risk',
-                'Full check-in response history stored per client forever',
-              ].map((b) => (
-                <li key={b} className="flex items-start gap-3">
-                  <CheckCircle2 size={18} className="text-green-500 mt-0.5 shrink-0" />
-                  <span className="text-zinc-300 text-sm leading-relaxed">{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Right — mockup */}
-          <div className="hidden lg:block fade-in-delay-1">
-            <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/40">
-              <div>
-                <div className="text-white font-semibold text-sm">Client Dashboard</div>
-                <div className="text-zinc-500 text-xs mt-0.5">4 active clients · Updated just now</div>
-              </div>
-
-              <div className="flex gap-2 mt-4">
-                {[
-                  { label: '8 Total', cls: 'bg-white/10 text-zinc-300' },
-                  { label: '5 Engaged', cls: 'bg-green-600/20 text-green-400' },
-                  { label: '2 Drifting', cls: 'bg-yellow-600/20 text-yellow-400' },
-                  { label: '1 At Risk', cls: 'bg-red-600/20 text-red-400' },
-                ].map((p) => (
-                  <span key={p.label} className={`text-xs font-semibold px-3 py-1 rounded-full ${p.cls}`}>{p.label}</span>
-                ))}
-              </div>
-
-              <div className="mt-5 space-y-1">
-                {[
-                  { name: 'Sarah Mitchell', init: 'SM', bg: 'bg-blue-600', goal: 'Weight Loss', status: 'Engaged', badge: 'bg-green-600/20 text-green-400' },
-                  { name: 'James Okafor', init: 'JO', bg: 'bg-purple-600', goal: 'Muscle Gain', status: 'Drifting', badge: 'bg-yellow-600/20 text-yellow-400' },
-                  { name: 'Priya Nair', init: 'PN', bg: 'bg-emerald-600', goal: 'Marathon Training', status: 'Engaged', badge: 'bg-green-600/20 text-green-400' },
-                  { name: 'Tom Bergström', init: 'TB', bg: 'bg-orange-600', goal: 'General Fitness', status: 'At Risk', badge: 'bg-red-600/20 text-red-400' },
-                ].map((c) => (
-                  <div key={c.name} className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${c.bg}`}>{c.init}</div>
-                      <span className="text-white text-sm font-medium">{c.name}</span>
-                      <span className="text-zinc-500 text-xs ml-1">{c.goal}</span>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>{c.status}</span>
-                  </div>
-                ))}
-              </div>
+      {/* ─── AI FEATURE SECTION ───────────────────────────────── */}
+      <section id="ai" className="section-white py-20 lg:py-32">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
+              <Sparkles size={12} />
+              AI-Powered Coaching
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURE BLOCK 2 — PROGRAMS */}
-      <section className="bg-white/[0.02]">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl mx-auto px-6 py-16 lg:py-32">
-          {/* Text — first in JSX for mobile, right on desktop */}
-          <div className="fade-in-delay-1 lg:order-2">
-            <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20">
-              Program Builder
-            </span>
-            <h2 className="mt-5 text-4xl font-bold text-white leading-tight tracking-tight">
-              Build world-class training programs in minutes.
+            <h2 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+              Your expertise.<br />
+              <span className="gradient-text">Amplified by AI.</span>
             </h2>
-            <p className="mt-5 text-zinc-400 text-lg leading-relaxed">
-              A powerful drag-and-drop program builder with a full exercise library. Create structured multi-week programs, assign them to clients with one click, and let your clients log every set and rep directly inside StopMooing.
-            </p>
-            <ul className="mt-8 space-y-3">
-              {[
-                'Build structured multi-day, multi-week training programs',
-                'Full exercise library with muscle group tagging',
-                'Assign programs to any client with one click',
-                'Clients log sets, reps and weights from their own view',
-                'Track client progress and personal bests over time',
-              ].map((b) => (
-                <li key={b} className="flex items-start gap-3">
-                  <CheckCircle2 size={18} className="text-green-500 mt-0.5 shrink-0" />
-                  <span className="text-zinc-300 text-sm leading-relaxed">{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Mockup — hidden on mobile, left on desktop */}
-          <div className="hidden lg:block lg:order-1 fade-in">
-            <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/40">
-              <div className="flex items-center justify-between">
-                <span className="text-white font-semibold text-sm">Program Builder</span>
-                <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-lg">+ New Program</span>
-              </div>
-
-              <div className="mt-4 bg-green-600/10 border-l-4 border-green-500 rounded-xl p-4">
-                <div className="text-white font-semibold text-sm">6 Week Strength Block</div>
-                <div className="text-zinc-400 text-xs mt-1">3 days · Upper / Lower / Full Body</div>
-              </div>
-
-              <div className="mt-4 space-y-2">
-                {[
-                  { n: 1, name: 'Bench Press', muscle: 'Chest', sets: '4 × 6-10 reps' },
-                  { n: 2, name: 'Barbell Row', muscle: 'Back', sets: '3 × 8-12 reps' },
-                  { n: 3, name: 'Shoulder Press', muscle: 'Shoulders', sets: '3 × 8-12 reps' },
-                  { n: 4, name: 'Squat', muscle: 'Legs', sets: '4 × 6-8 reps' },
-                ].map((e) => (
-                  <div key={e.n} className="flex items-center gap-3 bg-black/30 rounded-xl px-4 py-3">
-                    <div className="w-6 h-6 rounded-full bg-green-600/20 text-green-500 text-xs font-bold flex items-center justify-center shrink-0">{e.n}</div>
-                    <span className="text-white text-sm font-medium flex-1">{e.name}</span>
-                    <span className="bg-green-600/10 text-green-500 text-xs px-2 py-0.5 rounded-full font-medium">{e.muscle}</span>
-                    <span className="text-zinc-500 text-xs ml-2">{e.sets}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURE BLOCK 3 — NUTRITION & HABITS */}
-      <section style={{ backgroundColor: '#0a0a0a' }}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center max-w-6xl mx-auto px-6 py-16 lg:py-32">
-          {/* Left — text */}
-          <div className="fade-in">
-            <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20">
-              Nutrition &amp; Habits
-            </span>
-            <h2 className="mt-5 text-4xl font-bold text-white leading-tight tracking-tight">
-              Coach the whole person, not just the workout.
-            </h2>
-            <p className="mt-5 text-zinc-400 text-lg leading-relaxed">
-              Meal plans. Macro targets. Daily habit check-ins. StopMooing gives your clients the structure to build real, lasting change — and gives you the visibility to coach them on everything.
-            </p>
-            <ul className="mt-8 space-y-3">
-              {[
-                'Create and assign custom meal plans per client',
-                'Set daily macro and calorie targets',
-                'Daily habit tracking with streak counters',
-                'Full habit history visible on your PT dashboard',
-              ].map((b) => (
-                <li key={b} className="flex items-start gap-3">
-                  <CheckCircle2 size={18} className="text-green-500 mt-0.5 shrink-0" />
-                  <span className="text-zinc-300 text-sm leading-relaxed">{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Right — mockup */}
-          <div className="hidden lg:block fade-in-delay-1">
-            <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl shadow-black/40">
-              <div className="flex items-center justify-between">
-                <span className="text-white font-semibold text-sm">Today's Habits</span>
-                <span className="text-zinc-500 text-xs">Thu 7 May</span>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                {[
-                  { name: 'Morning workout', streak: '🔥 7 day streak', filled: 6 },
-                  { name: 'Hit protein target', streak: '🔥 5 day streak', filled: 5 },
-                  { name: '8hrs sleep', streak: '🔥 4 day streak', filled: 4 },
-                  { name: 'Drink 3L water', streak: '🔥 7 day streak', filled: 7 },
-                ].map((h) => (
-                  <div key={h.name} className="flex items-center justify-between">
-                    <div>
-                      <div className="text-zinc-300 text-sm font-medium">{h.name}</div>
-                      <div className="text-zinc-500 text-xs mt-0.5">{h.streak}</div>
-                    </div>
-                    <div className="flex gap-1.5">
-                      {Array.from({ length: 7 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-5 h-5 rounded-full ${i < h.filled ? 'bg-green-500' : 'bg-white/10'}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 pt-5 border-t border-white/10 grid grid-cols-3 gap-3">
-                {[
-                  { label: 'Protein', value: '156g / 180g', pct: 87 },
-                  { label: 'Carbs', value: '210g / 250g', pct: 84 },
-                  { label: 'Fats', value: '58g / 70g', pct: 83 },
-                ].map((m) => (
-                  <div key={m.label} className="bg-black/40 rounded-xl p-3 text-center">
-                    <div className="text-zinc-500 text-xs uppercase tracking-wide">{m.label}</div>
-                    <div className="text-white font-bold text-lg mt-1">{m.value}</div>
-                    <div className="h-1 rounded-full bg-white/10 mt-2">
-                      <div className="h-1 rounded-full bg-green-500" style={{ width: `${m.pct}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section className="py-16 lg:py-32 bg-white/[0.02]">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center">
-            <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20 fade-in">
-              How It Works
-            </span>
-            <h2 className="text-center text-2xl sm:text-3xl lg:text-4xl font-bold text-white mt-5 tracking-tight fade-in-delay-1">
-              Set up in minutes. Results from day one.
-            </h2>
-            <p className="text-center text-zinc-400 text-lg mt-4 max-w-2xl mx-auto fade-in-delay-2">
-              No complicated onboarding. No technical knowledge needed. Just add your clients and go.
+            <p className="mt-5 text-gray-500 text-lg max-w-2xl mx-auto leading-relaxed">
+              PT Blueprint's AI works quietly in the background — drafting programs, suggesting meal plans, running check-ins. You review, personalise, and send. Your coaching, your relationships, your brand. Just faster.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                num: '01',
-                heading: 'Add your clients',
-                desc: 'Import your existing roster or add clients one by one. Takes less than 2 minutes and requires zero technical setup.',
+                icon: <Brain size={24} className="text-emerald-600" />,
+                bg: "bg-emerald-50",
+                tag: "For Coaches",
+                title: "AI Program & Plan Generation",
+                desc: "Tell the AI your client's goals, training history and equipment — it drafts a full program or meal plan in seconds. You review it, adjust it, make it yours, then send.",
+                bullets: [
+                  "Generate structured multi-week programs",
+                  "Create macro-specific meal plans instantly",
+                  "AI learns your coaching style over time",
+                ],
               },
               {
-                num: '02',
-                heading: 'Build their program',
-                desc: 'Create a personalised training program, assign it directly to the client, and set up their nutrition and habit targets.',
+                icon: <ClipboardCheck size={24} className="text-blue-600" />,
+                bg: "bg-blue-50",
+                tag: "For Coaches",
+                title: "Intelligent Check-in Summaries",
+                desc: "When a client completes a check-in, AI reads the responses, flags anything important, and sends you a plain-English summary — so you never miss a thing, even when you're slammed.",
+                bullets: [
+                  "Automated weekly check-in conversations",
+                  "AI summarises key themes and concerns",
+                  "Instant alerts for at-risk clients",
+                ],
               },
               {
-                num: '03',
-                heading: 'Retain more clients',
-                desc: 'Automated check-ins run silently in the background. You get alerted before anyone even thinks about cancelling.',
+                icon: <Mic size={24} className="text-purple-600" />,
+                bg: "bg-purple-50",
+                tag: "For Clients",
+                title: "Voice-First Client Experience",
+                desc: "Your clients speak, PT Blueprint listens. Ask for a workout, a meal idea, or nutrition advice — and get a personalised answer in seconds. Coaching available to them around the clock.",
+                bullets: [
+                  '"Give me a high protein lunch under 600 cal"',
+                  '"I need a 30 minute upper body workout"',
+                  "All within your branded platform",
+                ],
               },
-            ].map((s, i) => (
-              <div
-                key={s.num}
-                className={`bg-white/5 border border-white/10 rounded-2xl p-8 hover:bg-white/[0.07] hover:border-white/20 transition-all duration-200 fade-in-delay-${i + 1}`}
-              >
-                <div className="text-7xl font-black text-green-600/20 leading-none">{s.num}</div>
-                <div className="text-white font-bold text-lg mt-6">{s.heading}</div>
-                <p className="text-zinc-400 text-sm mt-3 leading-relaxed">{s.desc}</p>
+            ].map(card => (
+              <div key={card.title} className="bg-white border border-gray-100 rounded-2xl p-7 shadow-sm feature-card">
+                <div className={`w-12 h-12 rounded-xl ${card.bg} flex items-center justify-center mb-5`}>
+                  {card.icon}
+                </div>
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{card.tag}</span>
+                <h3 className="text-xl font-bold text-gray-900 mt-2 leading-snug">{card.title}</h3>
+                <p className="text-gray-500 text-sm mt-3 leading-relaxed">{card.desc}</p>
+                <ul className="mt-5 space-y-2">
+                  {card.bullets.map(b => (
+                    <li key={b} className="flex items-start gap-2.5">
+                      <CheckCircle2 size={15} className="text-emerald-500 mt-0.5 shrink-0" />
+                      <span className="text-gray-600 text-sm">{b}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* PRICING */}
-      <section className="py-16 lg:py-32" style={{ backgroundColor: '#0a0a0a' }}>
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center">
-            <span className="inline-flex items-center gap-2 bg-green-600/10 text-green-500 text-xs font-semibold tracking-widest uppercase px-3 py-1.5 rounded-full border border-green-600/20 fade-in">
-              Pricing
-            </span>
-            <h2 className="text-center text-2xl sm:text-3xl lg:text-4xl font-bold text-white mt-5 tracking-tight fade-in-delay-1">
-              Simple pricing. No surprises.
+      {/* ─── FEATURE BLOCK 1 — RETENTION (dark) ─────────────── */}
+      <section id="features" className="section-dark py-20 lg:py-32 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+            <div>
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-6">
+                Client Retention
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight">
+                Know exactly who needs you before it's too late.
+              </h2>
+              <p className="mt-6 text-zinc-400 text-lg leading-relaxed">
+                PT Blueprint watches your entire client roster in real time. The moment someone starts going quiet — fewer check-ins, missed sessions, reduced engagement — you know about it before they even think about cancelling.
+              </p>
+              <ul className="mt-8 space-y-4">
+                {[
+                  'Automated weekly check-in links — no chasing required',
+                  'Green, amber, red status on every client at a glance',
+                  'Instant alerts the moment a client goes At Risk',
+                  'Full check-in history stored per client forever',
+                  'AI summarises each check-in so you can act fast',
+                ].map(b => (
+                  <li key={b} className="flex items-start gap-3">
+                    <CheckCircle2 size={17} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <span className="text-zinc-300 text-sm leading-relaxed">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="hidden lg:block">
+              <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl p-6 shadow-2xl shadow-black/40">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <div className="text-white font-bold text-sm">Client Dashboard</div>
+                    <div className="text-zinc-500 text-xs mt-0.5">Updated just now</div>
+                  </div>
+                  <div className="flex gap-2">
+                    {[
+                      { l: '12 Total', c: 'bg-white/10 text-zinc-300' },
+                      { l: '8 Engaged', c: 'bg-emerald-500/20 text-emerald-400' },
+                      { l: '3 Drifting', c: 'bg-amber-500/20 text-amber-400' },
+                      { l: '1 At Risk', c: 'bg-red-500/20 text-red-400' },
+                    ].map(p => (
+                      <span key={p.l} className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${p.c}`}>{p.l}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  {[
+                    { init: 'SM', name: 'Sarah Mitchell', goal: 'Weight Loss',     bg: 'bg-blue-600',    status: 'Engaged', badge: 'bg-emerald-500/20 text-emerald-400' },
+                    { init: 'JO', name: 'James Okafor',   goal: 'Muscle Gain',     bg: 'bg-purple-600',  status: 'Drifting', badge: 'bg-amber-500/20 text-amber-400' },
+                    { init: 'PN', name: 'Priya Nair',     goal: 'Marathon',        bg: 'bg-emerald-600', status: 'Engaged', badge: 'bg-emerald-500/20 text-emerald-400' },
+                    { init: 'TB', name: 'Tom Bergström',  goal: 'General Fitness', bg: 'bg-orange-600',  status: 'At Risk', badge: 'bg-red-500/20 text-red-400' },
+                  ].map(c => (
+                    <div key={c.name} className="flex items-center justify-between py-3 border-b border-white/[0.05] last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white ${c.bg}`}>{c.init}</div>
+                        <div>
+                          <div className="text-white text-sm font-semibold">{c.name}</div>
+                          <div className="text-zinc-500 text-xs">{c.goal}</div>
+                        </div>
+                      </div>
+                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${c.badge}`}>{c.status}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FEATURE BLOCK 2 — PROGRAMS (light) ─────────────── */}
+      <section className="section-light py-20 lg:py-32 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+            <div className="hidden lg:block lg:order-1">
+              <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xl shadow-gray-200/60">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-gray-900 font-bold text-sm">Program Builder</span>
+                  <span className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-3 py-1 rounded-lg">
+                    <Sparkles size={11} />
+                    AI Draft
+                  </span>
+                </div>
+
+                <div className="bg-emerald-50 border-l-4 border-emerald-500 rounded-xl p-4 mb-4">
+                  <div className="text-gray-900 font-bold text-sm">6 Week Strength Block</div>
+                  <div className="text-gray-500 text-xs mt-0.5">3 days · Upper / Lower / Full Body</div>
+                </div>
+
+                <div className="space-y-2">
+                  {[
+                    { n: 1, name: 'Bench Press',    muscle: 'Chest',     colour: 'bg-blue-100 text-blue-700',    sets: '4 × 6-10 reps' },
+                    { n: 2, name: 'Barbell Row',    muscle: 'Back',      colour: 'bg-purple-100 text-purple-700', sets: '3 × 8-12 reps' },
+                    { n: 3, name: 'Shoulder Press', muscle: 'Shoulders', colour: 'bg-amber-100 text-amber-700',   sets: '3 × 8-12 reps' },
+                    { n: 4, name: 'Squat',          muscle: 'Legs',      colour: 'bg-indigo-100 text-indigo-700', sets: '4 × 6-8 reps' },
+                  ].map(e => (
+                    <div key={e.n} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                      <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-black flex items-center justify-center shrink-0">{e.n}</div>
+                      <span className="text-gray-900 text-sm font-semibold flex-1">{e.name}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${e.colour}`}>{e.muscle}</span>
+                      <span className="text-gray-400 text-xs">{e.sets}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:order-2">
+              <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-6">
+                Program Builder
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-black text-gray-900 leading-tight tracking-tight">
+                Build world-class programs. In minutes, not hours.
+              </h2>
+              <p className="mt-6 text-gray-500 text-lg leading-relaxed">
+                A full exercise library, structured program builder, and AI that drafts programs based on your client's goals. You refine it, assign it, and your client logs every set directly in the app.
+              </p>
+              <ul className="mt-8 space-y-4">
+                {[
+                  'Build structured multi-day, multi-week programs',
+                  'Full exercise library with muscle group tagging',
+                  'AI drafts a program from your brief in seconds',
+                  'Assign to any client with one click',
+                  'Clients log sets, reps and weights from their own view',
+                  'Track progress and personal bests over time',
+                ].map(b => (
+                  <li key={b} className="flex items-start gap-3">
+                    <CheckCircle2 size={17} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <span className="text-gray-600 text-sm leading-relaxed">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── FEATURE BLOCK 3 — NUTRITION (dark) ─────────────── */}
+      <section className="section-dark py-20 lg:py-32 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+            <div>
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-6">
+                Nutrition & Habits
+              </div>
+              <h2 className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight">
+                Coach the whole person, not just the workout.
+              </h2>
+              <p className="mt-6 text-zinc-400 text-lg leading-relaxed">
+                Meal plans. Macro targets. Daily habit tracking. Water intake. Full food logging. PT Blueprint gives your clients the structure to build lasting change — and gives you the visibility to coach them on all of it.
+              </p>
+              <ul className="mt-8 space-y-4">
+                {[
+                  'Create and assign custom meal plans per client',
+                  'Set daily macro, calorie and water targets',
+                  'Daily habit tracking with streak counters and compliance scores',
+                  'Clients log food, workouts and water from their app',
+                  'Full nutrition history and trend charts visible on your dashboard',
+                ].map(b => (
+                  <li key={b} className="flex items-start gap-3">
+                    <CheckCircle2 size={17} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <span className="text-zinc-300 text-sm leading-relaxed">{b}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="hidden lg:block">
+              <div className="bg-zinc-900 border border-white/[0.08] rounded-2xl p-6 shadow-2xl shadow-black/40">
+                <div className="flex items-center justify-between mb-5">
+                  <span className="text-white font-bold text-sm">Today's Summary</span>
+                  <span className="text-zinc-500 text-xs">Sunday 17 May</span>
+                </div>
+
+                {/* Calorie ring */}
+                <div className="flex items-center gap-5 mb-5">
+                  <div className="relative w-20 h-20 shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#27272a" strokeWidth="10" />
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" strokeWidth="10" strokeDasharray="188 251" strokeLinecap="round" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-base font-black text-white leading-none">1502</span>
+                      <span className="text-[9px] text-zinc-500">kcal</span>
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2.5">
+                    {[
+                      { label: 'Protein', cur: 142, max: 180, colour: 'bg-red-500',    pct: 79 },
+                      { label: 'Carbs',   cur: 180, max: 250, colour: 'bg-yellow-500', pct: 72 },
+                      { label: 'Fats',    cur: 52,  max: 70,  colour: 'bg-blue-500',   pct: 74 },
+                    ].map(m => (
+                      <div key={m.label}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-zinc-400 text-xs">{m.label}</span>
+                          <span className="text-zinc-400 text-xs">{m.cur}g / {m.max}g</span>
+                        </div>
+                        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <div className={`h-full rounded-full ${m.colour}`} style={{ width: `${m.pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Habits */}
+                <div className="border-t border-white/[0.06] pt-4">
+                  <div className="text-zinc-500 text-xs font-semibold uppercase tracking-wide mb-3">Today's Habits</div>
+                  <div className="space-y-2.5">
+                    {[
+                      { name: 'Morning workout', streak: '🔥 7 day streak', filled: 6 },
+                      { name: 'Hit protein target', streak: '🔥 5 day streak', filled: 5 },
+                      { name: 'Drink 3L water', streak: '🔥 7 day streak', filled: 7 },
+                    ].map(h => (
+                      <div key={h.name} className="flex items-center justify-between">
+                        <div>
+                          <div className="text-zinc-300 text-xs font-medium">{h.name}</div>
+                          <div className="text-zinc-600 text-[10px] mt-0.5">{h.streak}</div>
+                        </div>
+                        <div className="flex gap-1">
+                          {Array.from({ length: 7 }).map((_, i) => (
+                            <div key={i} className={`w-4 h-4 rounded-full ${i < h.filled ? 'bg-emerald-500' : 'bg-white/10'}`} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── HOW IT WORKS (light) ────────────────────────────── */}
+      <section id="how-it-works" className="section-light py-20 lg:py-32">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
+              How It Works
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+              Set up in minutes.<br />Results from day one.
             </h2>
-            <p className="text-center text-zinc-400 text-lg mt-4 fade-in-delay-2">
-              One subscription replaces 4-5 separate tools. Cancel anytime.
+            <p className="mt-5 text-gray-500 text-lg max-w-xl mx-auto">
+              No complicated onboarding. No technical knowledge needed. Just add your clients and go.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-16 max-w-3xl mx-auto">
-            {/* Starter */}
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-8 flex flex-col fade-in-delay-1">
-              <div className="text-white font-bold text-xl">Starter</div>
-              <div className="flex items-end gap-1 mt-4">
-                <span className="text-5xl font-black text-white">$49</span>
-                <span className="text-zinc-500 text-base pb-1">/month</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
+              {
+                num: '01',
+                icon: <Users size={22} className="text-emerald-600" />,
+                heading: 'Add your clients',
+                desc: 'Sign up and build your client roster in minutes. Every client gets a dedicated profile — goals, programs, nutrition, habits and check-ins all in one place.',
+              },
+              {
+                num: '02',
+                icon: <Sparkles size={22} className="text-emerald-600" />,
+                heading: 'Coach smarter with AI',
+                desc: "AI is your behind-the-scenes assistant. Draft a program, get a head start on a meal plan, or run a check-in when you're flat out — then review, personalise and send it your way. Your expertise, amplified.",
+              },
+              {
+                num: '03',
+                icon: <TrendingUp size={22} className="text-emerald-600" />,
+                heading: 'Build a business that retains',
+                desc: "Know exactly which clients need your attention before it's too late. Automated alerts, check-in summaries and full progress visibility mean you're always one step ahead.",
+              },
+            ].map((s, i) => (
+              <div key={s.num} className="bg-white border border-gray-200 rounded-2xl p-8 feature-card">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
+                    {s.icon}
+                  </div>
+                  <span className="text-6xl font-black text-gray-100">{s.num}</span>
+                </div>
+                <h3 className="text-gray-900 font-bold text-xl">{s.heading}</h3>
+                <p className="text-gray-500 text-sm mt-3 leading-relaxed">{s.desc}</p>
               </div>
-              <p className="text-zinc-400 text-sm mt-2">Perfect for PTs building their foundation</p>
-              <div className="border-t border-white/10 my-6" />
-              <ul className="space-y-3">
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── SOCIAL PROOF ────────────────────────────────────── */}
+      <section className="section-white py-20 lg:py-28">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
+              Trusted by coaches who take their business seriously
+            </h2>
+            <p className="mt-4 text-gray-400 text-lg">Real results from real PTs using PT Blueprint every day</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              {
+                quote: "I used to spend Sunday nights chasing check-ins. Now PT Blueprint does it automatically and I get a summary on Monday morning. Game changer.",
+                name: "Marcus T.",
+                role: "Online PT · 24 clients",
+                init: "MT",
+                bg: "bg-blue-600",
+                stars: 5,
+              },
+              {
+                quote: "The AI program builder saves me 2-3 hours a week. I still write every program — it just gives me a solid first draft to work from. My clients get better programs, faster.",
+                name: "Jess K.",
+                role: "Gym-based PT · 18 clients",
+                init: "JK",
+                bg: "bg-purple-600",
+                stars: 5,
+              },
+              {
+                quote: "I had a client go At Risk and I genuinely didn't know. PT Blueprint caught it before they cancelled. That's one client retained — that's $400 a month I would have lost.",
+                name: "Dan R.",
+                role: "Online Coach · 31 clients",
+                init: "DR",
+                bg: "bg-emerald-600",
+                stars: 5,
+              },
+            ].map(t => (
+              <div key={t.name} className="bg-gray-50 border border-gray-200 rounded-2xl p-7 feature-card">
+                <div className="flex gap-0.5 mb-5">
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <Star key={i} size={14} className="text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-gray-700 text-sm leading-relaxed">"{t.quote}"</p>
+                <div className="flex items-center gap-3 mt-6">
+                  <div className={`w-9 h-9 rounded-full ${t.bg} flex items-center justify-center text-white text-xs font-bold`}>{t.init}</div>
+                  <div>
+                    <div className="text-gray-900 text-sm font-bold">{t.name}</div>
+                    <div className="text-gray-400 text-xs">{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── PRICING ─────────────────────────────────────────── */}
+      <section id="pricing" className="section-light py-20 lg:py-32">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-5">
+              Pricing
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight">Simple pricing. No surprises.</h2>
+            <p className="mt-4 text-gray-500 text-lg">One subscription replaces 4–5 separate tools. Cancel anytime.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 max-w-3xl mx-auto">
+
+            {/* Starter */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-8 flex flex-col shadow-sm">
+              <div className="text-gray-900 font-black text-2xl">Starter</div>
+              <div className="flex items-end gap-1 mt-4">
+                <span className="text-6xl font-black text-gray-900">$49</span>
+                <span className="text-gray-400 text-base pb-2">/month</span>
+              </div>
+              <p className="text-gray-400 text-sm mt-2">Perfect for PTs building their foundation</p>
+              <div className="border-t border-gray-100 my-6" />
+              <ul className="space-y-3 flex-1">
                 {[
                   'Up to 10 clients',
                   'Check-in system with automated links',
                   'Program builder and exercise library',
                   'Client workout logging',
-                  'Basic dashboard analytics',
-                ].map((f) => (
+                  'Nutrition and habit tracking',
+                  'Basic AI drafting tools',
+                ].map(f => (
                   <li key={f} className="flex items-center gap-2.5">
-                    <CheckCircle2 size={16} className="text-green-500 shrink-0" />
+                    <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                    <span className="text-gray-600 text-sm">{f}</span>
+                  </li>
+                ))}
+              </ul>
+              <a href="/auth" className="mt-8 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl py-3 text-sm font-bold text-center block w-full transition-all">
+                Get started free
+              </a>
+            </div>
+
+            {/* Pro */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col relative overflow-hidden shadow-2xl shadow-gray-900/30">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-emerald-600" />
+              <span className="inline-block bg-emerald-500/20 text-emerald-400 text-xs font-black px-3 py-1 rounded-full mb-4 w-fit">Most Popular</span>
+              <div className="text-white font-black text-2xl">Pro</div>
+              <div className="flex items-end gap-1 mt-4">
+                <span className="text-6xl font-black text-white">$99</span>
+                <span className="text-zinc-500 text-base pb-2">/month</span>
+              </div>
+              <p className="text-zinc-400 text-sm mt-2">For serious PTs ready to scale their business</p>
+              <div className="border-t border-white/[0.08] my-6" />
+              <ul className="space-y-3 flex-1">
+                {[
+                  'Unlimited clients',
+                  'Everything in Starter',
+                  'Full AI program & meal plan generation',
+                  'Voice-powered client experience',
+                  'AI check-in summaries',
+                  'Automated email alerts for at-risk clients',
+                  'Payments integration',
+                  'Priority support',
+                ].map(f => (
+                  <li key={f} className="flex items-center gap-2.5">
+                    <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
                     <span className="text-zinc-300 text-sm">{f}</span>
                   </li>
                 ))}
               </ul>
-              <a href="/auth" className="mt-auto pt-8 border border-white/20 text-white hover:bg-white/10 rounded-xl py-3 text-sm font-semibold text-center block w-full transition-all duration-150">Get started free</a>
+              <a href="/auth" className="mt-8 bg-emerald-500 hover:bg-emerald-400 text-white font-bold rounded-xl py-3 text-sm text-center block w-full transition-all shadow-lg shadow-emerald-500/25">
+                Start free trial →
+              </a>
             </div>
 
-            {/* Pro */}
-            <div className="bg-green-600 border border-green-500 rounded-2xl p-8 flex flex-col relative overflow-hidden fade-in-delay-2">
-              <div className="absolute inset-0 bg-green-400/10 rounded-2xl pointer-events-none" />
-              <span className="inline-block bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full mb-4 relative">Most Popular</span>
-              <div className="text-white font-bold text-xl relative">Pro</div>
-              <div className="flex items-end gap-1 mt-4 relative">
-                <span className="text-5xl font-black text-white">$99</span>
-                <span className="text-white/70 text-base pb-1">/month</span>
-              </div>
-              <p className="text-white/80 text-sm mt-2 relative">For serious PTs ready to scale their business</p>
-              <div className="border-t border-white/20 my-6 relative" />
-              <ul className="space-y-3 relative">
-                {[
-                  'Unlimited clients',
-                  'Everything in Starter',
-                  'Nutrition and meal plan builder',
-                  'Habit coaching and tracking',
-                  'Automated email alerts for at-risk clients',
-                  'Payments integration',
-                  'Priority support',
-                ].map((f) => (
-                  <li key={f} className="flex items-center gap-2.5">
-                    <CheckCircle2 size={16} className="text-white shrink-0" />
-                    <span className="text-white text-sm">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <a href="/auth" className="mt-auto pt-8 bg-white text-green-700 font-bold rounded-xl py-3 text-sm text-center block w-full hover:bg-green-50 transition-all duration-150">Start free trial →</a>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* FINAL CTA */}
-      <section className="py-16 lg:py-32 bg-[#0a0a0a] relative overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-green-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-green-600/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 max-w-2xl mx-auto px-6 text-center">
-          <h2 className="text-white font-black text-3xl sm:text-4xl lg:text-5xl leading-tight tracking-tight fade-in">
-            Ready to stop the churn?
+      {/* ─── FINAL CTA (dark) ────────────────────────────────── */}
+      <section className="section-dark py-20 lg:py-32 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-32 -left-32 w-96 h-96 bg-emerald-500/[0.06] rounded-full blur-3xl" />
+          <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-emerald-500/[0.04] rounded-full blur-3xl" />
+        </div>
+        <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
+          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold tracking-widest uppercase px-3 py-1.5 rounded-full mb-8">
+            <Zap size={12} />
+            Start today — it's free
+          </div>
+          <h2 className="text-white font-black text-4xl sm:text-5xl lg:text-6xl leading-tight tracking-tight">
+            Ready to build a PT business that lasts?
           </h2>
-          <p className="mt-5 text-zinc-400 text-lg fade-in-delay-1">
-            Join personal trainers already using StopMooing to protect their income.
+          <p className="mt-6 text-zinc-400 text-xl leading-relaxed max-w-xl mx-auto">
+            Join hundreds of personal trainers using PT Blueprint to coach better, retain more clients, and grow a business they're proud of.
           </p>
-          <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center fade-in-delay-2">
+          <div className="mt-12 flex flex-col sm:flex-row gap-3 justify-center">
             <input
               type="email"
-              placeholder="Enter your email"
-              className="bg-white/10 border border-white/20 text-white placeholder-zinc-500 rounded-xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-full sm:w-72"
+              placeholder="Enter your email address"
+              value={email2}
+              onChange={e => setEmail2(e.target.value)}
+              className="bg-white/[0.07] border border-white/20 text-white placeholder-zinc-500 rounded-lg px-5 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-full sm:w-80"
             />
-            <a href="/auth" className="bg-white text-green-700 font-bold px-6 py-3 rounded-xl hover:bg-zinc-100 transition-all duration-150 text-sm w-full sm:w-auto text-center">Start for free →</a>
+            <a href="/auth" className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-8 py-3.5 rounded-lg transition-all shadow-lg shadow-emerald-500/25 text-sm whitespace-nowrap">
+              Get started free →
+            </a>
           </div>
-          <p className="text-zinc-600 text-xs mt-3">Free to start · No credit card required · Cancel anytime</p>
-          <a href="/auth" className="mt-6 inline-block text-white font-black text-xl sm:text-2xl hover:text-green-500 transition-colors duration-150 tracking-tight">CREATE YOUR FREE ACCOUNT →</a>
+          <p className="text-zinc-600 text-xs mt-4">Free to start · No credit card required · Cancel anytime</p>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-black border-t border-white/10 py-12">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div className="flex flex-col">
-              <span className="text-white font-bold text-lg">StopMooing</span>
-              <span className="text-zinc-500 text-sm mt-1">Built for personal trainers.</span>
+      {/* ─── FOOTER ──────────────────────────────────────────── */}
+      <footer className="bg-black border-t border-white/[0.06] py-14">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-10 mb-12">
+
+            <div className="sm:col-span-2">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-emerald-500 flex items-center justify-center">
+                  <span className="text-white font-black text-xs">P</span>
+                </div>
+                <span className="text-white font-bold text-base">PT Blueprint</span>
+              </div>
+              <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">
+                The complete coaching platform built to help personal trainers run, grow and retain their business — online or in person.
+              </p>
             </div>
-            <div className="flex gap-6">
-              <a href="/auth" className="text-zinc-400 hover:text-white text-sm transition-colors duration-150">Sign in</a>
-              <a href="/auth" className="text-zinc-400 hover:text-white text-sm transition-colors duration-150">Get started</a>
+
+            <div>
+              <div className="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">Platform</div>
+              <div className="space-y-3">
+                {['Features', 'AI Tools', 'Pricing', 'How it works'].map(l => (
+                  <a key={l} href="#" className="block text-zinc-500 hover:text-white text-sm transition-colors">{l}</a>
+                ))}
+              </div>
             </div>
+
+            <div>
+              <div className="text-zinc-400 text-xs font-bold uppercase tracking-widest mb-4">Account</div>
+              <div className="space-y-3">
+                {[
+                  { label: 'Sign in', href: '/auth' },
+                  { label: 'Get started', href: '/auth' },
+                  { label: 'Privacy Policy', href: '#' },
+                  { label: 'Terms of Service', href: '#' },
+                ].map(l => (
+                  <a key={l.label} href={l.href} className="block text-zinc-500 hover:text-white text-sm transition-colors">{l.label}</a>
+                ))}
+              </div>
+            </div>
+
           </div>
-          <div className="mt-8 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-zinc-600 text-xs">© 2026 StopMooing. All rights reserved.</span>
-            <div className="flex gap-6">
-              <button className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors duration-150">Privacy Policy</button>
-              <button className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors duration-150">Terms of Service</button>
-            </div>
+
+          <div className="border-t border-white/[0.06] pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <span className="text-zinc-600 text-xs">© 2026 PT Blueprint. All rights reserved.</span>
+            <span className="text-zinc-600 text-xs">Built for personal trainers who mean business.</span>
           </div>
         </div>
       </footer>
+
     </div>
   )
 }
