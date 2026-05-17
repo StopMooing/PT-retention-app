@@ -2801,7 +2801,7 @@ export default function ClientProfile() {
 
         {totalHabits > 0 && (
           <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4" style={{ borderBottom: "1px solid #e5e7eb" }}>
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center shrink-0">
                   <Heart size={15} className="text-pink-500" />
@@ -2915,24 +2915,24 @@ export default function ClientProfile() {
                 </div>
 
                 <div className="grid grid-cols-4 gap-3" style={{ borderTop: "1px solid #f3f4f6", paddingTop: "16px" }}>
-                  <div className="flex flex-col items-center rounded-xl py-3 px-2" style={{ backgroundColor: "#f9fafb" }}>
+                  <div className="" style={{ backgroundColor: "#f3f4f6", borderRadius: "12px", padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <span className={`text-lg font-black ${habit.target_per_week && weekCount >= habit.target_per_week ? "text-emerald-600" : "text-gray-900"}`}>
                       {weekCount}{habit.target_per_week ? `/${habit.target_per_week}` : ""}
                     </span>
                     <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">This Week</span>
                   </div>
-                  <div className="flex flex-col items-center rounded-xl py-3 px-2" style={{ backgroundColor: "#f9fafb" }}>
+                  <div className="" style={{ backgroundColor: "#f3f4f6", borderRadius: "12px", padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <span className="text-lg font-black text-gray-900">{monthCount}</span>
                     <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">This Month</span>
                   </div>
-                  <div className="flex flex-col items-center rounded-xl py-3 px-2" style={{ backgroundColor: "#f9fafb" }}>
+                  <div className="" style={{ backgroundColor: "#f3f4f6", borderRadius: "12px", padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <div className="flex items-center gap-0.5">
                       {streak > 0 && <Flame size={14} className="text-orange-400" />}
                       <span className="text-lg font-black text-gray-900">{streak}</span>
                     </div>
                     <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">Streak</span>
                   </div>
-                  <div className="flex flex-col items-center rounded-xl py-3 px-2" style={{ backgroundColor: "#f9fafb" }}>
+                  <div className="" style={{ backgroundColor: "#f3f4f6", borderRadius: "12px", padding: "12px 8px", display: "flex", flexDirection: "column", alignItems: "center" }}>
                     <span className="text-lg font-black text-gray-900">{bestStreak}</span>
                     <span className="text-[10px] text-gray-400 mt-0.5 text-center leading-tight">Best Ever</span>
                   </div>
