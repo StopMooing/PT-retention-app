@@ -2985,9 +2985,9 @@ export default function ClientProfile() {
                   <span className="text-3xl font-black text-indigo-600 leading-none">{avgTraining}</span>
                   <span className="text-sm font-semibold text-gray-400 mb-0.5">/ 5</span>
                 </div>
-                <div className="flex gap-1.5 mt-2.5 w-full">
+                <div className="flex gap-1.5 mt-2.5 max-w-[160px]">
                   {[1,2,3,4,5].map(n => (
-                    <div key={n} className={`flex-1 h-2 rounded-full ${n <= Math.round(avgTraining) ? "bg-indigo-500" : "bg-gray-200"}`} />
+                    <div key={n} className={`w-8 h-2.5 rounded-full ${n <= Math.round(avgTraining) ? "bg-indigo-500" : "bg-gray-200"}`} />
                   ))}
                 </div>
               </div>
@@ -2997,9 +2997,9 @@ export default function ClientProfile() {
                   <span className="text-3xl font-black text-emerald-500 leading-none">{avgEnergy}</span>
                   <span className="text-sm font-semibold text-gray-400 mb-0.5">/ 5</span>
                 </div>
-                <div className="flex gap-1.5 mt-2.5 w-full">
+                <div className="flex gap-1.5 mt-2.5 max-w-[160px]">
                   {[1,2,3,4,5].map(n => (
-                    <div key={n} className={`flex-1 h-2 rounded-full ${n <= Math.round(avgEnergy) ? "bg-emerald-500" : "bg-gray-200"}`} />
+                    <div key={n} className={`w-8 h-2.5 rounded-full ${n <= Math.round(avgEnergy) ? "bg-emerald-500" : "bg-gray-200"}`} />
                   ))}
                 </div>
               </div>
