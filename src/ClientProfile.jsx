@@ -86,6 +86,7 @@ export default function ClientProfile() {
   const [notes, setNotes]                         = useState("")
   const [showNoteForm, setShowNoteForm]           = useState(false)
   const [savedNotes, setSavedNotes]               = useState([])
+  const [notesLoading, setNotesLoading] = useState(false)
   const [copied, setCopied]                       = useState(false)
 
   const [weightLogs, setWeightLogs] = useState([])
@@ -213,6 +214,12 @@ export default function ClientProfile() {
         setMealPlan(mealPlanRes.data?.[0] ?? null)
         setWorkoutLogs(workoutRes.data ?? [])
         setWeightLogs(weightRes.data ?? [])
+        const { data: ptNotesData } = await supabase
+          .from("pt_notes")
+          .select("*")
+          .eq("client_id", clientId)
+          .order("created_at", { ascending: false })
+        setSavedNotes(ptNotesData ?? [])
         const { data: { user: currentUserForFetch } } = await supabase.auth.getUser()
 
         const { data: allProgramsData } = await supabase
@@ -386,11 +393,26 @@ export default function ClientProfile() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  function handleSaveNote() {
+  async function handleSaveNote() {
     if (!notes.trim()) return
-    setSavedNotes(prev => [{ text: notes.trim(), createdAt: new Date().toISOString() }, ...prev])
-    setNotes("")
-    setShowNoteForm(false)
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      const { data, error } = await supabase
+        .from("pt_notes")
+        .insert({
+          client_id: clientId,
+          pt_id: currentUser.id,
+          text: notes.trim(),
+        })
+        .select()
+        .single()
+      if (error) throw error
+      setSavedNotes(prev => [data, ...prev])
+      setNotes("")
+      setShowNoteForm(false)
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   async function handleLogWeight() {
@@ -3130,35 +3152,66 @@ export default function ClientProfile() {
       <div className="space-y-4">
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-base font-semibold text-gray-800">PT Notes</h2>
-          <button onClick={() => setShowNoteForm(true)} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
-            <Plus size={16} /> Add Note
+          <button
+            onClick={() => setShowNoteForm(true)}
+            className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
+          >
+            <Plus size={15} /> Add Note
           </button>
         </div>
 
         {showNoteForm && (
-          <SectionCard className="p-5">
-            <textarea rows={4} placeholder="Add a note about this client..." value={notes} onChange={e => setNotes(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent resize-none" />
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+            <textarea
+              rows={4}
+              autoFocus
+              placeholder={`Add a note about ${client.full_name}...`}
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
+            />
             <div className="flex gap-3 mt-3">
-              <button onClick={handleSaveNote} className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">Save Note</button>
-              <button onClick={() => { setShowNoteForm(false); setNotes("") }} className="px-4 py-2 border border-gray-200 text-gray-500 hover:bg-gray-50 rounded-lg text-sm transition">Cancel</button>
+              <button
+                onClick={handleSaveNote}
+                disabled={!notes.trim()}
+                className="bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Save Note
+              </button>
+              <button
+                onClick={() => { setShowNoteForm(false); setNotes("") }}
+                className="px-4 py-2.5 border border-gray-200 text-gray-500 hover:bg-gray-50 rounded-lg text-sm transition"
+              >
+                Cancel
+              </button>
             </div>
-          </SectionCard>
+          </div>
         )}
 
         {savedNotes.length === 0 && !showNoteForm ? (
-          <div className="border border-dashed border-gray-200 rounded-2xl p-10 text-center bg-white">
-            <FileText size={28} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium text-sm">No notes yet</p>
-            <p className="text-xs text-gray-300 mt-1">Add your first note about {client.full_name}</p>
+          <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center">
+            <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <FileText size={24} className="text-gray-300" />
+            </div>
+            <p className="text-gray-700 font-semibold text-base">No notes yet</p>
+            <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">Add your first note about {client.full_name} — visible only to you.</p>
+            <button
+              onClick={() => setShowNoteForm(true)}
+              className="mt-5 bg-black hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition"
+            >
+              Add First Note
+            </button>
           </div>
         ) : (
           <div className="space-y-3">
             {savedNotes.map((note, i) => (
-              <SectionCard key={i} className="p-5">
-                <p className="text-xs text-gray-300 mb-2">{formatDate(note.createdAt)} · {timeAgo(note.createdAt)}</p>
+              <div key={note.id ?? i} className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{formatDate(note.created_at)}</span>
+                  <span className="text-xs text-gray-300">{timeAgo(note.created_at)}</span>
+                </div>
                 <p className="text-sm text-gray-700 leading-relaxed">{note.text}</p>
-              </SectionCard>
+              </div>
             ))}
           </div>
         )}
