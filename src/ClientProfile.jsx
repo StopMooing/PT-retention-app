@@ -2947,59 +2947,179 @@ export default function ClientProfile() {
   }
 
   function renderCheckins() {
+    const avgTraining = checkins.length > 0
+      ? Math.round((checkins.reduce((sum, c) => sum + (c.training_score || 0), 0) / checkins.length) * 10) / 10
+      : 0
+    const avgEnergy = checkins.length > 0
+      ? Math.round((checkins.reduce((sum, c) => sum + (c.energy_score || 0), 0) / checkins.length) * 10) / 10
+      : 0
+    const recentCheckins = checkins.slice(0, 4)
+    const trend = recentCheckins.length >= 2
+      ? recentCheckins[0].training_score - recentCheckins[recentCheckins.length - 1].training_score
+      : 0
+
     return (
       <div className="space-y-4">
+
+        {/* ── HEADER ROW ── */}
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-base font-semibold text-gray-800">Check-in History</h2>
-          <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">{checkins.length} total</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition"
+            >
+              <Send size={12} className="text-gray-400" /> {copied ? "Copied!" : "Send Check-in Link"}
+            </button>
+            <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">{checkins.length} total</span>
+          </div>
         </div>
-        {checkins.length === 0 ? (
-          <div className="border border-dashed border-gray-200 rounded-2xl p-10 text-center bg-white">
-            <CheckCircle2 size={28} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium text-sm">No check-ins yet</p>
-            <button onClick={handleCopyLink} className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
+
+        {/* ── SUMMARY STATS CARD ── */}
+        {checkins.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="grid grid-cols-3 divide-x divide-gray-100">
+              <div className="flex flex-col items-center py-5 px-4">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Avg Training</span>
+                <div className="flex items-end gap-1.5">
+                  <span className="text-3xl font-black text-indigo-600 leading-none">{avgTraining}</span>
+                  <span className="text-sm font-semibold text-gray-400 mb-0.5">/ 5</span>
+                </div>
+                <div className="flex gap-1 mt-2.5">
+                  {[1,2,3,4,5].map(n => (
+                    <div key={n} className={`w-4 h-4 rounded-sm ${n <= Math.round(avgTraining) ? "bg-indigo-500" : "bg-gray-100"}`} />
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col items-center py-5 px-4">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Avg Energy</span>
+                <div className="flex items-end gap-1.5">
+                  <span className="text-3xl font-black text-emerald-500 leading-none">{avgEnergy}</span>
+                  <span className="text-sm font-semibold text-gray-400 mb-0.5">/ 5</span>
+                </div>
+                <div className="flex gap-1 mt-2.5">
+                  {[1,2,3,4,5].map(n => (
+                    <div key={n} className={`w-4 h-4 rounded-sm ${n <= Math.round(avgEnergy) ? "bg-emerald-500" : "bg-gray-100"}`} />
+                  ))}
+                </div>
+              </div>
+              <div className="flex flex-col items-center py-5 px-4">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Trend</span>
+                <div className="flex items-end gap-1.5">
+                  <span className={`text-3xl font-black leading-none ${trend > 0 ? "text-emerald-500" : trend < 0 ? "text-red-400" : "text-gray-400"}`}>
+                    {trend > 0 ? "↑" : trend < 0 ? "↓" : "→"}
+                  </span>
+                </div>
+                <span className={`text-xs font-semibold mt-2.5 px-2.5 py-0.5 rounded-full ${
+                  trend > 0 ? "bg-emerald-50 text-emerald-600" :
+                  trend < 0 ? "bg-red-50 text-red-500" :
+                  "bg-gray-100 text-gray-400"
+                }`}>
+                  {trend > 0 ? "Improving" : trend < 0 ? "Declining" : "Stable"}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── EMPTY STATE ── */}
+        {checkins.length === 0 && (
+          <div className="border border-dashed border-gray-200 rounded-2xl p-12 text-center bg-white">
+            <div className="w-14 h-14 rounded-full bg-indigo-50 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 size={24} className="text-indigo-300" />
+            </div>
+            <p className="text-gray-700 font-semibold text-base">No check-ins yet</p>
+            <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">Send {client.full_name} their check-in link to get started.</p>
+            <button
+              onClick={handleCopyLink}
+              className="mt-5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition shadow-sm"
+            >
               {copied ? "Copied!" : "Copy Check-in Link"}
             </button>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {checkins.map((ci, index) => (
-              <SectionCard key={ci.id}>
-                <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-50">
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{formatDateLong(ci.submitted_at)}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{timeAgo(ci.submitted_at)}</p>
-                  </div>
-                  <span className="bg-gray-100 text-gray-500 text-xs font-medium px-2.5 py-1 rounded-full">Check-in #{index + 1}</span>
+        )}
+
+        {/* ── CHECK-IN CARDS ── */}
+        {checkins.map((ci, index) => {
+          const hasBlocker = ci.blocker && ci.blocker.trim().length > 0
+          const trainingColour = ci.training_score >= 4 ? "text-emerald-600" : ci.training_score >= 3 ? "text-amber-500" : "text-red-400"
+          const energyColour = ci.energy_score >= 4 ? "text-emerald-600" : ci.energy_score >= 3 ? "text-amber-500" : "text-red-400"
+          const trainingBg = ci.training_score >= 4 ? "bg-emerald-500" : ci.training_score >= 3 ? "bg-amber-400" : "bg-red-400"
+          const energyBg = ci.energy_score >= 4 ? "bg-emerald-500" : ci.energy_score >= 3 ? "bg-amber-400" : "bg-red-400"
+
+          return (
+            <div key={ci.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+
+              {/* Card header */}
+              <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">{formatDateLong(ci.submitted_at)}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{timeAgo(ci.submitted_at)}</p>
                 </div>
-                <div className="px-6 py-5 space-y-4">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Training Score</p>
-                    <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
-                      <ScoreDots score={ci.training_score} />
-                      <span className="text-sm text-gray-600 font-medium">{ci.training_score}/5</span>
+                <span className="flex items-center gap-1.5 text-xs font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 py-1 rounded-full">
+                  <CheckCircle2 size={11} /> Check-in #{checkins.length - index}
+                </span>
+              </div>
+
+              {/* Scores */}
+              <div className="px-6 py-5">
+                <div className="grid grid-cols-2 gap-4 mb-5">
+
+                  {/* Training Score */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Training</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-2xl font-black leading-none ${trainingColour}`}>{ci.training_score}</span>
+                      <span className="text-xs text-gray-400 font-medium">out of 5</span>
                     </div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Energy Score</p>
-                    <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-3">
-                      <ScoreDots score={ci.energy_score} />
-                      <span className="text-sm text-gray-600 font-medium">{ci.energy_score}/5</span>
+                    <div className="flex gap-1.5">
+                      {[1,2,3,4,5].map(n => (
+                        <div key={n} className={`flex-1 h-2 rounded-full ${n <= ci.training_score ? trainingBg : "bg-gray-200"}`} />
+                      ))}
                     </div>
+                    <p className="text-xs font-semibold mt-2 text-gray-400">
+                      {ci.training_score >= 4 ? "Great week" : ci.training_score >= 3 ? "Solid effort" : ci.training_score >= 2 ? "Struggled" : "Very tough week"}
+                    </p>
                   </div>
-                  {ci.blocker ? (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Blockers / Notes</p>
-                      <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-4 py-3 leading-relaxed">{ci.blocker}</p>
+
+                  {/* Energy Score */}
+                  <div className="bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Energy</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`text-2xl font-black leading-none ${energyColour}`}>{ci.energy_score}</span>
+                      <span className="text-xs text-gray-400 font-medium">out of 5</span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {[1,2,3,4,5].map(n => (
+                        <div key={n} className={`flex-1 h-2 rounded-full ${n <= ci.energy_score ? energyBg : "bg-gray-200"}`} />
+                      ))}
+                    </div>
+                    <p className="text-xs font-semibold mt-2 text-gray-400">
+                      {ci.energy_score >= 4 ? "High energy" : ci.energy_score >= 3 ? "Feeling okay" : ci.energy_score >= 2 ? "Low energy" : "Exhausted"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Blockers */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Blockers / Notes</p>
+                  {hasBlocker ? (
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+                      <p className="text-sm text-amber-900 leading-relaxed">{ci.blocker}</p>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-300 italic">No blockers reported</p>
+                    <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                      <p className="text-sm text-emerald-700 font-medium">Nothing to report — all clear</p>
+                    </div>
                   )}
                 </div>
-              </SectionCard>
-            ))}
-          </div>
-        )}
+              </div>
+
+            </div>
+          )
+        })}
+
       </div>
     )
   }
