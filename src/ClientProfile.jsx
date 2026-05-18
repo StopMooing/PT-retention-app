@@ -2985,9 +2985,9 @@ export default function ClientProfile() {
                   <span className="text-3xl font-black text-indigo-600 leading-none">{avgTraining}</span>
                   <span className="text-sm font-semibold text-gray-400 mb-0.5">/ 5</span>
                 </div>
-                <div className="flex gap-1 mt-2.5">
+                <div className="flex gap-1.5 mt-2.5 w-full">
                   {[1,2,3,4,5].map(n => (
-                    <div key={n} className={`w-4 h-4 rounded-sm ${n <= Math.round(avgTraining) ? "bg-indigo-500" : "bg-gray-100"}`} />
+                    <div key={n} className={`flex-1 h-2 rounded-full ${n <= Math.round(avgTraining) ? "bg-indigo-500" : "bg-gray-200"}`} />
                   ))}
                 </div>
               </div>
@@ -2997,9 +2997,9 @@ export default function ClientProfile() {
                   <span className="text-3xl font-black text-emerald-500 leading-none">{avgEnergy}</span>
                   <span className="text-sm font-semibold text-gray-400 mb-0.5">/ 5</span>
                 </div>
-                <div className="flex gap-1 mt-2.5">
+                <div className="flex gap-1.5 mt-2.5 w-full">
                   {[1,2,3,4,5].map(n => (
-                    <div key={n} className={`w-4 h-4 rounded-sm ${n <= Math.round(avgEnergy) ? "bg-emerald-500" : "bg-gray-100"}`} />
+                    <div key={n} className={`flex-1 h-2 rounded-full ${n <= Math.round(avgEnergy) ? "bg-emerald-500" : "bg-gray-200"}`} />
                   ))}
                 </div>
               </div>
@@ -3041,7 +3041,8 @@ export default function ClientProfile() {
 
         {/* ── CHECK-IN CARDS ── */}
         {checkins.map((ci, index) => {
-          const hasBlocker = ci.blocker && ci.blocker.trim().length > 0
+          const blockerText = ci.blocker?.trim() ?? ""
+          const hasBlocker = blockerText.length > 0 && !["none", "n/a", "na", "nil", "no", "-", "nothing"].includes(blockerText.toLowerCase())
           const trainingColour = ci.training_score >= 4 ? "text-emerald-600" : ci.training_score >= 3 ? "text-amber-500" : "text-red-400"
           const energyColour = ci.energy_score >= 4 ? "text-emerald-600" : ci.energy_score >= 3 ? "text-amber-500" : "text-red-400"
           const trainingBg = ci.training_score >= 4 ? "bg-emerald-500" : ci.training_score >= 3 ? "bg-amber-400" : "bg-red-400"
@@ -3072,9 +3073,9 @@ export default function ClientProfile() {
                       <span className={`text-2xl font-black leading-none ${trainingColour}`}>{ci.training_score}</span>
                       <span className="text-xs text-gray-400 font-medium">out of 5</span>
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 max-w-[160px]">
                       {[1,2,3,4,5].map(n => (
-                        <div key={n} className={`flex-1 h-2 rounded-full ${n <= ci.training_score ? trainingBg : "bg-gray-200"}`} />
+                        <div key={n} className={`w-8 h-2.5 rounded-full ${n <= ci.training_score ? trainingBg : "bg-gray-200"}`} />
                       ))}
                     </div>
                     <p className="text-xs font-semibold mt-2 text-gray-400">
@@ -3089,9 +3090,9 @@ export default function ClientProfile() {
                       <span className={`text-2xl font-black leading-none ${energyColour}`}>{ci.energy_score}</span>
                       <span className="text-xs text-gray-400 font-medium">out of 5</span>
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 max-w-[160px]">
                       {[1,2,3,4,5].map(n => (
-                        <div key={n} className={`flex-1 h-2 rounded-full ${n <= ci.energy_score ? energyBg : "bg-gray-200"}`} />
+                        <div key={n} className={`w-8 h-2.5 rounded-full ${n <= ci.energy_score ? energyBg : "bg-gray-200"}`} />
                       ))}
                     </div>
                     <p className="text-xs font-semibold mt-2 text-gray-400">
