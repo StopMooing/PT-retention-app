@@ -778,17 +778,17 @@ export default function ClientProfile() {
             </div>
             <div className="px-6 py-5">
               <div className="grid grid-cols-3 gap-4">
-                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-2">
+                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3 min-h-[110px] justify-between">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Last 7 Days</span>
                   <span className="text-2xl font-black text-gray-900">{checkins.filter(c => Math.floor((new Date() - new Date(c.submitted_at)) / 86400000) <= 7).length}<span className="text-base text-gray-400 font-medium">/1</span></span>
                   <span className={`text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full ${engagedCount > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>{engagedCount > 0 ? "On track" : "Not tracked"}</span>
                 </div>
-                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-2">
+                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3 min-h-[110px] justify-between">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">This Month</span>
                   <span className="text-2xl font-black text-gray-900">{thisMonthCheckins}<span className="text-base text-gray-400 font-medium">/4</span></span>
                   <span className={`text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full ${thisMonthCheckins >= 3 ? "bg-emerald-50 text-emerald-600" : thisMonthCheckins >= 1 ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}>{thisMonthCheckins >= 3 ? "Strong" : thisMonthCheckins >= 1 ? "Partial" : "Not tracked"}</span>
                 </div>
-                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-2">
+                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3 min-h-[110px] justify-between">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Total</span>
                   <span className="text-2xl font-black text-gray-900">{checkins.length}</span>
                   <span className="text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">All time</span>
