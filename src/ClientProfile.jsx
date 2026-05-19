@@ -144,6 +144,10 @@ export default function ClientProfile() {
   const [allPrograms, setAllPrograms] = useState([])
   const [expandedProgramId, setExpandedProgramId] = useState(null)
   const [showAssignProgramModal, setShowAssignProgramModal] = useState(false)
+  const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false)
+  const [autoScheduleStartDate, setAutoScheduleStartDate] = useState(() => new Date().toISOString().split("T")[0])
+  const [autoScheduleRestDays, setAutoScheduleRestDays] = useState(1)
+  const [autoScheduling, setAutoScheduling] = useState(false)
   const [assigningProgram, setAssigningProgram] = useState(false)
   const [selectedProgramToAssign, setSelectedProgramToAssign] = useState(null)
   const [assignProgramSearch, setAssignProgramSearch] = useState("")
@@ -693,6 +697,41 @@ export default function ClientProfile() {
     }
   }
 
+  async function handleAutoSchedule() {
+    if (!autoScheduleStartDate || programWorkouts.length === 0) return
+    setAutoScheduling(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const toInsert = programWorkouts.map((pw, i) => {
+        const d = new Date(autoScheduleStartDate + "T00:00:00")
+        d.setDate(d.getDate() + i * (1 + autoScheduleRestDays))
+        return {
+          client_id: clientId,
+          program_workout_id: pw.id,
+          scheduled_date: d.toISOString().split("T")[0],
+          created_by: user.id,
+        }
+      })
+      const { data, error } = await supabase
+        .from("scheduled_workouts")
+        .insert(toInsert)
+        .select("id, scheduled_date, program_workout_id, program_workouts(id, name, day_number)")
+      if (error) throw error
+      setScheduledWorkouts(prev => [...prev, ...(data ?? [])])
+      setShowAutoScheduleModal(false)
+      const firstDate = new Date(autoScheduleStartDate + "T00:00:00")
+      const day = firstDate.getDay()
+      const diff = firstDate.getDate() - day + (day === 0 ? -6 : 1)
+      firstDate.setDate(diff)
+      firstDate.setHours(0, 0, 0, 0)
+      setCalendarStartDate(firstDate)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setAutoScheduling(false)
+    }
+  }
+
   // ── TAB RENDERERS ────────────────────────────────────────────
 
   function renderOverview() {
@@ -1171,16 +1210,26 @@ export default function ClientProfile() {
                 <span className="text-sm font-semibold text-gray-700 ml-1">{startLabel} – {endLabel}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1">
-              {["1week", "2week", "4week"].map(view => (
+            <div className="flex items-center gap-2">
+              {programAssignment && (
                 <button
-                  key={view}
-                  onClick={() => setCalendarView(view)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${calendarView === view ? "bg-black text-white" : "border border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                  onClick={() => setShowAutoScheduleModal(true)}
+                  className="flex items-center gap-1.5 text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition"
                 >
-                  {view === "1week" ? "1 Week" : view === "2week" ? "2 Week" : "4 Week"}
+                  <Calendar size={12} /> Auto-schedule
                 </button>
-              ))}
+              )}
+              <div className="flex items-center gap-1">
+                {["1week", "2week", "4week"].map(view => (
+                  <button
+                    key={view}
+                    onClick={() => setCalendarView(view)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${calendarView === view ? "bg-black text-white" : "border border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                  >
+                    {view === "1week" ? "1 Week" : view === "2week" ? "2 Week" : "4 Week"}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -1502,6 +1551,108 @@ export default function ClientProfile() {
                   <button onClick={() => { setShowAssignProgramModal(false); setSelectedProgramToAssign(null); setAssignProgramSearch("") }} className="px-4 py-2 border border-gray-200 text-gray-500 text-sm font-medium rounded-lg hover:bg-gray-100 transition">Cancel</button>
                   <button onClick={handleAssignProgram} disabled={!selectedProgramToAssign || assigningProgram} className="px-5 py-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">{assigningProgram ? "Assigning..." : "Assign Program"}</button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Auto-schedule Modal */}
+        {showAutoScheduleModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+            onClick={e => { if (e.target === e.currentTarget) setShowAutoScheduleModal(false) }}
+          >
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">Auto-schedule Program</h2>
+                  <p className="text-xs text-gray-400 mt-0.5">Automatically fill the calendar from your program workouts</p>
+                </div>
+                <button onClick={() => setShowAutoScheduleModal(false)} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
+              </div>
+
+              <div className="px-6 py-5 space-y-5">
+
+                {/* Program summary */}
+                <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                    <Dumbbell size={15} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">{programAssignment?.programs?.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{programWorkouts.length} workout{programWorkouts.length !== 1 ? "s" : ""} to schedule</p>
+                  </div>
+                </div>
+
+                {/* Start date */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Start Date</label>
+                  <input
+                    type="date"
+                    value={autoScheduleStartDate}
+                    onChange={e => setAutoScheduleStartDate(e.target.value)}
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  />
+                </div>
+
+                {/* Days between sessions */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Rest Days Between Sessions</label>
+                  <div className="flex gap-2">
+                    {[0, 1, 2].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setAutoScheduleRestDays(n)}
+                        className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border transition ${autoScheduleRestDays === n ? "bg-black text-white border-black" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                      >
+                        {n === 0 ? "None" : n === 1 ? "1 day" : "2 days"}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {programWorkouts.length > 0 && autoScheduleStartDate ? (() => {
+                      const totalDays = (programWorkouts.length - 1) * (1 + autoScheduleRestDays)
+                      const endDate = new Date(autoScheduleStartDate + "T00:00:00")
+                      endDate.setDate(endDate.getDate() + totalDays)
+                      return `${programWorkouts.length} sessions ending ${endDate.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}`
+                    })() : "Select a start date to see the schedule end date"}
+                  </p>
+                </div>
+
+                {/* Preview */}
+                {autoScheduleStartDate && programWorkouts.length > 0 && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">Preview</label>
+                    <div className="border border-gray-100 rounded-xl overflow-hidden max-h-[180px] overflow-y-auto">
+                      {programWorkouts.map((pw, i) => {
+                        const d = new Date(autoScheduleStartDate + "T00:00:00")
+                        d.setDate(d.getDate() + i * (1 + autoScheduleRestDays))
+                        return (
+                          <div key={pw.id} className="flex items-center justify-between px-4 py-2.5 border-b border-gray-50 last:border-0">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600 shrink-0">{i + 1}</div>
+                              <span className="text-sm font-semibold text-gray-800">{pw.name || `Day ${pw.day_number}`}</span>
+                            </div>
+                            <span className="text-xs text-gray-400">{d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" })}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              <div className="flex items-center gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/50">
+                <button onClick={() => setShowAutoScheduleModal(false)} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-500 text-sm font-semibold rounded-lg hover:bg-gray-50 transition">Cancel</button>
+                <button
+                  onClick={handleAutoSchedule}
+                  disabled={!autoScheduleStartDate || programWorkouts.length === 0 || autoScheduling}
+                  className="flex-1 px-4 py-2.5 bg-black hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {autoScheduling ? "Scheduling..." : `Schedule ${programWorkouts.length} Session${programWorkouts.length !== 1 ? "s" : ""}`}
+                </button>
               </div>
             </div>
           </div>
