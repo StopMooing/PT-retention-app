@@ -515,6 +515,9 @@ function Dashboard({ user }) {
   const [loadingClients, setLoadingClients] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [selectedClient, setSelectedClient] = useState(null)
+  const [activityFeed, setActivityFeed] = useState([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("All")
 
   async function fetchData() {
     const { data: clientData, error } = await supabase
@@ -525,7 +528,6 @@ function Dashboard({ user }) {
 
     if (error || !clientData) { setLoadingClients(false); return }
     setClients(clientData)
-
     if (clientData.length === 0) { setLoadingClients(false); return }
 
     const clientIds = clientData.map((c) => c.id)
@@ -535,20 +537,43 @@ function Dashboard({ user }) {
 
     const { data: checkins } = await supabase
       .from('checkins')
-      .select('client_id, submitted_at')
+      .select('client_id, submitted_at, training_score, energy_score')
       .in('client_id', clientIds)
       .order('submitted_at', { ascending: false })
 
     const map = {}
     ;(checkins ?? []).forEach((c) => {
       if (!map[c.client_id]) {
-        map[c.client_id] = { lastCheckIn: c.submitted_at, sessionsThisMonth: 0 }
+        map[c.client_id] = { lastCheckIn: c.submitted_at, sessionsThisMonth: 0, recentScores: [] }
       }
       if (new Date(c.submitted_at) >= startOfMonth) {
         map[c.client_id].sessionsThisMonth++
       }
+      if (map[c.client_id].recentScores.length < 3) {
+        map[c.client_id].recentScores.push({
+          training: c.training_score,
+          energy: c.energy_score,
+          date: c.submitted_at,
+        })
+      }
     })
     setCheckinsMap(map)
+
+    // Build activity feed from recent checkins across all clients
+    const feed = (checkins ?? [])
+      .slice(0, 20)
+      .map(c => {
+        const client = clientData.find(cl => cl.id === c.client_id)
+        return {
+          clientName: client?.full_name ?? "Unknown",
+          clientInitials: client?.full_name?.split(' ').filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join('') ?? '?',
+          type: 'checkin',
+          training: c.training_score,
+          energy: c.energy_score,
+          date: c.submitted_at,
+        }
+      })
+    setActivityFeed(feed)
     setLoadingClients(false)
   }
 
@@ -556,9 +581,7 @@ function Dashboard({ user }) {
     fetchData()
     const channel = supabase
       .channel('checkins-watch')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checkins' }, () => {
-        fetchData()
-      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'checkins' }, () => fetchData())
       .subscribe()
     return () => supabase.removeChannel(channel)
   }, [user.id])
@@ -582,6 +605,7 @@ function Dashboard({ user }) {
       ...c,
       lastCheckIn,
       sessionsThisMonth: stats?.sessionsThisMonth ?? 0,
+      recentScores: stats?.recentScores ?? [],
       status: computeStatus(lastCheckIn),
     }
   })
@@ -589,108 +613,364 @@ function Dashboard({ user }) {
   const engaged = enrichedClients.filter((c) => c.status === 'Engaged').length
   const drifting = enrichedClients.filter((c) => c.status === 'Drifting').length
   const atRisk = enrichedClients.filter((c) => c.status === 'At Risk').length
+  const needsAttention = enrichedClients.filter((c) => c.status === 'At Risk' || c.status === 'Drifting')
+  const engagementRate = enrichedClients.length > 0 ? Math.round((engaged / enrichedClients.length) * 100) : 0
 
-  // Keep selectedClient in sync when enrichedClients refreshes
+  const filteredClients = enrichedClients
+    .filter(c => statusFilter === 'All' || c.status === statusFilter)
+    .filter(c => c.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) || c.goal?.toLowerCase().includes(searchQuery.toLowerCase()))
+
   const selectedEnriched = selectedClient
     ? enrichedClients.find((c) => c.id === selectedClient.id) ?? selectedClient
     : null
 
+  function timeAgo(dateStr) {
+    if (!dateStr) return 'Never'
+    const days = Math.floor((new Date() - new Date(dateStr)) / 86400000)
+    if (days === 0) return 'Today'
+    if (days === 1) return 'Yesterday'
+    return `${days}d ago`
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return null
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+  }
+
   return (
-    <div className="h-full overflow-y-auto bg-gray-50">
+    <div className="h-full overflow-y-auto bg-[#f8fafc]">
       {showModal && <AddClientModal onClose={() => setShowModal(false)} onSave={handleAddClient} />}
       {selectedEnriched && <ClientPanel client={selectedEnriched} onClose={() => setSelectedClient(null)} />}
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        <div className="mb-8 flex items-center justify-between">
+      <div className="max-w-[1400px] mx-auto px-6 py-8">
+
+        {/* ── PAGE HEADER ── */}
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 m-0">Client Dashboard</h1>
-            <p className="text-gray-500 text-sm mt-1">Monitor engagement and retention across your client roster.</p>
+            <h1 className="text-2xl font-bold text-gray-900">Client Dashboard</h1>
+            <p className="text-sm text-gray-400 mt-1">Monitor engagement and retention across your roster.</p>
           </div>
-          <button onClick={() => setShowModal(true)}
-            className="bg-black text-white text-sm font-semibold px-4 py-2.5 rounded-lg hover:bg-gray-800 active:bg-gray-900 transition-colors">
-            + Add Client
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-black hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2"
+          >
+            <span className="text-lg leading-none">+</span> Add Client
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
-          <StatCard label="Total Clients" value={enrichedClients.length} sub="Active roster" />
-          <StatCard label="Engaged" value={engaged} sub="On track" />
-          <StatCard label="Drifting" value={drifting} sub="Needs attention" />
-          <StatCard label="At Risk" value={atRisk} sub="Action required" />
+        {/* ── STAT CARDS ROW ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex flex-col gap-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Clients</p>
+            <p className="text-3xl font-black text-gray-900">{enrichedClients.length}</p>
+            <p className="text-xs text-gray-400">Active roster</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex flex-col gap-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Engagement</p>
+            <p className="text-3xl font-black text-gray-900">{engagementRate}<span className="text-lg font-semibold text-gray-400">%</span></p>
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${engagementRate}%` }} />
+            </div>
+          </div>
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'Engaged' ? 'All' : 'Engaged')}
+            className={`rounded-2xl border shadow-sm p-5 flex flex-col gap-2 cursor-pointer transition-all ${statusFilter === 'Engaged' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200 hover:border-emerald-200'}`}
+          >
+            <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Engaged</p>
+            <p className="text-3xl font-black text-emerald-600">{engaged}</p>
+            <p className="text-xs text-gray-400">On track</p>
+          </div>
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'Drifting' ? 'All' : 'Drifting')}
+            className={`rounded-2xl border shadow-sm p-5 flex flex-col gap-2 cursor-pointer transition-all ${statusFilter === 'Drifting' ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200 hover:border-amber-200'}`}
+          >
+            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Drifting</p>
+            <p className="text-3xl font-black text-amber-500">{drifting}</p>
+            <p className="text-xs text-gray-400">Needs attention</p>
+          </div>
+          <div
+            onClick={() => setStatusFilter(statusFilter === 'At Risk' ? 'All' : 'At Risk')}
+            className={`rounded-2xl border shadow-sm p-5 flex flex-col gap-2 cursor-pointer transition-all ${statusFilter === 'At Risk' ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200 hover:border-red-200'}`}
+          >
+            <p className="text-xs font-semibold text-red-500 uppercase tracking-wider">At Risk</p>
+            <p className="text-3xl font-black text-red-500">{atRisk}</p>
+            <p className="text-xs text-gray-400">Action required</p>
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-700 m-0">All Clients</h2>
-            <span className="text-xs text-gray-400">{enrichedClients.length} clients</span>
+        {/* ── NEEDS ATTENTION BANNER ── */}
+        {needsAttention.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-sm font-bold text-red-700">Needs Your Attention — {needsAttention.length} client{needsAttention.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {needsAttention.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => navigate(`/clients/${c.id}`)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition hover:shadow-sm ${
+                    c.status === 'At Risk'
+                      ? 'bg-red-100 border-red-200 text-red-700 hover:bg-red-200'
+                      : 'bg-amber-100 border-amber-200 text-amber-700 hover:bg-amber-200'
+                  }`}
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${c.status === 'At Risk' ? 'bg-red-500' : 'bg-amber-400'}`} />
+                  {c.full_name}
+                  <span className="text-[10px] opacity-70">· {timeAgo(c.lastCheckIn)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── MAIN TWO-COLUMN LAYOUT ── */}
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+
+          {/* ── LEFT: CLIENT LIST ── */}
+          <div className="flex flex-col gap-4">
+
+            {/* Search + filter bar */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search clients by name or goal..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="text-gray-300 hover:text-gray-500 text-lg leading-none">×</button>
+              )}
+              <div className="flex items-center gap-1 border-l border-gray-100 pl-3">
+                {['All', 'Engaged', 'Drifting', 'At Risk'].map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setStatusFilter(f)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
+                      statusFilter === f
+                        ? f === 'All' ? 'bg-gray-900 text-white'
+                        : f === 'Engaged' ? 'bg-emerald-500 text-white'
+                        : f === 'Drifting' ? 'bg-amber-400 text-white'
+                        : 'bg-red-500 text-white'
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Client cards */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-gray-700">
+                  {statusFilter === 'All' ? 'All Clients' : `${statusFilter} Clients`}
+                </h2>
+                <span className="text-xs text-gray-400">{filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}</span>
+              </div>
+
+              {loadingClients ? (
+                <div className="px-6 py-16 text-center text-sm text-gray-400">Loading clients…</div>
+              ) : filteredClients.length === 0 ? (
+                <div className="px-6 py-16 text-center">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {searchQuery || statusFilter !== 'All' ? 'No clients match your filters' : 'No clients yet'}
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {searchQuery || statusFilter !== 'All' ? 'Try adjusting your search or filter' : 'Click "Add Client" to add your first client.'}
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-gray-50 list-none m-0 p-0">
+                  {filteredClients.map((client) => {
+                    const cfg = statusConfig[client.status]
+                    const days = client.lastCheckIn ? Math.floor((new Date() - new Date(client.lastCheckIn)) / 86400000) : null
+                    const avgTraining = client.recentScores.length > 0
+                      ? Math.round(client.recentScores.reduce((sum, s) => sum + s.training, 0) / client.recentScores.length * 10) / 10
+                      : null
+                    const avgEnergy = client.recentScores.length > 0
+                      ? Math.round(client.recentScores.reduce((sum, s) => sum + s.energy, 0) / client.recentScores.length * 10) / 10
+                      : null
+
+                    return (
+                      <li
+                        key={client.id}
+                        onClick={() => navigate(`/clients/${client.id}`)}
+                        className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/80 transition-colors cursor-pointer group"
+                      >
+                        {/* Avatar */}
+                        <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 select-none ${
+                          client.status === 'Engaged' ? 'bg-emerald-100 text-emerald-700' :
+                          client.status === 'Drifting' ? 'bg-amber-100 text-amber-700' :
+                          client.status === 'At Risk' ? 'bg-red-100 text-red-600' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {client.full_name?.split(' ').filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join('')}
+                        </div>
+
+                        {/* Name + goal */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-bold text-gray-900 truncate">{client.full_name}</p>
+                            <StatusBadge status={client.status} />
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5 truncate">{client.goal}</p>
+                        </div>
+
+                        {/* Recent scores */}
+                        {avgTraining !== null && (
+                          <div className="hidden lg:flex flex-col items-center gap-0.5 min-w-[60px]">
+                            <div className="flex gap-0.5">
+                              {[1,2,3,4,5].map(n => (
+                                <div key={n} className={`w-2 h-2 rounded-sm ${n <= Math.round(avgTraining) ? 'bg-indigo-400' : 'bg-gray-100'}`} />
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-gray-400">Training {avgTraining}/5</span>
+                          </div>
+                        )}
+
+                        {/* Last check-in */}
+                        <div className="hidden sm:flex flex-col items-end gap-0.5 min-w-[90px]">
+                          {client.lastCheckIn ? (
+                            <>
+                              <p className="text-xs font-semibold text-gray-600">{formatDate(client.lastCheckIn)}</p>
+                              <p className={`text-[10px] font-medium ${
+                                days === 0 ? 'text-emerald-500' :
+                                days <= 7 ? 'text-emerald-400' :
+                                days <= 14 ? 'text-amber-500' :
+                                'text-red-400'
+                              }`}>
+                                {days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days}d ago`}
+                              </p>
+                            </>
+                          ) : (
+                            <p className="text-xs text-gray-300">No check-in</p>
+                          )}
+                        </div>
+
+                        {/* Sessions bar */}
+                        <div className="hidden lg:flex flex-col items-end gap-1 min-w-[80px]">
+                          <p className="text-xs font-medium text-gray-600">{client.sessionsThisMonth}/4 this month</p>
+                          <div className="w-20 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full ${cfg.bar}`}
+                              style={{ width: `${Math.min(100, (client.sessionsThisMonth / 4) * 100)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <CopyLinkButton clientId={client.id} />
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/clients/${client.id}`) }}
+                            className="flex items-center gap-1 text-xs font-semibold text-gray-400 group-hover:text-gray-700 transition px-2 py-1.5 rounded-lg group-hover:bg-gray-100"
+                          >
+                            View <ChevronRight size={13} />
+                          </button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </div>
           </div>
 
-          {loadingClients ? (
-            <div className="px-6 py-12 text-center text-sm text-gray-400">Loading clients…</div>
-          ) : enrichedClients.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <p className="text-sm font-semibold text-gray-900 m-0">No clients yet</p>
-              <p className="text-xs text-gray-400 mt-1">Click "Add Client" to add your first client.</p>
+          {/* ── RIGHT: ACTIVITY FEED ── */}
+          <div className="flex flex-col gap-4">
+
+            {/* Quick stats */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">This Month</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Check-ins received</span>
+                  <span className="text-sm font-black text-gray-900">
+                    {enrichedClients.reduce((sum, c) => sum + c.sessionsThisMonth, 0)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Clients checked in</span>
+                  <span className="text-sm font-black text-gray-900">
+                    {enrichedClients.filter(c => c.sessionsThisMonth > 0).length}
+                    <span className="text-xs text-gray-400 font-normal"> / {enrichedClients.length}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Engagement rate</span>
+                  <span className={`text-sm font-black ${engagementRate >= 70 ? 'text-emerald-500' : engagementRate >= 40 ? 'text-amber-500' : 'text-red-400'}`}>
+                    {engagementRate}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Need attention</span>
+                  <span className={`text-sm font-black ${needsAttention.length > 0 ? 'text-red-400' : 'text-emerald-500'}`}>
+                    {needsAttention.length > 0 ? needsAttention.length : '0 — all good ✓'}
+                  </span>
+                </div>
+              </div>
             </div>
-          ) : (
-            <ul className="divide-y divide-gray-100 list-none m-0 p-0">
-              {enrichedClients.map((client) => {
-                const cfg = statusConfig[client.status]
-                const days = daysSince(client.lastCheckIn)
-                return (
-                  <li
-                    key={client.id}
-                    onClick={() => navigate(`/clients/${client.id}`)}
-                    className="px-6 py-5 flex items-center gap-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    <Avatar name={client.full_name} />
 
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate m-0">{client.full_name}</p>
-                      <p className="text-xs text-gray-400 m-0 mt-0.5">{client.goal}</p>
-                    </div>
-
-                    <div className="hidden sm:flex flex-col items-end gap-0.5 min-w-[130px]">
-                      {client.lastCheckIn ? (
-                        <>
-                          <p className="text-xs font-medium text-gray-600 m-0">Last check-in</p>
-                          <p className="text-xs text-gray-400 m-0">{formatDate(client.lastCheckIn)}</p>
-                          <p className="text-xs text-gray-300 m-0">
-                            {days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-xs text-gray-300 m-0">No check-in yet</p>
-                      )}
-                    </div>
-
-                    <div className="hidden sm:flex flex-col items-end gap-1.5 min-w-[100px]">
-                      <p className="text-xs font-medium text-gray-600 m-0">{client.sessionsThisMonth} sessions</p>
-                      <div className="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${cfg.bar}`}
-                          style={{ width: `${Math.min(100, (client.sessionsThisMonth / 12) * 100)}%` }}
-                        />
+            {/* Activity feed */}
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex-1">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-gray-700">Recent Activity</h3>
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{activityFeed.length}</span>
+              </div>
+              <div className="divide-y divide-gray-50 max-h-[480px] overflow-y-auto">
+                {activityFeed.length === 0 ? (
+                  <div className="px-5 py-12 text-center">
+                    <p className="text-xs text-gray-300 italic">No activity yet</p>
+                    <p className="text-xs text-gray-300 mt-1">Check-ins will appear here in real time</p>
+                  </div>
+                ) : (
+                  activityFeed.map((item, i) => (
+                    <div key={i} className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        item.training >= 4 ? 'bg-emerald-100 text-emerald-700' :
+                        item.training >= 3 ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-600'
+                      }`}>
+                        {item.clientInitials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-800 leading-snug">
+                          {item.clientName} <span className="font-normal text-gray-500">submitted a check-in</span>
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                            item.training >= 4 ? 'bg-emerald-50 text-emerald-600' :
+                            item.training >= 3 ? 'bg-amber-50 text-amber-600' :
+                            'bg-red-50 text-red-500'
+                          }`}>
+                            Training {item.training}/5
+                          </span>
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                            item.energy >= 4 ? 'bg-emerald-50 text-emerald-600' :
+                            item.energy >= 3 ? 'bg-amber-50 text-amber-600' :
+                            'bg-red-50 text-red-500'
+                          }`}>
+                            Energy {item.energy}/5
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-300 mt-0.5">{timeAgo(item.date)}</p>
                       </div>
                     </div>
+                  ))
+                )}
+              </div>
+            </div>
 
-                    <StatusBadge status={client.status} />
-
-                    <CopyLinkButton clientId={client.id} />
-
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/clients/${client.id}`) }}
-                      className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium transition"
-                    >
-                      View Profile <ChevronRight size={14} />
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          )}
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }
