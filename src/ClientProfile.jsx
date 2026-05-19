@@ -729,11 +729,11 @@ export default function ClientProfile() {
 
     function updateIcon(type) {
       switch(type) {
-        case "checkin": return <div className="w-7 h-7 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0"><CheckCircle2 size={13} className="text-emerald-600" /></div>
-        case "habit":   return <div className="w-7 h-7 rounded-full bg-pink-50 flex items-center justify-center flex-shrink-0"><Heart size={13} className="text-pink-500" /></div>
-        case "workout": return <div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0"><Dumbbell size={13} className="text-blue-600" /></div>
-        case "weight":  return <div className="w-7 h-7 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0"><Scale size={13} className="text-indigo-600" /></div>
-        default:        return <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0"><Activity size={13} className="text-gray-400" /></div>
+        case "checkin": return <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0"><CheckCircle2 size={14} className="text-emerald-600" /></div>
+        case "habit":   return <div className="w-8 h-8 rounded-full bg-pink-50 flex items-center justify-center flex-shrink-0"><Heart size={14} className="text-pink-500" /></div>
+        case "workout": return <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0"><Dumbbell size={14} className="text-blue-600" /></div>
+        case "weight":  return <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0"><Scale size={14} className="text-indigo-600" /></div>
+        default:        return <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0"><Activity size={14} className="text-gray-400" /></div>
       }
     }
 
@@ -748,41 +748,53 @@ export default function ClientProfile() {
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
     }).length
 
+    const weightChange = filteredWeightLogs.length > 1
+      ? parseFloat(filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg) - parseFloat(filteredWeightLogs[0].weight_kg)
+      : null
+
     return (
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_280px_260px] gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px_260px] gap-5">
 
         {/* ── LEFT COLUMN ── */}
         <div className="flex flex-col gap-5">
 
           {/* Training Stats Card */}
           <SectionCard>
-            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-50">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
                   <Activity size={15} className="text-blue-600" />
                 </div>
                 <span className="text-sm font-semibold text-gray-800">Training</span>
               </div>
+              {checkins.length === 0 && (
+                <button
+                  onClick={handleCopyLink}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition"
+                >
+                  <Send size={11} /> Send Check-in Link
+                </button>
+              )}
             </div>
             <div className="px-6 py-5">
               <div className="grid grid-cols-3 gap-4">
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-4 px-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Last 7 Days</span>
                   <span className="text-2xl font-black text-gray-900">{checkins.filter(c => Math.floor((new Date() - new Date(c.submitted_at)) / 86400000) <= 7).length}<span className="text-base text-gray-400 font-medium">/1</span></span>
-                  <span className={`text-xs font-semibold mt-1 ${engagedCount > 0 ? "text-emerald-600" : "text-gray-400"}`}>{engagedCount > 0 ? "Tracked" : "Not tracked"}</span>
+                  <span className={`text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full ${engagedCount > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>{engagedCount > 0 ? "On track" : "Not tracked"}</span>
                 </div>
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-4 px-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">This Month</span>
                   <span className="text-2xl font-black text-gray-900">{thisMonthCheckins}<span className="text-base text-gray-400 font-medium">/4</span></span>
-                  <span className={`text-xs font-semibold mt-1 ${thisMonthCheckins > 0 ? "text-emerald-600" : "text-gray-400"}`}>{thisMonthCheckins > 0 ? "Tracked" : "Not tracked"}</span>
+                  <span className={`text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full ${thisMonthCheckins >= 3 ? "bg-emerald-50 text-emerald-600" : thisMonthCheckins >= 1 ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}>{thisMonthCheckins >= 3 ? "Strong" : thisMonthCheckins >= 1 ? "Partial" : "Not tracked"}</span>
                 </div>
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-4 px-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Total</span>
                   <span className="text-2xl font-black text-gray-900">{checkins.length}</span>
-                  <span className="text-xs font-semibold mt-1 text-gray-400">All time</span>
+                  <span className="text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">All time</span>
                 </div>
               </div>
-              {checkins.length > 0 && (
+              {checkins.length > 0 ? (
                 <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
                   <span className="text-xs text-gray-400">Last check-in</span>
                   <div className="flex items-center gap-2">
@@ -790,13 +802,18 @@ export default function ClientProfile() {
                     <span className="text-xs text-gray-400">· {timeAgo(checkins[0].submitted_at)}</span>
                   </div>
                 </div>
+              ) : (
+                <div className="mt-4 pt-4 border-t border-gray-50 flex items-center justify-between">
+                  <span className="text-xs text-gray-400">No check-ins yet</span>
+                  <span className="text-xs text-gray-300">Send the link to get started</span>
+                </div>
               )}
             </div>
           </SectionCard>
 
           {/* Body Weight Card */}
           <SectionCard>
-            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-50">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center">
                   <Scale size={15} className="text-indigo-600" />
@@ -807,7 +824,7 @@ export default function ClientProfile() {
                 <select
                   value={weightPeriod}
                   onChange={e => setWeightPeriod(e.target.value)}
-                  className="text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white"
+                  className="text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none bg-white"
                 >
                   <option value="7">Last 7 days</option>
                   <option value="14">Last 14 days</option>
@@ -816,7 +833,7 @@ export default function ClientProfile() {
                 </select>
                 <button
                   onClick={() => setShowWeightInput(v => !v)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg transition"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-black hover:bg-gray-800 px-3 py-1.5 rounded-lg transition"
                 >
                   <Plus size={12} /> Log Weight
                 </button>
@@ -842,7 +859,7 @@ export default function ClientProfile() {
                 <button
                   onClick={handleLogWeight}
                   disabled={savingWeight || !newWeight}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                  className="bg-black hover:bg-gray-800 text-white text-xs font-semibold px-4 py-2 rounded-lg transition disabled:opacity-50 shrink-0"
                 >
                   {savingWeight ? "Saving..." : "Save"}
                 </button>
@@ -867,41 +884,29 @@ export default function ClientProfile() {
               ) : (
                 <div>
                   <div className="flex items-end justify-between mb-3">
-                    <div>
+                    <div className="flex items-center gap-3">
                       <span className="text-2xl font-black text-gray-900">{filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg}<span className="text-sm font-medium text-gray-400 ml-1">kg</span></span>
-                      {filteredWeightLogs.length > 1 && (
-                        <span className={`ml-3 text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          parseFloat(filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg) < parseFloat(filteredWeightLogs[0].weight_kg)
-                            ? "bg-emerald-50 text-emerald-600"
-                            : parseFloat(filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg) > parseFloat(filteredWeightLogs[0].weight_kg)
-                            ? "bg-red-50 text-red-500"
-                            : "bg-gray-100 text-gray-500"
+                      {weightChange !== null && (
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          weightChange < 0 ? "bg-emerald-50 text-emerald-600" :
+                          weightChange > 0 ? "bg-red-50 text-red-500" :
+                          "bg-gray-100 text-gray-500"
                         }`}>
-                          {parseFloat(filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg) < parseFloat(filteredWeightLogs[0].weight_kg) ? "▼" : parseFloat(filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg) > parseFloat(filteredWeightLogs[0].weight_kg) ? "▲" : "—"}
-                          {" "}{Math.abs(parseFloat(filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg) - parseFloat(filteredWeightLogs[0].weight_kg)).toFixed(1)} kg
+                          {weightChange < 0 ? "▼" : weightChange > 0 ? "▲" : "—"} {Math.abs(weightChange).toFixed(1)} kg
                         </span>
                       )}
                     </div>
                     <span className="text-xs text-gray-400">{filteredWeightLogs.length} entries</span>
                   </div>
-                  <svg
-                    viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                    className="w-full"
-                    style={{ height: "120px" }}
-                    preserveAspectRatio="none"
-                  >
+                  <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full" style={{ height: "120px" }} preserveAspectRatio="none">
                     <defs>
                       <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#6366f1" stopOpacity="0.15" />
                         <stop offset="100%" stopColor="#6366f1" stopOpacity="0" />
                       </linearGradient>
                     </defs>
-                    {svgFill && (
-                      <path d={svgFill} fill="url(#weightGradient)" />
-                    )}
-                    {svgPath && (
-                      <path d={svgPath} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    )}
+                    {svgFill && <path d={svgFill} fill="url(#weightGradient)" />}
+                    {svgPath && <path d={svgPath} fill="none" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
                     {weightPoints.map((p, i) => (
                       <g key={i}>
                         <circle cx={p.x} cy={p.y} r="5" fill="transparent" />
@@ -912,14 +917,10 @@ export default function ClientProfile() {
                   </svg>
                   <div className="flex justify-between mt-1">
                     <span className="text-[10px] text-gray-300">
-                      {filteredWeightLogs[0]?.logged_date
-                        ? new Date(filteredWeightLogs[0].logged_date + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" })
-                        : ""}
+                      {filteredWeightLogs[0]?.logged_date ? new Date(filteredWeightLogs[0].logged_date + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" }) : ""}
                     </span>
                     <span className="text-[10px] text-gray-300">
-                      {filteredWeightLogs[filteredWeightLogs.length - 1]?.logged_date
-                        ? new Date(filteredWeightLogs[filteredWeightLogs.length - 1].logged_date + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" })
-                        : ""}
+                      {filteredWeightLogs[filteredWeightLogs.length - 1]?.logged_date ? new Date(filteredWeightLogs[filteredWeightLogs.length - 1].logged_date + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" }) : ""}
                     </span>
                   </div>
                 </div>
@@ -948,10 +949,10 @@ export default function ClientProfile() {
                     value={clientGoal}
                     onChange={e => setClientGoal(e.target.value)}
                     placeholder="e.g. Lose 10kg by summer"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
                   />
                   <div className="flex gap-2">
-                    <button onClick={handleSaveGoal} disabled={savingGoal} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1.5 rounded-lg transition disabled:opacity-50">{savingGoal ? "Saving..." : "Save"}</button>
+                    <button onClick={handleSaveGoal} disabled={savingGoal} className="flex-1 bg-black hover:bg-gray-800 text-white text-xs font-semibold py-1.5 rounded-lg transition disabled:opacity-50">{savingGoal ? "Saving..." : "Save"}</button>
                     <button onClick={() => setEditingGoal(false)} className="flex-1 border border-gray-200 text-gray-500 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50 transition">Cancel</button>
                   </div>
                 </div>
@@ -961,49 +962,6 @@ export default function ClientProfile() {
                   <button onClick={() => setEditingGoal(true)} className="shrink-0 w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center transition">
                     <Edit3 size={12} className="text-gray-400" />
                   </button>
-                </div>
-              )}
-            </div>
-          </SectionCard>
-
-          {/* Notes */}
-          <SectionCard>
-            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-yellow-50 flex items-center justify-center">
-                  <FileText size={13} className="text-yellow-600" />
-                </div>
-                <span className="text-sm font-semibold text-gray-800">Notes</span>
-              </div>
-              <button onClick={() => setShowNoteForm(true)} className="w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center transition">
-                <Edit3 size={12} className="text-gray-400" />
-              </button>
-            </div>
-            <div className="px-5 py-4">
-              {showNoteForm ? (
-                <div className="flex flex-col gap-2">
-                  <textarea
-                    rows={3}
-                    placeholder={`Add a note about ${client.full_name}...`}
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
-                  />
-                  <div className="flex gap-2">
-                    <button onClick={handleSaveNote} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1.5 rounded-lg transition">Save</button>
-                    <button onClick={() => { setShowNoteForm(false); setNotes("") }} className="flex-1 border border-gray-200 text-gray-500 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50 transition">Cancel</button>
-                  </div>
-                </div>
-              ) : savedNotes.length === 0 ? (
-                <p className="text-sm text-gray-300 italic text-center py-3">No notes yet</p>
-              ) : (
-                <div className="space-y-2">
-                  {savedNotes.slice(0, 3).map((note, i) => (
-                    <div key={i} className="text-sm text-gray-600 leading-relaxed border-b border-gray-50 pb-2 last:border-0 last:pb-0">
-                      <p className="text-[10px] text-gray-300 mb-0.5">{formatDate(note.createdAt)}</p>
-                      {note.text}
-                    </div>
-                  ))}
                 </div>
               )}
             </div>
@@ -1025,10 +983,10 @@ export default function ClientProfile() {
                     value={clientLimitations}
                     onChange={e => setClientLimitations(e.target.value)}
                     placeholder="e.g. Left knee injury, avoid deep squats"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
                   />
                   <div className="flex gap-2">
-                    <button onClick={handleSaveLimitations} disabled={savingLimitations} className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-1.5 rounded-lg transition disabled:opacity-50">{savingLimitations ? "Saving..." : "Save"}</button>
+                    <button onClick={handleSaveLimitations} disabled={savingLimitations} className="flex-1 bg-black hover:bg-gray-800 text-white text-xs font-semibold py-1.5 rounded-lg transition disabled:opacity-50">{savingLimitations ? "Saving..." : "Save"}</button>
                     <button onClick={() => setEditingLimitations(false)} className="flex-1 border border-gray-200 text-gray-500 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50 transition">Cancel</button>
                   </div>
                 </div>
@@ -1043,19 +1001,38 @@ export default function ClientProfile() {
             </div>
           </SectionCard>
 
-          {/* Progress Photo */}
+          {/* Recent Notes */}
           <SectionCard>
-            <div className="flex items-center gap-2 px-5 pt-4 pb-3 border-b border-gray-50">
-              <div className="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center">
-                <Camera size={13} className="text-teal-600" />
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-yellow-50 flex items-center justify-center">
+                  <FileText size={13} className="text-yellow-600" />
+                </div>
+                <span className="text-sm font-semibold text-gray-800">Notes</span>
               </div>
-              <span className="text-sm font-semibold text-gray-800">Progress Photo</span>
+              <button onClick={() => setActiveTab("notes")} className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition">View all →</button>
             </div>
             <div className="px-5 py-4">
-              <div className="border border-dashed border-gray-200 rounded-xl p-6 text-center bg-gray-50/50">
-                <Camera size={22} className="text-gray-200 mx-auto mb-2" />
-                <p className="text-xs text-gray-300">{client.full_name} hasn't uploaded any photos yet</p>
-              </div>
+              {savedNotes.length === 0 ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-300 italic">No notes yet</p>
+                  <button onClick={() => setActiveTab("notes")} className="text-xs font-semibold text-black hover:text-gray-600 border border-gray-200 hover:bg-gray-50 px-2.5 py-1 rounded-lg transition">Add note</button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {savedNotes.slice(0, 3).map((note, i) => (
+                    <div key={note.id ?? i} className="flex flex-col gap-1 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
+                      <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wide">{formatDate(note.created_at)} · {timeAgo(note.created_at)}</span>
+                      <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">{note.text}</p>
+                    </div>
+                  ))}
+                  {savedNotes.length > 3 && (
+                    <button onClick={() => setActiveTab("notes")} className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition">
+                      +{savedNotes.length - 3} more notes →
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </SectionCard>
 
@@ -1105,10 +1082,10 @@ export default function ClientProfile() {
           {/* Updates Feed */}
           <SectionCard>
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50">
-              <span className="text-sm font-semibold text-gray-800">Updates</span>
+              <span className="text-sm font-semibold text-gray-800">Recent Activity</span>
               <span className="text-xs text-gray-300 bg-gray-100 px-2 py-0.5 rounded-full">{allUpdates.length}</span>
             </div>
-            <div className="divide-y divide-gray-50 max-h-[480px] overflow-y-auto">
+            <div className="divide-y divide-gray-50 max-h-[420px] overflow-y-auto">
               {allUpdates.length === 0 ? (
                 <div className="px-5 py-8 text-center">
                   <p className="text-xs text-gray-300 italic">No activity yet</p>
