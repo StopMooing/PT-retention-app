@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 import { ArrowLeft, Phone, Target, Calendar, Activity, CheckCircle2, Clock, Dumbbell, Utensils, Heart, FileText, TrendingUp, Flame, Edit3, Send, Plus, ChevronRight, Circle, Mail, Scale, AlertCircle, Camera, Flag, Timer, MoreHorizontal, Droplets } from "lucide-react";
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from "@dnd-kit/core"
+import { CSS } from "@dnd-kit/utilities"
 
 const TABS = [
   { id: "overview",  label: "Overview"  },
@@ -66,6 +68,96 @@ function SectionCard({ children, className = "" }) {
   return (
     <div className={`bg-white border border-gray-100 rounded-2xl shadow-sm ${className}`}>
       {children}
+    </div>
+  )
+}
+
+function DraggableWorkout({ sw, workoutExercises, onRemoveClick, activeDragWorkout }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: sw.id })
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    opacity: isDragging ? 0.3 : 1,
+    cursor: isDragging ? "grabbing" : "grab",
+    touchAction: "none",
+  }
+  const exercises = workoutExercises[sw.program_workout_id] ?? []
+  const visibleExercises = exercises.slice(0, 3)
+  const overflowCount = exercises.length - 3
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="bg-white border border-indigo-100 rounded-lg p-1.5 group relative select-none"
+    >
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide truncate">{sw.program_workouts?.name || "Workout"}</span>
+        <button
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); onRemoveClick(sw.id) }}
+          className="opacity-0 group-hover:opacity-100 w-4 h-4 rounded flex items-center justify-center hover:bg-red-50 transition"
+        >
+          <span className="text-red-400 text-xs leading-none">×</span>
+        </button>
+      </div>
+      {visibleExercises.map(ex => (
+        <div key={ex.id} className="flex items-center gap-1 py-0.5">
+          <div className="w-4 h-4 rounded bg-gray-100 flex items-center justify-center shrink-0">
+            <Dumbbell size={9} className="text-gray-400" />
+          </div>
+          <span className="text-[10px] text-gray-600 truncate flex-1">{ex.exercises?.name}</span>
+          <span className="text-[10px] text-gray-400 shrink-0">{ex.sets}×{ex.reps}</span>
+        </div>
+      ))}
+      {overflowCount > 0 && (
+        <div className="mt-0.5">
+          <span className="text-[10px] text-indigo-500 font-medium">+ {overflowCount} more</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DroppableDay({ dateStr, isToday, isPast, isHovered, isDragOver, day, scheduledForDay, workoutExercises, programAssignment, activeDragWorkout, onMouseEnter, onMouseLeave, onAddClick, onRemoveClick }) {
+  const { setNodeRef, isOver } = useDroppable({ id: dateStr })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-h-[130px] p-2 border-r border-gray-50 last:border-r-0 transition-colors relative ${
+        isOver && activeDragWorkout ? "bg-indigo-50/60 ring-2 ring-inset ring-indigo-300" :
+        isHovered ? "bg-indigo-50/30" :
+        isPast ? "bg-gray-50/30" : "bg-white"
+      }`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      <div className="flex items-center justify-between mb-1.5">
+        <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${isToday ? "bg-indigo-600 text-white" : "text-gray-500"}`}>
+          {day.getDate()}
+        </div>
+        {isHovered && programAssignment && !activeDragWorkout && (
+          <button
+            onClick={onAddClick}
+            className="w-5 h-5 rounded-full bg-black hover:bg-gray-800 flex items-center justify-center transition shadow-sm"
+          >
+            <Plus size={11} className="text-white" />
+          </button>
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
+        {scheduledForDay.map(sw => (
+          <DraggableWorkout
+            key={sw.id}
+            sw={sw}
+            workoutExercises={workoutExercises}
+            onRemoveClick={onRemoveClick}
+            activeDragWorkout={activeDragWorkout}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -145,6 +237,7 @@ export default function ClientProfile() {
   const [expandedProgramId, setExpandedProgramId] = useState(null)
   const [showAssignProgramModal, setShowAssignProgramModal] = useState(false)
   const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false)
+  const [activeDragWorkout, setActiveDragWorkout] = useState(null)
   const [autoScheduleStartDate, setAutoScheduleStartDate] = useState(() => new Date().toISOString().split("T")[0])
   const [autoScheduleRestDays, setAutoScheduleRestDays] = useState(1)
   const [autoScheduling, setAutoScheduling] = useState(false)
@@ -732,6 +825,37 @@ export default function ClientProfile() {
     }
   }
 
+  async function handleDragEnd(event) {
+    const { active, over } = event
+    setActiveDragWorkout(null)
+    if (!over || active.id === over.id) return
+    const scheduledWorkoutId = active.id
+    const newDateStr = over.id
+    const existing = scheduledWorkouts.find(sw => sw.id === scheduledWorkoutId)
+    if (!existing || existing.scheduled_date === newDateStr) return
+    setScheduledWorkouts(prev => prev.map(sw =>
+      sw.id === scheduledWorkoutId ? { ...sw, scheduled_date: newDateStr } : sw
+    ))
+    try {
+      const { error } = await supabase
+        .from("scheduled_workouts")
+        .update({ scheduled_date: newDateStr })
+        .eq("id", scheduledWorkoutId)
+      if (error) throw error
+    } catch (e) {
+      console.error(e)
+      setScheduledWorkouts(prev => prev.map(sw =>
+        sw.id === scheduledWorkoutId ? { ...sw, scheduled_date: existing.scheduled_date } : sw
+      ))
+    }
+  }
+
+  function handleDragStart(event) {
+    const { active } = event
+    const workout = scheduledWorkouts.find(sw => sw.id === active.id)
+    setActiveDragWorkout(workout ?? null)
+  }
+
   // ── TAB RENDERERS ────────────────────────────────────────────
 
   function renderOverview() {
@@ -1233,81 +1357,64 @@ export default function ClientProfile() {
             </div>
           </div>
 
-          {/* Calendar grid */}
-          <div className="overflow-hidden">
-            <div className="grid grid-cols-7 border-b border-gray-50">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
-                <div key={day} className="px-3 py-2 text-center">
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{day}</span>
+          {/* Calendar grid with drag and drop */}
+          <DndContext
+            sensors={useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="overflow-hidden">
+              <div className="grid grid-cols-7 border-b border-gray-50">
+                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
+                  <div key={day} className="px-3 py-2 text-center">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{day}</span>
+                  </div>
+                ))}
+              </div>
+              {weeks.map((week, weekIndex) => (
+                <div key={weekIndex} className={`grid grid-cols-7 ${weekIndex < weeks.length - 1 ? "border-b border-gray-50" : ""}`}>
+                  {week.map((day, dayIndex) => {
+                    const dateStr = day.toISOString().split("T")[0]
+                    const isToday = dateStr === todayStr
+                    const scheduledForDay = scheduledWorkouts.filter(sw => sw.scheduled_date === dateStr)
+                    const isHovered = hoveredDay === dateStr
+                    const isPast = day < new Date(todayStr)
+                    const isDragOver = activeDragWorkout && hoveredDay === dateStr
+
+                    return (
+                      <DroppableDay
+                        key={dateStr}
+                        dateStr={dateStr}
+                        isToday={isToday}
+                        isPast={isPast}
+                        isHovered={isHovered}
+                        isDragOver={isDragOver}
+                        day={day}
+                        scheduledForDay={scheduledForDay}
+                        workoutExercises={workoutExercises}
+                        programAssignment={programAssignment}
+                        activeDragWorkout={activeDragWorkout}
+                        onMouseEnter={() => setHoveredDay(dateStr)}
+                        onMouseLeave={() => setHoveredDay(null)}
+                        onAddClick={() => { setModalTargetDate(day); setShowWorkoutModal(true) }}
+                        onRemoveClick={handleRemoveScheduledWorkout}
+                      />
+                    )
+                  })}
                 </div>
               ))}
             </div>
-            {weeks.map((week, weekIndex) => (
-              <div key={weekIndex} className={`grid grid-cols-7 ${weekIndex < weeks.length - 1 ? "border-b border-gray-50" : ""}`}>
-                {week.map((day, dayIndex) => {
-                  const dateStr = day.toISOString().split("T")[0]
-                  const isToday = dateStr === todayStr
-                  const scheduledForDay = scheduledWorkouts.filter(sw => sw.scheduled_date === dateStr)
-                  const isHovered = hoveredDay === dateStr
-                  const isPast = day < new Date(todayStr)
-
-                  return (
-                    <div
-                      key={dayIndex}
-                      className={`min-h-[130px] p-2 border-r border-gray-50 last:border-r-0 transition-colors relative ${isHovered ? "bg-indigo-50/30" : isPast ? "bg-gray-50/30" : "bg-white"}`}
-                      onMouseEnter={() => setHoveredDay(dateStr)}
-                      onMouseLeave={() => setHoveredDay(null)}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${isToday ? "bg-indigo-600 text-white" : "text-gray-500"}`}>
-                          {day.getDate()}
-                        </div>
-                        {isHovered && programAssignment && (
-                          <button
-                            onClick={() => { setModalTargetDate(day); setShowWorkoutModal(true) }}
-                            className="w-5 h-5 rounded-full bg-black hover:bg-gray-800 flex items-center justify-center transition shadow-sm"
-                          >
-                            <Plus size={11} className="text-white" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        {scheduledForDay.map(sw => {
-                          const exercises = workoutExercises[sw.program_workout_id] ?? []
-                          const visibleExercises = exercises.slice(0, 3)
-                          const overflowCount = exercises.length - 3
-                          return (
-                            <div key={sw.id} className="bg-white border border-indigo-100 rounded-lg p-1.5 group relative">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide truncate">{sw.program_workouts?.name || "Workout"}</span>
-                                <button onClick={() => handleRemoveScheduledWorkout(sw.id)} className="opacity-0 group-hover:opacity-100 w-4 h-4 rounded flex items-center justify-center hover:bg-red-50 transition">
-                                  <span className="text-red-400 text-xs leading-none">×</span>
-                                </button>
-                              </div>
-                              {visibleExercises.map(ex => (
-                                <div key={ex.id} className="flex items-center gap-1 py-0.5">
-                                  <div className="w-4 h-4 rounded bg-gray-100 flex items-center justify-center shrink-0">
-                                    <Dumbbell size={9} className="text-gray-400" />
-                                  </div>
-                                  <span className="text-[10px] text-gray-600 truncate flex-1">{ex.exercises?.name}</span>
-                                  <span className="text-[10px] text-gray-400 shrink-0">{ex.sets}×{ex.reps}</span>
-                                </div>
-                              ))}
-                              {overflowCount > 0 && (
-                                <div className="mt-0.5">
-                                  <span className="text-[10px] text-indigo-500 font-medium">+ {overflowCount} more</span>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
+            <DragOverlay>
+              {activeDragWorkout ? (
+                <div className="bg-white border-2 border-indigo-400 rounded-lg p-1.5 shadow-xl opacity-95 w-[120px]">
+                  <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide truncate block">
+                    {activeDragWorkout.program_workouts?.name || "Workout"}
+                  </span>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         </div>
 
         {/* History mode */}
