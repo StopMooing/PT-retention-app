@@ -755,10 +755,9 @@ export default function ClientProfile() {
     return (
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px_260px] gap-5">
 
-        {/* ── LEFT COLUMN ── */}
+        {/* LEFT COLUMN */}
         <div className="flex flex-col gap-5">
 
-          {/* Training Stats Card */}
           <SectionCard>
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
@@ -811,7 +810,6 @@ export default function ClientProfile() {
             </div>
           </SectionCard>
 
-          {/* Body Weight Card */}
           <SectionCard>
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
@@ -887,11 +885,7 @@ export default function ClientProfile() {
                     <div className="flex items-center gap-3">
                       <span className="text-2xl font-black text-gray-900">{filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg}<span className="text-sm font-medium text-gray-400 ml-1">kg</span></span>
                       {weightChange !== null && (
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          weightChange < 0 ? "bg-emerald-50 text-emerald-600" :
-                          weightChange > 0 ? "bg-red-50 text-red-500" :
-                          "bg-gray-100 text-gray-500"
-                        }`}>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${weightChange < 0 ? "bg-emerald-50 text-emerald-600" : weightChange > 0 ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-500"}`}>
                           {weightChange < 0 ? "▼" : weightChange > 0 ? "▲" : "—"} {Math.abs(weightChange).toFixed(1)} kg
                         </span>
                       )}
@@ -916,12 +910,8 @@ export default function ClientProfile() {
                     ))}
                   </svg>
                   <div className="flex justify-between mt-1">
-                    <span className="text-[10px] text-gray-300">
-                      {filteredWeightLogs[0]?.logged_date ? new Date(filteredWeightLogs[0].logged_date + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" }) : ""}
-                    </span>
-                    <span className="text-[10px] text-gray-300">
-                      {filteredWeightLogs[filteredWeightLogs.length - 1]?.logged_date ? new Date(filteredWeightLogs[filteredWeightLogs.length - 1].logged_date + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" }) : ""}
-                    </span>
+                    <span className="text-[10px] text-gray-300">{filteredWeightLogs[0]?.logged_date ? new Date(filteredWeightLogs[0].logged_date + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" }) : ""}</span>
+                    <span className="text-[10px] text-gray-300">{filteredWeightLogs[filteredWeightLogs.length - 1]?.logged_date ? new Date(filteredWeightLogs[filteredWeightLogs.length - 1].logged_date + "T00:00:00").toLocaleDateString("en-AU", { day: "2-digit", month: "2-digit" }) : ""}</span>
                   </div>
                 </div>
               )}
@@ -930,10 +920,9 @@ export default function ClientProfile() {
 
         </div>
 
-        {/* ── MIDDLE COLUMN ── */}
+        {/* MIDDLE COLUMN */}
         <div className="flex flex-col gap-4">
 
-          {/* Goal */}
           <SectionCard>
             <div className="flex items-center gap-2 px-5 pt-4 pb-3 border-b border-gray-50">
               <div className="w-6 h-6 rounded-lg bg-purple-50 flex items-center justify-center">
@@ -944,13 +933,7 @@ export default function ClientProfile() {
             <div className="px-5 py-4">
               {editingGoal ? (
                 <div className="flex flex-col gap-2">
-                  <textarea
-                    rows={3}
-                    value={clientGoal}
-                    onChange={e => setClientGoal(e.target.value)}
-                    placeholder="e.g. Lose 10kg by summer"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
-                  />
+                  <textarea rows={3} value={clientGoal} onChange={e => setClientGoal(e.target.value)} placeholder="e.g. Lose 10kg by summer" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none" />
                   <div className="flex gap-2">
                     <button onClick={handleSaveGoal} disabled={savingGoal} className="flex-1 bg-black hover:bg-gray-800 text-white text-xs font-semibold py-1.5 rounded-lg transition disabled:opacity-50">{savingGoal ? "Saving..." : "Save"}</button>
                     <button onClick={() => setEditingGoal(false)} className="flex-1 border border-gray-200 text-gray-500 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50 transition">Cancel</button>
@@ -959,15 +942,12 @@ export default function ClientProfile() {
               ) : (
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm text-gray-600 leading-relaxed flex-1">{clientGoal || <span className="text-gray-300 italic">No goal set yet</span>}</p>
-                  <button onClick={() => setEditingGoal(true)} className="shrink-0 w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center transition">
-                    <Edit3 size={12} className="text-gray-400" />
-                  </button>
+                  <button onClick={() => setEditingGoal(true)} className="shrink-0 w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center transition"><Edit3 size={12} className="text-gray-400" /></button>
                 </div>
               )}
             </div>
           </SectionCard>
 
-          {/* Limitations / Injuries */}
           <SectionCard>
             <div className="flex items-center gap-2 px-5 pt-4 pb-3 border-b border-gray-50">
               <div className="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center">
@@ -978,13 +958,7 @@ export default function ClientProfile() {
             <div className="px-5 py-4">
               {editingLimitations ? (
                 <div className="flex flex-col gap-2">
-                  <textarea
-                    rows={3}
-                    value={clientLimitations}
-                    onChange={e => setClientLimitations(e.target.value)}
-                    placeholder="e.g. Left knee injury, avoid deep squats"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
-                  />
+                  <textarea rows={3} value={clientLimitations} onChange={e => setClientLimitations(e.target.value)} placeholder="e.g. Left knee injury, avoid deep squats" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none" />
                   <div className="flex gap-2">
                     <button onClick={handleSaveLimitations} disabled={savingLimitations} className="flex-1 bg-black hover:bg-gray-800 text-white text-xs font-semibold py-1.5 rounded-lg transition disabled:opacity-50">{savingLimitations ? "Saving..." : "Save"}</button>
                     <button onClick={() => setEditingLimitations(false)} className="flex-1 border border-gray-200 text-gray-500 text-xs font-medium py-1.5 rounded-lg hover:bg-gray-50 transition">Cancel</button>
@@ -993,15 +967,12 @@ export default function ClientProfile() {
               ) : (
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm text-gray-600 leading-relaxed flex-1">{clientLimitations || <span className="text-gray-300 italic">No limitations recorded</span>}</p>
-                  <button onClick={() => setEditingLimitations(true)} className="shrink-0 w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center transition">
-                    <Edit3 size={12} className="text-gray-400" />
-                  </button>
+                  <button onClick={() => setEditingLimitations(true)} className="shrink-0 w-6 h-6 rounded-md hover:bg-gray-100 flex items-center justify-center transition"><Edit3 size={12} className="text-gray-400" /></button>
                 </div>
               )}
             </div>
           </SectionCard>
 
-          {/* Recent Notes */}
           <SectionCard>
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50">
               <div className="flex items-center gap-2">
@@ -1027,9 +998,7 @@ export default function ClientProfile() {
                     </div>
                   ))}
                   {savedNotes.length > 3 && (
-                    <button onClick={() => setActiveTab("notes")} className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition">
-                      +{savedNotes.length - 3} more notes →
-                    </button>
+                    <button onClick={() => setActiveTab("notes")} className="text-xs font-semibold text-gray-400 hover:text-gray-600 transition">+{savedNotes.length - 3} more notes →</button>
                   )}
                 </div>
               )}
@@ -1038,10 +1007,9 @@ export default function ClientProfile() {
 
         </div>
 
-        {/* ── RIGHT COLUMN ── */}
+        {/* RIGHT COLUMN */}
         <div className="flex flex-col gap-4">
 
-          {/* Profile Card */}
           <SectionCard>
             <div className="flex items-center gap-2 px-5 pt-4 pb-3 border-b border-gray-50">
               <span className="text-sm font-semibold text-gray-800">Profile</span>
@@ -1079,7 +1047,6 @@ export default function ClientProfile() {
             </div>
           </SectionCard>
 
-          {/* Updates Feed */}
           <SectionCard>
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-50">
               <span className="text-sm font-semibold text-gray-800">Recent Activity</span>
@@ -3273,19 +3240,16 @@ export default function ClientProfile() {
                 <span className="text-sm font-semibold text-gray-800">{checkins.length > 0 ? timeAgo(checkins[0].submitted_at) : "Never"}</span>
                 <span className="text-xs text-gray-400">last check-in</span>
               </div>
-
               <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-1.5 shadow-sm">
                 <CheckCircle2 size={13} className="text-emerald-500" />
                 <span className="text-sm font-semibold text-gray-800">{checkins.length}</span>
                 <span className="text-xs text-gray-400">check-ins</span>
               </div>
-
               <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-1.5 shadow-sm">
                 <Heart size={13} className="text-pink-400" />
                 <span className="text-sm font-semibold text-gray-800">{habits.length}</span>
                 <span className="text-xs text-gray-400">habits</span>
               </div>
-
               {programAssignment && (
                 <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-1.5 shadow-sm">
                   <Dumbbell size={13} className="text-blue-400" />
