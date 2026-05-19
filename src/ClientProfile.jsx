@@ -238,6 +238,7 @@ export default function ClientProfile() {
   const [showAssignProgramModal, setShowAssignProgramModal] = useState(false)
   const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false)
   const [activeDragWorkout, setActiveDragWorkout] = useState(null)
+  const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
   const [autoScheduleStartDate, setAutoScheduleStartDate] = useState(() => new Date().toISOString().split("T")[0])
   const [autoScheduleRestDays, setAutoScheduleRestDays] = useState(1)
   const [autoScheduling, setAutoScheduling] = useState(false)
@@ -1359,7 +1360,7 @@ export default function ClientProfile() {
 
           {/* Calendar grid with drag and drop */}
           <DndContext
-            sensors={useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))}
+            sensors={dndSensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
