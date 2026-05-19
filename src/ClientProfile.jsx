@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
 import { ArrowLeft, Phone, Target, Calendar, Activity, CheckCircle2, Clock, Dumbbell, Utensils, Heart, FileText, TrendingUp, Flame, Edit3, Send, Plus, ChevronRight, Circle, Mail, Scale, AlertCircle, Camera, Flag, Timer, MoreHorizontal, Droplets } from "lucide-react";
-import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from "@dnd-kit/core"
+import { DndContext, DragOverlay, PointerSensor, MouseSensor, TouchSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 
 const TABS = [
@@ -73,12 +73,14 @@ function SectionCard({ children, className = "" }) {
 }
 
 function DraggableWorkout({ sw, workoutExercises, onRemoveClick, activeDragWorkout }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: sw.id })
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: sw.id, data: { workout: sw } })
   const style = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     opacity: isDragging ? 0.3 : 1,
     cursor: isDragging ? "grabbing" : "grab",
     touchAction: "none",
+    userSelect: "none",
+    WebkitUserSelect: "none",
   }
   const exercises = workoutExercises[sw.program_workout_id] ?? []
   const visibleExercises = exercises.slice(0, 3)
@@ -238,7 +240,10 @@ export default function ClientProfile() {
   const [showAssignProgramModal, setShowAssignProgramModal] = useState(false)
   const [showAutoScheduleModal, setShowAutoScheduleModal] = useState(false)
   const [activeDragWorkout, setActiveDragWorkout] = useState(null)
-  const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const dndSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  )
   const [autoScheduleStartDate, setAutoScheduleStartDate] = useState(() => new Date().toISOString().split("T")[0])
   const [autoScheduleRestDays, setAutoScheduleRestDays] = useState(1)
   const [autoScheduling, setAutoScheduling] = useState(false)
