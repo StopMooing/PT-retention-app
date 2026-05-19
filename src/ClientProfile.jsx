@@ -778,17 +778,17 @@ export default function ClientProfile() {
             </div>
             <div className="px-6 py-5">
               <div className="grid grid-cols-3 gap-4">
-                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-4 px-2">
+                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Last 7 Days</span>
                   <span className="text-2xl font-black text-gray-900">{checkins.filter(c => Math.floor((new Date() - new Date(c.submitted_at)) / 86400000) <= 7).length}<span className="text-base text-gray-400 font-medium">/1</span></span>
                   <span className={`text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full ${engagedCount > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>{engagedCount > 0 ? "On track" : "Not tracked"}</span>
                 </div>
-                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-4 px-2">
+                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">This Month</span>
                   <span className="text-2xl font-black text-gray-900">{thisMonthCheckins}<span className="text-base text-gray-400 font-medium">/4</span></span>
                   <span className={`text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full ${thisMonthCheckins >= 3 ? "bg-emerald-50 text-emerald-600" : thisMonthCheckins >= 1 ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}>{thisMonthCheckins >= 3 ? "Strong" : thisMonthCheckins >= 1 ? "Partial" : "Not tracked"}</span>
                 </div>
-                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-4 px-2">
+                <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-2">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Total</span>
                   <span className="text-2xl font-black text-gray-900">{checkins.length}</span>
                   <span className="text-xs font-semibold mt-1.5 px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">All time</span>
@@ -1022,7 +1022,7 @@ export default function ClientProfile() {
                 <div className="space-y-3">
                   {savedNotes.slice(0, 3).map((note, i) => (
                     <div key={note.id ?? i} className="flex flex-col gap-1 pb-3 border-b border-gray-50 last:border-0 last:pb-0">
-                      <span className="text-[10px] font-semibold text-gray-300 uppercase tracking-wide">{formatDate(note.created_at)} · {timeAgo(note.created_at)}</span>
+                      <span className="text-[10px] font-semibold text-gray-300">{formatDate(note.created_at)} · {timeAgo(note.created_at)}</span>
                       <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">{note.text}</p>
                     </div>
                   ))}
@@ -3225,7 +3225,7 @@ export default function ClientProfile() {
               <Send size={13} />
               {copied ? "Copied!" : "Send Check-in"}
             </button>
-            <button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition shadow-sm">
+            <button className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition shadow-sm">
               <Edit3 size={13} /> Edit Client
             </button>
           </div>
