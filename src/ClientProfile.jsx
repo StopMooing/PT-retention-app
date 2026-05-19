@@ -1088,11 +1088,6 @@ export default function ClientProfile() {
 
     const todayStr = new Date().toISOString().split("T")[0]
 
-    function getScheduledForDate(date) {
-      const dateStr = date.toISOString().split("T")[0]
-      return scheduledWorkouts.filter(sw => sw.scheduled_date === dateStr)
-    }
-
     const filteredProgramWorkouts = programWorkouts.filter(pw =>
       pw.name?.toLowerCase().includes(modalSearch.toLowerCase())
     )
@@ -1105,53 +1100,51 @@ export default function ClientProfile() {
     return (
       <div className="flex flex-col gap-4">
 
-          {/* ── Program assignment bar ── */}
-          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-5 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                <Dumbbell size={15} className="text-blue-600" />
-              </div>
-              <div>
-                {programAssignment ? (
-                  <>
-                    <p className="text-sm font-semibold text-gray-800">{programAssignment.programs?.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Started {formatDate(programAssignment.start_date)} · <span className="text-emerald-600 font-medium">Active</span></p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm font-semibold text-gray-500">No program assigned</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Assign a program to start scheduling workouts</p>
-                  </>
-                )}
-              </div>
+        {/* Program assignment bar */}
+        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm px-5 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <Dumbbell size={15} className="text-blue-600" />
             </div>
-            <div className="flex items-center gap-2">
-              {programAssignment && (
-                <button
-                  onClick={() => setShowRemoveProgramConfirm(true)}
-                  className="flex items-center gap-2 text-sm font-semibold border border-red-200 text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition"
-                >
-                  Remove
-                </button>
+            <div>
+              {programAssignment ? (
+                <>
+                  <p className="text-sm font-semibold text-gray-800">{programAssignment.programs?.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Started {formatDate(programAssignment.start_date)} · <span className="text-emerald-600 font-medium">Active</span></p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-semibold text-gray-500">No program assigned</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Assign a program to start scheduling workouts</p>
+                </>
               )}
-              <button
-                onClick={() => {
-                  setSelectedProgramToAssign(null)
-                  setAssignProgramSearch("")
-                  setShowAssignProgramModal(true)
-                }}
-                className="flex items-center gap-2 text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg transition"
-              >
-                {programAssignment ? "Change Program" : "Assign Program"}
-              </button>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            {programAssignment && (
+              <button
+                onClick={() => setShowRemoveProgramConfirm(true)}
+                className="flex items-center gap-2 text-sm font-semibold border border-red-200 text-red-500 hover:bg-red-50 px-4 py-2 rounded-lg transition"
+              >
+                Remove
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setSelectedProgramToAssign(null)
+                setAssignProgramSearch("")
+                setShowAssignProgramModal(true)
+              }}
+              className="flex items-center gap-2 text-sm font-semibold bg-black hover:bg-gray-800 text-white px-4 py-2 rounded-lg transition"
+            >
+              {programAssignment ? "Change Program" : "Assign Program"}
+            </button>
+          </div>
+        </div>
 
-        {/* ── Calendar toolbar ── */}
+        {/* Calendar toolbar */}
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm">
           <div className="flex items-center justify-between px-5 py-3 border-b border-gray-50">
-
-            {/* Left: mode toggle + nav */}
             <div className="flex items-center gap-3">
               <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
                 <button
@@ -1167,43 +1160,23 @@ export default function ClientProfile() {
                   History
                 </button>
               </div>
-
               <div className="flex items-center gap-1">
-                <button
-                  onClick={goToToday}
-                  className="px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition"
-                >
-                  Today
-                </button>
-                <button
-                  onClick={() => navigateCalendar(-1)}
-                  className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition"
-                >
+                <button onClick={goToToday} className="px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition">Today</button>
+                <button onClick={() => navigateCalendar(-1)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition">
                   <ChevronRight size={14} className="rotate-180" />
                 </button>
-                <button
-                  onClick={() => navigateCalendar(1)}
-                  className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition"
-                >
+                <button onClick={() => navigateCalendar(1)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition">
                   <ChevronRight size={14} />
                 </button>
-                <span className="text-sm font-semibold text-gray-700 ml-1">
-                  {startLabel} – {endLabel}
-                </span>
+                <span className="text-sm font-semibold text-gray-700 ml-1">{startLabel} – {endLabel}</span>
               </div>
             </div>
-
-            {/* Right: view toggle */}
             <div className="flex items-center gap-1">
               {["1week", "2week", "4week"].map(view => (
                 <button
                   key={view}
                   onClick={() => setCalendarView(view)}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
-                    calendarView === view
-                      ? "bg-indigo-600 text-white"
-                      : "border border-gray-200 text-gray-500 hover:bg-gray-50"
-                  }`}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${calendarView === view ? "bg-black text-white" : "border border-gray-200 text-gray-500 hover:bg-gray-50"}`}
                 >
                   {view === "1week" ? "1 Week" : view === "2week" ? "2 Week" : "4 Week"}
                 </button>
@@ -1211,9 +1184,8 @@ export default function ClientProfile() {
             </div>
           </div>
 
-          {/* ── Calendar grid ── */}
+          {/* Calendar grid */}
           <div className="overflow-hidden">
-            {/* Day headers */}
             <div className="grid grid-cols-7 border-b border-gray-50">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(day => (
                 <div key={day} className="px-3 py-2 text-center">
@@ -1221,76 +1193,48 @@ export default function ClientProfile() {
                 </div>
               ))}
             </div>
-
-            {/* Week rows */}
             {weeks.map((week, weekIndex) => (
               <div key={weekIndex} className={`grid grid-cols-7 ${weekIndex < weeks.length - 1 ? "border-b border-gray-50" : ""}`}>
                 {week.map((day, dayIndex) => {
                   const dateStr = day.toISOString().split("T")[0]
                   const isToday = dateStr === todayStr
-                  const scheduledForDay = getScheduledForDate(day)
+                  const scheduledForDay = scheduledWorkouts.filter(sw => sw.scheduled_date === dateStr)
                   const isHovered = hoveredDay === dateStr
                   const isPast = day < new Date(todayStr)
 
                   return (
                     <div
                       key={dayIndex}
-                      className={`min-h-[130px] p-2 border-r border-gray-50 last:border-r-0 transition-colors relative ${
-                        isHovered ? "bg-indigo-50/30" : isPast ? "bg-gray-50/30" : "bg-white"
-                      }`}
+                      className={`min-h-[130px] p-2 border-r border-gray-50 last:border-r-0 transition-colors relative ${isHovered ? "bg-indigo-50/30" : isPast ? "bg-gray-50/30" : "bg-white"}`}
                       onMouseEnter={() => setHoveredDay(dateStr)}
                       onMouseLeave={() => setHoveredDay(null)}
                     >
-                      {/* Date number */}
                       <div className="flex items-center justify-between mb-1.5">
-                        <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
-                          isToday
-                            ? "bg-indigo-600 text-white"
-                            : "text-gray-500"
-                        }`}>
+                        <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${isToday ? "bg-indigo-600 text-white" : "text-gray-500"}`}>
                           {day.getDate()}
                         </div>
-
-                        {/* + button on hover */}
                         {isHovered && programAssignment && (
                           <button
-                            onClick={() => {
-                              setModalTargetDate(day)
-                              setShowWorkoutModal(true)
-                            }}
-                            className="w-5 h-5 rounded-full bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center transition shadow-sm"
+                            onClick={() => { setModalTargetDate(day); setShowWorkoutModal(true) }}
+                            className="w-5 h-5 rounded-full bg-black hover:bg-gray-800 flex items-center justify-center transition shadow-sm"
                           >
                             <Plus size={11} className="text-white" />
                           </button>
                         )}
                       </div>
-
-                      {/* Scheduled workouts for this day */}
                       <div className="flex flex-col gap-1">
                         {scheduledForDay.map(sw => {
                           const exercises = workoutExercises[sw.program_workout_id] ?? []
                           const visibleExercises = exercises.slice(0, 3)
                           const overflowCount = exercises.length - 3
-
                           return (
-                            <div
-                              key={sw.id}
-                              className="bg-white border border-indigo-100 rounded-lg p-1.5 group relative"
-                            >
-                              {/* Workout name */}
+                            <div key={sw.id} className="bg-white border border-indigo-100 rounded-lg p-1.5 group relative">
                               <div className="flex items-center justify-between mb-1">
-                                <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide truncate">
-                                  {sw.program_workouts?.name || "Workout"}
-                                </span>
-                                <button
-                                  onClick={() => handleRemoveScheduledWorkout(sw.id)}
-                                  className="opacity-0 group-hover:opacity-100 w-4 h-4 rounded flex items-center justify-center hover:bg-red-50 transition"
-                                >
+                                <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide truncate">{sw.program_workouts?.name || "Workout"}</span>
+                                <button onClick={() => handleRemoveScheduledWorkout(sw.id)} className="opacity-0 group-hover:opacity-100 w-4 h-4 rounded flex items-center justify-center hover:bg-red-50 transition">
                                   <span className="text-red-400 text-xs leading-none">×</span>
                                 </button>
                               </div>
-
-                              {/* Exercises */}
                               {visibleExercises.map(ex => (
                                 <div key={ex.id} className="flex items-center gap-1 py-0.5">
                                   <div className="w-4 h-4 rounded bg-gray-100 flex items-center justify-center shrink-0">
@@ -1300,10 +1244,9 @@ export default function ClientProfile() {
                                   <span className="text-[10px] text-gray-400 shrink-0">{ex.sets}×{ex.reps}</span>
                                 </div>
                               ))}
-
                               {overflowCount > 0 && (
-                                <div className="mt-0.5 flex items-center gap-1">
-                                  <span className="text-[10px] text-indigo-500 font-medium">+ {overflowCount} more exercise{overflowCount > 1 ? "s" : ""}</span>
+                                <div className="mt-0.5">
+                                  <span className="text-[10px] text-indigo-500 font-medium">+ {overflowCount} more</span>
                                 </div>
                               )}
                             </div>
@@ -1318,7 +1261,7 @@ export default function ClientProfile() {
           </div>
         </div>
 
-        {/* ── History mode: workout logs ── */}
+        {/* History mode */}
         {trainingMode === "history" && (
           <SectionCard>
             <div className="px-6 pt-5 pb-4 border-b border-gray-50">
@@ -1357,119 +1300,47 @@ export default function ClientProfile() {
           </SectionCard>
         )}
 
-        {/* ── Find a Workout Modal ── */}
+        {/* Find a Workout Modal */}
         {showWorkoutModal && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center px-4"
             style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
-            onClick={e => {
-              if (e.target === e.currentTarget) {
-                setShowWorkoutModal(false)
-                setModalSelectedWorkout(null)
-                setExpandedProgramId(null)
-                setModalSearch("")
-              }
-            }}
+            onClick={e => { if (e.target === e.currentTarget) { setShowWorkoutModal(false); setModalSelectedWorkout(null); setExpandedProgramId(null); setModalSearch("") } }}
           >
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col" style={{ maxHeight: "80vh" }}>
-
-              {/* Modal header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
                 <h2 className="text-base font-bold text-gray-900">Find a Workout</h2>
-                <button
-                  onClick={() => {
-                    setShowWorkoutModal(false)
-                    setModalSelectedWorkout(null)
-                    setExpandedProgramId(null)
-                    setModalSearch("")
-                  }}
-                  className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition text-gray-400 hover:text-gray-600 text-lg leading-none"
-                >
-                  ×
-                </button>
+                <button onClick={() => { setShowWorkoutModal(false); setModalSelectedWorkout(null); setExpandedProgramId(null); setModalSearch("") }} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
               </div>
-
-              {/* Modal body: two columns */}
               <div className="flex flex-1 min-h-0">
-
-                {/* Left: search + program accordion list */}
                 <div className="w-[55%] border-r border-gray-100 flex flex-col">
-
-                  {/* Search bar */}
                   <div className="px-4 py-3 border-b border-gray-50">
                     <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                      </svg>
-                      <input
-                        type="text"
-                        placeholder="Search workouts..."
-                        value={modalSearch}
-                        onChange={e => {
-                          setModalSearch(e.target.value)
-                          setModalSelectedWorkout(null)
-                          setExpandedProgramId(null)
-                        }}
-                        className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-300 focus:outline-none"
-                        autoFocus
-                      />
-                      {modalSearch && (
-                        <button
-                          onClick={() => {
-                            setModalSearch("")
-                            setModalSelectedWorkout(null)
-                            setExpandedProgramId(null)
-                          }}
-                          className="text-gray-300 hover:text-gray-500 text-lg leading-none"
-                        >
-                          ×
-                        </button>
-                      )}
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                      <input type="text" placeholder="Search workouts..." value={modalSearch} onChange={e => { setModalSearch(e.target.value); setModalSelectedWorkout(null); setExpandedProgramId(null) }} className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-300 focus:outline-none" autoFocus />
+                      {modalSearch && <button onClick={() => { setModalSearch(""); setModalSelectedWorkout(null); setExpandedProgramId(null) }} className="text-gray-300 hover:text-gray-500 text-lg leading-none">×</button>}
                     </div>
                   </div>
-
-                  {/* Scrollable program + workout list */}
                   <div className="flex-1 overflow-y-auto">
                     {modalSearch.trim() !== "" ? (
                       (() => {
                         const searchLower = modalSearch.toLowerCase()
-                        const matchingByName = allProgramWorkouts.filter(pw =>
-                          pw.name?.toLowerCase().includes(searchLower)
-                        )
-                        const matchingByProgram = allProgramWorkouts.filter(pw =>
-                          allPrograms.find(p => p.id === pw.program_id && p.name?.toLowerCase().includes(searchLower))
-                        )
+                        const matchingByName = allProgramWorkouts.filter(pw => pw.name?.toLowerCase().includes(searchLower))
+                        const matchingByProgram = allProgramWorkouts.filter(pw => allPrograms.find(p => p.id === pw.program_id && p.name?.toLowerCase().includes(searchLower)))
                         const combined = [...new Map([...matchingByName, ...matchingByProgram].map(pw => [pw.id, pw])).values()]
-
                         return combined.length === 0 ? (
-                          <div className="px-4 py-8 text-center">
-                            <p className="text-sm text-gray-400">No workouts match your search</p>
-                          </div>
+                          <div className="px-4 py-8 text-center"><p className="text-sm text-gray-400">No workouts match your search</p></div>
                         ) : (
                           <div className="py-2">
-                            <div className="px-4 py-2">
-                              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Results ({combined.length})</span>
-                            </div>
+                            <div className="px-4 py-2"><span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Results ({combined.length})</span></div>
                             {combined.map(pw => {
                               const isSelected = modalSelectedWorkout?.id === pw.id
                               const exercises = workoutExercises[pw.id] ?? []
                               const parentProgram = allPrograms.find(p => p.id === pw.program_id)
                               return (
-                                <button
-                                  key={pw.id}
-                                  onClick={() => setModalSelectedWorkout(pw)}
-                                  className={`w-full text-left px-4 py-3 transition border-l-2 ${
-                                    isSelected
-                                      ? "bg-indigo-50 border-indigo-500"
-                                      : "border-transparent hover:bg-gray-50 hover:border-gray-200"
-                                  }`}
-                                >
-                                  <p className={`text-sm font-semibold truncate ${isSelected ? "text-indigo-700" : "text-gray-800"}`}>
-                                    {pw.name || `Day ${pw.day_number}`}
-                                  </p>
-                                  <p className="text-xs text-gray-400 mt-0.5">
-                                    {parentProgram?.name ?? "Unknown program"} · {exercises.length} exercise{exercises.length !== 1 ? "s" : ""}
-                                  </p>
+                                <button key={pw.id} onClick={() => setModalSelectedWorkout(pw)} className={`w-full text-left px-4 py-3 transition border-l-2 ${isSelected ? "bg-indigo-50 border-indigo-500" : "border-transparent hover:bg-gray-50 hover:border-gray-200"}`}>
+                                  <p className={`text-sm font-semibold truncate ${isSelected ? "text-indigo-700" : "text-gray-800"}`}>{pw.name || `Day ${pw.day_number}`}</p>
+                                  <p className="text-xs text-gray-400 mt-0.5">{parentProgram?.name ?? "Unknown program"} · {exercises.length} exercise{exercises.length !== 1 ? "s" : ""}</p>
                                 </button>
                               )
                             })}
@@ -1477,71 +1348,38 @@ export default function ClientProfile() {
                         )
                       })()
                     ) : (
-                      /* ACCORDION MODE: programs expand inline to show their workouts */
                       allPrograms.length === 0 ? (
-                        <div className="px-4 py-8 text-center">
-                          <p className="text-sm text-gray-400">No programs found</p>
-                          <p className="text-xs text-gray-300 mt-1">Build a program in the Program Builder first</p>
-                        </div>
+                        <div className="px-4 py-8 text-center"><p className="text-sm text-gray-400">No programs found</p><p className="text-xs text-gray-300 mt-1">Build a program in the Program Builder first</p></div>
                       ) : (
                         <div className="py-2">
                           {allPrograms.map(program => {
                             const workoutsInProgram = allProgramWorkouts.filter(pw => pw.program_id === program.id)
                             const isExpanded = expandedProgramId === program.id
                             const isAssigned = programAssignment?.programs?.id === program.id
-
                             return (
                               <div key={program.id}>
-                                {/* Program header row — clicking expands/collapses */}
-                                <button
-                                  onClick={() => {
-                                    setExpandedProgramId(isExpanded ? null : program.id)
-                                    setModalSelectedWorkout(null)
-                                  }}
-                                  className="w-full text-left px-4 py-3 transition hover:bg-gray-50 flex items-center justify-between gap-3 border-b border-gray-50"
-                                >
+                                <button onClick={() => { setExpandedProgramId(isExpanded ? null : program.id); setModalSelectedWorkout(null) }} className="w-full text-left px-4 py-3 transition hover:bg-gray-50 flex items-center justify-between gap-3 border-b border-gray-50">
                                   <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2 flex-wrap">
                                       <p className="text-sm font-semibold text-gray-800 truncate">{program.name}</p>
-                                      {isAssigned && (
-                                        <span className="shrink-0 text-[10px] font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded-full">Assigned</span>
-                                      )}
+                                      {isAssigned && <span className="shrink-0 text-[10px] font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100 px-1.5 py-0.5 rounded-full">Assigned</span>}
                                     </div>
                                     <p className="text-xs text-gray-400 mt-0.5">{workoutsInProgram.length} workout{workoutsInProgram.length !== 1 ? "s" : ""}</p>
                                   </div>
-                                  <ChevronRight
-                                    size={14}
-                                    className={`text-gray-300 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`}
-                                  />
+                                  <ChevronRight size={14} className={`text-gray-300 shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
                                 </button>
-
-                                {/* Expanded workout list inline under the program */}
                                 {isExpanded && (
                                   <div className="bg-gray-50/50">
                                     {workoutsInProgram.length === 0 ? (
-                                      <div className="px-6 py-4 text-center">
-                                        <p className="text-xs text-gray-400 italic">No workouts in this program yet</p>
-                                      </div>
+                                      <div className="px-6 py-4 text-center"><p className="text-xs text-gray-400 italic">No workouts in this program yet</p></div>
                                     ) : (
                                       workoutsInProgram.map(pw => {
                                         const isSelected = modalSelectedWorkout?.id === pw.id
                                         const exercises = workoutExercises[pw.id] ?? []
                                         return (
-                                          <button
-                                            key={pw.id}
-                                            onClick={() => setModalSelectedWorkout(pw)}
-                                            className={`w-full text-left px-6 py-2.5 transition border-l-2 ${
-                                              isSelected
-                                                ? "bg-indigo-50 border-indigo-500"
-                                                : "border-transparent hover:bg-white hover:border-gray-200"
-                                            }`}
-                                          >
-                                            <p className={`text-sm font-semibold ${isSelected ? "text-indigo-700" : "text-gray-700"}`}>
-                                              {pw.name || `Day ${pw.day_number}`}
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-0.5">
-                                              {exercises.length} exercise{exercises.length !== 1 ? "s" : ""}
-                                            </p>
+                                          <button key={pw.id} onClick={() => setModalSelectedWorkout(pw)} className={`w-full text-left px-6 py-2.5 transition border-l-2 ${isSelected ? "bg-indigo-50 border-indigo-500" : "border-transparent hover:bg-white hover:border-gray-200"}`}>
+                                            <p className={`text-sm font-semibold ${isSelected ? "text-indigo-700" : "text-gray-700"}`}>{pw.name || `Day ${pw.day_number}`}</p>
+                                            <p className="text-xs text-gray-400 mt-0.5">{exercises.length} exercise{exercises.length !== 1 ? "s" : ""}</p>
                                           </button>
                                         )
                                       })
@@ -1556,25 +1394,16 @@ export default function ClientProfile() {
                     )}
                   </div>
                 </div>
-
-                {/* Right: exercise preview panel */}
                 <div className="flex-1 flex flex-col min-w-0">
                   {!modalSelectedWorkout ? (
                     <div className="flex-1 flex items-center justify-center p-6 text-center">
-                      <div>
-                        <Dumbbell size={32} className="text-gray-200 mx-auto mb-3" />
-                        <p className="text-sm text-gray-300">Select a workout to preview</p>
-                      </div>
+                      <div><Dumbbell size={32} className="text-gray-200 mx-auto mb-3" /><p className="text-sm text-gray-300">Select a workout to preview</p></div>
                     </div>
                   ) : (
                     <>
                       <div className="px-5 py-4 border-b border-gray-50 bg-indigo-50/50">
                         <p className="text-sm font-bold text-indigo-800">{modalSelectedWorkout.name || `Day ${modalSelectedWorkout.day_number}`}</p>
-                        <p className="text-xs text-indigo-400 mt-0.5">
-                          {allPrograms.find(p => p.id === modalSelectedWorkout.program_id)?.name ?? ""}
-                          {" · "}
-                          {(workoutExercises[modalSelectedWorkout.id] ?? []).length} exercise{(workoutExercises[modalSelectedWorkout.id] ?? []).length !== 1 ? "s" : ""}
-                        </p>
+                        <p className="text-xs text-indigo-400 mt-0.5">{allPrograms.find(p => p.id === modalSelectedWorkout.program_id)?.name ?? ""} · {(workoutExercises[modalSelectedWorkout.id] ?? []).length} exercise{(workoutExercises[modalSelectedWorkout.id] ?? []).length !== 1 ? "s" : ""}</p>
                       </div>
                       <div className="flex-1 overflow-y-auto px-5 py-3">
                         {(workoutExercises[modalSelectedWorkout.id] ?? []).length === 0 ? (
@@ -1583,14 +1412,10 @@ export default function ClientProfile() {
                           <div className="space-y-2">
                             {(workoutExercises[modalSelectedWorkout.id] ?? []).map((ex, i) => (
                               <div key={ex.id} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                                <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600 shrink-0">
-                                  {i + 1}
-                                </div>
+                                <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-600 shrink-0">{i + 1}</div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-semibold text-gray-800 truncate">{ex.exercises?.name}</p>
-                                  {ex.exercises?.muscle_group && (
-                                    <p className="text-xs text-gray-400">{ex.exercises.muscle_group}</p>
-                                  )}
+                                  {ex.exercises?.muscle_group && <p className="text-xs text-gray-400">{ex.exercises.muscle_group}</p>}
                                 </div>
                                 <span className="text-xs font-semibold text-gray-500 shrink-0">{ex.sets}×{ex.reps}</span>
                               </div>
@@ -1602,228 +1427,82 @@ export default function ClientProfile() {
                   )}
                 </div>
               </div>
-
-              {/* Modal footer */}
               <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-                <div>
-                  {modalTargetDate && (
-                    <p className="text-xs text-gray-500">
-                      Scheduling for <span className="font-semibold text-gray-700">{modalTargetDate.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</span>
-                    </p>
-                  )}
-                </div>
+                <div>{modalTargetDate && <p className="text-xs text-gray-500">Scheduling for <span className="font-semibold text-gray-700">{modalTargetDate.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}</span></p>}</div>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      setShowWorkoutModal(false)
-                      setModalSelectedWorkout(null)
-                      setExpandedProgramId(null)
-                      setModalSearch("")
-                    }}
-                    className="px-4 py-2 border border-gray-200 text-gray-500 text-sm font-medium rounded-lg hover:bg-gray-100 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSelectWorkout}
-                    disabled={!modalSelectedWorkout || savingSchedule}
-                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {savingSchedule ? "Saving..." : "Select"}
-                  </button>
+                  <button onClick={() => { setShowWorkoutModal(false); setModalSelectedWorkout(null); setExpandedProgramId(null); setModalSearch("") }} className="px-4 py-2 border border-gray-200 text-gray-500 text-sm font-medium rounded-lg hover:bg-gray-100 transition">Cancel</button>
+                  <button onClick={handleSelectWorkout} disabled={!modalSelectedWorkout || savingSchedule} className="px-5 py-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">{savingSchedule ? "Saving..." : "Select"}</button>
                 </div>
               </div>
-
             </div>
           </div>
         )}
 
-        {/* ── Remove Program Confirmation Modal ── */}
+        {/* Remove Program Confirmation Modal */}
         {showRemoveProgramConfirm && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
-            onClick={e => {
-              if (e.target === e.currentTarget) {
-                setShowRemoveProgramConfirm(false)
-              }
-            }}
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} onClick={e => { if (e.target === e.currentTarget) setShowRemoveProgramConfirm(false) }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-
-              {/* Header */}
               <div className="px-6 pt-6 pb-4">
-                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                  <AlertCircle size={20} className="text-red-500" />
-                </div>
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center mb-4"><AlertCircle size={20} className="text-red-500" /></div>
                 <h2 className="text-base font-bold text-gray-900">Remove Program?</h2>
-                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                  This will remove <span className="font-semibold text-gray-700">{programAssignment?.programs?.name}</span> from {client.full_name}'s profile. Their scheduled workouts will also be cleared. This cannot be undone.
-                </p>
+                <p className="text-sm text-gray-500 mt-2 leading-relaxed">This will remove <span className="font-semibold text-gray-700">{programAssignment?.programs?.name}</span> from {client.full_name}'s profile. Their scheduled workouts will also be cleared.</p>
               </div>
-
-              {/* Footer */}
               <div className="flex items-center gap-3 px-6 pb-6 pt-2">
-                <button
-                  onClick={() => setShowRemoveProgramConfirm(false)}
-                  disabled={removingProgram}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-500 text-sm font-semibold rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleRemoveProgram}
-                  disabled={removingProgram}
-                  className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {removingProgram ? "Removing..." : "Remove Program"}
-                </button>
+                <button onClick={() => setShowRemoveProgramConfirm(false)} disabled={removingProgram} className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-500 text-sm font-semibold rounded-lg hover:bg-gray-50 transition disabled:opacity-50">Cancel</button>
+                <button onClick={handleRemoveProgram} disabled={removingProgram} className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50">{removingProgram ? "Removing..." : "Remove Program"}</button>
               </div>
-
             </div>
           </div>
         )}
 
-        {/* ── Assign Program Modal ── */}
+        {/* Assign Program Modal */}
         {showAssignProgramModal && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
-            onClick={e => {
-              if (e.target === e.currentTarget) {
-                setShowAssignProgramModal(false)
-                setSelectedProgramToAssign(null)
-                setAssignProgramSearch("")
-              }
-            }}
-          >
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} onClick={e => { if (e.target === e.currentTarget) { setShowAssignProgramModal(false); setSelectedProgramToAssign(null); setAssignProgramSearch("") } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col" style={{ maxHeight: "70vh" }}>
-
-              {/* Modal header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
                 <div>
                   <h2 className="text-base font-bold text-gray-900">{programAssignment ? "Change Program" : "Assign Program"}</h2>
                   <p className="text-xs text-gray-400 mt-0.5">Select a program to assign to {client.full_name}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    setShowAssignProgramModal(false)
-                    setSelectedProgramToAssign(null)
-                    setAssignProgramSearch("")
-                  }}
-                  className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition text-gray-400 hover:text-gray-600 text-lg leading-none"
-                >
-                  ×
-                </button>
+                <button onClick={() => { setShowAssignProgramModal(false); setSelectedProgramToAssign(null); setAssignProgramSearch("") }} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition text-gray-400 hover:text-gray-600 text-lg leading-none">×</button>
               </div>
-
-              {/* Search */}
               <div className="px-4 py-3 border-b border-gray-50">
                 <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-                  </svg>
-                  <input
-                    type="text"
-                    placeholder="Search programs..."
-                    value={assignProgramSearch}
-                    onChange={e => setAssignProgramSearch(e.target.value)}
-                    className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-300 focus:outline-none"
-                    autoFocus
-                  />
-                  {assignProgramSearch && (
-                    <button
-                      onClick={() => setAssignProgramSearch("")}
-                      className="text-gray-300 hover:text-gray-500 text-lg leading-none"
-                    >
-                      ×
-                    </button>
-                  )}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /></svg>
+                  <input type="text" placeholder="Search programs..." value={assignProgramSearch} onChange={e => setAssignProgramSearch(e.target.value)} className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-300 focus:outline-none" autoFocus />
+                  {assignProgramSearch && <button onClick={() => setAssignProgramSearch("")} className="text-gray-300 hover:text-gray-500 text-lg leading-none">×</button>}
                 </div>
               </div>
-
-              {/* Program list */}
               <div className="flex-1 overflow-y-auto py-2">
                 {allPrograms.length === 0 ? (
-                  <div className="px-4 py-8 text-center">
-                    <Dumbbell size={28} className="text-gray-200 mx-auto mb-3" />
-                    <p className="text-sm text-gray-400">No programs found</p>
-                    <p className="text-xs text-gray-300 mt-1">Build a program in the Program Builder first</p>
-                  </div>
+                  <div className="px-4 py-8 text-center"><Dumbbell size={28} className="text-gray-200 mx-auto mb-3" /><p className="text-sm text-gray-400">No programs found</p><p className="text-xs text-gray-300 mt-1">Build a program in the Program Builder first</p></div>
                 ) : (
-                  allPrograms
-                    .filter(p => p.name?.toLowerCase().includes(assignProgramSearch.toLowerCase()))
-                    .map(program => {
-                      const isCurrentlyAssigned = programAssignment?.programs?.id === program.id
-                      const isSelected = selectedProgramToAssign?.id === program.id
-                      const workoutsInProgram = allProgramWorkouts.filter(pw => pw.program_id === program.id)
-
-                      return (
-                        <button
-                          key={program.id}
-                          onClick={() => setSelectedProgramToAssign(isSelected ? null : program)}
-                          disabled={isCurrentlyAssigned}
-                          className={`w-full text-left px-5 py-3.5 transition border-l-2 flex items-center justify-between gap-3 ${
-                            isCurrentlyAssigned
-                              ? "opacity-50 cursor-not-allowed border-transparent"
-                              : isSelected
-                              ? "bg-indigo-50 border-indigo-500"
-                              : "border-transparent hover:bg-gray-50 hover:border-gray-200"
-                          }`}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className={`text-sm font-semibold truncate ${isSelected ? "text-indigo-700" : "text-gray-800"}`}>
-                                {program.name}
-                              </p>
-                              {isCurrentlyAssigned && (
-                                <span className="shrink-0 text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-full">Current</span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-400 mt-0.5">
-                              {workoutsInProgram.length} workout{workoutsInProgram.length !== 1 ? "s" : ""}
-                              {program.description ? ` · ${program.description}` : ""}
-                            </p>
+                  allPrograms.filter(p => p.name?.toLowerCase().includes(assignProgramSearch.toLowerCase())).map(program => {
+                    const isCurrentlyAssigned = programAssignment?.programs?.id === program.id
+                    const isSelected = selectedProgramToAssign?.id === program.id
+                    const workoutsInProgram = allProgramWorkouts.filter(pw => pw.program_id === program.id)
+                    return (
+                      <button key={program.id} onClick={() => setSelectedProgramToAssign(isSelected ? null : program)} disabled={isCurrentlyAssigned} className={`w-full text-left px-5 py-3.5 transition border-l-2 flex items-center justify-between gap-3 ${isCurrentlyAssigned ? "opacity-50 cursor-not-allowed border-transparent" : isSelected ? "bg-indigo-50 border-indigo-500" : "border-transparent hover:bg-gray-50 hover:border-gray-200"}`}>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className={`text-sm font-semibold truncate ${isSelected ? "text-indigo-700" : "text-gray-800"}`}>{program.name}</p>
+                            {isCurrentlyAssigned && <span className="shrink-0 text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100 px-1.5 py-0.5 rounded-full">Current</span>}
                           </div>
-                          {isSelected && (
-                            <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center shrink-0">
-                              <CheckCircle2 size={12} className="text-white" />
-                            </div>
-                          )}
-                        </button>
-                      )
-                    })
+                          <p className="text-xs text-gray-400 mt-0.5">{workoutsInProgram.length} workout{workoutsInProgram.length !== 1 ? "s" : ""}{program.description ? ` · ${program.description}` : ""}</p>
+                        </div>
+                        {isSelected && <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center shrink-0"><CheckCircle2 size={12} className="text-white" /></div>}
+                      </button>
+                    )
+                  })
                 )}
               </div>
-
-              {/* Modal footer */}
               <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-                <p className="text-xs text-gray-400">
-                  {selectedProgramToAssign
-                    ? `Selected: ${selectedProgramToAssign.name}`
-                    : "No program selected"}
-                </p>
+                <p className="text-xs text-gray-400">{selectedProgramToAssign ? `Selected: ${selectedProgramToAssign.name}` : "No program selected"}</p>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => {
-                      setShowAssignProgramModal(false)
-                      setSelectedProgramToAssign(null)
-                      setAssignProgramSearch("")
-                    }}
-                    className="px-4 py-2 border border-gray-200 text-gray-500 text-sm font-medium rounded-lg hover:bg-gray-100 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAssignProgram}
-                    disabled={!selectedProgramToAssign || assigningProgram}
-                    className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {assigningProgram ? "Assigning..." : "Assign Program"}
-                  </button>
+                  <button onClick={() => { setShowAssignProgramModal(false); setSelectedProgramToAssign(null); setAssignProgramSearch("") }} className="px-4 py-2 border border-gray-200 text-gray-500 text-sm font-medium rounded-lg hover:bg-gray-100 transition">Cancel</button>
+                  <button onClick={handleAssignProgram} disabled={!selectedProgramToAssign || assigningProgram} className="px-5 py-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">{assigningProgram ? "Assigning..." : "Assign Program"}</button>
                 </div>
               </div>
-
             </div>
           </div>
         )}
