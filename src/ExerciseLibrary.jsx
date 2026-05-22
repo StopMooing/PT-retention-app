@@ -230,109 +230,912 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
   )
 }
 
-function getCoachingTips(exerciseName, muscleGroup) {
-  const specific = {
+const getCoachingTips = (exerciseName, muscleGroup) => {
+  const tips = {
+
     // BICEPS
-    'Barbell Bicep Curl': ['Keep elbows pinned to your sides — any forward drift reduces bicep tension.', 'Supinate your wrist fully at the top for maximum peak contraction.', 'Lower the bar in 3 seconds for greater hypertrophic stimulus.'],
-    'Dumbbell Bicep Curl': ['Rotate your palms outward as you curl for full supination and bicep activation.', 'Avoid swinging — momentum reduces the stimulus on the bicep.', 'Pause briefly at the top and squeeze before lowering.'],
-    'Alternating Dumbbell Curl': ['Focus on one arm fully completing its rep before the other begins.', 'Keep the non-working arm still at your side — no pre-tensing.', 'Control the eccentric on each arm independently.'],
-    'Hammer Curl': ['Neutral grip shifts emphasis from biceps brachii to brachialis and brachioradialis.', 'Keep wrist straight and locked throughout — no deviation.', 'The hammer curl builds arm thickness that standard curls do not address.'],
-    'Incline Dumbbell Curl': ['The inclined position creates a stretched start position that recruits the long head maximally.', 'Let arms hang completely straight at the bottom before each rep.', 'Do not let elbows drift forward — keep upper arms vertical throughout.'],
-    'Concentration Curl': ['Press your elbow firmly against your inner thigh to eliminate all momentum.', 'Rotate the wrist slightly outward at the top for peak bicep contraction.', 'This is a finish exercise — lighter weight with perfect form outperforms heavy sloppy reps.'],
-    'Preacher Curl (Barbell)': ['Lower to full extension at the bottom for maximum stretch on the bicep.', 'The pad removes momentum entirely — do not bounce at the bottom.', 'Keep upper arms flat against the pad throughout the full movement.'],
-    'Preacher Curl (Dumbbell)': ['Use a supinating motion as you curl for greater bicep activation.', 'Full lockout at the bottom is key to the preacher curl\'s effectiveness.', 'Single arm allows greater range of motion and focus than barbell version.'],
-    'EZ Bar Curl': ['The angled grip reduces wrist stress compared to straight bar.', 'Still supinate as much as the bar allows at the top.', 'EZ bar allows slightly heavier loading due to wrist comfort.'],
-    'Cable Bicep Curl': ['Cable provides constant tension unlike free weights which have zero tension at bottom.', 'Stand close to the stack to maintain tension at the bottom of the movement.', 'Perfect for high rep burnout sets due to consistent tension profile.'],
-    'Drag Curl': ['Elbows travel back behind the body as you drag the bar up your torso.', 'This movement pattern isolates the long head of the bicep uniquely.', 'The bar should stay in contact or very close to your body throughout.'],
-    'Bayesian Curl': ['Standing away from the cable with arm behind hip creates maximum long head stretch.', 'This is arguably the best single bicep exercise for long head development.', 'Use lighter weight than standard curls — the stretched position is demanding.'],
-    'Zottman Curl': ['Curl up with supinated grip, rotate to pronated at the top, lower overhand.', 'This single exercise trains both the concentric and eccentric in different planes.', 'Slow the overhand lowering phase to 3-4 seconds for maximum brachioradialis work.'],
+    "21s Curl": [
+      "Keep your elbows pinned to your sides the whole time. They should not drift forward.",
+      "Bottom half is from fully straight arms to 90 degrees, top half is 90 degrees to the top. Complete all reps of one half before switching.",
+      "Lower the weight slowly on every rep. Do not let it drop."
+    ],
+    "Alternating Hammer Curl": [
+      "Keep your upper arms completely still at your sides. Only your forearms should move.",
+      "Squeeze hard at the top and hold for a second before lowering.",
+      "Lower slowly, taking about 3 seconds to get back to the bottom."
+    ],
+    "Barbell Bicep Curl": [
+      "Keep your elbows tucked into your sides. Do not let them swing forward.",
+      "Squeeze hard at the top of each curl.",
+      "Lower the weight slowly, taking about 3 seconds to return to the bottom."
+    ],
+    "Cable Bicep Curl": [
+      "Stand close to the cable. Keep your elbows pinned to your sides.",
+      "Squeeze hard at the top and hold briefly before lowering.",
+      "Lower slowly and feel the stretch at the bottom."
+    ],
+    "Concentration Curl": [
+      "Rest your elbow on the inside of your thigh. It must not move at all.",
+      "Curl slowly and squeeze hard at the top.",
+      "This is a slow, controlled exercise. No swinging."
+    ],
+    "Dumbbell Bicep Curl": [
+      "Keep your elbows pinned to your sides. They should not swing forward.",
+      "Squeeze hard at the top of each curl.",
+      "Lower the weight slowly, taking about 3 seconds to return to the bottom."
+    ],
+    "EZ Bar Curl": [
+      "The angled grip takes pressure off your wrists. Use it if straight bar curls hurt your wrists.",
+      "Keep your elbows tucked into your sides. Do not let them swing.",
+      "Lower slowly and feel the stretch at the bottom."
+    ],
+    "Hammer Curl": [
+      "Hold the dumbbells like you are gripping a hammer, thumbs facing up.",
+      "Keep your upper arms completely still at your sides throughout.",
+      "Squeeze at the top and lower slowly."
+    ],
+    "Incline Dumbbell Curl": [
+      "Lie back on the incline bench and let your arms hang straight down behind you.",
+      "Keep your upper arms still throughout. Only your forearms move.",
+      "Lower all the way back down to a full stretch before curling again."
+    ],
+    "Preacher Curl": [
+      "Rest the back of your upper arms flat on the pad. They must stay on the pad the whole time.",
+      "Lower all the way down to a full stretch at the bottom before curling back up.",
+      "Squeeze hard at the top before lowering slowly."
+    ],
+    "Reverse Curl": [
+      "Hold the bar with your palms facing down instead of up.",
+      "Keep your elbows still at your sides throughout.",
+      "Go lighter than a normal curl as this is harder on your forearms."
+    ],
+    "Spider Curl": [
+      "Lie chest down on the incline bench and let your arms hang straight down.",
+      "Keep your upper arms pointing straight down throughout. Only your forearms move.",
+      "Squeeze hard at the top before lowering slowly."
+    ],
+    "Zottman Curl": [
+      "Curl up with palms facing up, then rotate your palms to face down before lowering.",
+      "Lower slowly with palms facing down. That is the challenging part.",
+      "Take your time with the rotation. Do not rush it."
+    ],
+
     // TRICEPS
-    'Close Grip Bench Press': ['Use a grip just inside shoulder width — too narrow increases wrist strain.', 'Keep elbows tucked at 45 degrees, not flared wide or pinned to sides.', 'Touch the bar to your lower chest, not upper, for full tricep range.'],
-    'Tricep Pushdown (Straight Bar)': ['Pin elbows to your sides and keep them there for the entire set.', 'Achieve full lockout at the bottom — do not stop short.', 'Lean very slightly forward to allow a better line of pull.'],
-    'Tricep Pushdown (Rope)': ['Split the rope ends apart at the bottom for an extra inch of contraction.', 'The rope allows a more natural wrist position than a straight bar.', 'Keep elbows fixed — only your forearms should move.'],
-    'Skull Crusher (Barbell)': ['Lower the bar to your forehead or slightly behind your head for greater stretch.', 'Keep upper arms perfectly vertical throughout — no rocking back and forth.', 'Combine with close grip press as a superset for intense tricep stimulus.'],
-    'Overhead Tricep Extension (Dumbbell)': ['Overhead position places the long head of the tricep in a fully stretched state.', 'Keep upper arms close to your head and pointed directly at the ceiling.', 'The long head cannot be fully trained without an overhead component in your program.'],
-    'Tricep Dip (Parallel Bars)': ['Keep torso upright to emphasise triceps over chest.', 'Lock out fully at the top of each rep.', 'Add weight via belt or dumbbell between legs once bodyweight becomes easy.'],
-    'Kickback (Dumbbell)': ['Upper arm must be parallel to floor throughout — any drop reduces tricep isolation.', 'Full lockout at the back is essential — do not stop at 90 degrees.', 'Best used as a finishing exercise with lighter weight and strict form.'],
+    "Bench Dip": [
+      "Keep your back close to the bench the whole time. Do not let your hips drift out.",
+      "Lower until your elbows reach 90 degrees, then push back up.",
+      "Fully straighten your arms at the top and squeeze your triceps."
+    ],
+    "Cable Tricep Pushdown": [
+      "Keep your elbows tucked into your sides. They must not move.",
+      "Push all the way down until your arms are fully straight, then squeeze.",
+      "Let the cable come back up slowly. Do not let it snap back."
+    ],
+    "Close Grip Bench Press": [
+      "Grip the bar with your hands about shoulder-width apart. Do not go narrower than that.",
+      "Keep your elbows tucked close to your body as you lower the bar.",
+      "Press up powerfully and squeeze your triceps at the top."
+    ],
+    "Diamond Push Up": [
+      "Form a diamond shape with your thumbs and index fingers on the floor.",
+      "Keep your elbows close to your body as you lower down.",
+      "Push all the way back up and squeeze your triceps at the top."
+    ],
+    "Dumbbell Overhead Tricep Extension": [
+      "Hold one dumbbell with both hands above your head. Keep your upper arms pointing straight up.",
+      "Lower the dumbbell behind your head by bending your elbows only. Upper arms stay still.",
+      "Press back up to fully straight arms and squeeze at the top."
+    ],
+    "EZ Bar Skullcrusher": [
+      "Lie on the bench with arms straight above your chest.",
+      "Lower the bar toward your forehead by bending your elbows only. Upper arms stay pointing straight up.",
+      "Press back up to straight arms. Keep everything slow and controlled."
+    ],
+    "Overhead Tricep Extension": [
+      "Keep your upper arms pointing straight up next to your ears throughout.",
+      "Lower the weight behind your head by bending your elbows only.",
+      "Press back up to fully straight arms and squeeze at the top."
+    ],
+    "Rope Pushdown": [
+      "Keep your elbows tucked into your sides. They must not move.",
+      "At the bottom, pull the rope ends slightly apart as you lock out fully.",
+      "Let the rope come back up slowly. Do not let it snap."
+    ],
+    "Skull Crusher": [
+      "Lie on the bench with arms straight above your chest.",
+      "Lower the bar toward your forehead by bending your elbows only. Upper arms stay still.",
+      "Press back up to straight arms. Slow and controlled throughout."
+    ],
+    "Tricep Dip": [
+      "Keep your body upright. Do not lean forward.",
+      "Lower until your elbows reach 90 degrees, then push back up.",
+      "Fully straighten your arms at the top and squeeze your triceps."
+    ],
+    "Tricep Kickback": [
+      "Hinge forward so your upper body is roughly parallel to the floor.",
+      "Keep your upper arm pinned to your side. Only your forearm moves.",
+      "Fully straighten your arm at the top and hold for a second before lowering."
+    ],
+
     // CHEST
-    'Barbell Bench Press': ['Retract and depress your scapula before unracking — this protects your shoulders.', 'Lower the bar to your mid-chest with elbows at 45-75 degrees from your torso.', 'Drive your feet into the floor and create full body tension throughout the press.'],
-    'Dumbbell Bench Press': ['Dumbbells allow greater range of motion than barbell — use it fully.', 'Press the dumbbells slightly toward each other at the top to increase pec activation.', 'Lower dumbbells until your upper arms are below parallel to the floor.'],
-    'Incline Barbell Bench Press': ['Set the bench to 30-45 degrees — higher than this becomes a shoulder press.', 'The bar should touch your upper chest, not your neck.', 'Upper chest is often undertrained — prioritise incline work for complete chest development.'],
-    'Cable Chest Fly (Low to High)': ['Low to high cable path specifically recruits the clavicular (upper) pec fibres.', 'Maintain a slight bend in the elbows throughout — do not let them straighten.', 'Think of hugging a large tree rather than a pressing motion.'],
-    'Dumbbell Chest Fly': ['This is a stretch exercise — the eccentric lowering provides the stimulus.', 'Never allow elbows to fully extend — maintain a consistent bend throughout.', 'Lower until you feel a deep chest stretch, not pain in the shoulder joint.'],
-    'Push Up': ['Body must remain in a perfectly straight line from head to heels throughout.', 'Lower chest to within one inch of the floor for full range of motion.', 'Tempo matters — 2 seconds down, pause, 1 second up for hypertrophy focus.'],
+    "Barbell Bench Press": [
+      "Before you unrack the bar, squeeze your shoulder blades together and push them down into the bench, like tucking them into your back pockets.",
+      "Lower the bar to your mid-chest with your elbows at roughly 45-75 degrees from your body, not flared straight out.",
+      "Drive your feet hard into the floor and create tension through your whole body as you press."
+    ],
+    "Cable Crossover": [
+      "Set the cables at shoulder height. Step forward so there is tension at the starting position.",
+      "Bring your hands together in front of your chest like you are hugging a tree. Keep a slight bend in your elbows throughout.",
+      "Squeeze your chest hard when your hands meet. Do not just swing your arms."
+    ],
+    "Cable Fly": [
+      "Keep a slight bend in your elbows throughout. Do not let your arms go fully straight.",
+      "Open your arms out wide, feeling a stretch across your chest, then bring them back together.",
+      "Squeeze your chest hard when your hands meet."
+    ],
+    "Chest Dip": [
+      "Lean your body forward as you dip. The forward lean shifts the work to your chest.",
+      "Lower until you feel a stretch across your chest, then push back up.",
+      "Squeeze your chest at the top of each rep."
+    ],
+    "Decline Bench Press": [
+      "Squeeze your shoulder blades together and push them into the bench before you start.",
+      "Lower the bar to your lower chest, keeping your elbows at roughly 45-75 degrees from your body.",
+      "Press up powerfully and squeeze your chest at the top."
+    ],
+    "Dumbbell Bench Press": [
+      "Squeeze your shoulder blades together and push them into the bench before you start.",
+      "Lower the dumbbells until they are level with your chest, elbows at roughly 45-75 degrees from your body.",
+      "Press up and bring the dumbbells slightly together at the top. Squeeze your chest."
+    ],
+    "Dumbbell Fly": [
+      "Keep a slight bend in your elbows throughout. Do not let your arms go fully straight.",
+      "Lower the dumbbells out to your sides until you feel a stretch across your chest.",
+      "Bring the dumbbells back together above your chest and squeeze hard."
+    ],
+    "Incline Barbell Press": [
+      "Squeeze your shoulder blades together and push them into the bench before you start.",
+      "Lower the bar to your upper chest, keeping your elbows at roughly 45-75 degrees from your body.",
+      "Press up and squeeze your upper chest at the top."
+    ],
+    "Incline Dumbbell Press": [
+      "Squeeze your shoulder blades together and push them into the bench before you start.",
+      "Lower the dumbbells until they are level with your upper chest.",
+      "Press up and squeeze your upper chest at the top."
+    ],
+    "Incline Dumbbell Fly": [
+      "Keep a slight bend in your elbows throughout.",
+      "Lower the dumbbells out to your sides until you feel a good stretch across your upper chest.",
+      "Bring the dumbbells back together above your upper chest and squeeze hard."
+    ],
+    "Machine Chest Press": [
+      "Adjust the seat so the handles are at chest height.",
+      "Squeeze your shoulder blades together and push them into the pad before you press.",
+      "Press out fully and squeeze your chest, then return slowly."
+    ],
+    "Machine Fly": [
+      "Adjust the seat so your arms are at chest height.",
+      "Keep a slight bend in your elbows as you bring the handles together.",
+      "Squeeze your chest hard when the handles meet, then open slowly."
+    ],
+    "Push Up": [
+      "Keep your body in a straight line from head to heels. Do not let your hips sag or pike up.",
+      "Lower your chest all the way to the floor, keeping your elbows at roughly 45 degrees from your body.",
+      "Push all the way back up to fully straight arms and squeeze your chest."
+    ],
+    "Pec Deck": [
+      "Adjust the seat so your arms are at chest height.",
+      "Keep a slight bend in your elbows as you bring the pads together.",
+      "Squeeze your chest hard when the pads meet, then open slowly."
+    ],
+
     // BACK
-    'Pull Up': ['Initiate by depressing and retracting the scapula before bending the elbows.', 'Drive elbows toward your back pockets rather than thinking about pulling with hands.', 'Achieve full hang at the bottom with arms completely straight between reps.'],
-    'Lat Pulldown (Wide Grip)': ['Lean back slightly 10-15 degrees and pull to your upper chest.', 'Drive elbows down and back — think of putting them in your back pockets.', 'Avoid pulling behind the neck which stresses the cervical spine.'],
-    'Barbell Row (Bent Over)': ['Maintain a flat back at 45 degrees — do not round the lumbar spine.', 'Row to your lower abdomen or navel, not your chest, for lat emphasis.', 'Initiate the row by retracting the scapula before bending the elbow.'],
-    'Dumbbell Row (Single Arm)': ['Allow the dumbbell to hang fully at the bottom for complete lat stretch.', 'Row to your hip, not your armpit, for maximum lat activation.', 'Brace your core hard against the bench to protect the lower back.'],
-    'Seated Cable Row (Close Grip)': ['Sit tall and initiate by squeezing shoulder blades together before pulling.', 'Row to your navel with elbows traveling close to your sides.', 'Pause with shoulder blades fully retracted at the end range for maximum trap and rhomboid activation.'],
-    'Face Pull': ['Pull to your face level with hands ending beside your ears.', 'Externally rotate at the end of the movement — this is the key part for shoulder health.', 'Face pulls are essential for shoulder health and should be in every program.'],
-    'Straight Arm Pulldown': ['Keep arms completely straight throughout — this isolates the lats purely.', 'Pull down until your hands are at your hips, not just chest height.', 'This is one of the best exercises for feeling the lats work if you struggle with mind-muscle connection.'],
+    "Assisted Pull Up (Machine)": [
+      "The heavier the weight on the machine, the easier the exercise. Start with a weight that lets you do clean reps.",
+      "Pull your elbows straight down toward your hips to lift yourself up.",
+      "Lower yourself slowly all the way back down to a full stretch before pulling again."
+    ],
+    "Band Pull Apart": [
+      "Hold the band at shoulder height with straight arms in front of you.",
+      "Pull the band apart by squeezing your shoulder blades together, like you are trying to pinch a pencil between them.",
+      "Control the band back to the start. Do not let it snap forward."
+    ],
+    "Barbell Pull Over": [
+      "Lie on the bench with the bar above your chest. Keep a slight bend in your elbows.",
+      "Lower the bar back over your head in an arc until you feel a stretch through your back and chest.",
+      "Pull the bar back over your chest by driving your elbows down toward your hips."
+    ],
+    "Barbell Row (Bent Over)": [
+      "Hinge forward to about 45 degrees. Keep your back flat, not rounded.",
+      "Pull the bar into your lower stomach by driving your elbows back behind you.",
+      "Squeeze your shoulder blades together at the top, then lower slowly."
+    ],
+    "Cable Row (Seated)": [
+      "Sit tall. Do not round your lower back.",
+      "Pull the handle into your stomach by driving your elbows back behind you.",
+      "Squeeze your shoulder blades together at the top, then let the cable pull your arms forward slowly."
+    ],
+    "Chest Supported Row": [
+      "Lie chest down on the pad. This removes your lower back from the equation.",
+      "Pull the handles up by driving your elbows back behind you.",
+      "Squeeze your shoulder blades together at the top before lowering slowly."
+    ],
+    "Dumbbell Pull Over": [
+      "Lie on the bench with the dumbbell above your chest. Keep a slight bend in your elbows.",
+      "Lower the dumbbell back over your head in an arc until you feel a stretch through your back.",
+      "Pull the dumbbell back over your chest by driving your elbows down toward your hips."
+    ],
+    "Dumbbell Row (Single Arm)": [
+      "Place one hand and knee on the bench for support. Keep your back flat.",
+      "Pull the dumbbell up by driving your elbow straight up toward the ceiling.",
+      "Squeeze your shoulder blade in toward your spine at the top before lowering slowly."
+    ],
+    "Face Pull": [
+      "Set the cable at face height. Pull the rope toward your face, flaring your elbows out to the sides.",
+      "Think about trying to pull your shoulder blades together and back as you pull.",
+      "Hold for a second at the end position, then return slowly."
+    ],
+    "Lat Pulldown": [
+      "Grip the bar just wider than shoulder-width. Lean back slightly.",
+      "Pull the bar down to your upper chest by driving your elbows straight down toward your hips.",
+      "Lower the bar back up slowly all the way to a full stretch before pulling again."
+    ],
+    "Meadow Row": [
+      "Stand side on to the barbell. Hinge forward and grip the end of the bar.",
+      "Pull the bar up by driving your elbow back behind you.",
+      "Squeeze your shoulder blade in at the top before lowering slowly."
+    ],
+    "Pull Up": [
+      "Hang with your arms fully straight to start every rep.",
+      "Pull yourself up by driving your elbows straight down toward your hips.",
+      "Lower yourself slowly all the way back down to a full hang before pulling again."
+    ],
+    "Rack Pull": [
+      "Set the bar at knee height in the rack. Stand with feet shoulder-width apart.",
+      "Keep your back flat and chest up as you pull. Do not round your back.",
+      "Drive your hips forward to stand up, then lower the bar back to the rack under control."
+    ],
+    "Straight Arm Pulldown": [
+      "Keep your arms straight throughout. This is not a rowing movement.",
+      "Pull the bar down toward your thighs by driving your arms down and back.",
+      "Squeeze your back hard at the bottom before letting the bar rise slowly."
+    ],
+    "T-Bar Row": [
+      "Hinge forward to about 45 degrees. Keep your back flat.",
+      "Pull the bar into your chest by driving your elbows back behind you.",
+      "Squeeze your shoulder blades together at the top before lowering slowly."
+    ],
+
     // SHOULDERS
-    'Barbell Overhead Press': ['Press the bar in a straight vertical line, not forward.', 'Brace your core and glutes hard to protect the lumbar spine under load.', 'Allow the bar to pass your face by moving your head back slightly as it passes.'],
-    'Dumbbell Shoulder Press': ['Dumbbells allow a more natural pressing arc than a barbell.', 'Do not lock out aggressively at the top — keep slight tension in the shoulders.', 'Lower dumbbells to ear height for full range of motion.'],
-    'Arnold Press': ['The rotational component of the Arnold press recruits all three deltoid heads.', 'Move smoothly through the rotation — do not rush the bottom position.', 'Slower tempo on the way down increases time under tension for the anterior delt.'],
-    'Dumbbell Lateral Raise': ['Lead with your elbows, not your hands — this shifts emphasis to the lateral delt.', 'Raise to shoulder height only — above this the traps take over.', 'A slight forward lean of the torso (10-15 degrees) improves lateral delt positioning.'],
-    'Bent Over Rear Delt Fly': ['Hinge forward until torso is almost parallel to the floor for true rear delt isolation.', 'Lead with your elbows, raising arms out to your sides.', 'Rear delts are typically undertrained — include this in every upper body session.'],
-    'Upright Row (Barbell)': ['Use a wider grip (just outside shoulder width) to reduce impingement risk.', 'Pull elbows up and out — they should travel higher than your wrists.', 'Stop when elbows reach shoulder height — pulling higher increases shoulder impingement risk.'],
-    'Shrug (Barbell)': ['Shrug straight up — do not roll your shoulders forward or backward.', 'Hold the contracted position at the top for 1-2 seconds for maximum trap activation.', 'Use straps if grip is the limiting factor for heavy shrugs.'],
-    // LEGS
-    'Back Squat': ['Brace your core hard before descending — create a rigid trunk.', 'Push your knees out in line with your toes throughout the entire movement.', 'Drive your hips forward to stand, not just your back — this protects the lumbar spine.'],
-    'Front Squat': ['The front rack position requires the bar to rest on your front delts, not your hands.', 'Keeping your torso upright is essential — if you tip forward the bar will roll off.', 'Front squats develop quad strength and upper back stability simultaneously.'],
-    'Goblet Squat': ['Hold the dumbbell or kettlebell close to your chest to act as a counterbalance.', 'Use the weight to pry your knees open at the bottom for hip opener benefit.', 'Perfect for learning squat mechanics before loading a barbell.'],
-    'Romanian Deadlift (Barbell)': ['Push your hips back, do not just bend your torso forward.', 'Maintain the bar close to your legs throughout the entire movement.', 'Stop lowering when you feel a strong hamstring stretch, not when the bar reaches the floor.'],
-    'Romanian Deadlift (Dumbbell)': ['Allow the dumbbells to travel down the front of your legs for a natural path.', 'Soft bend in the knees throughout, but knees should not travel forward.', 'Drive your hips forward forcefully to return to standing.'],
-    'Bulgarian Split Squat': ['Front foot should be far enough forward that your shin is vertical at the bottom.', 'Lower straight down rather than forward to keep tension on the glute and quad.', 'This is an extremely difficult exercise — start with bodyweight only and progress slowly.'],
-    'Leg Press': ['Do not allow your lower back to round off the pad at the bottom.', 'Foot placement determines emphasis: high wide feet for glutes, low narrow for quads.', 'Full range of motion is critical — short reps are ineffective.'],
-    'Leg Extension': ['Leg extensions are best used for pre-exhaustion or finishing sets, not as primary quad work.', 'Pause briefly at full extension to ensure the quad is fully contracted.', 'Control the eccentric — do not let the weight drop back down.'],
-    'Leg Curl (Lying)': ['Point your toes slightly during the curl for greater bicep femoris activation.', 'Full contraction at the top is the key goal — curl until the pad touches your glutes.', 'Avoid lifting your hips off the pad during the movement.'],
-    'Hip Thrust (Barbell)': ['Drive through the entire foot, not just heels, for maximum glute activation.', 'Posterior pelvic tilt at the top (tuck pelvis under) increases glute activation significantly.', 'Pad the bar or use a barbell pad — discomfort at the hip crease will limit your performance.'],
-    'Glute Bridge': ['Press your lower back gently toward the floor at the top of each rep.', 'Drive knees slightly outward to activate glute medius alongside glute maximus.', 'Add a resistance band above the knees to increase glute medius demand.'],
-    'Hip Thrust (Dumbbell)': ['Hold the dumbbell vertically on your hip crease, not balanced horizontally.', 'Drive your hips to a fully extended position at the top.', 'Single leg variation is excellent for identifying and correcting glute imbalances.'],
-    'Deadlift': ['The setup is everything in the deadlift — take time to position correctly before each pull.', 'Push the floor away from you rather than thinking about pulling the bar up.', 'Keep the bar in contact with or very close to your legs throughout the entire pull.'],
-    'Deadlift (Conventional)': ['The bar should be over your mid-foot (about 1 inch from shins) when you set up.', 'Take the slack out of the bar before initiating the pull to avoid jerking.', 'Lock out by squeezing glutes and driving hips forward, not by leaning back aggressively.'],
-    'Sumo Deadlift': ['Setup with the bar over your mid-foot and shins close to vertical.', 'Push your knees out hard throughout the entire pull.', 'The sumo stance places greater demand on the adductors and glutes than conventional.'],
-    'Kettlebell Swing': ['This is a hip hinge, not a squat — hinge aggressively backward, not down.', 'The power comes from the hip snap, not from your arms swinging the bell.', 'Keep your lats engaged throughout to protect the lower back.'],
+    "Arnold Press": [
+      "Start with the dumbbells at chin height, palms facing you.",
+      "As you press up, rotate your palms to face forward. Move smoothly through the rotation.",
+      "Lower slowly back to the start position, rotating your palms back to face you."
+    ],
+    "Barbell Front Raise": [
+      "Stand tall. Keep a slight bend in your elbows throughout.",
+      "Raise the bar to shoulder height only. You do not need to go higher.",
+      "Lower the bar slowly. Do not let it drop."
+    ],
+    "Barbell Overhead Press": [
+      "Press the bar in a straight vertical line above your head. Do not press forward.",
+      "Tighten your core and squeeze your glutes hard to protect your lower back under load.",
+      "As the bar passes your face, push your head slightly forward so the bar finishes directly above your shoulders."
+    ],
+    "Bent Over Rear Delt Fly": [
+      "Hinge forward until your upper body is almost parallel to the floor.",
+      "Raise your arms out to your sides by leading with your elbows, not your hands.",
+      "Squeeze your shoulder blades together at the top before lowering slowly."
+    ],
+    "Cable Lateral Raise": [
+      "Stand side on to the cable with the handle at your hip.",
+      "Raise your arm out to the side to shoulder height. Lead with your elbow, not your hand.",
+      "Lower slowly. Do not let the cable pull your arm down quickly."
+    ],
+    "Dumbbell Lateral Raise": [
+      "Keep a slight bend in your elbows throughout.",
+      "Raise your arms out to your sides to shoulder height. Think about pouring water out of a jug.",
+      "Lower slowly, taking about 3 seconds to return to your sides."
+    ],
+    "Dumbbell Shoulder Press": [
+      "Sit tall or stand tall. Do not arch your lower back.",
+      "Press the dumbbells straight up above your head.",
+      "Lower slowly until your elbows are at 90 degrees before pressing again."
+    ],
+    "Front Raise": [
+      "Keep a slight bend in your elbows throughout.",
+      "Raise to shoulder height only. You do not need to go higher.",
+      "Lower slowly. Do not let the weight drop."
+    ],
+    "Lateral Raise Machine": [
+      "Adjust the seat so the pads sit just above your elbows.",
+      "Raise your arms out to shoulder height, then lower slowly.",
+      "Do not shrug your shoulders up as you raise. Keep them relaxed and down."
+    ],
+    "Rear Delt Machine": [
+      "Adjust the seat so the handles are at shoulder height.",
+      "Pull your arms back by driving your elbows back behind you.",
+      "Squeeze your shoulder blades together at the end position before returning slowly."
+    ],
+    "Upright Row": [
+      "Grip the bar about shoulder-width apart.",
+      "Pull the bar straight up close to your body, leading with your elbows. Elbows should rise higher than your hands.",
+      "Lower slowly back to the start."
+    ],
+
+    // LEGS / QUADS
+    "Back Squat": [
+      "Take a big breath in and brace your core hard before you descend, like you are about to take a punch to the stomach.",
+      "Push your knees out in the same direction as your toes as you squat down.",
+      "Drive your hips forward to stand up, not just your chest. Push the floor away from you."
+    ],
+    "Banded Squat": [
+      "Push your knees out against the band throughout the whole movement.",
+      "Drive through your whole foot, not just your heels.",
+      "Master the full range of motion before adding load."
+    ],
+    "Box Jump": [
+      "Stand in front of the box with feet shoulder-width apart.",
+      "Swing your arms forward as you jump to help drive you up onto the box.",
+      "Land softly with both feet flat on the box and knees slightly bent. Step down, do not jump down."
+    ],
+    "Box Step Down": [
+      "Stand on the box on one leg. Lower your other foot toward the floor slowly.",
+      "Keep your knee tracking over your toes as you lower.",
+      "Touch the floor lightly, then drive back up to standing."
+    ],
+    "Bulgarian Split Squat": [
+      "Rest your back foot on the bench with the top of your foot facing down.",
+      "Lower straight down by bending your front knee. Keep your front foot flat.",
+      "Your front knee should track over your toes as you lower."
+    ],
+    "Front Squat": [
+      "Rest the bar on your front shoulders with your elbows pointing forward and up.",
+      "Keep your chest up tall throughout. If your chest drops, the bar will fall.",
+      "Push your knees out over your toes as you squat."
+    ],
+    "Goblet Squat": [
+      "Hold the dumbbell or kettlebell at chest height with both hands.",
+      "Keep your chest up and push your knees out over your toes as you squat.",
+      "Drive through your whole foot to stand back up."
+    ],
+    "Hack Squat": [
+      "Place your feet shoulder-width apart on the platform. Position depends on what feels comfortable.",
+      "Lower slowly and push your knees out over your toes.",
+      "Drive through your whole foot to push the platform away."
+    ],
+    "Leg Extension": [
+      "Adjust the machine so the pad sits just above your ankles.",
+      "Kick your legs up until they are fully straight, then squeeze hard for a second.",
+      "Lower slowly. Do not let the weight drop."
+    ],
+    "Leg Press": [
+      "Place your feet shoulder-width apart on the platform.",
+      "Lower the platform slowly until your knees are at 90 degrees. Do not let your lower back peel off the seat.",
+      "Drive through your whole foot to push the platform away. Do not lock your knees out completely at the top."
+    ],
+    "Lunge": [
+      "Step forward and lower your back knee toward the floor.",
+      "Keep your front knee tracking over your toes. Do not let it cave inward.",
+      "Drive through your front heel to push back to the start."
+    ],
+    "Pistol Squat": [
+      "Hold your arms out in front for balance.",
+      "Lower slowly on one leg, keeping your heel flat on the floor.",
+      "Drive through your heel to stand back up. Use a box or support until you build the strength."
+    ],
+    "Romanian Split Squat": [
+      "Stand in a split stance with one foot forward and one back.",
+      "Lower straight down by bending both knees.",
+      "Keep your front foot flat and your front knee tracking over your toes."
+    ],
+    "Sissy Squat": [
+      "Hold something for support to start. This is an advanced exercise.",
+      "Lean your body back as you bend your knees, raising your heels off the floor.",
+      "Lower slowly. The slower you go, the harder it is."
+    ],
+    "Smith Machine Squat": [
+      "Set the bar so you can step under it comfortably. It should sit on your upper back.",
+      "Push your knees out over your toes as you squat down.",
+      "Drive through your whole foot to stand back up."
+    ],
+    "Step Up": [
+      "Place your whole foot on the box or bench, not just your toes.",
+      "Drive through your front heel to step up. Do not push off with your back foot.",
+      "Lower your back foot slowly and with control."
+    ],
+    "Wall Sit": [
+      "Stand with your back flat against the wall and slide down until your knees are at 90 degrees.",
+      "Keep your feet flat on the floor directly under your knees.",
+      "Hold the position and breathe. Do not hold your breath."
+    ],
+
+    // HAMSTRINGS AND GLUTES
+    "Romanian Deadlift": [
+      "Keep a slight bend in your knees throughout. This is not a straight-leg movement.",
+      "Push your hips back as you lower the bar, like you are trying to touch the wall behind you with your backside.",
+      "Feel the stretch in the back of your legs at the bottom, then drive your hips forward to stand back up."
+    ],
+    "Nordic Curl": [
+      "Lock your feet under something secure. Keep your body in a straight line from knees to shoulders.",
+      "Lower yourself toward the floor as slowly as you possibly can.",
+      "Use your hands to push off the floor at the bottom, then curl yourself back up."
+    ],
+    "Leg Curl (Lying)": [
+      "Lie face down with the pad just above your heels.",
+      "Curl your heels toward your backside, squeezing the back of your legs hard at the top.",
+      "Lower slowly. Do not let the weight drop."
+    ],
+    "Leg Curl (Seated)": [
+      "Adjust the machine so the pad sits just above your heels.",
+      "Curl your legs down as far as the machine allows. Squeeze hard at the bottom.",
+      "Return slowly to the start position."
+    ],
+    "Stiff Leg Deadlift": [
+      "Keep your legs straight but not locked. There should be a soft bend at the knee.",
+      "Push your hips back as you lower, like you are trying to touch the wall behind you with your backside.",
+      "Feel the stretch in the back of your legs, then drive your hips forward to stand back up."
+    ],
+    "Good Morning": [
+      "Keep your back flat throughout. Do not round forward.",
+      "Push your hips back as you hinge forward. Keep a soft bend in your knees.",
+      "Drive your hips forward to stand back up."
+    ],
+    "Glute Ham Raise": [
+      "Lock your feet securely. Start with your body in a straight line.",
+      "Lower your upper body toward the floor as slowly as you can.",
+      "Use the strength of the back of your legs to curl yourself back up."
+    ],
+    "45 Degree Back Extension": [
+      "Lie face down on the pad with your hips at the top edge.",
+      "Lower your upper body down toward the floor, then raise back up to a straight line with your legs.",
+      "Squeeze your glutes and the back of your legs hard at the top."
+    ],
+    "Reverse Hyper": [
+      "Lie face down on the pad with your hips at the edge.",
+      "Raise your legs up by squeezing your glutes and the back of your legs.",
+      "Lower slowly and with control."
+    ],
+
+    // GLUTES
+    "Hip Thrust (Barbell)": [
+      "Rest your upper back on the bench and place the barbell across your hips. Use a pad for comfort.",
+      "Drive your hips straight up by squeezing your glutes hard. Think about pushing the ceiling away with your hips.",
+      "Squeeze and hold at the top for a second before lowering slowly."
+    ],
+    "Hip Thrust (Dumbbell)": [
+      "Rest your upper back on the bench with the dumbbell sitting across your hips.",
+      "Drive your hips straight up by squeezing your glutes hard.",
+      "Squeeze and hold at the top for a second before lowering slowly."
+    ],
+    "Banded Hip Thrust": [
+      "Place the band just above your knees and push your knees out against it throughout.",
+      "Drive your hips straight up by squeezing your glutes hard.",
+      "Squeeze and hold at the top for a second before lowering slowly."
+    ],
+    "American Hip Thrust": [
+      "At the top, tuck your hips under slightly, like you are flattening your lower back.",
+      "This is different to a standard hip thrust and targets a different part of your glutes.",
+      "Squeeze hard at the top and hold for a second before lowering."
+    ],
+    "Glute Bridge": [
+      "Lie on your back with your feet flat on the floor close to your backside.",
+      "Drive your hips straight up by squeezing your glutes hard.",
+      "Squeeze and hold at the top for a second before lowering slowly."
+    ],
+    "Single Leg Glute Bridge": [
+      "Lie on your back. Lift one foot off the floor and drive your hips up using the other leg.",
+      "Squeeze your glute hard at the top and hold for a second.",
+      "Keep your hips level. Do not let one side drop."
+    ],
+    "Cable Kickback": [
+      "Attach the ankle strap and face the cable machine.",
+      "Kick your leg straight back behind you, squeezing your glute hard at the top.",
+      "Return your foot slowly to the start. Do not swing your leg."
+    ],
+    "Donkey Kick": [
+      "Start on hands and knees with a flat back.",
+      "Kick one leg back and up, squeezing your glute hard at the top.",
+      "Keep your core tight so your lower back does not arch excessively."
+    ],
+    "Fire Hydrant": [
+      "Start on hands and knees with a flat back.",
+      "Lift one knee out to the side like a dog at a fire hydrant.",
+      "Keep your core tight. Do not let your hips rotate."
+    ],
+    "Clamshell": [
+      "Lie on your side with your hips and knees bent at 90 degrees.",
+      "Lift your top knee up like a clamshell opening, keeping your feet together.",
+      "Squeeze at the top and lower slowly. Do not let your hips roll back."
+    ],
+    "Hip Abduction Machine": [
+      "Adjust the machine so the pads rest on the outside of your knees.",
+      "Push your knees out against the pads, squeezing your outer glutes.",
+      "Return slowly. Do not let the weight snap your knees back together."
+    ],
+    "Hip Adduction Machine": [
+      "Adjust the machine so the pads rest on the inside of your knees.",
+      "Squeeze your knees together against the pads.",
+      "Return slowly. Do not let the weight pull your knees apart quickly."
+    ],
+    "Frog Pump": [
+      "Lie on your back with the soles of your feet together and knees out to the sides.",
+      "Drive your hips straight up by squeezing your glutes hard.",
+      "Squeeze and hold at the top for a second before lowering."
+    ],
+    "Cable Pull Through": [
+      "Face away from the cable machine with the rope between your legs.",
+      "Hinge forward, pushing your hips back toward the machine and feeling the stretch.",
+      "Drive your hips forward to stand up, squeezing your glutes hard at the top."
+    ],
+    "Curtsy Lunge": [
+      "Step one foot back and across behind the other leg.",
+      "Lower your back knee toward the floor, keeping your front knee tracking over your toes.",
+      "Push through your front heel to return to the start."
+    ],
+
+    // CALVES
+    "Calf Raise (Standing)": [
+      "Stand with the balls of your feet on the edge of a step or platform.",
+      "Lower your heels all the way down to feel a full stretch, then rise up as high as you can on your toes.",
+      "Hold at the top for a second and squeeze your calves before lowering slowly."
+    ],
+    "Calf Raise (Seated)": [
+      "Sit with the pad resting just above your knees.",
+      "Lower your heels all the way down to feel a full stretch before rising up.",
+      "Rise as high as you can on your toes and squeeze at the top before lowering slowly."
+    ],
+    "Calf Raise (Machine)": [
+      "Place the balls of your feet on the platform with heels hanging off the edge.",
+      "Lower your heels down to a full stretch before rising up.",
+      "Rise as high as you can and squeeze at the top before lowering slowly."
+    ],
+    "Donkey Calf Raise": [
+      "Hinge forward with your hands resting on a surface for support.",
+      "Lower your heels all the way down to a full stretch, then rise up as high as you can.",
+      "Squeeze your calves hard at the top before lowering slowly."
+    ],
+    "Jump Rope": [
+      "Keep your elbows close to your sides and turn the rope using your wrists, not your arms.",
+      "Jump with both feet together, bouncing lightly on the balls of your feet.",
+      "Keep your knees slightly bent throughout to absorb impact."
+    ],
+    "Single Leg Calf Raise": [
+      "Stand on one foot on the edge of a step. Hold something lightly for balance.",
+      "Lower your heel all the way down to a full stretch, then rise as high as you can.",
+      "Squeeze at the top before lowering slowly."
+    ],
+    "Tibialis Raise": [
+      "Stand with your heels on an edge or a weight plate, toes off the floor.",
+      "Raise your toes up as high as you can, squeezing the front of your shin.",
+      "Lower slowly back to the start."
+    ],
+
     // CORE
-    'Plank': ['Push the floor away with your forearms to maintain full shoulder engagement.', 'Squeeze your glutes and quads — your core does not work in isolation.', 'If your hips are sagging or elevated, reduce the duration until form is corrected.'],
-    'Ab Wheel Rollout': ['Start from kneeling and only progress to standing when full range is mastered.', 'Brace your core hard before rolling out — losing this at the bottom risks lower back injury.', 'Pull back in with your lats and abs working together.'],
-    'Pallof Press': ['The value is in resisting rotation, not creating it — the goal is to stay still.', 'Press slowly out and hold for 2 seconds before returning.', 'Step further from the cable to increase the rotational demand.'],
-    'Cable Crunch': ['Pull through the abs, not by pulling with your arms.', 'Allow your lower back to round fully at the bottom for complete abdominal contraction.', 'Heavier loads with strict form outperform light loads with excessive momentum.'],
-    'Hanging Leg Raise': ['Avoid swinging at the bottom by using a controlled leg lowering each rep.', 'For true lower ab work, tilt the pelvis posteriorly as you raise your legs.', 'Bent knee version is the correct regression before progressing to straight leg.'],
-    'Dead Bug': ['Press your lower back hard into the floor throughout the entire movement.', 'Move the opposite arm and leg simultaneously and smoothly.', 'This is one of the safest and most effective core stability exercises available.'],
+    "Ab Wheel Rollout": [
+      "Start from kneeling. Only move to standing when you can do perfect kneeling reps.",
+      "Brace your core hard before rolling out. If you lose that tension, you risk hurting your lower back.",
+      "Pull yourself back in using your core and the back of your arms working together."
+    ],
+    "Bicycle Crunch": [
+      "Lie on your back with hands lightly behind your head. Do not pull on your neck.",
+      "Bring your opposite elbow to your opposite knee, rotating through your core.",
+      "Keep the movement slow and controlled. Do not rush through the reps."
+    ],
+    "Bird Dog": [
+      "Start on hands and knees with a flat back. Do not let your back sag.",
+      "Extend your opposite arm and leg at the same time, keeping your body level.",
+      "Hold at the top for a second, then return slowly before switching sides."
+    ],
+    "Cable Crunch": [
+      "Kneel in front of the cable with the rope attachment behind your head.",
+      "Crunch down by rounding your spine, bringing your elbows toward your knees.",
+      "Return slowly to the start under control."
+    ],
+    "Dead Bug": [
+      "Lie on your back with arms pointing to the ceiling and knees bent at 90 degrees.",
+      "Brace your core and press your lower back flat into the floor. Keep it there throughout.",
+      "Lower your opposite arm and leg slowly toward the floor, then return and switch sides."
+    ],
+    "Dragon Flag": [
+      "This is an advanced exercise. Start with easier progressions first.",
+      "Keep your body in a perfectly straight line from shoulders to feet as you lower.",
+      "Lower as slowly as you can. The slower you go, the harder it is."
+    ],
+    "Hanging Knee Raise": [
+      "Hang from the bar with a firm grip.",
+      "Bring your knees up toward your chest by rounding your lower back slightly.",
+      "Lower your legs slowly back to the start. Do not swing."
+    ],
+    "Hanging Leg Raise": [
+      "Hang from the bar with a firm grip.",
+      "Raise your legs up with straight knees until they are parallel to the floor or higher.",
+      "Lower slowly. Do not swing or use momentum."
+    ],
+    "Hollow Body Hold": [
+      "Lie on your back and press your lower back flat into the floor.",
+      "Raise your shoulders and legs off the floor slightly, keeping your lower back flat.",
+      "Hold the position and breathe. Do not hold your breath."
+    ],
+    "Landmine Rotation": [
+      "Hold the end of the barbell with both hands, arms slightly bent.",
+      "Rotate the bar from one side of your body to the other, pivoting your feet.",
+      "Keep control of the bar throughout. Do not let it swing."
+    ],
+    "Leg Raise": [
+      "Lie flat on your back with legs straight.",
+      "Raise your legs up to 90 degrees by tightening your core, not just swinging your legs.",
+      "Lower slowly. Do not let your lower back arch off the floor."
+    ],
+    "Mountain Climber": [
+      "Start in a push up position with a flat back.",
+      "Drive one knee toward your chest, then quickly switch legs.",
+      "Keep your hips level and your core tight throughout."
+    ],
+    "Pallof Press": [
+      "Stand side on to the cable. The cable should be at chest height.",
+      "Press the handle straight out in front of your chest and hold briefly.",
+      "Pull it back to your chest. Resist the cable trying to rotate your body throughout."
+    ],
+    "Plank": [
+      "Place your forearms on the floor with elbows directly under your shoulders.",
+      "Keep your body in a straight line from head to heels. Do not let your hips sag or pike up.",
+      "Breathe normally throughout. Do not hold your breath."
+    ],
+    "Reverse Crunch": [
+      "Lie flat on your back with hands by your sides.",
+      "Bring your knees toward your chest by curling your lower back off the floor.",
+      "Lower slowly. Do not let your legs drop."
+    ],
+    "Russian Twist": [
+      "Sit with your knees bent and feet off the floor. Keep your back at a 45 degree angle.",
+      "Rotate your upper body from side to side, keeping your core tight.",
+      "Keep the movement controlled. Do not just swing your arms."
+    ],
+    "Side Plank": [
+      "Stack your feet or stagger them for balance. Keep your body in a straight line from head to heels.",
+      "Do not let your hips drop toward the floor.",
+      "Breathe normally throughout. Do not hold your breath."
+    ],
+    "Sit Up": [
+      "Lie on your back with knees bent and feet flat.",
+      "Curl your upper body up toward your knees using your core.",
+      "Lower slowly all the way back down before the next rep."
+    ],
+    "Toes to Bar": [
+      "Hang from the bar with a firm grip.",
+      "Raise your legs up and touch your toes to the bar.",
+      "Lower slowly with control. Do not just drop your legs."
+    ],
+    "Windmill": [
+      "Stand with feet wider than shoulder-width, toes turned out.",
+      "Hinge sideways, lowering one hand toward your foot while the other reaches to the ceiling.",
+      "Keep both arms straight and look up toward your raised hand."
+    ],
+    "Wood Chop": [
+      "Stand side on to the cable or holding a weight.",
+      "Rotate and pull the weight from high to low in a chopping motion, pivoting your feet.",
+      "Keep the movement controlled. Do not just swing."
+    ],
+
     // FULL BODY
-    'Thruster': ['The transition from squat to press must be seamless — use the upward momentum from the squat.', 'Keep your core braced throughout the entire movement.', 'A strong front rack position is essential — bar rests on shoulders, not hands.'],
-    'Turkish Get Up': ['Move slowly and deliberately — speed is your enemy on this exercise.', 'Keep your eyes on the kettlebell at all times throughout the entire sequence.', 'Master each position separately before attempting a full fluid movement.'],
-    'Farmers Walk': ['Walk tall with shoulders back and down, not hunched forward.', 'Take short, controlled steps — do not let the weights sway your gait.', 'Grip the handles tightly and brace your core for the entire distance.'],
+    "Assault Bike Sprint": [
+      "Push and pull the handles at the same time as you pedal. Arms and legs work together.",
+      "For sprints, drive as hard as you can for the full interval. Do not pace yourself.",
+      "Keep your back upright and core tight. Do not hunch forward."
+    ],
+    "Barbell Complex": [
+      "Choose a weight you can use for your weakest exercise in the series.",
+      "Do not put the bar down between exercises. That is the whole point.",
+      "Go through each movement with good form. Do not let technique fall apart when you are tired."
+    ],
+    "Battle Ropes": [
+      "Keep a slight bend in your knees and your core tight throughout.",
+      "Drive the waves from your shoulders, not just your wrists.",
+      "Breathe continuously. Do not hold your breath."
+    ],
+    "Bear Crawl": [
+      "Start on hands and knees with your knees hovering just an inch off the floor.",
+      "Move your opposite hand and foot together, like a crawling baby.",
+      "Keep your hips low and level. Do not let them rise up."
+    ],
+    "Broad Jump": [
+      "Stand with feet shoulder-width apart.",
+      "Swing your arms and bend your knees, then explode forward as far as you can.",
+      "Land softly with knees bent to absorb the impact."
+    ],
+    "Burpee": [
+      "Start standing. Drop your hands to the floor and jump or step your feet back to a push up position.",
+      "Do a push up, then jump or step your feet back toward your hands.",
+      "Jump up and clap overhead to finish one rep."
+    ],
+    "Clean": [
+      "Start with the bar over your mid-foot, about shoulder-width grip.",
+      "Drive through your legs first, then pull the bar up close to your body.",
+      "As the bar reaches chest height, quickly drop under it and catch it on your front shoulders with elbows high."
+    ],
+    "Clean and Jerk": [
+      "Perform the clean first to get the bar to your front shoulders.",
+      "Dip slightly at the knees, then drive the bar overhead explosively.",
+      "Split your feet or squat under the bar to catch it with straight arms."
+    ],
+    "Deadlift": [
+      "Stand with the bar over your mid-foot. Feet shoulder-width apart.",
+      "Keep your back flat and chest up as you pull. Think about pushing the floor away from you rather than pulling the bar up.",
+      "Drive your hips forward to stand up. Do not let your lower back round."
+    ],
+    "Farmers Carry": [
+      "Pick up the weights with a firm grip. Stand tall with your shoulders pulled back.",
+      "Walk with short, controlled steps. Keep your core tight throughout.",
+      "Do not let the weights pull your shoulders forward or your back round."
+    ],
+    "Kettlebell Swing": [
+      "Push your hips back as the kettlebell swings down between your legs, like you are hiking a football.",
+      "Drive your hips forward explosively to swing the kettlebell up. It is a hip movement, not a squat.",
+      "Let the kettlebell swing back between your legs naturally and repeat."
+    ],
+    "Man Maker": [
+      "This is a complex movement. Learn each part separately before combining them.",
+      "Perform a push up, then a renegade row on each side, then stand and perform a squat to press.",
+      "Choose a weight you can control for every part of the movement."
+    ],
+    "Power Clean": [
+      "Start with the bar over your mid-foot.",
+      "Drive through your legs, then pull the bar up close to your body and drop under it.",
+      "Catch the bar on your front shoulders with your elbows high."
+    ],
+    "Sandbag Carry": [
+      "Hug the sandbag to your chest or hoist it onto one shoulder.",
+      "Keep your core tight and walk with controlled steps.",
+      "Switch shoulders regularly if carrying on one side."
+    ],
+    "Sled Push": [
+      "Lean forward into the sled with your arms straight or bent.",
+      "Drive through your legs with powerful steps.",
+      "Keep your core tight and back flat throughout."
+    ],
+    "Snatch": [
+      "This is a technical lift. Work with a coach before adding heavy weight.",
+      "Drive through your legs first, then pull the bar close to your body all the way overhead.",
+      "Catch the bar with straight arms overhead in a partial squat."
+    ],
+    "Thruster": [
+      "Start with the bar on your front shoulders.",
+      "Squat down, then drive up explosively and use that momentum to press the bar overhead.",
+      "Lock your arms out fully at the top before lowering back to your shoulders."
+    ],
+    "Tyre Flip": [
+      "Start with the tyre flat on the ground. Hinge down and grip the bottom.",
+      "Drive through your legs to tip the tyre up, then switch your hands to push it over.",
+      "Use your legs throughout. Do not try to muscle it with your arms."
+    ],
+
     // CARDIO
-    'Treadmill Run': ['Land with a midfoot strike under your centre of mass, not a heel strike in front.', 'Keep your torso upright with a slight forward lean from the ankles, not the waist.', 'Cadence of 170-180 steps per minute is associated with reduced injury risk.'],
-    'Rowing Machine': ['Drive sequence: legs 60 percent, lean back 20 percent, arms 20 percent on each stroke.', 'Do not round your lower back at the catch position — maintain lumbar curve.', 'A damper setting of 4-6 typically provides the most efficient rowing experience.'],
-    'Stationary Bike': ['Set saddle height so there is a slight bend at the knee at the bottom of the pedal stroke.', 'Aim for 80-100 RPM for cardiovascular work — higher cadence is easier on the knees.', 'Engage your core and avoid rocking your hips side to side with each pedal stroke.'],
-    'Sprints': ['Drive your knees up and pump your arms hard during max effort sprints.', 'Full recovery between sprint efforts is essential for true sprint quality.', 'Start from a walk or jog before building to max effort to reduce injury risk.'],
+    "Cycling (Stationary)": [
+      "Adjust the seat so your knee has a slight bend when the pedal is at the bottom.",
+      "Keep a smooth, consistent pedal stroke throughout.",
+      "Keep your upper body relaxed. Do not hunch forward."
+    ],
+    "Hill Sprints": [
+      "Drive your knees up and pump your arms powerfully as you sprint up.",
+      "Lean into the hill slightly.",
+      "Walk back down slowly to recover before the next sprint."
+    ],
+    "Rowing Machine": [
+      "The sequence is legs, then lean back, then arms on the way out. Reverse it on the way back: arms, lean forward, legs.",
+      "Drive through your legs powerfully. Your legs do most of the work.",
+      "Keep your back tall and avoid rounding your shoulders."
+    ],
+    "Running (Treadmill)": [
+      "Keep your posture upright. Do not hunch forward.",
+      "Land with your foot under your body, not out in front.",
+      "Relax your shoulders and arms. Hands should be loose, not clenched."
+    ],
+    "Ski Erg": [
+      "Pull the handles down past your hips in one smooth arc.",
+      "Hinge at the hips as you pull, using your body weight to help drive the movement.",
+      "Let the handles rise back up fully before pulling again."
+    ],
+    "Skipping": [
+      "Keep your elbows close to your sides and turn the rope with your wrists, not your whole arms.",
+      "Jump with both feet together, bouncing lightly on the balls of your feet.",
+      "Keep your knees slightly bent to absorb the impact."
+    ],
+    "Stair Climber": [
+      "Keep your posture upright. Do not lean heavily on the handrails.",
+      "Place your whole foot on each step, not just your toes.",
+      "Find a challenging pace you can maintain for the full duration."
+    ],
+    "Swimming": [
+      "Keep your body as flat and horizontal in the water as possible.",
+      "Breathe consistently. Do not hold your breath for long periods.",
+      "Focus on long, smooth strokes rather than short, fast ones."
+    ],
+    "Versa Climber": [
+      "Drive opposite arm and leg together, like an exaggerated walking motion.",
+      "Keep your core tight throughout.",
+      "Find a steady rhythm rather than going all out and burning out."
+    ],
+    "Walking": [
+      "Keep your posture upright with your head up and shoulders back.",
+      "Swing your arms naturally as you walk.",
+      "Land your heel first and roll through to your toes with each step."
+    ],
+  };
+
+  if (tips[exerciseName]) {
+    return tips[exerciseName];
   }
 
-  if (specific[exerciseName]) return specific[exerciseName]
+  const muscleGroupTips = {
+    "Biceps": [
+      "Keep your elbows pinned to your sides throughout.",
+      "Squeeze hard at the top and lower slowly.",
+      "Control the weight on the way down. That is half the work."
+    ],
+    "Triceps": [
+      "Keep your upper arms still. Only your forearms should move.",
+      "Fully straighten your arms at the top and squeeze.",
+      "Lower slowly. Do not let the weight drop."
+    ],
+    "Chest": [
+      "Squeeze your shoulder blades together and push them into the bench before you start.",
+      "Feel the stretch across your chest at the bottom of each rep.",
+      "Squeeze your chest hard at the top."
+    ],
+    "Back": [
+      "Think about pulling with your elbows, not your hands.",
+      "Squeeze your shoulder blades together at the end of each rep.",
+      "Lower slowly and feel the stretch at the bottom."
+    ],
+    "Shoulders": [
+      "Keep your shoulders relaxed and down. Do not shrug them up.",
+      "Control the weight on the way down.",
+      "Do not use momentum. Move slowly and deliberately."
+    ],
+    "Legs": [
+      "Push your knees out in the direction of your toes.",
+      "Drive through your whole foot, not just your heels.",
+      "Lower slowly and with control."
+    ],
+    "Glutes": [
+      "Squeeze your glutes hard at the top of every rep.",
+      "Hold the squeeze for a full second before lowering.",
+      "Lower slowly. Do not just drop the weight."
+    ],
+    "Core": [
+      "Brace your core hard before every rep, like you are about to take a punch.",
+      "Do not hold your breath. Breathe throughout.",
+      "Slow is harder. The slower you go, the more your core works."
+    ],
+    "Full Body": [
+      "Set up properly before every rep. Good position makes the movement safer and more effective.",
+      "Focus on moving well, not moving fast.",
+      "If your form breaks down, reduce the weight or rest."
+    ],
+    "Cardio": [
+      "Breathe consistently throughout. Find a rhythm.",
+      "Keep your posture upright. Do not hunch.",
+      "Focus on maintaining a steady effort rather than going all out and stopping."
+    ],
+    "Hamstrings": [
+      "Feel the stretch in the back of your legs at the bottom of each rep.",
+      "Lower slowly and with control.",
+      "Drive through your heels to return to the start."
+    ],
+    "Calves": [
+      "Lower your heels all the way down to a full stretch before rising.",
+      "Rise as high as you can on your toes and squeeze at the top.",
+      "Lower slowly. Do not bounce at the bottom."
+    ]
+  };
 
-  const defaults = {
-    Biceps: ['Keep elbows pinned to your sides throughout the movement.', 'Control the lowering phase for greater hypertrophic stimulus.', 'Squeeze at the top of the movement before lowering.'],
-    Triceps: ['Achieve full lockout at the end range of each rep.', 'Keep upper arms still and only move at the elbow joint.', 'The long head of the tricep requires overhead work to be fully trained.'],
-    Chest: ['Retract and depress your scapula before pressing to protect your shoulders.', 'Control the eccentric for greater chest development.', 'Full range of motion is essential for complete pec development.'],
-    Back: ['Initiate all pulling movements by engaging the scapula first.', 'Drive elbows, not hands, toward your hips for better lat engagement.', 'Achieve full stretch at the top of every pulling movement.'],
-    Shoulders: ['Lead with elbows on lateral raises for lateral delt emphasis.', 'Rear delt work is essential for shoulder health and posture.', 'Keep traps relaxed during pressing to ensure delt recruitment.'],
-    Legs: ['Push knees out in line with toes on all squat pattern movements.', 'Drive through the full foot, not just the heel.', 'Full range of motion before adding load.'],
-    Glutes: ['Squeeze glutes hard at full hip extension and hold briefly.', 'Posterior pelvic tilt at the top of hip movements increases glute activation.', 'Include both hip thrust and hip hinge patterns for complete glute development.'],
-    Core: ['Brace your core by creating intra-abdominal pressure before each movement.', 'Anti-rotation exercises are as important as flexion movements.', 'Quality of movement always takes priority over number of reps.'],
-    Cardio: ['Work within your target heart rate zone for the desired training outcome.', 'Low impact options reduce injury risk while maintaining cardiovascular benefit.', 'Consistency over intensity for long term cardiovascular adaptation.'],
-    'Full Body': ['Prioritise compound movements early in sessions when energy is highest.', 'Focus on movement quality over load under fatigue.', 'Full body movements have high metabolic demand - manage rest periods accordingly.'],
-  }
-
-  return defaults[muscleGroup] ?? [
-    'Focus on controlled movement through full range of motion.',
-    'Progressive overload is the key driver of adaptation - track your weights.',
-    'Warm up the target muscle group before working sets.',
-  ]
-}
+  return muscleGroupTips[muscleGroup] || [
+    "Set up properly before every rep.",
+    "Focus on moving well, not moving fast.",
+    "Lower slowly and with control on every rep."
+  ];
+};
 
 export default function ExerciseLibrary({ user }) {
   const [exercises, setExercises] = useState([])
