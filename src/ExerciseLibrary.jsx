@@ -32,7 +32,7 @@ function MuscleChip({ group, size = 'sm' }) {
   )
 }
 
-function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
+function ExerciseDetailModal({ exercise, userId, onClose, onSave, gifUrl, gifLoading }) {
   const isOwn = !exercise.is_global && exercise.created_by === userId
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(exercise.name)
@@ -145,6 +145,23 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+
+          {/* GIF preview */}
+          {gifLoading && (
+            <div className="w-full flex items-center justify-center py-6">
+              <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
+            </div>
+          )}
+          {!gifLoading && gifUrl && (
+            <div className="w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 mb-2">
+              <img
+                src={gifUrl}
+                alt={`${exercise.name} demonstration`}
+                className="w-full object-contain max-h-56"
+                loading="lazy"
+              />
+            </div>
+          )}
 
           {/* Instructions */}
           <div>
@@ -1147,6 +1164,8 @@ export default function ExerciseLibrary({ user }) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [selectedExercise, setSelectedExercise] = useState(null)
+  const [exerciseGif, setExerciseGif] = useState(null)
+  const [gifLoading, setGifLoading] = useState(false)
 
   async function fetchExercises() {
     const { data, error } = await supabase
@@ -1159,6 +1178,33 @@ export default function ExerciseLibrary({ user }) {
   }
 
   useEffect(() => { fetchExercises() }, [user.id])
+
+  useEffect(() => {
+    if (!selectedExercise) {
+      setExerciseGif(null)
+      return
+    }
+    const fetchGif = async () => {
+      setGifLoading(true)
+      setExerciseGif(null)
+      try {
+        const searchName = selectedExercise.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim()
+        const res = await fetch(`https://exercisedb.dev/api/exercises/name/${encodeURIComponent(searchName)}?limit=1`)
+        if (!res.ok) throw new Error('fetch failed')
+        const data = await res.json()
+        if (Array.isArray(data) && data.length > 0 && data[0].gifUrl) {
+          setExerciseGif(data[0].gifUrl)
+        } else {
+          setExerciseGif(null)
+        }
+      } catch (e) {
+        setExerciseGif(null)
+      } finally {
+        setGifLoading(false)
+      }
+    }
+    fetchGif()
+  }, [selectedExercise])
 
   const filtered = exercises
     .filter(e => filter === 'All' || e.muscle_group === filter)
@@ -1198,6 +1244,8 @@ export default function ExerciseLibrary({ user }) {
           userId={user.id}
           onClose={() => setSelectedExercise(null)}
           onSave={handleSaveEdit}
+          gifUrl={exerciseGif}
+          gifLoading={gifLoading}
         />
       )}
 
