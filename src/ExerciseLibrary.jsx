@@ -1189,23 +1189,28 @@ export default function ExerciseLibrary({ user }) {
       setExerciseGif(null)
       try {
         const searchName = selectedExercise.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim()
+        const apiKey = import.meta.env.VITE_RAPIDAPI_KEY
+        console.log('API KEY:', apiKey)
+        console.log('Searching for:', searchName)
         const res = await fetch(
           `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(searchName)}?limit=1&offset=0`,
           {
             headers: {
-              'x-rapidapi-key': import.meta.env.VITE_RAPIDAPI_KEY,
+              'x-rapidapi-key': apiKey,
               'x-rapidapi-host': 'exercisedb.p.rapidapi.com'
             }
           }
         )
-        if (!res.ok) throw new Error('fetch failed')
+        console.log('Response status:', res.status)
         const data = await res.json()
+        console.log('Response data:', JSON.stringify(data).slice(0, 300))
         if (Array.isArray(data) && data.length > 0 && data[0].gifUrl) {
           setExerciseGif(data[0].gifUrl)
         } else {
           setExerciseGif(null)
         }
       } catch (e) {
+        console.log('Error:', e.message)
         setExerciseGif(null)
       } finally {
         setGifLoading(false)
