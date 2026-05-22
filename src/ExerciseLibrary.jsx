@@ -40,79 +40,11 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
   const [editInstructions, setEditInstructions] = useState(exercise.instructions ?? '')
   const [saving, setSaving] = useState(false)
   const [visible, setVisible] = useState(false)
-  const [exerciseGif, setExerciseGif] = useState(null)
-  const [gifLoading, setGifLoading] = useState(false)
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(raf)
   }, [])
-
-  useEffect(() => {
-    setExerciseGif(null)
-    const fetchGif = async () => {
-      setGifLoading(true)
-      setExerciseGif(null)
-      try {
-        const nameMap = {
-          "back squat": "barbell squat",
-          "front squat": "barbell front squat",
-          "goblet squat": "dumbbell goblet squat",
-          "hip thrust (barbell)": "barbell hip thrust",
-          "hip thrust (dumbbell)": "dumbbell hip thrust",
-          "banded hip thrust": "barbell hip thrust",
-          "leg curl (lying)": "lying leg curls",
-          "leg curl (seated)": "seated leg curl",
-          "dumbbell row (single arm)": "dumbbell bent over row",
-          "barbell row (bent over)": "barbell bent over row",
-          "cable row (seated)": "cable seated row",
-          "lat pulldown": "cable pulldown",
-          "assisted pull up (machine)": "assisted pull-up",
-          "pull up": "pull-up",
-          "barbell bicep curl": "barbell curl",
-          "dumbbell bicep curl": "dumbbell curl",
-          "cable bicep curl": "cable curl",
-          "skull crusher": "ez bar skullcrusher",
-          "cable tricep pushdown": "cable pushdown",
-          "rope pushdown": "cable pushdown",
-          "dumbbell fly": "dumbbell fly",
-          "push up": "push-up",
-          "deadlift": "barbell deadlift",
-          "calf raise (standing)": "standing calf raises",
-          "calf raise (seated)": "seated calf raise",
-          "bulgarian split squat": "dumbbell bulgarian split squat",
-          "lunge": "dumbbell lunge",
-          "step up": "dumbbell step-up",
-          "face pull": "cable face pull",
-          "bent over rear delt fly": "dumbbell rear lateral raise",
-          "upright row": "barbell upright row",
-          "farmers carry": "farmer walk",
-          "45 degree back extension": "hyperextension",
-          "t-bar row": "t bar row",
-          "straight arm pulldown": "cable straight arm pulldown",
-        }
-        const rawName = exercise.name.toLowerCase()
-        const searchName = nameMap[rawName] || rawName
-        const res = await fetch(
-          `https://oss.exercisedb.dev/api/v1/exercises?name=${encodeURIComponent(searchName)}&limit=1`,
-          { headers: { 'Accept': 'application/json' } }
-        )
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const json = await res.json()
-        const list = Array.isArray(json) ? json : (json.exercises || json.data || [])
-        if (list.length > 0 && list[0].gifUrl) {
-          setExerciseGif(list[0].gifUrl)
-        } else {
-          setExerciseGif(null)
-        }
-      } catch (e) {
-        setExerciseGif(null)
-      } finally {
-        setGifLoading(false)
-      }
-    }
-    fetchGif()
-  }, [exercise.id])
 
   function handleClose() {
     setVisible(false)
@@ -213,23 +145,6 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-
-          {/* GIF preview */}
-          {gifLoading && (
-            <div className="w-full flex items-center justify-center py-6">
-              <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
-            </div>
-          )}
-          {!gifLoading && exerciseGif && (
-            <div className="w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 mb-4 mt-2">
-              <img
-                src={exerciseGif}
-                alt={`${exercise.name} demonstration`}
-                className="w-full object-contain max-h-64"
-                loading="lazy"
-              />
-            </div>
-          )}
 
           {/* Instructions */}
           <div>
