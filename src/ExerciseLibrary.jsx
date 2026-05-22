@@ -32,7 +32,7 @@ function MuscleChip({ group, size = 'sm' }) {
   )
 }
 
-function ExerciseDetailModal({ exercise, userId, onClose, onSave, gifUrl, gifLoading }) {
+function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
   const isOwn = !exercise.is_global && exercise.created_by === userId
   const [editing, setEditing] = useState(false)
   const [editName, setEditName] = useState(exercise.name)
@@ -40,11 +40,120 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave, gifUrl, gifLoa
   const [editInstructions, setEditInstructions] = useState(exercise.instructions ?? '')
   const [saving, setSaving] = useState(false)
   const [visible, setVisible] = useState(false)
+  const [exerciseGif, setExerciseGif] = useState(null)
+  const [gifLoading, setGifLoading] = useState(false)
 
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(raf)
   }, [])
+
+  useEffect(() => {
+    setExerciseGif(null)
+    const fetchGif = async () => {
+      setGifLoading(true)
+      try {
+        const nameMap = {
+          "back squat": "barbell squat",
+          "front squat": "barbell front squat",
+          "goblet squat": "dumbbell goblet squat",
+          "romanian deadlift": "romanian deadlift",
+          "hip thrust (barbell)": "barbell hip thrust",
+          "hip thrust (dumbbell)": "dumbbell hip thrust",
+          "banded hip thrust": "barbell hip thrust",
+          "leg curl (lying)": "lying leg curls",
+          "leg curl (seated)": "seated leg curl",
+          "dumbbell row (single arm)": "dumbbell bent over row",
+          "barbell row (bent over)": "barbell bent over row",
+          "cable row (seated)": "cable seated row",
+          "lat pulldown": "cable pulldown",
+          "assisted pull up (machine)": "assisted pull-up",
+          "pull up": "pull-up",
+          "dumbbell shoulder press": "dumbbell shoulder press",
+          "barbell overhead press": "barbell overhead press",
+          "dumbbell lateral raise": "lateral raise",
+          "cable lateral raise": "cable lateral raise",
+          "barbell bicep curl": "barbell curl",
+          "dumbbell bicep curl": "dumbbell curl",
+          "cable bicep curl": "cable curl",
+          "skull crusher": "ez bar skullcrusher",
+          "ez bar skullcrusher": "ez bar skullcrusher",
+          "cable tricep pushdown": "cable pushdown",
+          "rope pushdown": "cable pushdown",
+          "barbell bench press": "barbell bench press",
+          "dumbbell bench press": "dumbbell bench press",
+          "incline barbell press": "barbell incline bench press",
+          "incline dumbbell press": "dumbbell incline bench press",
+          "dumbbell fly": "dumbbell fly",
+          "push up": "push-up",
+          "deadlift": "barbell deadlift",
+          "kettlebell swing": "kettlebell swing",
+          "glute bridge": "glute bridge",
+          "single leg glute bridge": "single leg glute bridge",
+          "donkey kick": "donkey kick",
+          "fire hydrant": "fire hydrant",
+          "clamshell": "clam",
+          "calf raise (standing)": "standing calf raises",
+          "calf raise (seated)": "seated calf raise",
+          "plank": "plank",
+          "russian twist": "russian twist",
+          "bicycle crunch": "bicycle crunch",
+          "leg raise": "leg raise",
+          "hanging leg raise": "hanging leg raise",
+          "mountain climber": "mountain climber",
+          "ab wheel rollout": "ab wheel roller",
+          "bulgarian split squat": "dumbbell bulgarian split squat",
+          "lunge": "dumbbell lunge",
+          "step up": "dumbbell step-up",
+          "leg press": "leg press",
+          "leg extension": "leg extension",
+          "hack squat": "hack squat",
+          "face pull": "cable face pull",
+          "bent over rear delt fly": "dumbbell rear lateral raise",
+          "arnold press": "arnold press",
+          "upright row": "barbell upright row",
+          "burpee": "burpee",
+          "box jump": "jump",
+          "farmers carry": "farmer walk",
+          "battle ropes": "battle ropes",
+          "bear crawl": "bear crawl",
+          "t-bar row": "t bar row",
+          "straight arm pulldown": "cable straight arm pulldown",
+          "45 degree back extension": "hyperextension",
+          "good morning": "good morning",
+          "nordic curl": "nordic hamstring curl",
+          "reverse hyper": "hyperextension",
+        }
+        const rawName = exercise.name.toLowerCase()
+        const searchName = nameMap[rawName] || rawName.replace(/[^a-z0-9\s]/g, '').trim()
+        console.log('Searching ExerciseDB for:', searchName)
+        const apiKey = import.meta.env.VITE_RAPIDAPI_KEY
+        const res = await fetch(
+          `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(searchName)}?limit=1&offset=0`,
+          {
+            headers: {
+              'x-rapidapi-key': apiKey,
+              'x-rapidapi-host': 'exercisedb.p.rapidapi.com'
+            }
+          }
+        )
+        if (!res.ok) throw new Error('fetch failed')
+        const data = await res.json()
+        console.log('Result count:', Array.isArray(data) ? data.length : 'not array')
+        if (Array.isArray(data) && data.length > 0 && data[0].gifUrl) {
+          setExerciseGif(data[0].gifUrl)
+        } else {
+          setExerciseGif(null)
+        }
+      } catch (e) {
+        console.log('Error:', e.message)
+        setExerciseGif(null)
+      } finally {
+        setGifLoading(false)
+      }
+    }
+    fetchGif()
+  }, [exercise.id])
 
   function handleClose() {
     setVisible(false)
@@ -152,13 +261,14 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave, gifUrl, gifLoa
               <div className="w-8 h-8 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin" />
             </div>
           )}
-          {!gifLoading && gifUrl && (
-            <div className="w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 mb-2">
+          {!gifLoading && exerciseGif && (
+            <div className="w-full rounded-xl overflow-hidden bg-gray-50 border border-gray-100 mb-4 mt-2">
               <img
-                src={gifUrl}
+                src={exerciseGif}
                 alt={`${exercise.name} demonstration`}
-                className="w-full object-contain max-h-56"
+                className="w-full object-contain max-h-64"
                 loading="lazy"
+                onError={() => setExerciseGif(null)}
               />
             </div>
           )}
@@ -1164,8 +1274,6 @@ export default function ExerciseLibrary({ user }) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [selectedExercise, setSelectedExercise] = useState(null)
-  const [exerciseGif, setExerciseGif] = useState(null)
-  const [gifLoading, setGifLoading] = useState(false)
 
   async function fetchExercises() {
     const { data, error } = await supabase
@@ -1178,120 +1286,6 @@ export default function ExerciseLibrary({ user }) {
   }
 
   useEffect(() => { fetchExercises() }, [user.id])
-
-  useEffect(() => {
-    if (!selectedExercise) {
-      setExerciseGif(null)
-      return
-    }
-    const fetchGif = async () => {
-      setGifLoading(true)
-      setExerciseGif(null)
-      try {
-        const nameMap = {
-          "back squat": "barbell squat",
-          "front squat": "barbell front squat",
-          "goblet squat": "dumbbell goblet squat",
-          "romanian deadlift": "romanian deadlift",
-          "hip thrust (barbell)": "barbell hip thrust",
-          "hip thrust (dumbbell)": "dumbbell hip thrust",
-          "banded hip thrust": "barbell hip thrust",
-          "leg curl (lying)": "lying leg curls",
-          "leg curl (seated)": "seated leg curl",
-          "dumbbell row (single arm)": "dumbbell bent over row",
-          "barbell row (bent over)": "barbell bent over row",
-          "cable row (seated)": "cable seated row",
-          "lat pulldown": "cable pulldown",
-          "assisted pull up (machine)": "assisted pull-up",
-          "pull up": "pull-up",
-          "dumbbell shoulder press": "dumbbell shoulder press",
-          "barbell overhead press": "barbell overhead press",
-          "dumbbell lateral raise": "lateral raise",
-          "cable lateral raise": "cable lateral raise",
-          "barbell bicep curl": "barbell curl",
-          "dumbbell bicep curl": "dumbbell curl",
-          "cable bicep curl": "cable curl",
-          "skull crusher": "ez bar skullcrusher",
-          "ez bar skullcrusher": "ez bar skullcrusher",
-          "cable tricep pushdown": "cable pushdown",
-          "rope pushdown": "cable pushdown",
-          "barbell bench press": "barbell bench press",
-          "dumbbell bench press": "dumbbell bench press",
-          "incline barbell press": "barbell incline bench press",
-          "incline dumbbell press": "dumbbell incline bench press",
-          "dumbbell fly": "dumbbell fly",
-          "push up": "push-up",
-          "deadlift": "barbell deadlift",
-          "kettlebell swing": "kettlebell swing",
-          "glute bridge": "glute bridge",
-          "single leg glute bridge": "single leg glute bridge",
-          "donkey kick": "donkey kick",
-          "fire hydrant": "fire hydrant",
-          "clamshell": "clam",
-          "calf raise (standing)": "standing calf raises",
-          "calf raise (seated)": "seated calf raise",
-          "plank": "plank",
-          "russian twist": "russian twist",
-          "bicycle crunch": "bicycle crunch",
-          "leg raise": "leg raise",
-          "hanging leg raise": "hanging leg raise",
-          "mountain climber": "mountain climber",
-          "ab wheel rollout": "ab wheel roller",
-          "bulgarian split squat": "dumbbell bulgarian split squat",
-          "lunge": "dumbbell lunge",
-          "step up": "dumbbell step-up",
-          "leg press": "leg press",
-          "leg extension": "leg extension",
-          "hack squat": "hack squat",
-          "face pull": "cable face pull",
-          "bent over rear delt fly": "dumbbell rear lateral raise",
-          "arnold press": "arnold press",
-          "upright row": "barbell upright row",
-          "burpee": "burpee",
-          "box jump": "jump",
-          "farmers carry": "farmer walk",
-          "battle ropes": "battle ropes",
-          "bear crawl": "bear crawl",
-          "t-bar row": "t bar row",
-          "straight arm pulldown": "cable straight arm pulldown",
-          "45 degree back extension": "hyperextension",
-          "good morning": "good morning",
-          "nordic curl": "nordic hamstring curl",
-          "reverse hyper": "hyperextension",
-        }
-
-        const rawName = selectedExercise.name.toLowerCase()
-        const searchName = nameMap[rawName] || rawName.replace(/[^a-z0-9\s]/g, '').trim()
-
-        console.log('Searching ExerciseDB for:', searchName)
-
-        const apiKey = import.meta.env.VITE_RAPIDAPI_KEY
-        const res = await fetch(
-          `https://exercisedb.p.rapidapi.com/exercises/name/${encodeURIComponent(searchName)}?limit=1&offset=0`,
-          {
-            headers: {
-              'x-rapidapi-key': apiKey,
-              'x-rapidapi-host': 'exercisedb.p.rapidapi.com'
-            }
-          }
-        )
-        if (!res.ok) throw new Error('fetch failed')
-        const data = await res.json()
-        console.log('Result count:', Array.isArray(data) ? data.length : 'not array')
-        if (Array.isArray(data) && data.length > 0 && data[0].gifUrl) {
-          setExerciseGif(data[0].gifUrl)
-        } else {
-          setExerciseGif(null)
-        }
-      } catch (e) {
-        console.log('Error:', e.message)
-        setExerciseGif(null)
-      } finally {
-        setGifLoading(false)
-      }
-    }
-    fetchGif()
-  }, [selectedExercise])
 
   const filtered = exercises
     .filter(e => filter === 'All' || e.muscle_group === filter)
@@ -1331,8 +1325,6 @@ export default function ExerciseLibrary({ user }) {
           userId={user.id}
           onClose={() => setSelectedExercise(null)}
           onSave={handleSaveEdit}
-          gifUrl={exerciseGif}
-          gifLoading={gifLoading}
         />
       )}
 
