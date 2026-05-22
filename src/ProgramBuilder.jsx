@@ -689,8 +689,7 @@ export default function ProgramBuilder({ user }) {
                         </button>
                         <button
                           type="submit"
-                          disabled={savingExercise || !newExercise.exercise_id}
-                          className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                         >
                           {savingExercise ? 'Adding...' : 'Add to Workout'}
                         </button>
