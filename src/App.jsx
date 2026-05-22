@@ -648,77 +648,76 @@ function Dashboard({ user }) {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Client Dashboard</h1>
-            <p className="text-sm text-gray-400 mt-1">Monitor engagement and retention across your roster.</p>
+            <p className="text-sm text-gray-500 mt-0.5">Monitor engagement and retention across your roster.</p>
           </div>
           <button
             onClick={() => setShowModal(true)}
-            className="bg-black hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2"
+            className="bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2"
           >
             <span className="text-lg leading-none">+</span> Add Client
           </button>
         </div>
 
         {/* ── STAT CARDS ROW ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex flex-col gap-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Clients</p>
-            <p className="text-3xl font-black text-gray-900">{enrichedClients.length}</p>
-            <p className="text-xs text-gray-400">Active roster</p>
+        <div className="grid grid-cols-5 gap-4 mb-6">
+          <div className="bg-white border border-gray-200 rounded-2xl p-5">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Total Clients</p>
+            <p className="text-3xl font-bold text-gray-900">{enrichedClients.length}</p>
+            <p className="text-xs text-gray-400 mt-1">Active roster</p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 flex flex-col gap-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Engagement</p>
-            <p className="text-3xl font-black text-gray-900">{engagementRate}<span className="text-lg font-semibold text-gray-400">%</span></p>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${engagementRate}%` }} />
-            </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-5">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Engagement</p>
+            <p className="text-3xl font-bold text-gray-900">{engagementRate}<span className="text-lg font-semibold text-gray-400">%</span></p>
+            <p className="text-xs text-gray-400 mt-1">Of roster active</p>
           </div>
           <div
             onClick={() => setStatusFilter(statusFilter === 'Engaged' ? 'All' : 'Engaged')}
-            className={`rounded-2xl border shadow-sm p-5 flex flex-col gap-2 cursor-pointer transition-all ${statusFilter === 'Engaged' ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-gray-200 hover:border-emerald-200'}`}
+            className="rounded-2xl p-5 cursor-pointer transition-all"
+            style={{ border: statusFilter === 'Engaged' ? '2px solid #10b981' : '1px solid #e5e7eb', backgroundColor: statusFilter === 'Engaged' ? '#ecfdf5' : 'white' }}
           >
-            <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Engaged</p>
-            <p className="text-3xl font-black text-emerald-600">{engaged}</p>
-            <p className="text-xs text-gray-400">On track</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Engaged</p>
+            <p className="text-3xl font-bold text-emerald-500">{engaged}</p>
+            <p className="text-xs text-gray-400 mt-1">On track</p>
           </div>
           <div
             onClick={() => setStatusFilter(statusFilter === 'Drifting' ? 'All' : 'Drifting')}
-            className={`rounded-2xl border shadow-sm p-5 flex flex-col gap-2 cursor-pointer transition-all ${statusFilter === 'Drifting' ? 'bg-amber-50 border-amber-200' : 'bg-white border-gray-200 hover:border-amber-200'}`}
+            className="rounded-2xl p-5 cursor-pointer transition-all"
+            style={{ border: statusFilter === 'Drifting' ? '2px solid #f59e0b' : '1px solid #e5e7eb', backgroundColor: statusFilter === 'Drifting' ? '#fffbeb' : 'white' }}
           >
-            <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Drifting</p>
-            <p className="text-3xl font-black text-amber-500">{drifting}</p>
-            <p className="text-xs text-gray-400">Needs attention</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Drifting</p>
+            <p className="text-3xl font-bold text-amber-500">{drifting}</p>
+            <p className="text-xs text-gray-400 mt-1">Needs attention</p>
           </div>
           <div
             onClick={() => setStatusFilter(statusFilter === 'At Risk' ? 'All' : 'At Risk')}
-            className={`rounded-2xl border shadow-sm p-5 flex flex-col gap-2 cursor-pointer transition-all ${statusFilter === 'At Risk' ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200 hover:border-red-200'}`}
+            className="rounded-2xl p-5 cursor-pointer transition-all"
+            style={{ border: statusFilter === 'At Risk' ? '2px solid #ef4444' : '1px solid #e5e7eb', backgroundColor: statusFilter === 'At Risk' ? '#fef2f2' : 'white' }}
           >
-            <p className="text-xs font-semibold text-red-500 uppercase tracking-wider">At Risk</p>
-            <p className="text-3xl font-black text-red-500">{atRisk}</p>
-            <p className="text-xs text-gray-400">Action required</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">At Risk</p>
+            <p className="text-3xl font-bold text-red-500">{atRisk}</p>
+            <p className="text-xs text-gray-400 mt-1">Action required</p>
           </div>
         </div>
 
         {/* ── NEEDS ATTENTION BANNER ── */}
         {needsAttention.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-6">
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-4 mb-6">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="text-sm font-bold text-red-700">Needs Your Attention — {needsAttention.length} client{needsAttention.length !== 1 ? 's' : ''}</span>
+              <div className="w-2 h-2 rounded-full bg-red-400" />
+              <p className="text-sm font-semibold text-red-700">
+                Needs Your Attention — {needsAttention.length} {needsAttention.length === 1 ? 'client' : 'clients'}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
               {needsAttention.map(c => (
                 <button
                   key={c.id}
                   onClick={() => navigate(`/clients/${c.id}`)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold border transition hover:shadow-sm ${
-                    c.status === 'At Risk'
-                      ? 'bg-red-100 border-red-200 text-red-700 hover:bg-red-200'
-                      : 'bg-amber-100 border-amber-200 text-amber-700 hover:bg-amber-200'
-                  }`}
+                  className="flex items-center gap-2 bg-white border border-red-200 rounded-xl px-3 py-1.5 hover:border-red-300 transition-colors"
                 >
-                  <span className={`w-1.5 h-1.5 rounded-full ${c.status === 'At Risk' ? 'bg-red-500' : 'bg-amber-400'}`} />
-                  {c.full_name}
-                  <span className="text-[10px] opacity-70">· {timeAgo(c.lastCheckIn)}</span>
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.status === 'At Risk' ? '#ef4444' : '#f59e0b' }} />
+                  <span className="text-sm font-medium text-gray-800">{c.full_name}</span>
+                  <span className="text-xs text-gray-400">{c.status}</span>
                 </button>
               ))}
             </div>
@@ -726,39 +725,31 @@ function Dashboard({ user }) {
         )}
 
         {/* ── MAIN TWO-COLUMN LAYOUT ── */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
+        <div className="flex gap-6 items-start">
 
           {/* ── LEFT: CLIENT LIST ── */}
-          <div className="flex flex-col gap-4">
+          <div className="flex-1 min-w-0">
 
-            {/* Search + filter bar */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm px-4 py-3 flex items-center gap-3">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search clients by name or goal..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent"
-              />
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="text-gray-300 hover:text-gray-500 text-lg leading-none">×</button>
-              )}
-              <div className="flex items-center gap-1 border-l border-gray-100 pl-3">
+            {/* Search + filter row */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search clients by name or goal..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent placeholder-gray-400"
+                />
+              </div>
+              <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
                 {['All', 'Engaged', 'Drifting', 'At Risk'].map(f => (
                   <button
                     key={f}
                     onClick={() => setStatusFilter(f)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
-                      statusFilter === f
-                        ? f === 'All' ? 'bg-gray-900 text-white'
-                        : f === 'Engaged' ? 'bg-emerald-500 text-white'
-                        : f === 'Drifting' ? 'bg-amber-400 text-white'
-                        : 'bg-red-500 text-white'
-                        : 'text-gray-500 hover:bg-gray-100'
-                    }`}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${statusFilter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     {f}
                   </button>
@@ -766,206 +757,141 @@ function Dashboard({ user }) {
               </div>
             </div>
 
-            {/* Client cards */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-gray-700">
-                  {statusFilter === 'All' ? 'All Clients' : `${statusFilter} Clients`}
-                </h2>
-                <span className="text-xs text-gray-400">{filteredClients.length} client{filteredClients.length !== 1 ? 's' : ''}</span>
+            {/* Client list header */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">
+                {statusFilter === 'All' ? 'All Clients' : statusFilter} <span className="text-gray-400 font-normal ml-1">{filteredClients.length} {filteredClients.length === 1 ? 'client' : 'clients'}</span>
+              </h3>
+            </div>
+
+            {/* Client rows */}
+            {loadingClients ? (
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-sm text-gray-400">Loading clients…</div>
+            ) : filteredClients.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
+                <p className="text-sm font-semibold text-gray-900">
+                  {searchQuery || statusFilter !== 'All' ? 'No clients match your filters' : 'No clients yet'}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {searchQuery || statusFilter !== 'All' ? 'Try adjusting your search or filter' : 'Click "Add Client" to add your first client.'}
+                </p>
               </div>
-
-              {loadingClients ? (
-                <div className="px-6 py-16 text-center text-sm text-gray-400">Loading clients…</div>
-              ) : filteredClients.length === 0 ? (
-                <div className="px-6 py-16 text-center">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {searchQuery || statusFilter !== 'All' ? 'No clients match your filters' : 'No clients yet'}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    {searchQuery || statusFilter !== 'All' ? 'Try adjusting your search or filter' : 'Click "Add Client" to add your first client.'}
-                  </p>
-                </div>
-              ) : (
-                <ul className="divide-y divide-gray-50 list-none m-0 p-0">
-                  {filteredClients.map((client) => {
-                    const cfg = statusConfig[client.status]
-                    const days = client.lastCheckIn ? Math.floor((new Date() - new Date(client.lastCheckIn)) / 86400000) : null
-                    const avgTraining = client.recentScores.length > 0
-                      ? Math.round(client.recentScores.reduce((sum, s) => sum + s.training, 0) / client.recentScores.length * 10) / 10
-                      : null
-                    const avgEnergy = client.recentScores.length > 0
-                      ? Math.round(client.recentScores.reduce((sum, s) => sum + s.energy, 0) / client.recentScores.length * 10) / 10
-                      : null
-
-                    return (
-                      <li
-                        key={client.id}
-                        onClick={() => navigate(`/clients/${client.id}`)}
-                        className="px-6 py-4 flex items-center gap-4 hover:bg-gray-50/80 transition-colors cursor-pointer group"
-                      >
-                        {/* Avatar */}
-                        <div className={`w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm shrink-0 select-none ${
-                          client.status === 'Engaged' ? 'bg-emerald-100 text-emerald-700' :
-                          client.status === 'Drifting' ? 'bg-amber-100 text-amber-700' :
-                          client.status === 'At Risk' ? 'bg-red-100 text-red-600' :
-                          'bg-gray-100 text-gray-600'
-                        }`}>
-                          {client.full_name?.split(' ').filter(Boolean).slice(0,2).map(w => w[0].toUpperCase()).join('')}
+            ) : (
+              <div className="flex flex-col gap-3">
+                {filteredClients.map((client) => (
+                  <div
+                    key={client.id}
+                    className="bg-white border border-gray-200 rounded-2xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer"
+                    onClick={() => navigate(`/clients/${client.id}`)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-gray-900 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
+                        {client.full_name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-semibold text-gray-900 text-sm">{client.full_name}</span>
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full font-medium"
+                            style={{
+                              backgroundColor: client.status === 'Engaged' ? '#d1fae5' : client.status === 'Drifting' ? '#fef3c7' : '#fee2e2',
+                              color: client.status === 'Engaged' ? '#065f46' : client.status === 'Drifting' ? '#92400e' : '#991b1b'
+                            }}
+                          >
+                            {client.status}
+                          </span>
                         </div>
-
-                        {/* Name + goal */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-bold text-gray-900 truncate">{client.full_name}</p>
-                            <StatusBadge status={client.status} />
-                          </div>
-                          <p className="text-xs text-gray-400 mt-0.5 truncate">{client.goal}</p>
+                        <p className="text-xs text-gray-500 truncate">{client.goal || 'No goal set'}</p>
+                      </div>
+                      <div className="flex items-center gap-6 flex-shrink-0">
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400 mb-0.5">Last check-in</p>
+                          <p className="text-sm font-medium text-gray-700">{client.lastCheckIn ? timeAgo(client.lastCheckIn) : 'Never'}</p>
                         </div>
-
-                        {/* Recent scores */}
-                        {avgTraining !== null && (
-                          <div className="hidden lg:flex flex-col items-center gap-0.5 min-w-[60px]">
-                            <div className="flex gap-0.5">
-                              {[1,2,3,4,5].map(n => (
-                                <div key={n} className={`w-2 h-2 rounded-sm ${n <= Math.round(avgTraining) ? 'bg-indigo-400' : 'bg-gray-100'}`} />
-                              ))}
-                            </div>
-                            <span className="text-[10px] text-gray-400">Training {avgTraining}/5</span>
-                          </div>
-                        )}
-
-                        {/* Last check-in */}
-                        <div className="hidden sm:flex flex-col items-end gap-0.5 min-w-[90px]">
-                          {client.lastCheckIn ? (
-                            <>
-                              <p className="text-xs font-semibold text-gray-600">{formatDate(client.lastCheckIn)}</p>
-                              <p className={`text-[10px] font-medium ${
-                                days === 0 ? 'text-emerald-500' :
-                                days <= 7 ? 'text-emerald-400' :
-                                days <= 14 ? 'text-amber-500' :
-                                'text-red-400'
-                              }`}>
-                                {days === 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days}d ago`}
-                              </p>
-                            </>
-                          ) : (
-                            <p className="text-xs text-gray-300">No check-in</p>
-                          )}
+                        <div className="text-center">
+                          <p className="text-xs text-gray-400 mb-0.5">This month</p>
+                          <p className="text-sm font-medium text-gray-700">{client.sessionsThisMonth || 0}/4</p>
                         </div>
-
-                        {/* Sessions bar */}
-                        <div className="hidden lg:flex flex-col items-end gap-1 min-w-[80px]">
-                          <p className="text-xs font-medium text-gray-600">{client.sessionsThisMonth}/4 this month</p>
-                          <div className="w-20 h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${cfg.bar}`}
-                              style={{ width: `${Math.min(100, (client.sessionsThisMonth / 4) * 100)}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2">
                           <CopyLinkButton clientId={client.id} />
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/clients/${client.id}`) }}
-                            className="flex items-center gap-1 text-xs font-semibold text-gray-400 group-hover:text-gray-700 transition px-2 py-1.5 rounded-lg group-hover:bg-gray-100"
+                            onClick={e => { e.stopPropagation(); navigate(`/clients/${client.id}`) }}
+                            className="text-xs font-medium text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 py-1.5 transition-colors"
                           >
-                            View <ChevronRight size={13} />
+                            View →
                           </button>
                         </div>
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-            </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-          {/* ── RIGHT: ACTIVITY FEED ── */}
-          <div className="flex flex-col gap-4">
+          {/* ── RIGHT: STATS + ACTIVITY ── */}
+          <div className="w-72 flex-shrink-0 flex flex-col gap-4">
 
-            {/* Quick stats */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">This Month</h3>
+            {/* This Month card */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-5">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4">This Month</h3>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Check-ins received</span>
-                  <span className="text-sm font-black text-gray-900">
-                    {enrichedClients.reduce((sum, c) => sum + c.sessionsThisMonth, 0)}
-                  </span>
+                  <span className="text-sm text-gray-500">Check-ins received</span>
+                  <span className="text-sm font-semibold text-gray-900">{enrichedClients.reduce((sum, c) => sum + c.sessionsThisMonth, 0)}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Clients checked in</span>
-                  <span className="text-sm font-black text-gray-900">
-                    {enrichedClients.filter(c => c.sessionsThisMonth > 0).length}
-                    <span className="text-xs text-gray-400 font-normal"> / {enrichedClients.length}</span>
-                  </span>
+                  <span className="text-sm text-gray-500">Clients checked in</span>
+                  <span className="text-sm font-semibold text-gray-900">{enrichedClients.filter(c => c.sessionsThisMonth > 0).length} <span className="text-gray-400 font-normal">/ {enrichedClients.length}</span></span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Engagement rate</span>
-                  <span className={`text-sm font-black ${engagementRate >= 70 ? 'text-emerald-500' : engagementRate >= 40 ? 'text-amber-500' : 'text-red-400'}`}>
+                  <span className="text-sm text-gray-500">Engagement rate</span>
+                  <span className="text-sm font-semibold" style={{ color: engagementRate >= 70 ? '#10b981' : engagementRate >= 40 ? '#f59e0b' : '#ef4444' }}>
                     {engagementRate}%
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Need attention</span>
-                  <span className={`text-sm font-black ${needsAttention.length > 0 ? 'text-red-400' : 'text-emerald-500'}`}>
-                    {needsAttention.length > 0 ? needsAttention.length : '0 — all good ✓'}
-                  </span>
+                  <span className="text-sm text-gray-500">Need attention</span>
+                  <span className="text-sm font-semibold text-red-500">{needsAttention.length}</span>
                 </div>
               </div>
             </div>
 
-            {/* Activity feed */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex-1">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="text-sm font-bold text-gray-700">Recent Activity</h3>
-                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{activityFeed.length}</span>
-              </div>
-              <div className="divide-y divide-gray-50 max-h-[480px] overflow-y-auto">
-                {activityFeed.length === 0 ? (
-                  <div className="px-5 py-12 text-center">
-                    <p className="text-xs text-gray-300 italic">No activity yet</p>
-                    <p className="text-xs text-gray-300 mt-1">Check-ins will appear here in real time</p>
-                  </div>
-                ) : (
-                  activityFeed.map((item, i) => (
-                    <div key={i} className="flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50/50 transition">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                        item.training >= 4 ? 'bg-emerald-100 text-emerald-700' :
-                        item.training >= 3 ? 'bg-amber-100 text-amber-700' :
-                        'bg-red-100 text-red-600'
-                      }`}>
-                        {item.clientInitials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-800 leading-snug">
-                          {item.clientName} <span className="font-normal text-gray-500">submitted a check-in</span>
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                            item.training >= 4 ? 'bg-emerald-50 text-emerald-600' :
-                            item.training >= 3 ? 'bg-amber-50 text-amber-600' :
-                            'bg-red-50 text-red-500'
-                          }`}>
-                            Training {item.training}/5
-                          </span>
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
-                            item.energy >= 4 ? 'bg-emerald-50 text-emerald-600' :
-                            item.energy >= 3 ? 'bg-amber-50 text-amber-600' :
-                            'bg-red-50 text-red-500'
-                          }`}>
-                            Energy {item.energy}/5
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-gray-300 mt-0.5">{timeAgo(item.date)}</p>
-                      </div>
-                    </div>
-                  ))
+            {/* Recent Activity card */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold text-gray-700">Recent Activity</h3>
+                {activityFeed.length > 0 && (
+                  <span className="text-xs bg-gray-100 text-gray-600 font-medium px-2 py-0.5 rounded-full">{activityFeed.length}</span>
                 )}
               </div>
+              {activityFeed.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-4">No recent activity</p>
+              ) : (
+                <div className="space-y-3">
+                  {activityFeed.slice(0, 5).map((activity, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-7 h-7 rounded-full bg-gray-900 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                        {activity.clientName?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-700">
+                          <span className="font-semibold">{activity.clientName}</span> submitted a check-in
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: '#e0e7ff', color: '#3730a3' }}>
+                            Training {activity.training}/5
+                          </span>
+                          <span className="text-xs px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: '#d1fae5', color: '#065f46' }}>
+                            Energy {activity.energy}/5
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">{timeAgo(activity.date)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>
