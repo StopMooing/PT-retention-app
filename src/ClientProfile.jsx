@@ -945,7 +945,7 @@ export default function ClientProfile() {
               )}
             </div>
             <div className="px-6 py-5">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Last 7 Days</span>
                   <span className="text-2xl font-black text-gray-900">{checkins.filter(c => Math.floor((new Date() - new Date(c.submitted_at)) / 86400000) <= 7).length}<span className="text-base text-gray-400 font-medium">/1</span></span>
@@ -1349,7 +1349,7 @@ export default function ClientProfile() {
                   <Calendar size={12} /> Auto-schedule
                 </button>
               )}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2 overflow-x-auto">
                 {["1week", "2week", "4week"].map(view => (
                   <button
                     key={view}
@@ -3123,7 +3123,7 @@ export default function ClientProfile() {
       <div className="bg-white border-b border-gray-100 shadow-sm">
 
         {/* Row 1: back + actions */}
-        <div className="flex items-center justify-between px-8 py-4 border-b border-gray-50">
+        <div className="flex items-center justify-between gap-2 flex-wrap px-8 py-4 border-b border-gray-50">
           <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-gray-600 text-sm font-medium transition">
             <ArrowLeft size={16} /> Back to Dashboard
           </button>
@@ -3177,7 +3177,7 @@ export default function ClientProfile() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2 mt-4 flex-wrap">
+            <div className="flex flex-wrap gap-2 mb-4">
               <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-1.5 shadow-sm">
                 <Clock size={13} className="text-gray-400" />
                 <span className="text-sm font-semibold text-gray-800">{checkins.length > 0 ? timeAgo(checkins[0].submitted_at) : "Never"}</span>
@@ -3204,12 +3204,12 @@ export default function ClientProfile() {
         </div>
 
         {/* Row 3: tabs */}
-        <div className="flex px-8 border-t border-gray-50 gap-1">
+        <div className="flex gap-1 border-t border-gray-50 overflow-x-auto scrollbar-hide px-8">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3.5 text-sm font-medium -mb-px transition border-b-2 ${
+              className={`whitespace-nowrap px-4 py-3.5 text-sm font-medium -mb-px transition border-b-2 ${
                 activeTab === tab.id
                   ? "text-indigo-600 font-semibold border-indigo-600"
                   : "text-gray-400 hover:text-gray-600 border-transparent"

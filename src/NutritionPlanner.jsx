@@ -368,10 +368,10 @@ export default function NutritionPlanner() {
           TAB 1 — MEAL PLANS
       ══════════════════════════════════════ */}
       {activeTab === "plans" && (
-        <div className="flex flex-row flex-1 min-h-0">
+        <div className="flex flex-col md:flex-row flex-1 min-h-0">
 
           {/* LEFT PANEL */}
-          <div className="w-[280px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-y-auto">
+          <div className={`${selectedPlan ? 'hidden md:flex' : 'flex'} w-full md:w-[280px] shrink-0 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex-col overflow-y-auto`}>
 
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <span className="text-sm font-bold text-gray-800 uppercase tracking-wide">Meal Plans</span>
@@ -472,7 +472,7 @@ export default function NutritionPlanner() {
           </div>
 
           {/* RIGHT PANEL */}
-          <div className="flex-1 bg-gray-50 overflow-y-auto">
+          <div className={`${!selectedPlan ? 'hidden md:block' : 'block'} flex-1 bg-gray-50 overflow-y-auto`}>
             {!selectedPlan ? (
               <div className="h-full flex items-center justify-center">
                 <div className="bg-green-100 rounded-2xl p-8 text-center max-w-sm mx-auto">

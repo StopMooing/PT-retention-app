@@ -297,12 +297,12 @@ export default function ProgramBuilder({ user }) {
     <div className="h-full flex flex-col overflow-hidden bg-gray-50">
 
       {/* ── 3-panel layout ── */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
 
         {/* ════════════════════════════════════════════════════
             PANEL 1 — Programs
         ════════════════════════════════════════════════════ */}
-        <div className="w-[260px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+        <div className={`${selectedProgram ? 'hidden md:flex' : 'flex'} w-full md:w-[260px] flex-shrink-0 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex-col overflow-hidden`}>
 
           <div className="px-4 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
             <h2 className="text-lg font-bold text-gray-900 m-0">Programs</h2>
@@ -402,14 +402,20 @@ export default function ProgramBuilder({ user }) {
         {/* ════════════════════════════════════════════════════
             PANEL 2 — Workout Days
         ════════════════════════════════════════════════════ */}
-        <div className="w-[240px] flex-shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+        <div className={`${!selectedProgram ? 'hidden md:flex' : selectedDay ? 'hidden md:flex' : 'flex'} w-full md:w-[240px] flex-shrink-0 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex-col overflow-hidden`}>
 
           {!selectedProgram ? (
             <Placeholder text="Select a program first" />
           ) : (
             <>
               <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center justify-between flex-shrink-0">
-                <h2 className="text-sm font-bold text-gray-900 m-0">Workout Days</h2>
+                <div>
+                  <button onClick={() => setSelectedProgram(null)} className="md:hidden flex items-center gap-1 text-sm text-gray-500 mb-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    Programs
+                  </button>
+                  <h2 className="text-sm font-bold text-gray-900 m-0">Workout Days</h2>
+                </div>
                 <button
                   onClick={() => { setShowNewDay(v => !v); setNewDay({ name: '', day_number: '' }) }}
                   className="border border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
@@ -518,7 +524,7 @@ export default function ProgramBuilder({ user }) {
         {/* ════════════════════════════════════════════════════
             PANEL 3 — Exercises
         ════════════════════════════════════════════════════ */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 min-w-0">
+        <div className={`${!selectedDay ? 'hidden md:flex' : 'flex'} flex-1 flex-col overflow-hidden bg-gray-50 min-w-0`}>
 
           {!selectedProgram ? (
             <Placeholder text="Select a program to get started" />
@@ -585,6 +591,10 @@ export default function ProgramBuilder({ user }) {
             <>
               {/* Day header */}
               <div className="px-6 py-4 bg-white border-b border-gray-200 flex-shrink-0">
+                <button onClick={() => setSelectedDay(null)} className="md:hidden flex items-center gap-1 text-sm text-gray-500 mb-4">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  Workout Days
+                </button>
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{selectedProgram?.name} · Day {selectedDay?.day_number}</p>

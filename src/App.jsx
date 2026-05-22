@@ -645,7 +645,7 @@ function Dashboard({ user }) {
       <div className="max-w-[1400px] mx-auto px-6 py-8">
 
         {/* ── PAGE HEADER ── */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Client Dashboard</h1>
             <p className="text-sm text-gray-500 mt-0.5">Monitor engagement and retention across your roster.</p>
@@ -654,12 +654,13 @@ function Dashboard({ user }) {
             onClick={() => setShowModal(true)}
             className="bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors flex items-center gap-2"
           >
-            <span className="text-lg leading-none">+</span> Add Client
+            <span className="hidden md:inline">+ Add Client</span>
+            <span className="md:hidden">+ Add</span>
           </button>
         </div>
 
         {/* ── STAT CARDS ROW ── */}
-        <div className="grid grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
           <div className="bg-white border border-gray-200 rounded-2xl p-5">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Total Clients</p>
             <p className="text-3xl font-bold text-gray-900">{enrichedClients.length}</p>
@@ -725,10 +726,10 @@ function Dashboard({ user }) {
         )}
 
         {/* ── MAIN TWO-COLUMN LAYOUT ── */}
-        <div className="flex gap-6 items-start">
+        <div className="flex flex-col md:flex-row gap-6 items-start">
 
           {/* ── LEFT: CLIENT LIST ── */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
 
             {/* Search + filter row */}
             <div className="flex items-center gap-3 mb-4">
@@ -784,7 +785,7 @@ function Dashboard({ user }) {
                     className="bg-white border border-gray-200 rounded-2xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer"
                     onClick={() => navigate(`/clients/${client.id}`)}
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-900 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
                         {client.full_name?.charAt(0).toUpperCase()}
                       </div>
@@ -802,8 +803,13 @@ function Dashboard({ user }) {
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 truncate">{client.goal || 'No goal set'}</p>
+                        <div className="flex items-center gap-2 mt-1 md:hidden">
+                          <span className="text-xs text-gray-400">{client.lastCheckIn ? timeAgo(client.lastCheckIn) : 'Never'}</span>
+                          <span className="text-gray-300 text-xs">·</span>
+                          <span className="text-xs text-gray-400">{client.sessionsThisMonth || 0}/4 this month</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-6 flex-shrink-0">
+                      <div className="hidden md:flex items-center gap-6 flex-shrink-0">
                         <div className="text-center">
                           <p className="text-xs text-gray-400 mb-0.5">Last check-in</p>
                           <p className="text-sm font-medium text-gray-700">{client.lastCheckIn ? timeAgo(client.lastCheckIn) : 'Never'}</p>
@@ -830,7 +836,7 @@ function Dashboard({ user }) {
           </div>
 
           {/* ── RIGHT: STATS + ACTIVITY ── */}
-          <div className="w-72 flex-shrink-0 flex flex-col gap-4">
+          <div className="w-full md:w-72 flex-shrink-0 flex flex-col gap-4">
 
             {/* This Month card */}
             <div className="bg-white border border-gray-200 rounded-2xl p-5">

@@ -83,7 +83,7 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
         onClick={handleClose}
       />
       <div
-        className="fixed inset-y-0 right-0 z-50 w-full max-w-lg bg-white shadow-2xl flex flex-col transition-transform duration-250"
+        className="fixed inset-0 md:inset-auto md:right-0 md:top-0 md:h-full md:w-[420px] bg-white shadow-2xl z-50 flex flex-col transition-transform duration-250"
         style={{ transform: visible ? 'translateX(0)' : 'translateX(100%)' }}
       >
         {/* Header */}
@@ -1283,7 +1283,7 @@ export default function ExerciseLibrary({ user }) {
         </div>
 
         {/* Muscle group filter pills */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-4">
           {MUSCLE_GROUPS.map(group => {
             const cfg = MUSCLE_CHIP[group]
             const isActive = filter === group
@@ -1325,7 +1325,7 @@ export default function ExerciseLibrary({ user }) {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {filtered.map(exercise => {
               const cfg = MUSCLE_CHIP[exercise.muscle_group] ?? MUSCLE_CHIP.Other
               const isOwn = !exercise.is_global && exercise.created_by === user.id

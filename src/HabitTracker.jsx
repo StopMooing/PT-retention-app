@@ -358,10 +358,10 @@ export default function HabitTracker() {
       </div>
 
       {/* ── Panels ── */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-col md:flex-row flex-1 min-h-0">
 
         {/* ── Left panel — client list ── */}
-        <div className="w-[300px] shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+        <div className={`${selectedClient ? 'hidden md:flex' : 'flex'} w-full md:w-[300px] shrink-0 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex-col overflow-hidden`}>
           <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between shrink-0">
             <span className="text-sm font-bold text-gray-800 uppercase tracking-wide">Clients</span>
             <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{clients.length}</span>
@@ -425,7 +425,7 @@ export default function HabitTracker() {
         </div>
 
         {/* ── Right panel ── */}
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        <div className={`${!selectedClient ? 'hidden md:flex' : 'flex'} flex-1 flex-col overflow-hidden min-w-0`}>
           {!selectedClient ? (
             <div className="flex-1 flex items-center justify-center p-8">
               <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center max-w-sm shadow-sm">
@@ -436,6 +436,10 @@ export default function HabitTracker() {
             </div>
           ) : (
             <>
+              <button onClick={() => setSelectedClient(null)} className="md:hidden flex items-center gap-1 text-sm text-gray-500 px-6 pt-4 pb-0">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                All Clients
+              </button>
               {/* Client habit header */}
               <div className="bg-white border-b border-gray-200 px-6 py-5 shrink-0">
                 <div className="flex items-center justify-between">
