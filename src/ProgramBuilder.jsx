@@ -164,7 +164,7 @@ export default function ProgramBuilder({ user }) {
     setLoadingDays(true)
     const { data, error } = await supabase
       .from('program_workouts')
-      .select('*')
+      .select('*, workout_exercises(*)')
       .eq('program_id', programId)
       .order('day_number')
     if (!error && data) setWorkoutDays(data)
@@ -231,7 +231,7 @@ export default function ProgramBuilder({ user }) {
       .single()
     setSavingDay(false)
     if (error) { showBanner('Could not save day.', 'error'); return }
-    setWorkoutDays(prev => [...prev, data].sort((a, b) => a.day_number - b.day_number))
+    setWorkoutDays(prev => [...prev, { ...data, workout_exercises: [] }].sort((a, b) => a.day_number - b.day_number))
     setPrograms(prev => prev.map(p =>
       p.id === selectedProgram.id
         ? { ...p, program_workouts: [...(p.program_workouts ?? []), { id: data.id }] }
@@ -488,6 +488,22 @@ export default function ProgramBuilder({ user }) {
                             <p className="font-semibold text-gray-900 text-sm mt-0.5 m-0 leading-snug">
                               {day.name}
                             </p>
+                            <div className="flex items-center gap-3 mt-1.5">
+                              <span className="text-xs text-gray-400">
+                                {day.workout_exercises?.length || 0} exercises
+                              </span>
+                              {(day.workout_exercises?.length || 0) > 0 && (
+                                <span className="text-xs text-gray-400">
+                                  ~{Math.round(
+                                    (day.workout_exercises || []).reduce((total, ex) => {
+                                      const sets = parseInt(ex.sets) || 3
+                                      const rest = parseInt(ex.rest_seconds) || 90
+                                      return total + (sets * (rest + 45))
+                                    }, 0) / 60
+                                  )} min
+                                </span>
+                              )}
+                            </div>
                           </button>
                         </li>
                       )
@@ -508,6 +524,23 @@ export default function ProgramBuilder({ user }) {
             <Placeholder text="Select a program to get started" />
           ) : !selectedDay ? (
             <div className="flex-1 overflow-y-auto">
+              <div className="px-6 py-4 border-b border-gray-100 bg-white">
+                <h2 className="text-xl font-bold text-gray-900 mb-1">{selectedProgram.name}</h2>
+                {selectedProgram.description && (
+                  <p className="text-sm text-gray-500 mb-3">{selectedProgram.description}</p>
+                )}
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">
+                    <span className="font-semibold text-gray-900">{workoutDays.length}</span> {workoutDays.length === 1 ? 'day' : 'days'}
+                  </span>
+                  <span className="text-gray-300">·</span>
+                  <span className="text-sm text-gray-600">
+                    <span className="font-semibold text-gray-900">
+                      {workoutDays.reduce((total, w) => total + (w.workout_exercises?.length || 0), 0)}
+                    </span> total exercises
+                  </span>
+                </div>
+              </div>
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 mx-6 mt-6 max-w-md">
                 <h3 className="font-semibold text-gray-900 mb-1">Assign to Client</h3>
                 <p className="text-xs text-gray-500 mb-4">Assign this program to one of your clients</p>
