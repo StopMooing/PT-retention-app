@@ -778,7 +778,7 @@ export default function NutritionPlanner() {
           {filteredTemplates.length === 0 ? (
             <div className="text-center py-16 text-gray-400 text-sm">No meal templates found for these filters</div>
           ) : (
-            <div className="grid grid-cols-3 gap-5 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
               {filteredTemplates.map(t => (
                 <div
                   key={t.id}
