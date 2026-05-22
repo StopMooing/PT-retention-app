@@ -3,14 +3,14 @@ import { supabase } from './supabase'
 
 // ─── Shared input class ───────────────────────────────────────────────────────
 
-const inputCls = 'border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-green-400 focus:outline-none transition-all duration-150 placeholder-gray-400 bg-white'
+const inputCls = 'border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-gray-900 focus:border-gray-900 focus:outline-none transition-all duration-150 placeholder-gray-400 bg-white'
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 
 function Spinner() {
   return (
     <div className="flex items-center justify-center py-12">
-      <div className="w-5 h-5 rounded-full border-2 border-green-200 border-t-green-600 animate-spin" />
+      <div className="w-5 h-5 rounded-full border-2 border-gray-200 border-t-gray-500 animate-spin" />
     </div>
   )
 }
@@ -25,7 +25,7 @@ function Banner({ id, message, type = 'success', onDismiss }) {
 
   return (
     <div className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium mb-4 transition-all duration-150
-      ${type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}
+      ${type === 'error' ? 'bg-red-100 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'}`}
     >
       <div className="flex items-center gap-2">
         {type === 'error' ? (
@@ -308,7 +308,7 @@ export default function ProgramBuilder({ user }) {
             <h2 className="text-lg font-bold text-gray-900 m-0">Programs</h2>
             <button
               onClick={() => { setShowNewProgram(v => !v); setNewProgram({ name: '', description: '' }) }}
-              className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-3 py-1.5 rounded-lg transition-all duration-150"
+              className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
             >
               + New
             </button>
@@ -340,7 +340,7 @@ export default function ProgramBuilder({ user }) {
                     <button
                       type="submit"
                       disabled={savingProgram}
-                      className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-all duration-150 disabled:opacity-50"
+                      className="flex-1 py-2 bg-black hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                     >
                       {savingProgram ? 'Saving...' : 'Create Program'}
                     </button>
@@ -378,23 +378,18 @@ export default function ProgramBuilder({ user }) {
                     <li key={program.id}>
                       <button
                         onClick={() => openProgram(program)}
-                        className={`w-full text-left p-4 rounded-xl border shadow-sm transition-all duration-150
+                        className={`w-full text-left p-4 rounded-xl border transition-all
                           ${active
-                            ? 'bg-green-50 border-gray-200 border-l-4 border-l-green-600'
-                            : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                            ? 'border-2 border-black bg-gray-50'
+                            : 'border border-gray-200 hover:border-gray-300 bg-white'}`}
                       >
-                        <p className={`text-sm font-bold m-0 truncate leading-snug
-                          ${active ? 'text-green-700' : 'text-gray-900'}`}>
+                        <p className="font-semibold text-gray-900 text-sm m-0 truncate leading-snug">
                           {program.name}
                         </p>
                         {program.description && (
                           <p className="text-xs text-gray-400 m-0 mt-1 truncate">{program.description}</p>
                         )}
-                        <div className="mt-2">
-                          <span className="inline-block text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">
-                            {count} {count === 1 ? 'day' : 'days'}
-                          </span>
-                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5 m-0">{count} {count === 1 ? 'day' : 'days'}</p>
                       </button>
                     </li>
                   )
@@ -413,13 +408,11 @@ export default function ProgramBuilder({ user }) {
             <Placeholder text="Select a program first" />
           ) : (
             <>
-              <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #e5e7eb', backgroundColor: 'white'}}>
-                <h2 style={{fontSize: '14px', fontWeight: '700', color: '#111827', margin: 0}}>Workout Days</h2>
+              <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center justify-between flex-shrink-0">
+                <h2 className="text-sm font-bold text-gray-900 m-0">Workout Days</h2>
                 <button
                   onClick={() => { setShowNewDay(v => !v); setNewDay({ name: '', day_number: '' }) }}
-                  style={{border: '1px solid #16a34a', color: '#16a34a', backgroundColor: 'white', fontSize: '13px', fontWeight: '500', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer'}}
-                  onMouseOver={e => e.target.style.backgroundColor = '#f0fdf4'}
-                  onMouseOut={e => e.target.style.backgroundColor = 'white'}
+                  className="border border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
                 >
                   + Add Day
                 </button>
@@ -453,7 +446,7 @@ export default function ProgramBuilder({ user }) {
                         <button
                           type="submit"
                           disabled={savingDay}
-                          className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-all duration-150 disabled:opacity-50"
+                          className="flex-1 py-2 bg-black hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                         >
                           {savingDay ? 'Saving...' : 'Add Day'}
                         </button>
@@ -484,17 +477,15 @@ export default function ProgramBuilder({ user }) {
                         <li key={day.id}>
                           <button
                             onClick={() => openDay(day)}
-                            className={`w-full text-left p-4 rounded-xl border shadow-sm transition-all duration-150
+                            className={`w-full text-left p-3 rounded-lg border transition-all
                               ${active
-                                ? 'bg-green-50 border-gray-200 border-l-4 border-l-green-600'
-                                : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+                                ? 'border-2 border-black bg-gray-50'
+                                : 'border border-gray-200 hover:border-gray-300 bg-white'}`}
                           >
-                            <p className={`text-[10px] font-bold uppercase tracking-widest m-0
-                              ${active ? 'text-green-600' : 'text-gray-400'}`}>
+                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide m-0">
                               Day {day.day_number}
                             </p>
-                            <p className={`text-sm font-bold m-0 mt-0.5 leading-snug
-                              ${active ? 'text-green-700' : 'text-gray-900'}`}>
+                            <p className="font-semibold text-gray-900 text-sm mt-0.5 m-0 leading-snug">
                               {day.name}
                             </p>
                           </button>
@@ -517,14 +508,14 @@ export default function ProgramBuilder({ user }) {
             <Placeholder text="Select a program to get started" />
           ) : !selectedDay ? (
             <div className="flex-1 overflow-y-auto">
-              <div className="p-6 border border-gray-200 rounded-xl bg-white shadow-sm mx-6 mt-6 max-w-md">
-                <h2 className="text-lg font-bold text-gray-800">Assign Program</h2>
-                <p className="text-sm text-gray-500">Assign this program to one of your clients</p>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 mx-6 mt-6 max-w-md">
+                <h3 className="font-semibold text-gray-900 mb-1">Assign to Client</h3>
+                <p className="text-xs text-gray-500 mb-4">Assign this program to one of your clients</p>
 
                 <select
                   value={assignClientId}
                   onChange={e => setAssignClientId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 mt-2"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 mb-3"
                 >
                   <option value="">Select a client...</option>
                   {clients.map(c => (
@@ -532,24 +523,24 @@ export default function ProgramBuilder({ user }) {
                   ))}
                 </select>
 
-                <label className="block text-sm text-gray-600 font-medium mt-3 mb-1">Start Date</label>
+                <label className="block text-sm text-gray-600 font-medium mb-1">Start Date</label>
                 <input
                   type="date"
                   value={assignStartDate}
                   onChange={e => setAssignStartDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 mt-2"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 mb-4"
                 />
 
                 <button
                   onClick={handleAssignProgram}
                   disabled={assignLoading || !assignClientId}
-                  className="mt-3 bg-green-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-green-700 transition w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {assignLoading ? 'Assigning...' : 'Assign Program'}
                 </button>
 
                 {assignBanner && (
-                  <div className={`mt-3 p-3 text-sm rounded-lg ${assignBanner.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                  <div className={`mt-3 p-3 text-sm rounded-lg ${assignBanner.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'}`}>
                     {assignBanner.text}
                   </div>
                 )}
@@ -560,24 +551,19 @@ export default function ProgramBuilder({ user }) {
           ) : (
             <>
               {/* Day header */}
-              <div className="px-6 py-4 bg-white border-b border-gray-200 flex-shrink-0 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="text-xs font-normal uppercase tracking-wide text-gray-400 m-0">
-                    {selectedProgram.name} &middot; Day {selectedDay.day_number}
-                  </p>
-                  <h2 className="text-xl font-bold text-gray-800 m-0 mt-0.5 leading-tight truncate">
-                    {selectedDay.name}
-                  </h2>
+              <div className="px-6 py-4 bg-white border-b border-gray-200 flex-shrink-0">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{selectedProgram?.name} · Day {selectedDay?.day_number}</p>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedDay?.name}</h2>
+                  </div>
+                  <button
+                    onClick={() => setShowNewExercise(v => !v)}
+                    className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <span>+</span> Add Exercise
+                  </button>
                 </div>
-                <button
-                  onClick={() => setShowNewExercise(v => !v)}
-                  className={`flex-shrink-0 text-sm font-semibold px-4 py-2 rounded-lg transition-all duration-150
-                    ${showNewExercise
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-green-600 hover:bg-green-700 text-white'}`}
-                >
-                  + Add Exercise
-                </button>
               </div>
 
               {/* Scrollable body */}
@@ -596,13 +582,9 @@ export default function ProgramBuilder({ user }) {
 
                 {/* ── Add exercise form ── */}
                 {showNewExercise && (
-                  <div className="mb-5 bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden">
-                    <div className="px-5 py-4 border-b border-gray-100">
-                      <h3 className="text-sm font-bold text-gray-900 m-0">
-                        Add Exercise to {selectedDay.name}
-                      </h3>
-                    </div>
-                    <form onSubmit={handleSaveExercise} className="p-5 flex flex-col gap-4">
+                  <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
+                    <h3 className="font-semibold text-gray-900 mb-4">Add Exercise to {selectedDay?.name}</h3>
+                    <form onSubmit={handleSaveExercise} className="flex flex-col gap-4">
 
                       <Field label="Exercise">
                         <div className="relative">
@@ -619,7 +601,7 @@ export default function ProgramBuilder({ user }) {
                           />
                           {newExercise.exercise_id && (
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M20 6L9 17l-5-5"/>
                               </svg>
                             </div>
@@ -640,11 +622,11 @@ export default function ProgramBuilder({ user }) {
                                     setNewExercise(e => ({ ...e, exercise_id: ex.id }))
                                     setExerciseSearch(ex.name)
                                   }}
-                                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-green-50 transition-all duration-150 flex items-center justify-between gap-3"
+                                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center justify-between gap-3"
                                 >
                                   <span className="font-medium text-gray-700 truncate">{ex.name}</span>
                                   {ex.muscle_group && (
-                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 bg-green-100 text-green-700">
+                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 bg-gray-100 text-gray-600">
                                       {ex.muscle_group}
                                     </span>
                                   )}
@@ -708,7 +690,7 @@ export default function ProgramBuilder({ user }) {
                         <button
                           type="submit"
                           disabled={savingExercise || !newExercise.exercise_id}
-                          className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-5 py-2 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {savingExercise ? 'Adding...' : 'Add to Workout'}
                         </button>
@@ -722,73 +704,59 @@ export default function ProgramBuilder({ user }) {
                   <Spinner />
                 ) : dayExercises.length === 0 && !showNewExercise ? (
                   <div className="flex items-center justify-center py-12">
-                    <div className="bg-green-50 border border-green-100 rounded-xl px-10 py-10 text-center max-w-xs">
-                      <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center mx-auto mb-4">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl px-10 py-10 text-center max-w-xs">
+                      <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M6 4v16M18 4v16M3 8h4M17 8h4M3 16h4M17 16h4"/>
                         </svg>
                       </div>
-                      <p className="text-sm font-medium text-green-700 m-0">No exercises added yet</p>
-                      <p className="text-xs text-green-500 mt-1.5">Click + Add Exercise to build this workout</p>
+                      <p className="text-sm font-medium text-gray-600 m-0">No exercises added yet</p>
+                      <p className="text-xs text-gray-400 mt-1.5">Click + Add Exercise to build this workout</p>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {dayExercises.map((we, idx) => {
-                      const ex = we.exercises
-                      const isDeleting = deletingId === we.id
-                      const setsReps = [
-                        we.sets  ? `${we.sets} sets`  : null,
-                        we.reps  ? `${we.reps} reps`  : null,
-                      ].filter(Boolean).join(' x ')
-
-                      return (
-                        <div
-                          key={we.id}
-                          className={`bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex items-start gap-4 transition-all duration-150
-                            ${isDeleting ? 'opacity-30 pointer-events-none' : ''}`}
-                        >
-                          {/* Row index */}
-                          <span className="text-xs font-bold text-gray-300 w-5 mt-0.5 text-center flex-shrink-0 tabular-nums">
-                            {idx + 1}
-                          </span>
-
-                          {/* Name, badge, stats, notes */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="text-sm font-bold text-gray-900 m-0 leading-snug">
-                                {ex?.name ?? 'Unknown exercise'}
-                              </p>
-                              {ex?.muscle_group && (
-                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                                  {ex.muscle_group}
+                    {dayExercises.map((exercise, index) => (
+                      <div key={exercise.id} className={`bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-all ${deletingId === exercise.id ? 'opacity-30 pointer-events-none' : ''}`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">{index + 1}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-gray-900 text-sm">{exercise.exercises?.name || exercise.name}</span>
+                                {(exercise.exercises?.muscle_group || exercise.muscle_group) && (
+                                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                                    {exercise.exercises?.muscle_group || exercise.muscle_group}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
+                                  <span className="text-gray-400">Sets</span> {exercise.sets}
                                 </span>
+                                <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
+                                  <span className="text-gray-400">Reps</span> {exercise.reps}
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
+                                  <span className="text-gray-400">Rest</span> {exercise.rest_seconds}s
+                                </span>
+                              </div>
+                              {exercise.notes && (
+                                <p className="text-xs text-gray-500 mt-2 italic">{exercise.notes}</p>
                               )}
                             </div>
-                            {setsReps && (
-                              <p className="text-sm text-gray-600 m-0 mt-1">{setsReps}</p>
-                            )}
-                            {we.rest_seconds != null && (
-                              <p className="text-sm text-gray-400 m-0 mt-0.5">{we.rest_seconds}s rest</p>
-                            )}
-                            {we.notes && (
-                              <p className="text-xs italic text-gray-400 m-0 mt-1">{we.notes}</p>
-                            )}
                           </div>
-
-                          {/* Delete */}
                           <button
-                            onClick={() => handleDeleteExercise(we.id)}
-                            title="Remove exercise"
-                            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all duration-150 mt-0.5"
+                            onClick={() => handleDeleteExercise(exercise.id)}
+                            className="text-gray-300 hover:text-red-400 transition-colors ml-2 flex-shrink-0 p-1"
                           >
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
                         </div>
-                      )
-                    })}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
