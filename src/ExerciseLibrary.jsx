@@ -1189,11 +1189,12 @@ export default function ExerciseLibrary({ user }) {
       setExerciseGif(null)
       try {
         const searchName = selectedExercise.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').trim()
-        const res = await fetch(`https://exercisedb.dev/api/exercises/name/${encodeURIComponent(searchName)}?limit=1`)
+        const res = await fetch(`https://oss.exercisedb.dev/api/v1/exercises?name=${encodeURIComponent(searchName)}&limit=1`)
         if (!res.ok) throw new Error('fetch failed')
         const data = await res.json()
-        if (Array.isArray(data) && data.length > 0 && data[0].gifUrl) {
-          setExerciseGif(data[0].gifUrl)
+        const exercises = data.exercises || data
+        if (Array.isArray(exercises) && exercises.length > 0 && exercises[0].gifUrl) {
+          setExerciseGif(exercises[0].gifUrl)
         } else {
           setExerciseGif(null)
         }
