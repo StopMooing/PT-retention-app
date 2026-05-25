@@ -981,8 +981,10 @@ export default function App() {
           <Route path="/clients/:clientId" element={
             userRole === 'pt' ? <ClientProfile /> : <Navigate to="/my-workout" replace />
           } />
-          <Route path="/my-workout" element={<ClientApp />} />
         </Route>
+      )}
+      {session && (
+        <Route path="/my-workout" element={<ClientApp />} />
       )}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

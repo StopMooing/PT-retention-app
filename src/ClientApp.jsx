@@ -133,7 +133,7 @@ function ProfilePhoto({ client, size = 'md', onUpdate }) {
 }
 
 // ─── AI CHAT COMPONENT ────────────────────────────────────────────────────────
-function AIChat({ context, placeholder, systemPrompt, onClose }) {
+function AIChat({ context, placeholder, systemPrompt, onClose, onSave }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -225,6 +225,16 @@ function AIChat({ context, placeholder, systemPrompt, onClose }) {
             </div>
           </div>
         ))}
+        {messages.length > 0 && messages[messages.length - 1].role === 'assistant' && onSave && !loading && (
+          <div className="flex justify-start">
+            <button
+              onClick={() => onSave(messages[messages.length - 1].content)}
+              className="flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl hover:bg-emerald-100 transition-colors ml-1"
+            >
+              <Plus size={12} /> Save this workout
+            </button>
+          </div>
+        )}
         {loading && (
           <div className="flex justify-start">
             <div className="bg-gray-100 rounded-2xl rounded-bl-sm px-4 py-3">
@@ -448,6 +458,9 @@ export default function ClientApp() {
   // Calendar
   const [loggingWorkout, setLoggingWorkout] = useState(null)
   const [completedIds, setCompletedIds] = useState(new Set())
+  const [calYear, setCalYear] = useState(new Date().getFullYear())
+  const [calMonth, setCalMonth] = useState(new Date().getMonth())
+  const [selectedCalDate, setSelectedCalDate] = useState(new Date().toISOString().split('T')[0])
 
   // Program
   const [programView, setProgramView] = useState('list')
@@ -623,8 +636,8 @@ export default function ClientApp() {
   )
 
   // AI overlays
-  if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt="You are an expert personal trainer. When giving a workout, always use this exact format with no markdown symbols, no asterisks, no hashtags:\n\nWARM UP\nExercise name — X minutes or X reps\nExercise name — X minutes or X reps\n\nMAIN SESSION\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nCOOL DOWN\nExercise name — X minutes\n\nUse plain text only. No bullet points, no asterisks, no hashtags, no bold markers. Just clean section headers in CAPS followed by exercise details on separate lines." onClose={() => setShowWorkoutAI(false)} />
-  if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable." onClose={() => setShowNutritionAI(false)} />
+  if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt="You are an expert personal trainer. When giving a workout, always use this exact format with no markdown symbols, no asterisks, no hashtags:\n\nWARM UP\nExercise name — X minutes or X reps\nExercise name — X minutes or X reps\n\nMAIN SESSION\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nCOOL DOWN\nExercise name — X minutes\n\nUse plain text only. No bullet points, no asterisks, no hashtags, no bold markers. Just clean section headers in CAPS followed by exercise details on separate lines." onClose={() => setShowWorkoutAI(false)} onSave={(content) => { alert('Workout saved as template! Coming soon: add to a specific day.') }} />
+  if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={async (content) => { const calorieMatch = content.match(/[Cc]alories?:?\s*(\d+)/); const proteinMatch = content.match(/[Pp]rotein:?\s*(\d+)/); const carbsMatch = content.match(/[Cc]arbs?:?\s*(\d+)/); const fatsMatch = content.match(/[Ff]ats?:?\s*(\d+)/); const mealName = content.split('\n')[0].replace(/^#+\s*/, '').trim().substring(0, 50) || 'AI Meal'; try { const { data: { user } } = await supabase.auth.getUser(); await supabase.from('food_logs').insert({ client_id: client.id, food_name: mealName, meal_type: 'other', calories: parseFloat(calorieMatch?.[1]) || 0, protein_g: parseFloat(proteinMatch?.[1]) || 0, carbs_g: parseFloat(carbsMatch?.[1]) || 0, fats_g: parseFloat(fatsMatch?.[1]) || 0, logged_at: new Date().toISOString() }); setShowNutritionAI(false); alert('Meal added to your food log!') } catch(e) { console.error(e) } }} />
 
   // Workout logging overlay
   if (loggingWorkout) {
@@ -782,58 +795,127 @@ export default function ClientApp() {
   }
 
   function renderCalendar() {
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
+    const firstDayOfMonth = new Date(calYear, calMonth, 1).getDay()
+    const startOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1
+    const monthName = new Date(calYear, calMonth).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
+    const selectedWorkouts = groupedByDate[selectedCalDate] ?? []
+    const selectedDateLabel = formatDateLabel(selectedCalDate)
+
     return (
-      <div className="px-4 py-4 space-y-1">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Schedule</h2>
-          <button onClick={() => document.getElementById('cal-today')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className="text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">Today</button>
-        </div>
-        {sortedDates.length === 0 ? (
-          <div className="text-center py-16">
-            <Calendar size={32} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-sm text-gray-400">No workouts scheduled yet.</p>
-            <p className="text-xs text-gray-300 mt-1">Your trainer will add workouts here.</p>
+      <div className="px-4 py-4 space-y-4">
+        <h2 className="text-lg font-bold text-gray-900">Schedule</h2>
+
+        {/* Month navigation */}
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <button
+              onClick={() => { if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1) } else setCalMonth(m => m - 1) }}
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+            >
+              <ChevronRight size={16} className="text-gray-600 rotate-180" />
+            </button>
+            <span className="text-sm font-bold text-gray-900">{monthName}</span>
+            <button
+              onClick={() => { if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1) } else setCalMonth(m => m + 1) }}
+              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+            >
+              <ChevronRight size={16} className="text-gray-600" />
+            </button>
           </div>
-        ) : sortedDates.map(dateStr => {
-          const workoutsOnDay = groupedByDate[dateStr]
-          const todaySection = isToday(dateStr)
-          const pastSection = isPast(dateStr)
-          return (
-            <div key={dateStr} id={todaySection ? 'cal-today' : undefined} className="mb-3">
-              <div className="px-1 py-2 flex items-center gap-2">
-                <span className={`text-sm font-bold ${todaySection ? 'text-emerald-600' : pastSection ? 'text-gray-400' : 'text-gray-800'}`}>{formatDateLabel(dateStr)}</span>
-                {todaySection && <span className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">TODAY</span>}
-              </div>
-              <div className="space-y-2">
-                {workoutsOnDay.map(sw => {
-                  const done = completedIds.has(sw.id)
-                  const exercises = workoutExercises[sw.program_workout_id] ?? []
-                  const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
-                  return (
-                    <button key={sw.id} onClick={() => setLoggingWorkout(sw)}
-                      className={`w-full text-left bg-white border rounded-2xl px-4 py-4 flex items-center gap-4 hover:shadow-sm transition-all ${done ? 'border-emerald-200 bg-emerald-50/30' : todaySection ? 'border-emerald-200' : 'border-gray-200'}`}>
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-500' : 'border-2 border-gray-200'}`}>
-                        {done && <Check size={14} className="text-white" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-bold truncate ${done ? 'text-gray-500' : 'text-gray-900'}`}>{sw.program_workouts?.name || 'Workout'}</p>
-                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <span className={`text-xs font-medium ${done ? 'text-emerald-600' : todaySection ? 'text-emerald-600' : pastSection ? 'text-gray-400' : 'text-gray-400'}`}>
-                            {done ? 'Completed' : todaySection ? 'Ready to start' : pastSection ? 'Missed' : 'Upcoming'}
-                          </span>
-                          {exercises.length > 0 && <><span className="text-gray-300 text-xs">·</span><span className="text-xs text-gray-400">{exercises.length} exercises</span></>}
-                          {estMin > 0 && <><span className="text-gray-300 text-xs">·</span><span className="text-xs text-gray-400">~{estMin} min</span></>}
-                        </div>
-                      </div>
-                      <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-                    </button>
-                  )
-                })}
-              </div>
+
+          {/* Day headers */}
+          <div className="grid grid-cols-7 border-b border-gray-100">
+            {['M','T','W','T','F','S','S'].map((d, i) => (
+              <div key={i} className="py-2 text-center text-xs font-semibold text-gray-400">{d}</div>
+            ))}
+          </div>
+
+          {/* Calendar grid */}
+          <div className="grid grid-cols-7">
+            {Array.from({ length: startOffset }).map((_, i) => (
+              <div key={`empty-${i}`} className="h-10" />
+            ))}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1
+              const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+              const isCurrentDay = dateStr === todayStr
+              const isSelected = dateStr === selectedCalDate
+              const hasWorkout = !!(groupedByDate[dateStr]?.length)
+              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(sw.id))
+              return (
+                <button
+                  key={dateStr}
+                  onClick={() => setSelectedCalDate(dateStr)}
+                  className={`h-10 flex flex-col items-center justify-center relative transition-colors ${
+                    isSelected ? 'bg-emerald-500' :
+                    isCurrentDay ? 'bg-emerald-50' :
+                    'hover:bg-gray-50'
+                  }`}
+                >
+                  <span className={`text-xs font-semibold ${
+                    isSelected ? 'text-white' :
+                    isCurrentDay ? 'text-emerald-600' :
+                    'text-gray-700'
+                  }`}>{day}</span>
+                  {hasWorkout && (
+                    <div className={`w-1 h-1 rounded-full mt-0.5 ${
+                      isSelected ? 'bg-white' :
+                      hasCompleted ? 'bg-emerald-500' :
+                      'bg-gray-400'
+                    }`} />
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Selected date panel */}
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <p className="text-sm font-bold text-gray-900">{selectedDateLabel}</p>
+            {isToday(selectedCalDate) && <span className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">TODAY</span>}
+          </div>
+          {selectedWorkouts.length === 0 ? (
+            <div className="px-4 py-6 text-center">
+              <p className="text-sm text-gray-400 mb-3">No workouts scheduled for this day.</p>
+              <button
+                onClick={() => setShowWorkoutAI(true)}
+                className="flex items-center gap-2 mx-auto text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl"
+              >
+                <span>✨</span> Build a workout with AI
+              </button>
             </div>
-          )
-        })}
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {selectedWorkouts.map(sw => {
+                const done = completedIds.has(sw.id)
+                const exercises = workoutExercises[sw.program_workout_id] ?? []
+                const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
+                return (
+                  <button key={sw.id} onClick={() => setLoggingWorkout(sw)}
+                    className="w-full text-left px-4 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-500' : 'border-2 border-gray-200'}`}>
+                      {done && <Check size={14} className="text-white" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{sw.program_workouts?.name || 'Workout'}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`text-xs ${done ? 'text-emerald-600 font-medium' : 'text-gray-400'}`}>
+                          {done ? 'Completed' : 'Tap to start'}
+                        </span>
+                        {exercises.length > 0 && <><span className="text-gray-300">·</span><span className="text-xs text-gray-400">{exercises.length} exercises</span></>}
+                        {estMin > 0 && <><span className="text-gray-300">·</span><span className="text-xs text-gray-400">~{estMin} min</span></>}
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
         <div className="h-20" />
       </div>
     )
