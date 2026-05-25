@@ -197,12 +197,31 @@ function AIChat({ context, placeholder, systemPrompt, onClose }) {
         )}
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
               msg.role === 'user'
                 ? 'bg-emerald-500 text-white rounded-br-sm'
                 : 'bg-gray-100 text-gray-800 rounded-bl-sm'
             }`}>
-              {msg.content}
+              {msg.role === 'assistant' ? (
+                <div className="space-y-2">
+                  {msg.content.split('\n').filter(line => line.trim() !== '').map((line, li) => {
+                    if (line.startsWith('### ')) return <p key={li} className="font-bold text-gray-900 text-sm mt-2">{line.replace('### ', '')}</p>
+                    if (line.startsWith('## ')) return <p key={li} className="font-bold text-gray-900 text-base mt-3 mb-1">{line.replace('## ', '')}</p>
+                    if (line.startsWith('# ')) return <p key={li} className="font-bold text-gray-900 text-lg mt-3 mb-1">{line.replace('# ', '')}</p>
+                    if (line.startsWith('- ') || line.startsWith('* ')) {
+                      return <div key={li} className="flex items-start gap-2"><span className="text-emerald-500 mt-0.5 flex-shrink-0">•</span><span>{line.replace(/^[-*] /, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span></div>
+                    }
+                    if (/^\d+\. /.test(line)) {
+                      const num = line.match(/^(\d+)\. /)[1]
+                      return <div key={li} className="flex items-start gap-2"><span className="text-emerald-500 font-bold flex-shrink-0">{num}.</span><span>{line.replace(/^\d+\. /, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span></div>
+                    }
+                    const formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    return <p key={li} dangerouslySetInnerHTML={{ __html: formatted }} />
+                  })}
+                </div>
+              ) : (
+                msg.content
+              )}
             </div>
           </div>
         ))}
