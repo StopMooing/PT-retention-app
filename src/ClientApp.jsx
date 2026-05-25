@@ -133,7 +133,7 @@ function ProfilePhoto({ client, size = 'md', onUpdate }) {
 }
 
 // ─── AI CHAT COMPONENT ────────────────────────────────────────────────────────
-function AIChat({ context, placeholder, systemPrompt, onClose, onSave }) {
+function AIChat({ context, placeholder, systemPrompt, onClose, onSave, saveLabel }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -231,7 +231,7 @@ function AIChat({ context, placeholder, systemPrompt, onClose, onSave }) {
               onClick={() => onSave(messages[messages.length - 1].content)}
               className="flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-xl hover:bg-emerald-100 transition-colors ml-1"
             >
-              <Plus size={12} /> Save this workout
+              <Plus size={12} /> {saveLabel || 'Save this workout'}
             </button>
           </div>
         )}
@@ -478,6 +478,26 @@ export default function ClientApp() {
   // Database
   const [resourceFilter, setResourceFilter] = useState('all')
 
+  // Saved workouts
+  const [savedWorkouts, setSavedWorkouts] = useState([])
+  const [programSubTab, setProgramSubTab] = useState('program')
+  const [showAddToCalendar, setShowAddToCalendar] = useState(false)
+  const [workoutToSchedule, setWorkoutToSchedule] = useState(null)
+  const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0])
+
+  // Saved meals
+  const [savedMeals, setSavedMeals] = useState([])
+  const [nutritionSubTab, setNutritionSubTab] = useState('log')
+
+  // Progress photos
+  const [progressPhotos, setProgressPhotos] = useState([])
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const photoInputRef = useRef(null)
+
+  // Weight graph
+  const [weightPeriod, setWeightPeriod] = useState(30)
+  const [weightLogs, setWeightLogs] = useState([])
+
   const todayStr = new Date().toISOString().split('T')[0]
 
   useEffect(() => {
@@ -553,6 +573,23 @@ export default function ClientApp() {
       const { data: resourceData } = await supabase.from('resources').select('*').order('created_at', { ascending: false })
       setResources(resourceData ?? [])
 
+      // Saved workouts
+      const { data: savedWData } = await supabase.from('saved_workouts').select('*').eq('client_id', clientRow.id).order('created_at', { ascending: false })
+      setSavedWorkouts(savedWData ?? [])
+
+      // Saved meals
+      const { data: savedMData } = await supabase.from('saved_meals').select('*').eq('client_id', clientRow.id).order('created_at', { ascending: false })
+      setSavedMeals(savedMData ?? [])
+
+      // Progress photos
+      const { data: ppData } = await supabase.from('progress_photos').select('*').eq('client_id', clientRow.id).order('taken_at', { ascending: false })
+      setProgressPhotos(ppData ?? [])
+
+      // Weight logs (90 days)
+      const ninetyAgo = new Date(); ninetyAgo.setDate(ninetyAgo.getDate() - 90)
+      const { data: wlData } = await supabase.from('body_weight_logs').select('weight_kg, logged_date').eq('client_id', clientRow.id).gte('logged_date', ninetyAgo.toISOString().split('T')[0]).order('logged_date', { ascending: true })
+      setWeightLogs(wlData ?? [])
+
       setLoading(false)
     }
     init()
@@ -592,6 +629,83 @@ export default function ClientApp() {
       setShowAddFood(false)
     } catch (e) { console.error(e) }
     finally { setAddingFood(false) }
+  }
+
+  async function handleSaveWorkout(content) {
+    if (!client) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const title = content.split('\n')[0].replace(/^#+\s*/, '').trim().substring(0, 80) || 'Custom Workout'
+      const { data, error } = await supabase.from('saved_workouts').insert({ client_id: client.id, created_by: user.id, title, content }).select().single()
+      if (error) throw error
+      setSavedWorkouts(prev => [data, ...prev])
+      setShowWorkoutAI(false)
+    } catch (e) { console.error(e) }
+  }
+
+  async function handleSaveMeal(content) {
+    if (!client) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const calorieMatch = content.match(/[Cc]alories?:?\s*(\d+)/)
+      const proteinMatch = content.match(/[Pp]rotein:?\s*(\d+)/)
+      const carbsMatch = content.match(/[Cc]arbs?:?\s*(\d+)/)
+      const fatsMatch = content.match(/[Ff]ats?:?\s*(\d+)/)
+      const title = content.split('\n')[0].replace(/^#+\s*/, '').trim().substring(0, 80) || 'AI Meal'
+      const { data, error } = await supabase.from('saved_meals').insert({
+        client_id: client.id, created_by: user.id, title, content,
+        calories: parseFloat(calorieMatch?.[1]) || 0,
+        protein_g: parseFloat(proteinMatch?.[1]) || 0,
+        carbs_g: parseFloat(carbsMatch?.[1]) || 0,
+        fats_g: parseFloat(fatsMatch?.[1]) || 0,
+      }).select().single()
+      if (error) throw error
+      setSavedMeals(prev => [data, ...prev])
+      setShowNutritionAI(false)
+    } catch (e) { console.error(e) }
+  }
+
+  async function handleAddMealToLog(meal) {
+    if (!client) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data, error } = await supabase.from('food_logs').insert({
+        client_id: client.id, food_name: meal.title, meal_type: 'other',
+        calories: meal.calories || 0, protein_g: meal.protein_g || 0,
+        carbs_g: meal.carbs_g || 0, fats_g: meal.fats_g || 0,
+        logged_at: new Date().toISOString(),
+      }).select().single()
+      if (error) throw error
+      setFoodLogs(prev => [data, ...prev])
+      setNutritionSubTab('log')
+    } catch (e) { console.error(e) }
+  }
+
+  async function handleScheduleWorkout(workout, date) {
+    if (!client || !date) return
+    try {
+      await supabase.from('scheduled_workouts').insert({ client_id: client.id, scheduled_date: date })
+      setShowAddToCalendar(false)
+      setWorkoutToSchedule(null)
+    } catch (e) { console.error(e) }
+  }
+
+  async function handleUploadProgressPhoto(e) {
+    const file = e.target.files?.[0]
+    if (!file || !client) return
+    setUploadingPhoto(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const ext = file.name.split('.').pop()
+      const path = `${user.id}/progress/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('progress-photos').upload(path, file, { upsert: false })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('progress-photos').getPublicUrl(path)
+      const { data, error } = await supabase.from('progress_photos').insert({ client_id: client.id, uploaded_by: user.id, photo_url: publicUrl, taken_at: new Date().toISOString() }).select().single()
+      if (error) throw error
+      setProgressPhotos(prev => [data, ...prev])
+    } catch (e) { console.error(e) }
+    finally { setUploadingPhoto(false) }
   }
 
   async function handleDeleteFood(id) {
@@ -636,8 +750,8 @@ export default function ClientApp() {
   )
 
   // AI overlays
-  if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt="You are an expert personal trainer. When giving a workout, always use this exact format with no markdown symbols, no asterisks, no hashtags:\n\nWARM UP\nExercise name — X minutes or X reps\nExercise name — X minutes or X reps\n\nMAIN SESSION\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nCOOL DOWN\nExercise name — X minutes\n\nUse plain text only. No bullet points, no asterisks, no hashtags, no bold markers. Just clean section headers in CAPS followed by exercise details on separate lines." onClose={() => setShowWorkoutAI(false)} onSave={(content) => { alert('Workout saved as template! Coming soon: add to a specific day.') }} />
-  if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={async (content) => { const calorieMatch = content.match(/[Cc]alories?:?\s*(\d+)/); const proteinMatch = content.match(/[Pp]rotein:?\s*(\d+)/); const carbsMatch = content.match(/[Cc]arbs?:?\s*(\d+)/); const fatsMatch = content.match(/[Ff]ats?:?\s*(\d+)/); const mealName = content.split('\n')[0].replace(/^#+\s*/, '').trim().substring(0, 50) || 'AI Meal'; try { const { data: { user } } = await supabase.auth.getUser(); await supabase.from('food_logs').insert({ client_id: client.id, food_name: mealName, meal_type: 'other', calories: parseFloat(calorieMatch?.[1]) || 0, protein_g: parseFloat(proteinMatch?.[1]) || 0, carbs_g: parseFloat(carbsMatch?.[1]) || 0, fats_g: parseFloat(fatsMatch?.[1]) || 0, logged_at: new Date().toISOString() }); setShowNutritionAI(false); alert('Meal added to your food log!') } catch(e) { console.error(e) } }} />
+  if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt="You are an expert personal trainer. When giving a workout, always use this exact format with no markdown symbols, no asterisks, no hashtags:\n\nWARM UP\nExercise name — X minutes or X reps\nExercise name — X minutes or X reps\n\nMAIN SESSION\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nCOOL DOWN\nExercise name — X minutes\n\nUse plain text only. No bullet points, no asterisks, no hashtags, no bold markers. Just clean section headers in CAPS followed by exercise details on separate lines." onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
+  if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={handleSaveMeal} saveLabel="Save meal" />
 
   // Workout logging overlay
   if (loggingWorkout) {
@@ -660,6 +774,39 @@ export default function ClientApp() {
 
   function renderHome() {
     const firstName = client.full_name?.split(' ')[0] || client.full_name
+
+    // Streak: consecutive days with completed workouts going back from today
+    const completedDates = new Set(
+      scheduledWorkouts.filter(sw => completedIds.has(sw.id)).map(sw => sw.scheduled_date)
+    )
+    let streak = 0
+    const streakCheck = new Date()
+    while (completedDates.has(streakCheck.toISOString().split('T')[0])) {
+      streak++
+      streakCheck.setDate(streakCheck.getDate() - 1)
+    }
+
+    // Weight graph
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - weightPeriod)
+    const cutoffStr = cutoff.toISOString().split('T')[0]
+    const filteredLogs = weightLogs.filter(w => w.logged_date >= cutoffStr)
+    const svgW = 320, svgH = 90, padL = 8, padR = 8, padT = 8, padB = 8
+    const chartW = svgW - padL - padR, chartH = svgH - padT - padB
+    let wPath = '', wArea = '', wPts = []
+    if (filteredLogs.length >= 2) {
+      const vals = filteredLogs.map(w => w.weight_kg)
+      const minV = Math.min(...vals), maxV = Math.max(...vals)
+      const range = maxV - minV || 0.1
+      const n = filteredLogs.length
+      wPts = filteredLogs.map((w, i) => ({
+        x: padL + (i / (n - 1)) * chartW,
+        y: padT + chartH - ((w.weight_kg - minV) / range) * chartH,
+        val: w.weight_kg,
+      }))
+      wPath = wPts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+      wArea = `${wPath} L${wPts[n-1].x.toFixed(1)},${(padT+chartH).toFixed(1)} L${wPts[0].x.toFixed(1)},${(padT+chartH).toFixed(1)} Z`
+    }
+
     return (
       <div className="px-4 py-5 space-y-5">
 
@@ -678,7 +825,28 @@ export default function ClientApp() {
           <ProfilePhoto client={{ ...client, profile_photo_url: photoUrl }} size="lg" onUpdate={setPhotoUrl} />
         </div>
 
-        {/* Weight card */}
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white border border-gray-200 rounded-2xl p-3">
+            <div className="flex items-center gap-1.5 mb-1"><Flame size={13} className="text-orange-500" /><span className="text-[10px] font-semibold text-gray-500">Streak</span></div>
+            <p className="text-xl font-black text-gray-900">{streak}</p>
+            <p className="text-[10px] text-gray-400">days</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-3">
+            <div className="flex items-center gap-1.5 mb-1"><Dumbbell size={13} className="text-emerald-500" /><span className="text-[10px] font-semibold text-gray-500">Done</span></div>
+            <p className="text-xl font-black text-gray-900">{completedIds.size}</p>
+            <p className="text-[10px] text-gray-400">workouts</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-2xl p-3">
+            <div className="flex items-center gap-1.5 mb-1"><Target size={13} className="text-blue-500" /><span className="text-[10px] font-semibold text-gray-500">Weight</span></div>
+            {todayWeight
+              ? <><p className="text-xl font-black text-gray-900">{todayWeight}</p><p className="text-[10px] text-gray-400">kg today</p></>
+              : <p className="text-sm text-gray-300 mt-1">—</p>
+            }
+          </div>
+        </div>
+
+        {/* Weight log entry */}
         {!todayWeight ? (
           <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Log Today's Weight</p>
@@ -704,6 +872,38 @@ export default function ClientApp() {
               </div>
             </div>
             <button onClick={() => setTodayWeight(null)} className="text-xs text-gray-400 hover:text-gray-600 border border-gray-200 px-2.5 py-1.5 rounded-lg transition-colors">Update</button>
+          </div>
+        )}
+
+        {/* Weight trend graph */}
+        {filteredLogs.length >= 2 && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Weight Trend</p>
+              <div className="flex gap-1">
+                {[7, 30, 90].map(p => (
+                  <button key={p} onClick={() => setWeightPeriod(p)}
+                    className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${weightPeriod === p ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                    {p}d
+                  </button>
+                ))}
+              </div>
+            </div>
+            <svg width="100%" viewBox={`0 0 ${svgW} ${svgH}`} className="overflow-visible">
+              <defs>
+                <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.2" />
+                  <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d={wArea} fill="url(#wGrad)" />
+              <path d={wPath} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              {wPts.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r="3" fill="white" stroke="#10b981" strokeWidth="1.5" />)}
+            </svg>
+            <div className="flex justify-between mt-1">
+              <span className="text-[10px] text-gray-400">{filteredLogs[0]?.logged_date}</span>
+              <span className="text-[10px] text-gray-400">{filteredLogs[filteredLogs.length - 1]?.logged_date}</span>
+            </div>
           </div>
         )}
 
@@ -757,36 +957,42 @@ export default function ClientApp() {
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Today at a Glance</p>
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => setActiveTab('nutrition')} className="bg-white border border-gray-200 rounded-2xl p-4 text-left hover:border-emerald-200 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <Flame size={16} className="text-orange-500" />
-                <span className="text-xs font-semibold text-gray-500">Calories</span>
-              </div>
+              <div className="flex items-center gap-2 mb-2"><Flame size={16} className="text-orange-500" /><span className="text-xs font-semibold text-gray-500">Calories</span></div>
               <p className="text-2xl font-black text-gray-900">{todayCalories}<span className="text-sm font-medium text-gray-400 ml-1">kcal</span></p>
-              {calTarget > 0 && (
-                <>
-                  <div className="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
-                    <div className="h-full bg-orange-400 rounded-full" style={{ width: `${calPct}%` }} />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">of {calTarget} target</p>
-                </>
-              )}
+              {calTarget > 0 && (<><div className="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden"><div className="h-full bg-orange-400 rounded-full" style={{ width: `${calPct}%` }} /></div><p className="text-xs text-gray-400 mt-1">of {calTarget} target</p></>)}
             </button>
             <button onClick={() => setActiveTab('nutrition')} className="bg-white border border-gray-200 rounded-2xl p-4 text-left hover:border-emerald-200 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <Target size={16} className="text-red-500" />
-                <span className="text-xs font-semibold text-gray-500">Protein</span>
-              </div>
+              <div className="flex items-center gap-2 mb-2"><Target size={16} className="text-red-500" /><span className="text-xs font-semibold text-gray-500">Protein</span></div>
               <p className="text-2xl font-black text-gray-900">{todayProtein}<span className="text-sm font-medium text-gray-400 ml-1">g</span></p>
-              {client?.protein_target_g > 0 && (
-                <>
-                  <div className="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
-                    <div className="h-full bg-red-400 rounded-full" style={{ width: `${Math.min(100, Math.round((todayProtein / client.protein_target_g) * 100))}%` }} />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">of {client.protein_target_g}g target</p>
-                </>
-              )}
+              {client?.protein_target_g > 0 && (<><div className="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden"><div className="h-full bg-red-400 rounded-full" style={{ width: `${Math.min(100, Math.round((todayProtein / client.protein_target_g) * 100))}%` }} /></div><p className="text-xs text-gray-400 mt-1">of {client.protein_target_g}g target</p></>)}
             </button>
           </div>
+        </div>
+
+        {/* Progress photos */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Progress Photos</p>
+            <button onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}
+              className="flex items-center gap-1 text-xs font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+              {uploadingPhoto ? '...' : <><Camera size={12} /> Add</>}
+            </button>
+            <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handleUploadProgressPhoto} />
+          </div>
+          {progressPhotos.length === 0 ? (
+            <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-8 text-center">
+              <Camera size={24} className="text-gray-200 mx-auto mb-2" />
+              <p className="text-sm text-gray-400">No progress photos yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {progressPhotos.slice(0, 9).map(photo => (
+                <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-gray-100">
+                  <img src={photo.photo_url} alt="Progress" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="h-20" />
@@ -960,66 +1166,118 @@ export default function ClientApp() {
       <div className="px-4 py-4 space-y-5">
         <h2 className="text-lg font-bold text-gray-900">Program</h2>
 
-        {/* Assigned program */}
-        {assignment ? (
-          <div>
-            <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4 mb-3">
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-                  <Dumbbell size={16} className="text-emerald-600" />
+        {/* Sub-tabs */}
+        <div className="flex gap-4 border-b border-gray-100 -mx-4 px-4">
+          {[['program', 'My Program'], ['saved', 'Saved']].map(([id, label]) => (
+            <button key={id} onClick={() => setProgramSubTab(id)}
+              className={`pb-2 text-sm font-semibold transition-colors border-b-2 ${programSubTab === id ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-400'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {programSubTab === 'program' ? (
+          <>
+            {assignment ? (
+              <div>
+                <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4 mb-3">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                      <Dumbbell size={16} className="text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{assignment.programs?.name}</p>
+                      <p className="text-xs text-gray-400">Started {new Date(assignment.start_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">{assignment.programs?.name}</p>
-                  <p className="text-xs text-gray-400">Started {new Date(assignment.start_date + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                <div className="space-y-2">
+                  {programWorkouts.map(pw => {
+                    const exercises = allProgramExercises[pw.id] ?? []
+                    const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
+                    return (
+                      <button key={pw.id} onClick={() => { setSelectedProgramDay(pw); setProgramView('detail') }}
+                        className="w-full text-left bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center gap-4 hover:border-emerald-200 hover:shadow-sm transition-all">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                          <span className="text-sm font-black text-gray-500">D{pw.day_number}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900 truncate">{pw.name}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-gray-400">{exercises.length} exercises</span>
+                            {estMin > 0 && <><span className="text-gray-300 text-xs">·</span><span className="text-xs text-gray-400">~{estMin} min</span></>}
+                          </div>
+                        </div>
+                        <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
+            ) : (
+              <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-8 text-center">
+                <Dumbbell size={28} className="text-gray-200 mx-auto mb-3" />
+                <p className="text-sm font-semibold text-gray-500">No program assigned yet</p>
+                <p className="text-xs text-gray-400 mt-1">Your trainer will assign a program here.</p>
+              </div>
+            )}
+
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Build Your Own</p>
+              <button onClick={() => setShowWorkoutAI(true)}
+                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center gap-4 hover:border-emerald-200 hover:shadow-sm transition-all text-left">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0"><span className="text-xl">✨</span></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900">Build with AI</p>
+                  <p className="text-xs text-gray-400 mt-0.5">Describe your goal and get a custom workout</p>
+                </div>
+                <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+              </button>
             </div>
-            <div className="space-y-2">
-              {programWorkouts.map(pw => {
-                const exercises = allProgramExercises[pw.id] ?? []
-                const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
-                return (
-                  <button key={pw.id} onClick={() => { setSelectedProgramDay(pw); setProgramView('detail') }}
-                    className="w-full text-left bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center gap-4 hover:border-emerald-200 hover:shadow-sm transition-all">
-                    <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-black text-gray-500">D{pw.day_number}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{pw.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-gray-400">{exercises.length} exercises</span>
-                        {estMin > 0 && <><span className="text-gray-300 text-xs">·</span><span className="text-xs text-gray-400">~{estMin} min</span></>}
-                      </div>
-                    </div>
-                    <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          </>
         ) : (
-          <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-8 text-center">
-            <Dumbbell size={28} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-sm font-semibold text-gray-500">No program assigned yet</p>
-            <p className="text-xs text-gray-400 mt-1">Your trainer will assign a program here.</p>
-          </div>
+          <>
+            {savedWorkouts.length === 0 ? (
+              <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-8 text-center">
+                <Dumbbell size={28} className="text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400">No saved workouts yet.</p>
+                <p className="text-xs text-gray-300 mt-1">Use AI to build and save a workout.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {savedWorkouts.map(sw => (
+                  <div key={sw.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
+                    <p className="text-sm font-bold text-gray-900 mb-2">{sw.title}</p>
+                    <p className="text-xs text-gray-400 line-clamp-3 whitespace-pre-line">{sw.content}</p>
+                    <button onClick={() => { setWorkoutToSchedule(sw); setShowAddToCalendar(true) }}
+                      className="mt-3 w-full text-xs font-semibold border border-emerald-200 text-emerald-600 bg-emerald-50 py-2 rounded-xl hover:bg-emerald-100 transition-colors">
+                      Add to Calendar
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
-        {/* Build your own */}
-        <div>
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Build Your Own</p>
-          <button onClick={() => setShowWorkoutAI(true)}
-            className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center gap-4 hover:border-emerald-200 hover:shadow-sm transition-all text-left">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl">✨</span>
+        {/* Add to Calendar modal */}
+        {showAddToCalendar && workoutToSchedule && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-end md:items-center justify-center" onClick={() => setShowAddToCalendar(false)}>
+            <div className="bg-white rounded-t-3xl md:rounded-3xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+              <h3 className="text-base font-bold text-gray-900 mb-1">Add to Calendar</h3>
+              <p className="text-xs text-gray-400 mb-4 truncate">{workoutToSchedule.title}</p>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Date</label>
+              <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+              <div className="flex gap-2">
+                <button onClick={() => handleScheduleWorkout(workoutToSchedule, scheduleDate)}
+                  className="flex-1 bg-black text-white text-sm font-semibold py-3 rounded-xl hover:bg-gray-800 transition-colors">Schedule</button>
+                <button onClick={() => setShowAddToCalendar(false)}
+                  className="flex-1 border border-gray-200 text-gray-500 text-sm py-3 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-900">Build with AI</p>
-              <p className="text-xs text-gray-400 mt-0.5">Describe your goal and get a custom workout</p>
-            </div>
-            <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-          </button>
-        </div>
+          </div>
+        )}
 
         <div className="h-20" />
       </div>
@@ -1045,96 +1303,127 @@ export default function ClientApp() {
           </button>
         </div>
 
-        {/* Macro rings */}
-        <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Today's Totals</p>
-          <div className="grid grid-cols-4 gap-3">
-            {[
-              { label: 'Calories', value: todayCalories, unit: 'kcal', target: calTarget, colour: 'text-orange-500', bar: 'bg-orange-400' },
-              { label: 'Protein', value: todayProtein, unit: 'g', target: client?.protein_target_g || 0, colour: 'text-red-500', bar: 'bg-red-400' },
-              { label: 'Carbs', value: todayCarbs, unit: 'g', target: client?.carbs_target_g || 0, colour: 'text-yellow-500', bar: 'bg-yellow-400' },
-              { label: 'Fats', value: todayFats, unit: 'g', target: client?.fats_target_g || 0, colour: 'text-blue-500', bar: 'bg-blue-400' },
-            ].map(m => {
-              const pct = m.target > 0 ? Math.min(100, Math.round((m.value / m.target) * 100)) : 0
-              return (
-                <div key={m.label} className="flex flex-col items-center">
-                  <span className={`text-lg font-black ${m.colour}`}>{m.value}</span>
-                  <span className="text-[10px] text-gray-400 mt-0.5">{m.unit}</span>
-                  {m.target > 0 && (
-                    <div className="w-full h-1.5 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
-                      <div className={`h-full rounded-full ${m.bar}`} style={{ width: `${pct}%` }} />
-                    </div>
-                  )}
-                  <span className="text-[10px] text-gray-400 mt-0.5">{m.label}</span>
-                </div>
-              )
-            })}
-          </div>
+        {/* Sub-tabs */}
+        <div className="flex gap-4 border-b border-gray-100 -mx-4 px-4">
+          {[['log', "Today's Log"], ['saved', 'Saved Meals']].map(([id, label]) => (
+            <button key={id} onClick={() => setNutritionSubTab(id)}
+              className={`pb-2 text-sm font-semibold transition-colors border-b-2 ${nutritionSubTab === id ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-gray-400'}`}>
+              {label}
+            </button>
+          ))}
         </div>
 
-        {/* Add food */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Today's Food Log</p>
-            <button onClick={() => setShowAddFood(v => !v)} className="flex items-center gap-1 text-xs font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 px-2.5 py-1.5 rounded-lg transition-colors">
-              <Plus size={12} /> Add Food
-            </button>
-          </div>
-
-          {showAddFood && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-3 space-y-3">
-              <input type="text" placeholder="Food name" value={foodInput.name} onChange={e => setFoodInput(f => ({ ...f, name: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
-              <select value={foodInput.meal_type} onChange={e => setFoodInput(f => ({ ...f, meal_type: e.target.value }))}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
-                {MEAL_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-              </select>
-              <div className="grid grid-cols-2 gap-2">
+        {nutritionSubTab === 'log' ? (
+          <>
+            {/* Macro totals */}
+            <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Today's Totals</p>
+              <div className="grid grid-cols-4 gap-3">
                 {[
-                  { key: 'calories', label: 'Calories (kcal)' },
-                  { key: 'protein', label: 'Protein (g)' },
-                  { key: 'carbs', label: 'Carbs (g)' },
-                  { key: 'fats', label: 'Fats (g)' },
-                ].map(f => (
-                  <input key={f.key} type="number" placeholder={f.label} value={foodInput[f.key]} onChange={e => setFoodInput(prev => ({ ...prev, [f.key]: e.target.value }))}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <button onClick={handleAddFood} disabled={addingFood || !foodInput.name.trim()}
-                  className="flex-1 bg-black text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition-colors">
-                  {addingFood ? 'Saving...' : 'Add'}
-                </button>
-                <button onClick={() => setShowAddFood(false)} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
-              </div>
-            </div>
-          )}
-
-          {foodLogs.length === 0 ? (
-            <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-8 text-center">
-              <Utensils size={24} className="text-gray-200 mx-auto mb-2" />
-              <p className="text-sm text-gray-400">Nothing logged yet today.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {foodLogs.map(log => {
-                const mealColour = MEAL_COLOURS[log.meal_type?.toLowerCase()] ?? MEAL_COLOURS.other
-                return (
-                  <div key={log.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize flex-shrink-0 ${mealColour}`}>{log.meal_type || 'other'}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{log.food_name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{Math.round(log.calories)} kcal · P{Math.round(log.protein_g)}g · C{Math.round(log.carbs_g)}g · F{Math.round(log.fats_g)}g</p>
+                  { label: 'Calories', value: todayCalories, unit: 'kcal', target: calTarget, colour: 'text-orange-500', bar: 'bg-orange-400' },
+                  { label: 'Protein', value: todayProtein, unit: 'g', target: client?.protein_target_g || 0, colour: 'text-red-500', bar: 'bg-red-400' },
+                  { label: 'Carbs', value: todayCarbs, unit: 'g', target: client?.carbs_target_g || 0, colour: 'text-yellow-500', bar: 'bg-yellow-400' },
+                  { label: 'Fats', value: todayFats, unit: 'g', target: client?.fats_target_g || 0, colour: 'text-blue-500', bar: 'bg-blue-400' },
+                ].map(m => {
+                  const pct = m.target > 0 ? Math.min(100, Math.round((m.value / m.target) * 100)) : 0
+                  return (
+                    <div key={m.label} className="flex flex-col items-center">
+                      <span className={`text-lg font-black ${m.colour}`}>{m.value}</span>
+                      <span className="text-[10px] text-gray-400 mt-0.5">{m.unit}</span>
+                      {m.target > 0 && (<div className="w-full h-1.5 bg-gray-100 rounded-full mt-1.5 overflow-hidden"><div className={`h-full rounded-full ${m.bar}`} style={{ width: `${pct}%` }} /></div>)}
+                      <span className="text-[10px] text-gray-400 mt-0.5">{m.label}</span>
                     </div>
-                    <button onClick={() => handleDeleteFood(log.id)} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0">
-                      <X size={14} />
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Add food */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Food Log</p>
+                <button onClick={() => setShowAddFood(v => !v)} className="flex items-center gap-1 text-xs font-semibold text-gray-600 border border-gray-200 hover:bg-gray-50 px-2.5 py-1.5 rounded-lg transition-colors">
+                  <Plus size={12} /> Add Food
+                </button>
+              </div>
+
+              {showAddFood && (
+                <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-3 space-y-3">
+                  <input type="text" placeholder="Food name" value={foodInput.name} onChange={e => setFoodInput(f => ({ ...f, name: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                  <select value={foodInput.meal_type} onChange={e => setFoodInput(f => ({ ...f, meal_type: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
+                    {MEAL_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                  </select>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[{ key: 'calories', label: 'Calories (kcal)' }, { key: 'protein', label: 'Protein (g)' }, { key: 'carbs', label: 'Carbs (g)' }, { key: 'fats', label: 'Fats (g)' }].map(f => (
+                      <input key={f.key} type="number" placeholder={f.label} value={foodInput[f.key]} onChange={e => setFoodInput(prev => ({ ...prev, [f.key]: e.target.value }))}
+                        className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={handleAddFood} disabled={addingFood || !foodInput.name.trim()}
+                      className="flex-1 bg-black text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                      {addingFood ? 'Saving...' : 'Add'}
+                    </button>
+                    <button onClick={() => setShowAddFood(false)} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+                  </div>
+                </div>
+              )}
+
+              {foodLogs.length === 0 ? (
+                <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-8 text-center">
+                  <Utensils size={24} className="text-gray-200 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">Nothing logged yet today.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {foodLogs.map(log => {
+                    const mealColour = MEAL_COLOURS[log.meal_type?.toLowerCase()] ?? MEAL_COLOURS.other
+                    return (
+                      <div key={log.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize flex-shrink-0 ${mealColour}`}>{log.meal_type || 'other'}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{log.food_name}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{Math.round(log.calories)} kcal · P{Math.round(log.protein_g)}g · C{Math.round(log.carbs_g)}g · F{Math.round(log.fats_g)}g</p>
+                        </div>
+                        <button onClick={() => handleDeleteFood(log.id)} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0">
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {savedMeals.length === 0 ? (
+              <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-8 text-center">
+                <Utensils size={28} className="text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400">No saved meals yet.</p>
+                <p className="text-xs text-gray-300 mt-1">Use AI Ideas to generate and save meals.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {savedMeals.map(meal => (
+                  <div key={meal.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
+                    <p className="text-sm font-bold text-gray-900 mb-1">{meal.title}</p>
+                    {meal.calories > 0 && (
+                      <p className="text-xs text-gray-400 mb-2">{Math.round(meal.calories)} kcal · P{Math.round(meal.protein_g)}g · C{Math.round(meal.carbs_g)}g · F{Math.round(meal.fats_g)}g</p>
+                    )}
+                    <p className="text-xs text-gray-400 line-clamp-3 whitespace-pre-line">{meal.content}</p>
+                    <button onClick={() => handleAddMealToLog(meal)}
+                      className="mt-3 w-full text-xs font-semibold border border-emerald-200 text-emerald-600 bg-emerald-50 py-2 rounded-xl hover:bg-emerald-100 transition-colors">
+                      Add to Today's Log
                     </button>
                   </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
         <div className="h-20" />
       </div>
