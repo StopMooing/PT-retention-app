@@ -18,7 +18,7 @@ export default async function handler(req, res) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1024,
         system: system || 'You are a helpful fitness and nutrition assistant.',
         messages,
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const error = await response.text()
       console.error('Anthropic API error:', error)
-      return res.status(response.status).json({ error: 'AI service error' })
+      return res.status(response.status).json({ error: 'AI service error', detail: error })
     }
 
     const data = await response.json()
