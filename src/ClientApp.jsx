@@ -458,9 +458,9 @@ export default function ClientApp() {
   // Calendar
   const [loggingWorkout, setLoggingWorkout] = useState(null)
   const [completedIds, setCompletedIds] = useState(new Set())
-  const [calYear, setCalYear] = useState(new Date().getFullYear())
-  const [calMonth, setCalMonth] = useState(new Date().getMonth())
-  const [selectedCalDate, setSelectedCalDate] = useState(new Date().toISOString().split('T')[0])
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear())
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
+  const [selectedCalDate, setSelectedCalDate] = useState(() => new Date().toISOString().split('T')[0])
 
   // Program
   const [programView, setProgramView] = useState('list')
@@ -498,7 +498,8 @@ export default function ClientApp() {
   const [weightPeriod, setWeightPeriod] = useState(30)
   const [weightLogs, setWeightLogs] = useState([])
 
-  const todayStr = new Date().toISOString().split('T')[0]
+  const getTodayStr = () => new Date().toISOString().split('T')[0]
+  const todayStr = getTodayStr()
 
   useEffect(() => {
     async function init() {
@@ -566,7 +567,9 @@ export default function ClientApp() {
       setCompletedIds(new Set(logs.filter(l => l.completed).map(l => l.workout_id)))
 
       // Food logs for today
-      const { data: foodData } = await supabase.from('food_logs').select('*').eq('client_id', clientRow.id).gte('logged_at', today + 'T00:00:00').order('logged_at', { ascending: false })
+      const localMidnight = new Date()
+      localMidnight.setHours(0, 0, 0, 0)
+      const { data: foodData } = await supabase.from('food_logs').select('*').eq('client_id', clientRow.id).gte('logged_at', localMidnight.toISOString()).order('logged_at', { ascending: false })
       setFoodLogs(foodData ?? [])
 
       // Resources from PT
@@ -632,37 +635,55 @@ export default function ClientApp() {
   }
 
   async function handleSaveWorkout(content) {
-    if (!client) return
+    const name = content.split('\n').find(l => l.trim().length > 3)?.trim().substring(0, 50) || 'AI Workout'
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const title = content.split('\n')[0].replace(/^#+\s*/, '').trim().substring(0, 80) || 'Custom Workout'
-      const { data, error } = await supabase.from('saved_workouts').insert({ client_id: client.id, created_by: user.id, title, content }).select().single()
-      if (error) throw error
+      const { data, error } = await supabase.from('saved_workouts').insert({
+        client_id: client.id,
+        name,
+        content,
+      }).select().single()
+      if (error) {
+        console.error('Save workout error:', error)
+        alert('Could not save workout: ' + error.message)
+        return
+      }
       setSavedWorkouts(prev => [data, ...prev])
       setShowWorkoutAI(false)
-    } catch (e) { console.error(e) }
+      setProgramSubTab('saved')
+    } catch (e) {
+      console.error('Save workout exception:', e)
+      alert('Something went wrong saving the workout.')
+    }
   }
 
   async function handleSaveMeal(content) {
-    if (!client) return
+    const calorieMatch = content.match(/[Cc]alories?:?\s*(\d+)/)
+    const proteinMatch = content.match(/[Pp]rotein:?\s*(\d+)/)
+    const carbsMatch = content.match(/[Cc]arbs?:?\s*(\d+)/)
+    const fatsMatch = content.match(/[Ff]ats?:?\s*(\d+)/)
+    const name = content.split('\n').find(l => l.trim().length > 3)?.trim().substring(0, 50) || 'AI Meal'
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const calorieMatch = content.match(/[Cc]alories?:?\s*(\d+)/)
-      const proteinMatch = content.match(/[Pp]rotein:?\s*(\d+)/)
-      const carbsMatch = content.match(/[Cc]arbs?:?\s*(\d+)/)
-      const fatsMatch = content.match(/[Ff]ats?:?\s*(\d+)/)
-      const title = content.split('\n')[0].replace(/^#+\s*/, '').trim().substring(0, 80) || 'AI Meal'
       const { data, error } = await supabase.from('saved_meals').insert({
-        client_id: client.id, created_by: user.id, title, content,
+        client_id: client.id,
+        name,
+        content,
         calories: parseFloat(calorieMatch?.[1]) || 0,
         protein_g: parseFloat(proteinMatch?.[1]) || 0,
         carbs_g: parseFloat(carbsMatch?.[1]) || 0,
         fats_g: parseFloat(fatsMatch?.[1]) || 0,
       }).select().single()
-      if (error) throw error
+      if (error) {
+        console.error('Save meal error:', error)
+        alert('Could not save meal: ' + error.message)
+        return
+      }
       setSavedMeals(prev => [data, ...prev])
       setShowNutritionAI(false)
-    } catch (e) { console.error(e) }
+      setNutritionSubTab('saved')
+    } catch (e) {
+      console.error('Save meal exception:', e)
+      alert('Something went wrong saving the meal.')
+    }
   }
 
   async function handleAddMealToLog(meal) {
@@ -809,6 +830,60 @@ export default function ClientApp() {
 
     return (
       <div className="px-4 py-5 space-y-5">
+
+        {/* Week date strip */}
+        {(() => {
+          const today = new Date()
+          const dayOfWeek = today.getDay()
+          const monday = new Date(today)
+          monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
+          monday.setHours(0, 0, 0, 0)
+          const weekDays = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(monday)
+            d.setDate(monday.getDate() + i)
+            return d
+          })
+          const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+          return (
+            <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                  {today.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+                </p>
+                <button onClick={() => setActiveTab('calendar')} className="text-xs text-emerald-600 font-semibold">
+                  Full calendar →
+                </button>
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {weekDays.map((day, i) => {
+                  const dateStr = day.toISOString().split('T')[0]
+                  const isCurrentDay = dateStr === todayStr
+                  const hasWorkout = !!(groupedByDate[dateStr]?.length)
+                  const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(sw.id))
+                  return (
+                    <button
+                      key={dateStr}
+                      onClick={() => { setActiveTab('calendar'); setSelectedCalDate(dateStr) }}
+                      className={`flex flex-col items-center gap-1 py-2 rounded-xl transition-colors ${isCurrentDay ? 'bg-emerald-500' : 'hover:bg-gray-50'}`}
+                    >
+                      <span className={`text-[10px] font-semibold uppercase ${isCurrentDay ? 'text-white' : 'text-gray-400'}`}>
+                        {DAY_LABELS[i]}
+                      </span>
+                      <span className={`text-sm font-bold ${isCurrentDay ? 'text-white' : 'text-gray-700'}`}>
+                        {day.getDate()}
+                      </span>
+                      {hasWorkout ? (
+                        <div className={`w-1.5 h-1.5 rounded-full ${isCurrentDay ? 'bg-white' : hasCompleted ? 'bg-emerald-500' : 'bg-gray-300'}`} />
+                      ) : (
+                        <div className="w-1.5 h-1.5" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* Welcome header */}
         <div className="flex items-center justify-between">
