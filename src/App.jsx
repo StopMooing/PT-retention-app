@@ -10,7 +10,7 @@ import ProgramBuilder from './ProgramBuilder'
 import NutritionPlanner from './NutritionPlanner'
 import HabitTracker from './HabitTracker'
 import ClientProfile from './ClientProfile'
-import ClientWorkout from './ClientWorkout'
+import ClientApp from './ClientApp'
 
 const statusConfig = {
   Engaged: {
@@ -981,7 +981,7 @@ export default function App() {
           <Route path="/clients/:clientId" element={
             userRole === 'pt' ? <ClientProfile /> : <Navigate to="/my-workout" replace />
           } />
-          <Route path="/my-workout" element={<ClientWorkout />} />
+          <Route path="/my-workout" element={<ClientApp />} />
         </Route>
       )}
       <Route path="*" element={<Navigate to="/" replace />} />
