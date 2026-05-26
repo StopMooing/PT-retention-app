@@ -484,6 +484,12 @@ export default function ClientApp() {
   const [showAddToCalendar, setShowAddToCalendar] = useState(false)
   const [workoutToSchedule, setWorkoutToSchedule] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0])
+  const [selectedHomeDate, setSelectedHomeDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [homeDateFoodLogs, setHomeDateFoodLogs] = useState([])
+  const [homeDateLoading, setHomeDateLoading] = useState(false)
+  const [showTDEE, setShowTDEE] = useState(false)
+  const [tdeeInputs, setTdeeInputs] = useState({ age: '', gender: 'male', heightCm: '', weightKg: '', activity: '1.55' })
+  const [tdeeResult, setTdeeResult] = useState(null)
 
   // Saved meals
   const [savedMeals, setSavedMeals] = useState([])
@@ -545,9 +551,20 @@ export default function ClientApp() {
       // Scheduled workouts
       const from = new Date(); from.setDate(from.getDate() - 28)
       const to = new Date(); to.setDate(to.getDate() + 56)
-      const { data: swData } = await supabase.from('scheduled_workouts').select('id, scheduled_date, program_workout_id, program_workouts(id, name, day_number)').eq('client_id', clientRow.id).gte('scheduled_date', from.toISOString().split('T')[0]).lte('scheduled_date', to.toISOString().split('T')[0]).order('scheduled_date', { ascending: true })
-      const fetchedSW = swData ?? []
-      setScheduledWorkouts(fetchedSW)
+      const { data: swData } = await supabase
+        .from('scheduled_workouts')
+        .select('id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)')
+        .eq('client_id', clientRow.id)
+        .gte('scheduled_date', from.toISOString().split('T')[0])
+        .lte('scheduled_date', to.toISOString().split('T')[0])
+        .order('scheduled_date', { ascending: true })
+      const enrichedSW = (swData ?? []).map(sw => ({
+        ...sw,
+        program_workouts: sw.program_workouts ?? (sw.saved_workouts ? { name: sw.saved_workouts.name, day_number: 0 } : null),
+        _isCustom: !!sw.custom_workout_id,
+        _customWorkout: sw.saved_workouts ?? null,
+      }))
+      setScheduledWorkouts(enrichedSW)
 
       // Exercises for scheduled workouts
       const pwIds = [...new Set(fetchedSW.map(sw => sw.program_workout_id).filter(Boolean))]
@@ -609,6 +626,24 @@ export default function ClientApp() {
       setWeightInput('')
     } catch (e) { console.error(e) }
     finally { setSavingWeight(false) }
+  }
+
+  async function loadHomeDateData(dateStr) {
+    setHomeDateLoading(true)
+    try {
+      const d = new Date(dateStr + 'T00:00:00')
+      const nextD = new Date(d)
+      nextD.setDate(nextD.getDate() + 1)
+      const { data } = await supabase
+        .from('food_logs')
+        .select('*')
+        .eq('client_id', client.id)
+        .gte('logged_at', d.toISOString())
+        .lt('logged_at', nextD.toISOString())
+        .order('logged_at', { ascending: false })
+      setHomeDateFoodLogs(data ?? [])
+    } catch (e) { console.error(e) }
+    finally { setHomeDateLoading(false) }
   }
 
   async function handleAddFood() {
@@ -687,28 +722,64 @@ export default function ClientApp() {
   }
 
   async function handleAddMealToLog(meal) {
-    if (!client) return
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const { data, error } = await supabase.from('food_logs').insert({
-        client_id: client.id, food_name: meal.title, meal_type: 'other',
-        calories: meal.calories || 0, protein_g: meal.protein_g || 0,
-        carbs_g: meal.carbs_g || 0, fats_g: meal.fats_g || 0,
+        client_id: client.id,
+        food_name: meal.name,
+        meal_type: 'other',
+        calories: meal.calories || 0,
+        protein_g: meal.protein_g || 0,
+        carbs_g: meal.carbs_g || 0,
+        fats_g: meal.fats_g || 0,
         logged_at: new Date().toISOString(),
       }).select().single()
-      if (error) throw error
+      if (error) {
+        console.error('Add meal error:', error)
+        alert('Could not add meal: ' + error.message)
+        return
+      }
       setFoodLogs(prev => [data, ...prev])
       setNutritionSubTab('log')
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error('Add meal exception:', e)
+      alert('Something went wrong: ' + e.message)
+    }
   }
 
-  async function handleScheduleWorkout(workout, date) {
-    if (!client || !date) return
+  async function handleScheduleWorkout() {
+    if (!workoutToSchedule || !scheduleDate) return
     try {
-      await supabase.from('scheduled_workouts').insert({ client_id: client.id, scheduled_date: date })
+      const { data: { user } } = await supabase.auth.getUser()
+      const { data, error } = await supabase
+        .from('scheduled_workouts')
+        .insert({
+          client_id: client.id,
+          program_workout_id: null,
+          custom_workout_id: workoutToSchedule.id,
+          scheduled_date: scheduleDate,
+          created_by: user.id,
+        })
+        .select('id, scheduled_date, program_workout_id, custom_workout_id')
+        .single()
+      if (error) {
+        console.error('Schedule error:', error)
+        alert('Could not schedule workout: ' + error.message)
+        return
+      }
+      const enriched = {
+        ...data,
+        program_workouts: { name: workoutToSchedule.name, day_number: 0 },
+        _isCustom: true,
+        _customWorkout: workoutToSchedule,
+      }
+      setScheduledWorkouts(prev => [...prev, enriched])
       setShowAddToCalendar(false)
       setWorkoutToSchedule(null)
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error('Schedule exception:', e)
+      alert('Something went wrong: ' + e.message)
+    }
   }
 
   async function handleUploadProgressPhoto(e) {
@@ -844,42 +915,132 @@ export default function ClientApp() {
             return d
           })
           const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+          const selectedDateWorkouts = groupedByDate[selectedHomeDate] ?? []
+          const selectedIsToday = selectedHomeDate === todayStr
+
+          const selectedDateCalories = selectedIsToday
+            ? todayCalories
+            : Math.round(homeDateFoodLogs.reduce((s, f) => s + (f.calories || 0), 0))
+          const selectedDateProtein = selectedIsToday
+            ? todayProtein
+            : Math.round(homeDateFoodLogs.reduce((s, f) => s + (f.protein_g || 0), 0))
+          const selectedDateCarbs = selectedIsToday
+            ? todayCarbs
+            : Math.round(homeDateFoodLogs.reduce((s, f) => s + (f.carbs_g || 0), 0))
+          const selectedDateFats = selectedIsToday
+            ? todayFats
+            : Math.round(homeDateFoodLogs.reduce((s, f) => s + (f.fats_g || 0), 0))
+
           return (
-            <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                  {today.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
-                </p>
-                <button onClick={() => setActiveTab('calendar')} className="text-xs text-emerald-600 font-semibold">
-                  Full calendar →
-                </button>
+            <div className="space-y-3">
+              {/* Week strip */}
+              <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    {today.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
+                  </p>
+                  <button onClick={() => setActiveTab('calendar')} className="text-xs text-emerald-600 font-semibold">
+                    Full calendar →
+                  </button>
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {weekDays.map((day, i) => {
+                    const dateStr = day.toISOString().split('T')[0]
+                    const isCurrentDay = dateStr === todayStr
+                    const isSelected = dateStr === selectedHomeDate
+                    const hasWorkout = !!(groupedByDate[dateStr]?.length)
+                    const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(sw.id))
+                    return (
+                      <button
+                        key={dateStr}
+                        onClick={() => {
+                          setSelectedHomeDate(dateStr)
+                          if (dateStr !== todayStr) loadHomeDateData(dateStr)
+                        }}
+                        className={`flex flex-col items-center gap-1 py-2 rounded-xl transition-colors ${
+                          isSelected && isCurrentDay ? 'bg-emerald-500' :
+                          isSelected ? 'bg-gray-800' :
+                          isCurrentDay ? 'bg-emerald-50 border border-emerald-200' :
+                          'hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className={`text-[10px] font-semibold uppercase ${
+                          isSelected ? 'text-white' : isCurrentDay ? 'text-emerald-600' : 'text-gray-400'
+                        }`}>{DAY_LABELS[i]}</span>
+                        <span className={`text-sm font-bold ${
+                          isSelected ? 'text-white' : isCurrentDay ? 'text-emerald-600' : 'text-gray-700'
+                        }`}>{day.getDate()}</span>
+                        {hasWorkout ? (
+                          <div className={`w-1.5 h-1.5 rounded-full ${
+                            isSelected ? 'bg-white' : hasCompleted ? 'bg-emerald-500' : 'bg-gray-300'
+                          }`} />
+                        ) : (
+                          <div className="w-1.5 h-1.5" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-              <div className="grid grid-cols-7 gap-1">
-                {weekDays.map((day, i) => {
-                  const dateStr = day.toISOString().split('T')[0]
-                  const isCurrentDay = dateStr === todayStr
-                  const hasWorkout = !!(groupedByDate[dateStr]?.length)
-                  const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(sw.id))
-                  return (
-                    <button
-                      key={dateStr}
-                      onClick={() => { setActiveTab('calendar'); setSelectedCalDate(dateStr) }}
-                      className={`flex flex-col items-center gap-1 py-2 rounded-xl transition-colors ${isCurrentDay ? 'bg-emerald-500' : 'hover:bg-gray-50'}`}
-                    >
-                      <span className={`text-[10px] font-semibold uppercase ${isCurrentDay ? 'text-white' : 'text-gray-400'}`}>
-                        {DAY_LABELS[i]}
-                      </span>
-                      <span className={`text-sm font-bold ${isCurrentDay ? 'text-white' : 'text-gray-700'}`}>
-                        {day.getDate()}
-                      </span>
-                      {hasWorkout ? (
-                        <div className={`w-1.5 h-1.5 rounded-full ${isCurrentDay ? 'bg-white' : hasCompleted ? 'bg-emerald-500' : 'bg-gray-300'}`} />
-                      ) : (
-                        <div className="w-1.5 h-1.5" />
+
+              {/* Selected day summary */}
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                  <p className="text-sm font-bold text-gray-900">
+                    {selectedIsToday ? 'Today' : new Date(selectedHomeDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}
+                  </p>
+                  {selectedIsToday && <span className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">TODAY</span>}
+                </div>
+
+                {/* Workout for this day */}
+                <div className="px-4 py-3 border-b border-gray-50">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Workout</p>
+                  {homeDateLoading ? (
+                    <p className="text-xs text-gray-300">Loading...</p>
+                  ) : selectedDateWorkouts.length === 0 ? (
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-400">No workout scheduled</p>
+                      {selectedIsToday && (
+                        <button onClick={() => setActiveTab('program')} className="text-xs text-emerald-600 font-semibold">Build one →</button>
                       )}
-                    </button>
-                  )
-                })}
+                    </div>
+                  ) : selectedDateWorkouts.map(sw => {
+                    const done = completedIds.has(sw.id)
+                    const name = sw.program_workouts?.name || sw._customWorkout?.name || 'Workout'
+                    return (
+                      <button key={sw.id} onClick={() => setLoggingWorkout(sw)} className="w-full text-left flex items-center gap-3">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-500' : 'border-2 border-gray-200'}`}>
+                          {done && <Check size={12} className="text-white" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-semibold truncate ${done ? 'text-gray-500' : 'text-gray-900'}`}>{name}</p>
+                          <p className={`text-xs mt-0.5 ${done ? 'text-emerald-600' : 'text-gray-400'}`}>{done ? 'Completed ✓' : 'Tap to start'}</p>
+                        </div>
+                        <ChevronRight size={14} className="text-gray-300 flex-shrink-0" />
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {/* Nutrition summary for this day */}
+                <div className="px-4 py-3">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Nutrition</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { label: 'Calories', value: selectedDateCalories, unit: 'kcal', colour: 'text-orange-500' },
+                      { label: 'Protein', value: selectedDateProtein, unit: 'g', colour: 'text-red-500' },
+                      { label: 'Carbs', value: selectedDateCarbs, unit: 'g', colour: 'text-yellow-500' },
+                      { label: 'Fats', value: selectedDateFats, unit: 'g', colour: 'text-blue-500' },
+                    ].map(m => (
+                      <div key={m.label} className="text-center">
+                        <p className={`text-base font-black ${m.colour}`}>{m.value}</p>
+                        <p className="text-[10px] text-gray-400">{m.unit}</p>
+                        <p className="text-[10px] text-gray-300">{m.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )
@@ -1345,7 +1506,7 @@ export default function ClientApp() {
               <input type="date" value={scheduleDate} onChange={e => setScheduleDate(e.target.value)}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-400" />
               <div className="flex gap-2">
-                <button onClick={() => handleScheduleWorkout(workoutToSchedule, scheduleDate)}
+                <button onClick={() => handleScheduleWorkout()}
                   className="flex-1 bg-black text-white text-sm font-semibold py-3 rounded-xl hover:bg-gray-800 transition-colors">Schedule</button>
                 <button onClick={() => setShowAddToCalendar(false)}
                   className="flex-1 border border-gray-200 text-gray-500 text-sm py-3 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
@@ -1373,9 +1534,14 @@ export default function ClientApp() {
       <div className="px-4 py-4 space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-900">Nutrition</h2>
-          <button onClick={() => setShowNutritionAI(true)} className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
-            <span>✨</span> AI Ideas
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setShowTDEE(v => !v)} className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
+              🔢 Calc
+            </button>
+            <button onClick={() => setShowNutritionAI(true)} className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-lg">
+              <span>✨</span> AI Ideas
+            </button>
+          </div>
         </div>
 
         {/* Sub-tabs */}
@@ -1387,6 +1553,97 @@ export default function ClientApp() {
             </button>
           ))}
         </div>
+
+        {/* TDEE Calculator */}
+        {showTDEE && (
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+              <p className="text-sm font-bold text-gray-900">Calorie Calculator</p>
+              <button onClick={() => { setShowTDEE(false); setTdeeResult(null) }} className="text-gray-400 hover:text-gray-600">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="px-4 py-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Age</label>
+                  <input type="number" placeholder="e.g. 28" value={tdeeInputs.age} onChange={e => setTdeeInputs(p => ({ ...p, age: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Gender</label>
+                  <select value={tdeeInputs.gender} onChange={e => setTdeeInputs(p => ({ ...p, gender: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none bg-white">
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Height (cm)</label>
+                  <input type="number" placeholder="e.g. 175" value={tdeeInputs.heightCm} onChange={e => setTdeeInputs(p => ({ ...p, heightCm: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Weight (kg)</label>
+                  <input type="number" placeholder="e.g. 75" value={tdeeInputs.weightKg} onChange={e => setTdeeInputs(p => ({ ...p, weightKg: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Activity Level</label>
+                <select value={tdeeInputs.activity} onChange={e => setTdeeInputs(p => ({ ...p, activity: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none bg-white">
+                  <option value="1.2">Sedentary — little or no exercise</option>
+                  <option value="1.375">Lightly active — 1-3 days/week</option>
+                  <option value="1.55">Moderately active — 3-5 days/week</option>
+                  <option value="1.725">Very active — 6-7 days/week</option>
+                  <option value="1.9">Extremely active — physical job + training</option>
+                </select>
+              </div>
+              <button
+                onClick={() => {
+                  const age = parseFloat(tdeeInputs.age)
+                  const h = parseFloat(tdeeInputs.heightCm)
+                  const w = parseFloat(tdeeInputs.weightKg)
+                  const act = parseFloat(tdeeInputs.activity)
+                  if (!age || !h || !w) { alert('Please fill in all fields'); return }
+                  const bmr = tdeeInputs.gender === 'male'
+                    ? (10 * w) + (6.25 * h) - (5 * age) + 5
+                    : (10 * w) + (6.25 * h) - (5 * age) - 161
+                  const maintenance = Math.round(bmr * act)
+                  setTdeeResult({
+                    maintenance,
+                    fatLoss: maintenance - 500,
+                    aggressiveLoss: maintenance - 750,
+                    muscleGain: maintenance + 300,
+                  })
+                }}
+                className="w-full bg-black text-white text-sm font-semibold py-3 rounded-xl hover:bg-gray-800 transition-colors"
+              >
+                Calculate
+              </button>
+              {tdeeResult && (
+                <div className="space-y-2 pt-2 border-t border-gray-100">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Your Results</p>
+                  {[
+                    { label: 'Maintain Weight', cal: tdeeResult.maintenance, colour: 'bg-blue-50 border-blue-100', text: 'text-blue-600', desc: 'Stay at current weight' },
+                    { label: 'Fat Loss', cal: tdeeResult.fatLoss, colour: 'bg-emerald-50 border-emerald-100', text: 'text-emerald-600', desc: '~0.5kg loss per week' },
+                    { label: 'Aggressive Fat Loss', cal: tdeeResult.aggressiveLoss, colour: 'bg-orange-50 border-orange-100', text: 'text-orange-600', desc: '~0.75kg loss per week' },
+                    { label: 'Muscle Gain', cal: tdeeResult.muscleGain, colour: 'bg-purple-50 border-purple-100', text: 'text-purple-600', desc: 'Lean bulk' },
+                  ].map(r => (
+                    <div key={r.label} className={`flex items-center justify-between px-3 py-2.5 rounded-xl border ${r.colour}`}>
+                      <div>
+                        <p className={`text-xs font-bold ${r.text}`}>{r.label}</p>
+                        <p className="text-[10px] text-gray-400">{r.desc}</p>
+                      </div>
+                      <p className={`text-lg font-black ${r.text}`}>{r.cal}<span className="text-xs font-medium ml-0.5">kcal</span></p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {nutritionSubTab === 'log' ? (
           <>
