@@ -67,12 +67,16 @@ function formatShortDate(dateStr) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
+function toLocalDateStr(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
 function isToday(dateStr) {
-  return dateStr === new Date().toISOString().split('T')[0]
+  return dateStr === toLocalDateStr()
 }
 
 function isPast(dateStr) {
-  return dateStr < new Date().toISOString().split('T')[0]
+  return dateStr < toLocalDateStr()
 }
 
 // ─── PROFILE PHOTO COMPONENT ─────────────────────────────────────────────────
@@ -499,7 +503,7 @@ export default function ClientApp() {
   const [programSubTab, setProgramSubTab] = useState('program')
   const [showAddToCalendar, setShowAddToCalendar] = useState(false)
   const [workoutToSchedule, setWorkoutToSchedule] = useState(null)
-  const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0])
+  const [scheduleDate, setScheduleDate] = useState(toLocalDateStr())
   const [selectedHomeDate, setSelectedHomeDate] = useState(() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -529,10 +533,7 @@ export default function ClientApp() {
   const [weightPeriod, setWeightPeriod] = useState(30)
   const [weightLogs, setWeightLogs] = useState([])
 
-  const getTodayStr = () => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  }
+  const getTodayStr = () => toLocalDateStr()
   const todayStr = getTodayStr()
 
   useEffect(() => {
@@ -549,7 +550,7 @@ export default function ClientApp() {
       setClient(clientRow)
       setPhotoUrl(clientRow.profile_photo_url)
 
-      const today = new Date().toISOString().split('T')[0]
+      const today = toLocalDateStr()
 
       // Weight
       const { data: wt } = await supabase.from('body_weight_logs').select('weight_kg').eq('client_id', clientRow.id).eq('logged_date', today).maybeSingle()
@@ -583,8 +584,8 @@ export default function ClientApp() {
         .from('scheduled_workouts')
         .select('id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)')
         .eq('client_id', clientRow.id)
-        .gte('scheduled_date', from.toISOString().split('T')[0])
-        .lte('scheduled_date', to.toISOString().split('T')[0])
+        .gte('scheduled_date', toLocalDateStr(from))
+        .lte('scheduled_date', toLocalDateStr(to))
         .order('scheduled_date', { ascending: true })
       const enrichedSW = (fetchedSW ?? []).map(sw => ({
         ...sw,
@@ -638,7 +639,7 @@ export default function ClientApp() {
 
       // Weight logs (90 days)
       const ninetyAgo = new Date(); ninetyAgo.setDate(ninetyAgo.getDate() - 90)
-      const { data: wlData } = await supabase.from('body_weight_logs').select('weight_kg, logged_date').eq('client_id', clientRow.id).gte('logged_date', ninetyAgo.toISOString().split('T')[0]).order('logged_date', { ascending: true })
+      const { data: wlData } = await supabase.from('body_weight_logs').select('weight_kg, logged_date').eq('client_id', clientRow.id).gte('logged_date', toLocalDateStr(ninetyAgo)).order('logged_date', { ascending: true })
       setWeightLogs(wlData ?? [])
 
       setNutritionTargets({
@@ -739,7 +740,13 @@ export default function ClientApp() {
   }
 
   async function handleSaveWorkout(content) {
-    const name = content.split('\n').find(l => l.trim().length > 3)?.trim().substring(0, 50) || 'AI Workout'
+    const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+    const SKIP_HEADERS = ['WARM UP', 'MAIN SESSION', 'MAIN WORKOUT', 'COOL DOWN', 'SESSION']
+    const firstLine = lines[0] || ''
+    const isHeader = SKIP_HEADERS.some(h => firstLine.toUpperCase().startsWith(h))
+    const name = isHeader
+      ? `AI Workout ${toLocalDateStr()}`
+      : firstLine.substring(0, 50)
     try {
       const { data, error } = await supabase.from('saved_workouts').insert({
         client_id: client.id,
@@ -911,7 +918,7 @@ export default function ClientApp() {
   )
 
   // AI overlays
-  if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt="You are an expert personal trainer. When giving a workout, always use this exact format with no markdown symbols, no asterisks, no hashtags:\n\nWARM UP\nExercise name — X minutes or X reps\nExercise name — X minutes or X reps\n\nMAIN SESSION\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nCOOL DOWN\nExercise name — X minutes\n\nUse plain text only. No bullet points, no asterisks, no hashtags, no bold markers. Just clean section headers in CAPS followed by exercise details on separate lines." onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
+  if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt="You are an expert personal trainer. When giving a workout, the VERY FIRST LINE must be a short descriptive workout title (e.g. '45 Min Upper Body Strength' or '30 Min Full Body HIIT'). Then use this exact format with no markdown symbols, no asterisks, no hashtags:\n\nWARM UP\nExercise name — X minutes or X reps\nExercise name — X minutes or X reps\n\nMAIN SESSION\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nCOOL DOWN\nExercise name — X minutes\n\nUse plain text only. No bullet points, no asterisks, no hashtags, no bold markers. The first line is always the workout title, then section headers in CAPS, then exercise details on separate lines." onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
   if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={handleSaveMeal} saveLabel="Save meal" />
 
   // Workout logging overlay
@@ -940,7 +947,7 @@ export default function ClientApp() {
     const days = parseInt(weightPeriod)
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - days)
-    const cutoffStr = cutoff.toISOString().split('T')[0]
+    const cutoffStr = toLocalDateStr(cutoff)
     const filteredWeightLogs = weightLogs.filter(w => w.logged_date >= cutoffStr)
     const minW = filteredWeightLogs.length > 0 ? Math.min(...filteredWeightLogs.map(w => parseFloat(w.weight_kg))) : 0
     const maxW = filteredWeightLogs.length > 0 ? Math.max(...filteredWeightLogs.map(w => parseFloat(w.weight_kg))) : 100
@@ -963,14 +970,14 @@ export default function ClientApp() {
     let streak = 0
     let checkDate = new Date()
     for (const dateStr of sortedCompletedDates) {
-      const checkStr = checkDate.toISOString().split('T')[0]
+      const checkStr = toLocalDateStr(checkDate)
       if (dateStr === checkStr) { streak++; checkDate.setDate(checkDate.getDate() - 1) }
       else if (dateStr < checkStr) break
     }
 
     // Weekly workouts
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
-    const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(sw.id) && sw.scheduled_date >= weekAgo.toISOString().split('T')[0]).length
+    const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(sw.id) && sw.scheduled_date >= toLocalDateStr(weekAgo)).length
 
     // Week strip data
     const today = new Date()
@@ -1035,7 +1042,7 @@ export default function ClientApp() {
           </div>
           <div className="grid grid-cols-7 gap-1">
             {weekDays.map((day, i) => {
-              const dateStr = day.toISOString().split('T')[0]
+              const dateStr = toLocalDateStr(day)
               const isCurrentDay = dateStr === todayStr
               const isSelected = dateStr === selectedHomeDate
               const hasWorkout = !!(groupedByDate[dateStr]?.length)
