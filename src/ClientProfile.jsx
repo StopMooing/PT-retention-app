@@ -158,10 +158,13 @@ function DraggableWorkout({ workout, onRemove, onClick }) {
       <div
         {...listeners}
         onClick={() => onClick && onClick(workout)}
-        className="flex items-center gap-1 bg-white border border-gray-200 rounded px-1.5 py-0.5 cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition-colors"
+        className={`text-xs font-semibold px-2 py-1 rounded-lg cursor-pointer truncate mb-0.5 ${
+          workout._isCustom
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+            : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100'
+        } transition-colors`}
       >
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0"></span>
-        <span className="text-xs font-medium text-gray-800 truncate leading-tight">{workout.name}</span>
+        {workout._displayName || workout.program_workouts?.name || workout.saved_workouts?.name || 'Workout'}
       </div>
       {onRemove && (
         <button
@@ -179,7 +182,7 @@ function DroppableDay({ dateStr, isToday, isPast, isHovered, isDragOver, day, sc
   return (
     <div
       ref={setNodeRef}
-      className={`min-h-[130px] p-2 border-r border-gray-50 last:border-r-0 transition-colors relative ${
+      className={`min-h-[130px] p-2 border-r border-gray-50 last:border-r-0 transition-colors relative overflow-hidden ${
         isOver && activeDragWorkout ? "bg-indigo-50/60 ring-2 ring-inset ring-indigo-300" :
         isHovered ? "bg-indigo-50/30" :
         isPast ? "bg-gray-50/30" : "bg-white"
