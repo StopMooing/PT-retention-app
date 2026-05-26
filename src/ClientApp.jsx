@@ -304,22 +304,37 @@ function WorkoutComplete({ workoutName, stats, onDone }) {
         {newPBs.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">🏆 Personal Bests</p>
-            {newPBs.map((pb, i) => (
-              <div key={i} className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{pb.exerciseName}</p>
-                    <p className="text-xs text-yellow-600 font-semibold mt-0.5">
-                      {pb.isFirst ? '🌟 First time logged!' : `${pb.label}: ${pb.previous} → ${pb.value}${pb.unit}`}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-black text-orange-500">{pb.value}</p>
-                    <p className="text-[10px] text-gray-400">{pb.unit}</p>
+            {newPBs.map((pb, i) => {
+              const PB_LABELS = {
+                '1rm': { label: 'Estimated 1RM', emoji: '🏋️', desc: 'Heaviest estimated single rep' },
+                'best_set': { label: 'Best Set', emoji: '💥', desc: 'Highest weight × reps score' },
+                'volume': { label: 'Session Volume', emoji: '📈', desc: 'Total kg moved this session' },
+              }
+              const pbMeta = PB_LABELS[pb.type] || { label: pb.label, emoji: '🏆', desc: '' }
+              return (
+                <div key={i} className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-sm">{pbMeta.emoji}</span>
+                        <span className="text-[10px] font-bold text-orange-500 uppercase tracking-wide">{pbMeta.label}</span>
+                      </div>
+                      <p className="text-sm font-bold text-gray-900 truncate">{pb.exerciseName}</p>
+                      <p className="text-xs text-yellow-600 font-semibold mt-0.5">
+                        {pb.isFirst
+                          ? `🌟 First time logged — ${pbMeta.desc}`
+                          : `${pb.previous}${pb.unit} → ${pb.value}${pb.unit}`
+                        }
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-2xl font-black text-orange-500">{pb.value}</p>
+                      <p className="text-[10px] text-gray-400 font-medium">{pb.unit}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
         {newPBs.length === 0 && (
@@ -596,7 +611,15 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
           const { data: existing } = await supabase.from('personal_bests').select('value').eq('client_id', client.id).eq('exercise_id', exerciseId).eq('pb_type', check.type).single()
           if (!existing || check.value > existing.value) {
             await supabase.from('personal_bests').upsert({ client_id: client.id, exercise_id: exerciseId, pb_type: check.type, value: check.value, achieved_at: new Date().toISOString(), scheduled_workout_id: scheduledWorkout.id }, { onConflict: 'client_id,exercise_id,pb_type' })
-            newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, previous: existing?.value ?? null, isFirst: !existing })
+            if (!existing) {
+              // On first session only show 1RM — it's the most meaningful
+              if (check.type === '1rm') {
+                newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, isFirst: true })
+              }
+            } else {
+              // On subsequent sessions show any improvement
+              newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, previous: existing.value, isFirst: false })
+            }
           }
         }
       }
