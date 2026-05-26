@@ -623,8 +623,12 @@ export default function ClientApp() {
       const { data: foodData } = await supabase.from('food_logs').select('*').eq('client_id', clientRow.id).gte('logged_at', localMidnight.toISOString()).order('logged_at', { ascending: false })
       setFoodLogs(foodData ?? [])
 
-      // Resources from PT
-      const { data: resourceData } = await supabase.from('resources').select('*').order('created_at', { ascending: false })
+      // Resources from PT (global or created by this client's PT)
+      const { data: resourceData } = await supabase
+        .from('resources')
+        .select('*')
+        .or(`is_global.eq.true,created_by.eq.${clientRow.pt_id}`)
+        .order('created_at', { ascending: false })
       setResources(resourceData ?? [])
 
       // Saved workouts

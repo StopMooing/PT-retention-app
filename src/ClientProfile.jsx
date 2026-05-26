@@ -106,10 +106,15 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout }) {
           )}
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
-          {exercises.length === 0 && (
+          {workout._isCustom && workout.customContent ? (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">AI Workout Plan</p>
+              <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans bg-gray-50 rounded-xl p-4">{workout.customContent}</pre>
+            </div>
+          ) : exercises.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No exercises added to this workout yet.</p>
-          )}
-          {exercises.map((ex, idx) => {
+          ) : null}
+          {!workout._isCustom && exercises.map((ex, idx) => {
             const exName = ex.exercise?.name || ex.exercises?.name || ex.name || 'Exercise';
             const sets = ex.sets || 0;
             const reps = ex.reps || '–';
@@ -230,6 +235,7 @@ export default function ClientProfile() {
 
   const [weightLogs, setWeightLogs] = useState([])
   const [weightPeriod, setWeightPeriod] = useState("30")
+  const [progressPhotos, setProgressPhotos] = useState([])
   const [newWeight, setNewWeight] = useState("")
   const [savingWeight, setSavingWeight] = useState(false)
   const [showWeightInput, setShowWeightInput] = useState(false)
@@ -414,11 +420,24 @@ export default function ClientProfile() {
 
         const { data: swData } = await supabase
           .from("scheduled_workouts")
-          .select("id, scheduled_date, program_workout_id, program_workouts(id, name, day_number)")
+          .select("id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)")
           .eq("client_id", clientId)
           .gte("scheduled_date", threeMonthsAgo.toISOString().split("T")[0])
           .lte("scheduled_date", threeMonthsAhead.toISOString().split("T")[0])
-        setScheduledWorkouts(swData ?? [])
+        const enrichedSW = (swData ?? []).map(sw => ({
+          ...sw,
+          _displayName: sw.program_workouts?.name || sw.saved_workouts?.name || 'Workout',
+          _isCustom: !!sw.custom_workout_id,
+        }))
+        setScheduledWorkouts(enrichedSW)
+
+        const { data: photoData } = await supabase
+          .from('progress_photos')
+          .select('id, photo_url, note, taken_at, created_at')
+          .eq('client_id', clientId)
+          .order('created_at', { ascending: false })
+          .limit(12)
+        setProgressPhotos(photoData ?? [])
 
         setClientGoal(clientRes.data?.goal ?? "")
         setClientLimitations(clientRes.data?.limitations ?? "")
@@ -735,10 +754,11 @@ export default function ClientProfile() {
           scheduled_date: dateStr,
           created_by: user.id,
         })
-        .select("id, scheduled_date, program_workout_id, program_workouts(id, name, day_number)")
+        .select("id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)")
         .single()
       if (error) throw error
-      setScheduledWorkouts(prev => [...prev, data])
+      const enriched = { ...data, _displayName: data.program_workouts?.name || data.saved_workouts?.name || 'Workout', _isCustom: !!data.custom_workout_id }
+      setScheduledWorkouts(prev => [...prev, enriched])
       setShowWorkoutModal(false)
       setModalSelectedWorkout(null)
       setModalTargetDate(null)
@@ -860,9 +880,10 @@ export default function ClientProfile() {
       const { data, error } = await supabase
         .from("scheduled_workouts")
         .insert(toInsert)
-        .select("id, scheduled_date, program_workout_id, program_workouts(id, name, day_number)")
+        .select("id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)")
       if (error) throw error
-      setScheduledWorkouts(prev => [...prev, ...(data ?? [])])
+      const enrichedBulk = (data ?? []).map(sw => ({ ...sw, _displayName: sw.program_workouts?.name || sw.saved_workouts?.name || 'Workout', _isCustom: !!sw.custom_workout_id }))
+      setScheduledWorkouts(prev => [...prev, ...enrichedBulk])
       setShowAutoScheduleModal(false)
       const firstDate = new Date(autoScheduleStartDate + "T00:00:00")
       const day = firstDate.getDay()
@@ -1131,6 +1152,35 @@ export default function ClientProfile() {
                 </div>
               )}
             </div>
+          </SectionCard>
+
+          <SectionCard>
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-pink-50 flex items-center justify-center">
+                  <Camera size={15} className="text-pink-500" />
+                </div>
+                <span className="text-sm font-semibold text-gray-800">Progress Photos</span>
+              </div>
+              <span className="text-xs text-gray-400">{progressPhotos.length} photos</span>
+            </div>
+            {progressPhotos.length === 0 ? (
+              <div className="px-6 py-8 text-center">
+                <p className="text-sm text-gray-400">No progress photos yet.</p>
+                <p className="text-xs text-gray-300 mt-1">Photos the client uploads will appear here.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-4 gap-2 p-4">
+                {progressPhotos.map(photo => (
+                  <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-gray-100 group relative">
+                    <img src={photo.photo_url} alt="" className="w-full h-full object-cover" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-[10px] text-white">{new Date(photo.taken_at || photo.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </SectionCard>
 
         </div>
@@ -1450,7 +1500,7 @@ export default function ClientProfile() {
                         onMouseLeave={() => setHoveredDay(null)}
                         onAddClick={() => { setModalTargetDate(day); setShowWorkoutModal(true) }}
                         onRemoveClick={handleRemoveScheduledWorkout}
-                        onWorkoutClick={(wo) => setSelectedCalendarDay({ date: dateStr, workout: { id: wo.id, name: wo.program_workouts?.name || 'Workout', exercises: workoutExercises[wo.program_workout_id] ?? [] } })}
+                        onWorkoutClick={(wo) => setSelectedCalendarDay({ date: dateStr, workout: { id: wo.id, name: wo._displayName || wo.program_workouts?.name || wo.saved_workouts?.name || 'Workout', exercises: workoutExercises[wo.program_workout_id] ?? [], _isCustom: wo._isCustom, customContent: wo.saved_workouts?.content || null } })}
                       />
                     )
                   })}
@@ -1461,7 +1511,7 @@ export default function ClientProfile() {
               {activeDragWorkout ? (
                 <div className="bg-white border-2 border-indigo-400 rounded-lg p-1.5 shadow-xl opacity-95 w-[120px]">
                   <span className="text-[10px] font-bold text-indigo-700 uppercase tracking-wide truncate block">
-                    {activeDragWorkout.program_workouts?.name || "Workout"}
+                    {activeDragWorkout._displayName || activeDragWorkout.program_workouts?.name || activeDragWorkout.saved_workouts?.name || "Workout"}
                   </span>
                 </div>
               ) : null}
