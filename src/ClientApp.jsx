@@ -502,6 +502,8 @@ export default function ClientApp() {
   const [savedWorkouts, setSavedWorkouts] = useState([])
   const [programSubTab, setProgramSubTab] = useState('program')
   const [showAddToCalendar, setShowAddToCalendar] = useState(false)
+  const [expandedWorkoutId, setExpandedWorkoutId] = useState(null)
+  const [expandedMealId, setExpandedMealId] = useState(null)
   const [workoutToSchedule, setWorkoutToSchedule] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(toLocalDateStr())
   const [selectedHomeDate, setSelectedHomeDate] = useState(() => {
@@ -1560,16 +1562,38 @@ export default function ClientApp() {
               </div>
             ) : (
               <div className="space-y-3">
-                {savedWorkouts.map(sw => (
-                  <div key={sw.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
-                    <p className="text-sm font-bold text-gray-900 mb-2">{sw.title}</p>
-                    <p className="text-xs text-gray-400 line-clamp-3 whitespace-pre-line">{sw.content}</p>
-                    <button onClick={() => { setWorkoutToSchedule(sw); setShowAddToCalendar(true) }}
-                      className="mt-3 w-full text-xs font-semibold border border-emerald-200 text-emerald-600 bg-emerald-50 py-2 rounded-xl hover:bg-emerald-100 transition-colors">
-                      Add to Calendar
-                    </button>
-                  </div>
-                ))}
+                {savedWorkouts.map(sw => {
+                  const isExpanded = expandedWorkoutId === sw.id
+                  return (
+                    <div key={sw.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <button
+                          onClick={() => setExpandedWorkoutId(isExpanded ? null : sw.id)}
+                          className="flex-1 text-left min-w-0 mr-3"
+                        >
+                          <p className="text-sm font-bold text-gray-900 truncate">{sw.name || sw.title}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-xs text-gray-400">{new Date(sw.created_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                            <span className="text-gray-200">·</span>
+                            <p className={`text-xs font-semibold ${isExpanded ? 'text-emerald-600' : 'text-gray-400'}`}>
+                              {isExpanded ? 'Collapse ↑' : 'View ↓'}
+                            </p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => { setWorkoutToSchedule(sw); setShowAddToCalendar(true) }}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors flex-shrink-0">
+                          <Plus size={12} /> Schedule
+                        </button>
+                      </div>
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-1 border-t border-gray-50">
+                          <pre className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap font-sans">{sw.content}</pre>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </>
@@ -1849,19 +1873,41 @@ export default function ClientApp() {
               </div>
             ) : (
               <div className="space-y-3">
-                {savedMeals.map(meal => (
-                  <div key={meal.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
-                    <p className="text-sm font-bold text-gray-900 mb-1">{meal.title}</p>
-                    {meal.calories > 0 && (
-                      <p className="text-xs text-gray-400 mb-2">{Math.round(meal.calories)} kcal · P{Math.round(meal.protein_g)}g · C{Math.round(meal.carbs_g)}g · F{Math.round(meal.fats_g)}g</p>
-                    )}
-                    <p className="text-xs text-gray-400 line-clamp-3 whitespace-pre-line">{meal.content}</p>
-                    <button onClick={() => handleAddMealToLog(meal)}
-                      className="mt-3 w-full text-xs font-semibold border border-emerald-200 text-emerald-600 bg-emerald-50 py-2 rounded-xl hover:bg-emerald-100 transition-colors">
-                      Add to Today's Log
-                    </button>
-                  </div>
-                ))}
+                {savedMeals.map(meal => {
+                  const isExpanded = expandedMealId === meal.id
+                  return (
+                    <div key={meal.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="px-4 py-3 flex items-center justify-between">
+                        <button
+                          onClick={() => setExpandedMealId(isExpanded ? null : meal.id)}
+                          className="flex-1 text-left min-w-0 mr-3"
+                        >
+                          <p className="text-sm font-bold text-gray-900 truncate">{meal.name || meal.title}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {meal.calories > 0 && <span className="text-xs text-orange-500 font-semibold">{meal.calories} kcal</span>}
+                            {meal.protein_g > 0 && <span className="text-xs text-red-500">P{meal.protein_g}g</span>}
+                            {meal.carbs_g > 0 && <span className="text-xs text-yellow-500">C{meal.carbs_g}g</span>}
+                            {meal.fats_g > 0 && <span className="text-xs text-blue-500">F{meal.fats_g}g</span>}
+                            <span className="text-gray-200">·</span>
+                            <span className={`text-xs font-semibold ${isExpanded ? 'text-emerald-600' : 'text-gray-400'}`}>
+                              {isExpanded ? 'Collapse ↑' : 'View ↓'}
+                            </span>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => handleAddMealToLog(meal)}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors flex-shrink-0">
+                          <Plus size={12} /> Add to Log
+                        </button>
+                      </div>
+                      {isExpanded && (
+                        <div className="px-4 pb-4 pt-1 border-t border-gray-50">
+                          <pre className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap font-sans">{meal.content}</pre>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </>
