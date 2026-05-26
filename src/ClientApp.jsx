@@ -281,6 +281,14 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
   const [completing, setCompleting] = useState(false)
   const [completed, setCompleted] = useState(false)
   const logIdRef = useRef(null)
+
+  const isCustom = scheduledWorkout._isCustom || !scheduledWorkout.program_workout_id
+  const customContent = scheduledWorkout._customWorkout?.content || scheduledWorkout.saved_workouts?.content || null
+  const workoutName = scheduledWorkout.program_workouts?.name
+    || scheduledWorkout._customWorkout?.name
+    || scheduledWorkout.saved_workouts?.name
+    || 'Workout'
+
   const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
 
   async function ensureLog() {
@@ -344,7 +352,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
           </button>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-400">{formatDateLabel(scheduledWorkout.scheduled_date)}</p>
-            <h1 className="text-base font-bold text-gray-900 truncate">{scheduledWorkout.program_workouts?.name || 'Workout'}</h1>
+            <h1 className="text-base font-bold text-gray-900 truncate">{workoutName}</h1>
           </div>
           {estMin > 0 && (
             <div className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
@@ -367,7 +375,12 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
           </div>
         )}
 
-        {exercises.length === 0 ? (
+        {isCustom && customContent ? (
+          <div className="bg-white border border-gray-200 rounded-2xl p-5">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Workout Plan</p>
+            <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{customContent}</pre>
+          </div>
+        ) : exercises.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
             <Dumbbell size={28} className="text-gray-200 mx-auto mb-3" />
             <p className="text-sm text-gray-400">No exercises in this workout yet.</p>
@@ -460,7 +473,10 @@ export default function ClientApp() {
   const [completedIds, setCompletedIds] = useState(new Set())
   const [calYear, setCalYear] = useState(() => new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
-  const [selectedCalDate, setSelectedCalDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [selectedCalDate, setSelectedCalDate] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
 
   // Program
   const [programView, setProgramView] = useState('list')
@@ -484,7 +500,10 @@ export default function ClientApp() {
   const [showAddToCalendar, setShowAddToCalendar] = useState(false)
   const [workoutToSchedule, setWorkoutToSchedule] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0])
-  const [selectedHomeDate, setSelectedHomeDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [selectedHomeDate, setSelectedHomeDate] = useState(() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
   const [homeDateFoodLogs, setHomeDateFoodLogs] = useState([])
   const [homeDateLoading, setHomeDateLoading] = useState(false)
   const [showTDEE, setShowTDEE] = useState(false)
@@ -504,7 +523,10 @@ export default function ClientApp() {
   const [weightPeriod, setWeightPeriod] = useState(30)
   const [weightLogs, setWeightLogs] = useState([])
 
-  const getTodayStr = () => new Date().toISOString().split('T')[0]
+  const getTodayStr = () => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
   const todayStr = getTodayStr()
 
   useEffect(() => {
@@ -1379,7 +1401,7 @@ export default function ClientApp() {
                       {done && <Check size={14} className="text-white" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-900 truncate">{sw.program_workouts?.name || 'Workout'}</p>
+                      <p className="text-sm font-bold text-gray-900 truncate">{sw.program_workouts?.name || sw._customWorkout?.name || sw.saved_workouts?.name || 'Workout'}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className={`text-xs ${done ? 'text-emerald-600 font-medium' : 'text-gray-400'}`}>
                           {done ? 'Completed' : 'Tap to start'}
@@ -1558,6 +1580,11 @@ export default function ClientApp() {
   }
 
   function renderNutrition() {
+    const calTarget = client?.calorie_target || 0
+    const proTarget = client?.protein_target_g || 0
+    const carbTarget = client?.carbs_target_g || 0
+    const fatTarget = client?.fats_target_g || 0
+
     const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'other']
     const MEAL_COLOURS = {
       breakfast: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -1698,9 +1725,9 @@ export default function ClientApp() {
               <div className="grid grid-cols-4 gap-3">
                 {[
                   { label: 'Calories', value: todayCalories, unit: 'kcal', target: calTarget, colour: 'text-orange-500', bar: 'bg-orange-400' },
-                  { label: 'Protein', value: todayProtein, unit: 'g', target: client?.protein_target_g || 0, colour: 'text-red-500', bar: 'bg-red-400' },
-                  { label: 'Carbs', value: todayCarbs, unit: 'g', target: client?.carbs_target_g || 0, colour: 'text-yellow-500', bar: 'bg-yellow-400' },
-                  { label: 'Fats', value: todayFats, unit: 'g', target: client?.fats_target_g || 0, colour: 'text-blue-500', bar: 'bg-blue-400' },
+                  { label: 'Protein', value: todayProtein, unit: 'g', target: proTarget, colour: 'text-red-500', bar: 'bg-red-400' },
+                  { label: 'Carbs', value: todayCarbs, unit: 'g', target: carbTarget, colour: 'text-yellow-500', bar: 'bg-yellow-400' },
+                  { label: 'Fats', value: todayFats, unit: 'g', target: fatTarget, colour: 'text-blue-500', bar: 'bg-blue-400' },
                 ].map(m => {
                   const pct = m.target > 0 ? Math.min(100, Math.round((m.value / m.target) * 100)) : 0
                   return (
