@@ -278,6 +278,68 @@ function AIChat({ context, placeholder, systemPrompt, onClose, onSave, saveLabel
 }
 
 // ─── WORKOUT LOGGING VIEW ─────────────────────────────────────────────────────
+function WorkoutComplete({ workoutName, stats, onDone }) {
+  const { newPBs = [], totalVolume = 0, setsCompleted = 0, exerciseCount = 0 } = stats || {}
+  return (
+    <div className="fixed inset-0 bg-white z-50 flex flex-col max-w-lg mx-auto">
+      <div className="flex-1 overflow-y-auto px-4 py-8 space-y-5">
+        <div className="text-center pt-8">
+          <div className="text-6xl mb-4">🏋️</div>
+          <h1 className="text-2xl font-black text-gray-900">Session Complete!</h1>
+          <p className="text-gray-400 mt-1 text-sm">{workoutName}</p>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: 'Sets Done', value: setsCompleted, icon: '✅' },
+            { label: 'Exercises', value: exerciseCount, icon: '💪' },
+            { label: 'Volume', value: totalVolume > 0 ? `${Math.round(totalVolume)}kg` : '—', icon: '📊' },
+          ].map(s => (
+            <div key={s.label} className="bg-gray-50 border border-gray-200 rounded-2xl p-3 text-center">
+              <p className="text-lg mb-1">{s.icon}</p>
+              <p className="text-lg font-black text-gray-900">{s.value}</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mt-0.5">{s.label}</p>
+            </div>
+          ))}
+        </div>
+        {newPBs.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">🏆 Personal Bests</p>
+            {newPBs.map((pb, i) => (
+              <div key={i} className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-2xl px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-gray-900">{pb.exerciseName}</p>
+                    <p className="text-xs text-yellow-600 font-semibold mt-0.5">
+                      {pb.isFirst ? '🌟 First time logged!' : `${pb.label}: ${pb.previous} → ${pb.value}${pb.unit}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-black text-orange-500">{pb.value}</p>
+                    <p className="text-[10px] text-gray-400">{pb.unit}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {newPBs.length === 0 && (
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-4 text-center">
+            <p className="text-sm font-semibold text-blue-700">Keep going — PBs come with consistency! 💪</p>
+            <p className="text-xs text-blue-400 mt-1">Log weights each session to track your progress</p>
+          </div>
+        )}
+        <div className="h-8" />
+      </div>
+      <div className="px-4 pb-8 pt-3 border-t border-gray-100">
+        <button onClick={onDone}
+          className="w-full bg-black hover:bg-gray-800 text-white text-base font-bold py-4 rounded-2xl transition-colors">
+          Back to Home
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function WorkoutPreview({ scheduledWorkout, exercises, client, onBack, onStart }) {
   const isCustom = scheduledWorkout._isCustom || !scheduledWorkout.program_workout_id
   const customContent = scheduledWorkout._customWorkout?.content || scheduledWorkout.saved_workouts?.content || null
@@ -412,176 +474,309 @@ function WorkoutPreview({ scheduledWorkout, exercises, client, onBack, onStart }
 }
 
 function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplete }) {
-  const [setInputs, setSetInputs] = useState({})
-  const [savingSet, setSavingSet] = useState(null)
-  const [workoutLogId, setWorkoutLogId] = useState(null)
-  const [completing, setCompleting] = useState(false)
-  const [completed, setCompleted] = useState(false)
-  const logIdRef = useRef(null)
-
   const isCustom = scheduledWorkout._isCustom || !scheduledWorkout.program_workout_id
   const customContent = scheduledWorkout._customWorkout?.content || scheduledWorkout.saved_workouts?.content || null
-  const workoutName = scheduledWorkout.program_workouts?.name
-    || scheduledWorkout._customWorkout?.name
-    || scheduledWorkout.saved_workouts?.name
-    || 'Workout'
+  const workoutName = scheduledWorkout.program_workouts?.name || scheduledWorkout._customWorkout?.name || scheduledWorkout.saved_workouts?.name || 'Workout'
 
-  const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
+  const [setData, setSetData] = useState({})
+  const [completing, setCompleting] = useState(false)
+  const [previousSets, setPreviousSets] = useState({})
+  const [restTimer, setRestTimer] = useState(null)
+  const [restInterval, setRestInterval] = useState(null)
+  const [activeSet, setActiveSet] = useState(null)
 
-  async function ensureLog() {
-    if (logIdRef.current) return logIdRef.current
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data, error } = await supabase.from('workout_logs').insert({
-      client_id: client.id,
-      workout_id: scheduledWorkout.id,
-      logged_by: user.id,
-      completed: false,
-    }).select('id').single()
-    if (error || !data) return null
-    logIdRef.current = data.id
-    setWorkoutLogId(data.id)
-    return data.id
+  useEffect(() => {
+    async function loadPreviousData() {
+      if (!exercises.length || !client?.id) return
+      const exerciseIds = exercises.map(ex => ex.exercise_id || ex.exercises?.id).filter(Boolean)
+      if (!exerciseIds.length) return
+      const { data } = await supabase
+        .from('workout_set_logs')
+        .select('exercise_id, set_number, reps_completed, weight_kg, logged_at')
+        .eq('client_id', client.id)
+        .in('exercise_id', exerciseIds)
+        .order('logged_at', { ascending: false })
+      if (!data) return
+      const prev = {}
+      const seenSessions = {}
+      for (const row of data) {
+        const eid = row.exercise_id
+        if (!seenSessions[eid]) seenSessions[eid] = row.logged_at?.split('T')[0]
+        if (row.logged_at?.split('T')[0] === seenSessions[eid]) {
+          if (!prev[eid]) prev[eid] = []
+          prev[eid].push({ reps: row.reps_completed, weight_kg: row.weight_kg })
+        }
+      }
+      setPreviousSets(prev)
+    }
+    loadPreviousData()
+  }, [exercises, client?.id])
+
+  useEffect(() => {
+    return () => { if (restInterval) clearInterval(restInterval) }
+  }, [restInterval])
+
+  function startRestTimer(seconds) {
+    if (restInterval) clearInterval(restInterval)
+    setRestTimer(seconds)
+    const interval = setInterval(() => {
+      setRestTimer(prev => {
+        if (prev <= 1) { clearInterval(interval); setRestInterval(null); return null }
+        return prev - 1
+      })
+    }, 1000)
+    setRestInterval(interval)
   }
 
-  async function handleSaveSet(exId, exDbId, setIdx) {
-    const key = `${exId}_${setIdx}`
-    const inp = setInputs[key] ?? {}
-    const reps = parseInt(inp.reps, 10)
-    if (!reps || reps <= 0) return
-    setSavingSet(key)
-    const logId = await ensureLog()
-    if (!logId) { setSavingSet(null); return }
-    const { error } = await supabase.from('exercise_logs').insert({
-      workout_log_id: logId,
-      exercise_id: exDbId,
-      set_number: setIdx + 1,
-      reps_completed: reps,
-      weight_kg: parseFloat(inp.weight) || null,
-    })
-    setSavingSet(null)
-    if (!error) setSetInputs(prev => ({ ...prev, [key]: { ...prev[key], saved: true } }))
+  function updateSet(exerciseId, setNumber, field, value) {
+    setSetData(prev => ({
+      ...prev,
+      [exerciseId]: {
+        ...(prev[exerciseId] || {}),
+        [setNumber]: { ...(prev[exerciseId]?.[setNumber] || {}), [field]: value }
+      }
+    }))
   }
+
+  function markSetDone(exerciseId, setNumber, restSeconds) {
+    updateSet(exerciseId, setNumber, 'done', true)
+    setActiveSet({ exerciseId, setNumber })
+    if (restSeconds) startRestTimer(restSeconds)
+  }
+
+  const totalSetsCount = exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)
+  const doneSetsCount = Object.values(setData).reduce((sum, ex) =>
+    sum + Object.values(ex).filter(s => s.done).length, 0)
+  const allDone = !isCustom && totalSetsCount > 0 && doneSetsCount >= totalSetsCount
+  const progressPct = totalSetsCount > 0 ? Math.round((doneSetsCount / totalSetsCount) * 100) : 0
 
   async function handleComplete() {
-    const logId = logIdRef.current
-    if (!logId) return
     setCompleting(true)
-    await supabase.from('workout_logs').update({ completed: true }).eq('id', logId)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      let totalVolume = 0
+      const setLogsToInsert = []
+      for (const ex of exercises) {
+        const exerciseId = ex.exercise_id || ex.exercises?.id
+        if (!exerciseId) continue
+        const exSets = setData[exerciseId] || {}
+        for (let s = 1; s <= (ex.sets || 0); s++) {
+          const set = exSets[s] || {}
+          const reps = parseFloat(set.reps) || ex.reps || 0
+          const weight = parseFloat(set.weight) || 0
+          totalVolume += reps * weight
+          setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight })
+        }
+      }
+      if (setLogsToInsert.length > 0) await supabase.from('workout_set_logs').insert(setLogsToInsert)
+
+      const newPBs = []
+      for (const ex of exercises) {
+        const exerciseId = ex.exercise_id || ex.exercises?.id
+        if (!exerciseId) continue
+        const exSets = setData[exerciseId] || {}
+        const exerciseName = ex.exercises?.name || 'Exercise'
+        let best1RM = 0, bestSet = 0, sessionVolume = 0
+        for (let s = 1; s <= (ex.sets || 0); s++) {
+          const set = exSets[s] || {}
+          const reps = parseFloat(set.reps) || ex.reps || 0
+          const weight = parseFloat(set.weight) || 0
+          if (weight === 0) continue
+          const estimated1RM = reps === 1 ? weight : weight * (1 + reps / 30)
+          if (estimated1RM > best1RM) best1RM = estimated1RM
+          const setScore = weight * reps
+          if (setScore > bestSet) bestSet = setScore
+          sessionVolume += reps * weight
+        }
+        const pbChecks = []
+        if (best1RM > 0) pbChecks.push({ type: '1rm', value: Math.round(best1RM * 10) / 10, label: 'Estimated 1RM', unit: 'kg' })
+        if (bestSet > 0) pbChecks.push({ type: 'best_set', value: bestSet, label: 'Best Set Score', unit: 'pts' })
+        if (sessionVolume > 0) pbChecks.push({ type: 'volume', value: Math.round(sessionVolume), label: 'Session Volume', unit: 'kg' })
+        for (const check of pbChecks) {
+          const { data: existing } = await supabase.from('personal_bests').select('value').eq('client_id', client.id).eq('exercise_id', exerciseId).eq('pb_type', check.type).single()
+          if (!existing || check.value > existing.value) {
+            await supabase.from('personal_bests').upsert({ client_id: client.id, exercise_id: exerciseId, pb_type: check.type, value: check.value, achieved_at: new Date().toISOString(), scheduled_workout_id: scheduledWorkout.id }, { onConflict: 'client_id,exercise_id,pb_type' })
+            newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, previous: existing?.value ?? null, isFirst: !existing })
+          }
+        }
+      }
+
+      await supabase.from('workout_logs').insert({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, workout_id: scheduledWorkout.id, logged_by: user.id, completed: true, completed_at: new Date().toISOString(), total_volume_kg: totalVolume })
+      onComplete && onComplete(scheduledWorkout.id, { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: exercises.length, workoutName })
+    } catch (e) {
+      console.error('Complete error:', e)
+      alert('Something went wrong: ' + e.message)
+    }
     setCompleting(false)
-    setCompleted(true)
-    onComplete && onComplete(scheduledWorkout.id)
   }
 
-  function setInput(key, field, value) {
-    setSetInputs(prev => ({ ...prev, [key]: { ...(prev[key] ?? {}), [field]: value, saved: false } }))
+  async function handleCompleteCustom() {
+    setCompleting(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      await supabase.from('workout_logs').insert({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, workout_id: scheduledWorkout.id, logged_by: user.id, completed: true, completed_at: new Date().toISOString(), total_volume_kg: 0 })
+      onComplete && onComplete(scheduledWorkout.id, { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName })
+    } catch (e) {
+      console.error(e)
+      alert('Something went wrong: ' + e.message)
+    }
+    setCompleting(false)
   }
-
-  const allSaved = exercises.length > 0 && exercises.every(ex =>
-    Array.from({ length: ex.sets || 3 }).some((_, i) => setInputs[`${ex.id}_${i}`]?.saved)
-  )
 
   return (
-    <div className="fixed inset-0 z-40 bg-gray-50 flex flex-col" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 flex-shrink-0">
-        <div className="px-4 py-4 flex items-center gap-3">
-          <button onClick={onBack} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-            <ArrowLeft size={18} className="text-gray-600" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400">{formatDateLabel(scheduledWorkout.scheduled_date)}</p>
-            <h1 className="text-base font-bold text-gray-900 truncate">{workoutName}</h1>
+    <div className="fixed inset-0 bg-white z-40 flex flex-col max-w-lg mx-auto">
+      <div className="flex items-center gap-3 px-4 pt-12 pb-3 border-b border-gray-100">
+        <button onClick={onBack} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0">
+          <ArrowLeft size={18} className="text-gray-600" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-base font-bold text-gray-900 truncate">{workoutName}</h1>
+          {!isCustom && <p className="text-xs text-gray-400 mt-0.5">{doneSetsCount}/{totalSetsCount} sets completed</p>}
+        </div>
+        {!isCustom && totalSetsCount > 0 && (
+          <div className="flex-shrink-0 w-10 h-10 relative">
+            <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15" fill="none" stroke="#f3f4f6" strokeWidth="3" />
+              <circle cx="18" cy="18" r="15" fill="none" stroke="#10b981" strokeWidth="3"
+                strokeDasharray={`${progressPct * 0.942} 94.2`} strokeLinecap="round" />
+            </svg>
+            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-emerald-600">{progressPct}%</span>
           </div>
-          {estMin > 0 && (
-            <div className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
-              <Clock size={13} /><span>~{estMin} min</span>
+        )}
+      </div>
+
+      {restTimer !== null && (
+        <div className="bg-emerald-500 px-4 py-2 flex items-center justify-between">
+          <p className="text-sm font-bold text-white">Rest timer</p>
+          <div className="flex items-center gap-3">
+            <p className="text-2xl font-black text-white tabular-nums">{restTimer}s</p>
+            <button onClick={() => { if (restInterval) clearInterval(restInterval); setRestTimer(null) }}
+              className="text-emerald-100 text-xs font-semibold border border-emerald-300 px-2 py-1 rounded-lg">Skip</button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {isCustom && customContent ? (
+          <div className="space-y-4">
+            <div className="bg-gray-50 rounded-2xl p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Workout Plan</p>
+              <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{customContent}</pre>
+            </div>
+            <button onClick={handleCompleteCustom} disabled={completing}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-base font-bold py-4 rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              {completing ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</> : <><CheckCircle2 size={20} />Complete Workout</>}
+            </button>
+          </div>
+        ) : (
+          exercises.map((ex, idx) => {
+            const exerciseId = ex.exercise_id || ex.exercises?.id
+            const exSetData = setData[exerciseId] || {}
+            const prevSets = previousSets[exerciseId] || []
+            const muscle = ex.exercises?.muscle_group
+            const MUSCLE_COLOURS = {
+              Chest: 'bg-red-50 text-red-600', Back: 'bg-blue-50 text-blue-600',
+              Shoulders: 'bg-purple-50 text-purple-600', Legs: 'bg-emerald-50 text-emerald-600',
+              Arms: 'bg-orange-50 text-orange-600', Core: 'bg-yellow-50 text-yellow-600',
+              Glutes: 'bg-pink-50 text-pink-600', Other: 'bg-gray-100 text-gray-600',
+            }
+            const chipClass = MUSCLE_COLOURS[muscle] ?? MUSCLE_COLOURS.Other
+            return (
+              <div key={ex.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-50 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{idx + 1}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900">{ex.exercises?.name || 'Exercise'}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {muscle && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${chipClass}`}>{muscle}</span>}
+                      <span className="text-xs text-gray-400">{ex.sets} sets × {ex.reps} reps</span>
+                      {ex.rest_seconds && <span className="text-xs text-gray-300">· {ex.rest_seconds}s rest</span>}
+                    </div>
+                  </div>
+                </div>
+                {prevSets.length > 0 && (
+                  <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+                    <p className="text-[10px] font-semibold text-blue-500 uppercase tracking-wide mb-1">Last session</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {prevSets.map((ps, i) => (
+                        <span key={i} className="text-xs text-blue-600 font-semibold bg-white border border-blue-200 px-2 py-0.5 rounded-full">
+                          Set {i + 1}: {ps.weight_kg > 0 ? `${ps.weight_kg}kg × ` : ''}{ps.reps}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="divide-y divide-gray-50">
+                  {Array.from({ length: ex.sets || 0 }, (_, i) => {
+                    const setNum = i + 1
+                    const setInfo = exSetData[setNum] || {}
+                    const isDone = !!setInfo.done
+                    const prevSet = prevSets[i]
+                    return (
+                      <div key={setNum} className={`px-4 py-3 flex items-center gap-3 transition-colors ${isDone ? 'bg-emerald-50' : ''}`}>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${isDone ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                          {isDone ? '✓' : setNum}
+                        </div>
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="flex items-center gap-1 flex-1">
+                            <input type="number" step="0.5" min="0"
+                              placeholder={prevSet?.weight_kg > 0 ? `${prevSet.weight_kg}` : '0'}
+                              value={setInfo.weight || ''}
+                              onChange={e => updateSet(exerciseId, setNum, 'weight', e.target.value)}
+                              disabled={isDone}
+                              className={`w-16 border rounded-xl px-2 py-1.5 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 ${isDone ? 'bg-gray-50 border-gray-100 text-gray-400' : 'border-gray-200'}`} />
+                            <span className="text-xs text-gray-400 flex-shrink-0">kg</span>
+                          </div>
+                          <span className="text-gray-300 text-sm">×</span>
+                          <div className="flex items-center gap-1 flex-1">
+                            <input type="number" min="0"
+                              placeholder={`${prevSet?.reps || ex.reps || ''}`}
+                              value={setInfo.reps || ''}
+                              onChange={e => updateSet(exerciseId, setNum, 'reps', e.target.value)}
+                              disabled={isDone}
+                              className={`w-16 border rounded-xl px-2 py-1.5 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 ${isDone ? 'bg-gray-50 border-gray-100 text-gray-400' : 'border-gray-200'}`} />
+                            <span className="text-xs text-gray-400 flex-shrink-0">reps</span>
+                          </div>
+                        </div>
+                        {!isDone ? (
+                          <button onClick={() => markSetDone(exerciseId, setNum, ex.rest_seconds)}
+                            className="flex-shrink-0 bg-black text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-gray-800 transition-colors">Done</button>
+                        ) : (
+                          <button onClick={() => updateSet(exerciseId, setNum, 'done', false)}
+                            className="flex-shrink-0 text-xs text-gray-400 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">Undo</button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })
+        )}
+        <div className="h-32" />
+      </div>
+
+      {!isCustom && (
+        <div className="px-4 pb-8 pt-3 border-t border-gray-100 bg-white">
+          {allDone ? (
+            <button onClick={handleComplete} disabled={completing}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-base font-bold py-4 rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-200">
+              {completing
+                ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving your session...</>
+                : <><CheckCircle2 size={20} />Complete Workout</>}
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div className="bg-emerald-500 h-2 rounded-full transition-all duration-300" style={{ width: `${progressPct}%` }} />
+              </div>
+              <p className="text-center text-xs text-gray-400 font-medium">
+                Complete all {totalSetsCount} sets to finish — {totalSetsCount - doneSetsCount} remaining
+              </p>
             </div>
           )}
         </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {completed && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-              <Check size={18} className="text-white" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-emerald-800">Workout complete!</p>
-              <p className="text-xs text-emerald-600 mt-0.5">Great work — this session has been saved.</p>
-            </div>
-          </div>
-        )}
-
-        {isCustom && customContent ? (
-          <div className="bg-white border border-gray-200 rounded-2xl p-5">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Workout Plan</p>
-            <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans leading-relaxed">{customContent}</pre>
-          </div>
-        ) : exercises.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
-            <Dumbbell size={28} className="text-gray-200 mx-auto mb-3" />
-            <p className="text-sm text-gray-400">No exercises in this workout yet.</p>
-          </div>
-        ) : exercises.map((ex, idx) => {
-          const exName = ex.exercises?.name || 'Exercise'
-          const muscle = ex.exercises?.muscle_group
-          const chipClass = MUSCLE_CHIP[muscle] ?? MUSCLE_CHIP.Other
-          const setCount = ex.sets || 3
-          return (
-            <div key={ex.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-              <div className="px-4 py-4 border-b border-gray-50">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{idx + 1}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900">{exName}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {muscle && <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${chipClass}`}>{muscle}</span>}
-                      <span className="text-xs text-gray-400">{setCount} sets × {ex.reps || '—'} reps</span>
-                      {ex.rest_seconds && <span className="text-xs text-gray-400">· {ex.rest_seconds}s rest</span>}
-                    </div>
-                    {ex.notes && <p className="text-xs text-gray-400 mt-1 italic">{ex.notes}</p>}
-                  </div>
-                </div>
-              </div>
-              <div className="px-4 py-3 space-y-2">
-                <div className="grid grid-cols-[36px_1fr_1fr_36px] gap-2 px-1">
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Set</span>
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Weight kg</span>
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Reps</span>
-                  <span />
-                </div>
-                {Array.from({ length: setCount }).map((_, i) => {
-                  const key = `${ex.id}_${i}`
-                  const inp = setInputs[key] ?? {}
-                  const isSaved = !!inp.saved
-                  const isSaving = savingSet === key
-                  return (
-                    <div key={i} className={`grid grid-cols-[36px_1fr_1fr_36px] gap-2 items-center px-1 py-1 rounded-xl transition-colors ${isSaved ? 'bg-emerald-50' : ''}`}>
-                      <span className="text-xs font-semibold text-gray-400 text-center">{i + 1}</span>
-                      <input type="number" min="0" step="0.5" placeholder="—" disabled={isSaved} value={inp.weight ?? ''} onChange={e => setInput(key, 'weight', e.target.value)}
-                        className="border border-gray-200 rounded-lg px-2 py-2 text-sm text-gray-900 text-center placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:bg-gray-50 disabled:text-gray-400 w-full" />
-                      <input type="number" min="1" step="1" placeholder="—" disabled={isSaved} value={inp.reps ?? ''} onChange={e => setInput(key, 'reps', e.target.value)}
-                        className="border border-gray-200 rounded-lg px-2 py-2 text-sm text-gray-900 text-center placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:bg-gray-50 disabled:text-gray-400 w-full" />
-                      <button onClick={() => handleSaveSet(ex.id, ex.exercises?.id, i)} disabled={isSaved || isSaving || !inp.reps}
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 ${isSaved ? 'bg-emerald-500 text-white' : 'border border-gray-200 text-gray-400 hover:border-emerald-400 hover:text-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed'}`}>
-                        {isSaving ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" /> : <Check size={14} />}
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )
-        })}
-
-        {!completed && allSaved && (
-          <button onClick={handleComplete} disabled={completing}
-            className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold rounded-2xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25">
-            {completing ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</> : <><CheckCircle2 size={18} />Complete Workout</>}
-          </button>
-        )}
-        <div className="h-8" />
-      </div>
+      )}
     </div>
   )
 }
@@ -608,6 +803,7 @@ export default function ClientApp() {
   // Calendar
   const [loggingWorkout, setLoggingWorkout] = useState(null)
   const [previewWorkout, setPreviewWorkout] = useState(null)
+  const [workoutCompleteData, setWorkoutCompleteData] = useState(null)
   const [completedIds, setCompletedIds] = useState(new Set())
   const [calYear, setCalYear] = useState(() => new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
@@ -1062,6 +1258,18 @@ export default function ClientApp() {
   if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={handleSaveMeal} saveLabel="Save meal" />
 
   // Workout preview (between card tap and logging)
+  if (workoutCompleteData) return (
+    <WorkoutComplete
+      workoutName={workoutCompleteData.workoutName}
+      stats={workoutCompleteData}
+      onDone={() => {
+        setWorkoutCompleteData(null)
+        setLoggingWorkout(null)
+        setActiveTab('home')
+      }}
+    />
+  )
+
   if (previewWorkout) return (
     <WorkoutPreview
       scheduledWorkout={previewWorkout}
@@ -1076,21 +1284,19 @@ export default function ClientApp() {
   )
 
   // Workout logging overlay
-  if (loggingWorkout) {
-    const exercises = workoutExercises[loggingWorkout.program_workout_id] ?? []
-    return (
-      <WorkoutLogging
-        scheduledWorkout={loggingWorkout}
-        exercises={exercises}
-        client={client}
-        onBack={() => setLoggingWorkout(null)}
-        onComplete={(id) => {
-          setCompletedIds(prev => new Set([...prev, id]))
-          setLoggingWorkout(null)
-        }}
-      />
-    )
-  }
+  if (loggingWorkout) return (
+    <WorkoutLogging
+      scheduledWorkout={loggingWorkout}
+      exercises={workoutExercises[loggingWorkout.program_workout_id] ?? []}
+      client={client}
+      onBack={() => setLoggingWorkout(null)}
+      onComplete={(workoutId, stats) => {
+        setCompletedIds(prev => new Set([...prev, workoutId]))
+        setLoggingWorkout(null)
+        setWorkoutCompleteData(stats)
+      }}
+    />
+  )
 
   // ── TAB CONTENT ─────────────────────────────────────────────────────────────
 
