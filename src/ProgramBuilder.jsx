@@ -93,6 +93,8 @@ export default function ProgramBuilder({ user }) {
   const [showNewExercise, setShowNewExercise]   = useState(false)
   const [newExercise, setNewExercise]           = useState({ exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' })
   const [exerciseSearch, setExerciseSearch]     = useState('')
+  const [equipmentFilter, setEquipmentFilter]   = useState('')
+  const [muscleFilter, setMuscleFilter]         = useState('')
   const [savingExercise, setSavingExercise]     = useState(false)
   const [deletingId, setDeletingId]             = useState(null)
 
@@ -129,7 +131,7 @@ export default function ProgramBuilder({ user }) {
   const fetchAllExercises = useCallback(async () => {
     const { data } = await supabase
       .from('exercises')
-      .select('id, name, muscle_group')
+      .select('id, name, muscle_group, equipment, category, is_global, exercise_aliases(alias)')
       .or(`is_global.eq.true,created_by.eq.${user.id}`)
       .order('name')
     if (data) setAllExercises(data)
@@ -290,9 +292,15 @@ export default function ProgramBuilder({ user }) {
     setNewExercise({ exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' })
   }
 
-  const filteredExercises = allExercises.filter(e =>
-    e.name.toLowerCase().includes(exerciseSearch.toLowerCase())
-  )
+  const filteredExercises = allExercises.filter(ex => {
+    const q = exerciseSearch.toLowerCase()
+    const matchesSearch = !q ||
+      ex.name.toLowerCase().includes(q) ||
+      ex.exercise_aliases?.some(a => a.alias.toLowerCase().includes(q))
+    const matchesEquipment = !equipmentFilter || ex.equipment === equipmentFilter
+    const matchesMuscle = !muscleFilter || ex.muscle_group === muscleFilter
+    return matchesSearch && matchesEquipment && matchesMuscle
+  })
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -659,6 +667,51 @@ export default function ProgramBuilder({ user }) {
                                 <path d="M20 6L9 17l-5-5"/>
                               </svg>
                             </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <select
+                            value={equipmentFilter}
+                            onChange={e => setEquipmentFilter(e.target.value)}
+                            className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                          >
+                            <option value="">All Equipment</option>
+                            <option value="barbell">Barbell</option>
+                            <option value="dumbbell">Dumbbell</option>
+                            <option value="cable">Cable</option>
+                            <option value="machine">Machine</option>
+                            <option value="bodyweight">Bodyweight</option>
+                            <option value="band">Band</option>
+                            <option value="kettlebell">Kettlebell</option>
+                            <option value="trx">TRX</option>
+                            <option value="sled">Sled</option>
+                            <option value="landmine">Landmine</option>
+                            <option value="trap_bar">Trap Bar</option>
+                          </select>
+                          <select
+                            value={muscleFilter}
+                            onChange={e => setMuscleFilter(e.target.value)}
+                            className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-black bg-white"
+                          >
+                            <option value="">All Muscles</option>
+                            <option value="Back">Back</option>
+                            <option value="Biceps">Biceps</option>
+                            <option value="Cardio">Cardio</option>
+                            <option value="Chest">Chest</option>
+                            <option value="Core">Core</option>
+                            <option value="Full Body">Full Body</option>
+                            <option value="Glutes">Glutes</option>
+                            <option value="Legs">Legs</option>
+                            <option value="Shoulders">Shoulders</option>
+                            <option value="Triceps">Triceps</option>
+                          </select>
+                          {(equipmentFilter || muscleFilter) && (
+                            <button
+                              onClick={() => { setEquipmentFilter(''); setMuscleFilter('') }}
+                              className="text-xs text-gray-400 hover:text-gray-600 underline"
+                            >
+                              Clear filters
+                            </button>
                           )}
                         </div>
                         {/* Dropdown results */}
