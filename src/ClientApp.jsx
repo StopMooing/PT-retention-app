@@ -278,6 +278,139 @@ function AIChat({ context, placeholder, systemPrompt, onClose, onSave, saveLabel
 }
 
 // ─── WORKOUT LOGGING VIEW ─────────────────────────────────────────────────────
+function WorkoutPreview({ scheduledWorkout, exercises, client, onBack, onStart }) {
+  const isCustom = scheduledWorkout._isCustom || !scheduledWorkout.program_workout_id
+  const customContent = scheduledWorkout._customWorkout?.content || scheduledWorkout.saved_workouts?.content || null
+  const workoutName = scheduledWorkout.program_workouts?.name || scheduledWorkout._customWorkout?.name || scheduledWorkout.saved_workouts?.name || 'Workout'
+  const scheduledDate = scheduledWorkout.scheduled_date
+  const dateLabel = scheduledDate ? new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : ''
+
+  const estMin = isCustom
+    ? null
+    : Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
+
+  const muscleGroups = isCustom
+    ? []
+    : [...new Set(exercises.map(ex => ex.exercises?.muscle_group).filter(Boolean))]
+
+  const MUSCLE_COLOURS = {
+    Chest: 'bg-red-50 text-red-600',
+    Back: 'bg-blue-50 text-blue-600',
+    Shoulders: 'bg-purple-50 text-purple-600',
+    Legs: 'bg-emerald-50 text-emerald-600',
+    Arms: 'bg-orange-50 text-orange-600',
+    Core: 'bg-yellow-50 text-yellow-600',
+    Glutes: 'bg-pink-50 text-pink-600',
+    Other: 'bg-gray-100 text-gray-600',
+  }
+
+  return (
+    <div className="fixed inset-0 bg-white z-40 flex flex-col max-w-lg mx-auto">
+
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 pt-12 pb-4 border-b border-gray-100">
+        <button onClick={onBack} className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0">
+          <ArrowLeft size={18} className="text-gray-600" />
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs text-gray-400 font-medium">{dateLabel}</p>
+          <h1 className="text-lg font-bold text-gray-900 truncate">{workoutName}</h1>
+        </div>
+      </div>
+
+      {/* Stats row */}
+      {!isCustom && (
+        <div className="grid grid-cols-3 gap-3 px-4 py-4 border-b border-gray-100">
+          <div className="text-center">
+            <p className="text-xl font-black text-gray-900">{exercises.length}</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mt-0.5">Exercises</p>
+          </div>
+          <div className="text-center border-x border-gray-100">
+            <p className="text-xl font-black text-gray-900">{estMin ?? '—'}</p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mt-0.5">Est. Min</p>
+          </div>
+          <div className="text-center">
+            <p className="text-xl font-black text-gray-900">
+              {exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)}
+            </p>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide font-semibold mt-0.5">Total Sets</p>
+          </div>
+        </div>
+      )}
+
+      {/* Muscle groups */}
+      {muscleGroups.length > 0 && (
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 flex-wrap">
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Muscles:</p>
+          {muscleGroups.map(mg => (
+            <span key={mg} className={`text-[10px] font-bold px-2 py-1 rounded-full ${MUSCLE_COLOURS[mg] ?? MUSCLE_COLOURS.Other}`}>
+              {mg}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Exercise list or AI content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {isCustom && customContent ? (
+          <div className="bg-gray-50 rounded-2xl p-4">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Workout Plan</p>
+            <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{customContent}</pre>
+          </div>
+        ) : exercises.length === 0 ? (
+          <div className="text-center py-12">
+            <Dumbbell size={32} className="text-gray-200 mx-auto mb-3" />
+            <p className="text-sm text-gray-400">No exercises loaded.</p>
+          </div>
+        ) : (
+          exercises.map((ex, idx) => {
+            const muscle = ex.exercises?.muscle_group
+            const chipClass = MUSCLE_COLOURS[muscle] ?? MUSCLE_COLOURS.Other
+            return (
+              <div key={ex.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
+                  {idx + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-900">{ex.exercises?.name || 'Exercise'}</p>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    {muscle && (
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${chipClass}`}>{muscle}</span>
+                    )}
+                    <span className="text-xs font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-full">
+                      {ex.sets} sets × {ex.reps} reps
+                    </span>
+                    {ex.rest_seconds && (
+                      <span className="text-xs text-gray-400 bg-gray-50 border border-gray-200 px-2 py-0.5 rounded-full">
+                        {ex.rest_seconds}s rest
+                      </span>
+                    )}
+                  </div>
+                  {ex.notes && (
+                    <p className="text-xs text-gray-400 mt-1.5 italic">{ex.notes}</p>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
+        <div className="h-24" />
+      </div>
+
+      {/* Start button pinned to bottom */}
+      <div className="px-4 pb-8 pt-3 border-t border-gray-100 bg-white">
+        <button
+          onClick={onStart}
+          className="w-full bg-black hover:bg-gray-800 text-white text-base font-bold py-4 rounded-2xl transition-colors flex items-center justify-center gap-2"
+        >
+          <Dumbbell size={18} />
+          Start Workout
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplete }) {
   const [setInputs, setSetInputs] = useState({})
   const [savingSet, setSavingSet] = useState(null)
@@ -474,6 +607,7 @@ export default function ClientApp() {
 
   // Calendar
   const [loggingWorkout, setLoggingWorkout] = useState(null)
+  const [previewWorkout, setPreviewWorkout] = useState(null)
   const [completedIds, setCompletedIds] = useState(new Set())
   const [calYear, setCalYear] = useState(() => new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
@@ -927,6 +1061,20 @@ export default function ClientApp() {
   if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt="You are an expert personal trainer. When giving a workout, the VERY FIRST LINE must be a short descriptive workout title (e.g. '45 Min Upper Body Strength' or '30 Min Full Body HIIT'). Then use this exact format with no markdown symbols, no asterisks, no hashtags:\n\nWARM UP\nExercise name — X minutes or X reps\nExercise name — X minutes or X reps\n\nMAIN SESSION\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nCOOL DOWN\nExercise name — X minutes\n\nUse plain text only. No bullet points, no asterisks, no hashtags, no bold markers. The first line is always the workout title, then section headers in CAPS, then exercise details on separate lines." onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
   if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={handleSaveMeal} saveLabel="Save meal" />
 
+  // Workout preview (between card tap and logging)
+  if (previewWorkout) return (
+    <WorkoutPreview
+      scheduledWorkout={previewWorkout}
+      exercises={workoutExercises[previewWorkout.program_workout_id] ?? []}
+      client={client}
+      onBack={() => setPreviewWorkout(null)}
+      onStart={() => {
+        setLoggingWorkout(previewWorkout)
+        setPreviewWorkout(null)
+      }}
+    />
+  )
+
   // Workout logging overlay
   if (loggingWorkout) {
     const exercises = workoutExercises[loggingWorkout.program_workout_id] ?? []
@@ -1116,7 +1264,7 @@ export default function ClientApp() {
               const exercises = workoutExercises[sw.program_workout_id] ?? []
               const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
               return (
-                <button key={sw.id} onClick={() => setLoggingWorkout(sw)}
+                <button key={sw.id} onClick={() => setPreviewWorkout(sw)}
                   className="w-full text-left flex items-center gap-3 group">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
                     done ? 'bg-emerald-500' : 'border-2 border-gray-200 group-hover:border-emerald-400'
@@ -1421,7 +1569,7 @@ export default function ClientApp() {
                 const exercises = workoutExercises[sw.program_workout_id] ?? []
                 const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
                 return (
-                  <button key={sw.id} onClick={() => setLoggingWorkout(sw)}
+                  <button key={sw.id} onClick={() => setPreviewWorkout(sw)}
                     className="w-full text-left px-4 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-500' : 'border-2 border-gray-200'}`}>
                       {done && <Check size={14} className="text-white" />}
