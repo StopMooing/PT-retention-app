@@ -856,6 +856,12 @@ export default function ClientApp() {
   const [programSubTab, setProgramSubTab] = useState('program')
   const [showAddToCalendar, setShowAddToCalendar] = useState(false)
   const [expandedWorkoutId, setExpandedWorkoutId] = useState(null)
+  const [scheduleView, setScheduleView] = useState('calendar') // 'calendar' | 'history'
+  const [workoutHistory, setWorkoutHistory] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [expandedHistoryId, setExpandedHistoryId] = useState(null)
+  const [historySetLogs, setHistorySetLogs] = useState({}) // { [workout_log_id]: [sets] }
+  const [historyPBs, setHistoryPBs] = useState({}) // { [scheduled_workout_id]: [pbs] }
   const [expandedMealId, setExpandedMealId] = useState(null)
   const [workoutToSchedule, setWorkoutToSchedule] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(toLocalDateStr())
@@ -1024,6 +1030,54 @@ export default function ClientApp() {
       setWeightInput('')
     } catch (e) { console.error(e) }
     finally { setSavingWeight(false) }
+  }
+
+  async function loadWorkoutHistory() {
+    if (!client?.id) return
+    setHistoryLoading(true)
+    try {
+      const { data: logs, error } = await supabase
+        .from('workout_logs')
+        .select('id, completed_at, total_volume_kg, scheduled_workout_id, scheduled_workouts(id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(name), saved_workouts(name))')
+        .eq('client_id', client.id)
+        .eq('completed', true)
+        .order('completed_at', { ascending: false })
+        .limit(30)
+      if (error) throw error
+      setWorkoutHistory(logs ?? [])
+
+      const { data: pbs } = await supabase
+        .from('personal_bests')
+        .select('id, pb_type, value, exercise_id, achieved_at, scheduled_workout_id, exercises(name)')
+        .eq('client_id', client.id)
+        .order('achieved_at', { ascending: false })
+      if (pbs) {
+        const pbMap = {}
+        for (const pb of pbs) {
+          if (!pb.scheduled_workout_id) continue
+          if (!pbMap[pb.scheduled_workout_id]) pbMap[pb.scheduled_workout_id] = []
+          pbMap[pb.scheduled_workout_id].push(pb)
+        }
+        setHistoryPBs(pbMap)
+      }
+    } catch (e) { console.error('History load error:', e) }
+    finally { setHistoryLoading(false) }
+  }
+
+  async function loadHistorySetLogs(workoutLogId, scheduledWorkoutId) {
+    if (historySetLogs[workoutLogId]) return
+    try {
+      const { data } = await supabase
+        .from('workout_set_logs')
+        .select('id, set_number, reps_completed, weight_kg, exercise_id, exercises(name, muscle_group)')
+        .eq('scheduled_workout_id', scheduledWorkoutId)
+        .eq('client_id', client.id)
+        .order('exercise_id')
+        .order('set_number')
+      if (data) {
+        setHistorySetLogs(prev => ({ ...prev, [workoutLogId]: data }))
+      }
+    } catch (e) { console.error('Set logs load error:', e) }
   }
 
   async function loadHomeDateData(dateStr) {
@@ -1708,7 +1762,144 @@ export default function ClientApp() {
 
     return (
       <div className="px-4 py-4 space-y-4">
-        <h2 className="text-lg font-bold text-gray-900">Schedule</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-900">Schedule</h2>
+        </div>
+
+        {/* View toggle */}
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+          <button
+            onClick={() => setScheduleView('calendar')}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${scheduleView === 'calendar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+          >
+            Calendar
+          </button>
+          <button
+            onClick={() => {
+              setScheduleView('history')
+              if (workoutHistory.length === 0) loadWorkoutHistory()
+            }}
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors ${scheduleView === 'history' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+          >
+            History
+          </button>
+        </div>
+
+        {scheduleView === 'history' ? (
+          <div className="space-y-3">
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : workoutHistory.length === 0 ? (
+              <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-10 text-center">
+                <Dumbbell size={28} className="text-gray-200 mx-auto mb-3" />
+                <p className="text-sm font-semibold text-gray-500">No completed workouts yet</p>
+                <p className="text-xs text-gray-400 mt-1">Complete your first session to see history here.</p>
+              </div>
+            ) : workoutHistory.map(log => {
+              const sw = log.scheduled_workouts
+              const workoutName = sw?.program_workouts?.name || sw?.saved_workouts?.name || 'Workout'
+              const sessionDate = log.completed_at
+                ? new Date(log.completed_at).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+                : sw?.scheduled_date
+                  ? new Date(sw.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
+                  : 'Unknown date'
+              const isExpanded = expandedHistoryId === log.id
+              const sets = historySetLogs[log.id] ?? []
+              const sessionPBs = historyPBs[log.scheduled_workout_id] ?? []
+
+              const exerciseMap = {}
+              for (const s of sets) {
+                const eid = s.exercise_id
+                if (!exerciseMap[eid]) exerciseMap[eid] = { name: s.exercises?.name || 'Exercise', muscle: s.exercises?.muscle_group, sets: [] }
+                exerciseMap[eid].sets.push(s)
+              }
+              const exerciseList = Object.values(exerciseMap)
+
+              return (
+                <div key={log.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                  <button
+                    onClick={() => {
+                      if (!isExpanded) loadHistorySetLogs(log.id, log.scheduled_workout_id)
+                      setExpandedHistoryId(isExpanded ? null : log.id)
+                    }}
+                    className="w-full text-left px-4 py-4 flex items-start gap-3"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                      <Check size={18} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{workoutName}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{sessionDate}</p>
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        {log.total_volume_kg > 0 && (
+                          <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {Math.round(log.total_volume_kg).toLocaleString()} kg total
+                          </span>
+                        )}
+                        {sessionPBs.length > 0 && (
+                          <span className="text-xs font-semibold text-orange-500 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+                            🏆 {sessionPBs.length} PB{sessionPBs.length > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className={`text-gray-300 flex-shrink-0 mt-1 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                  </button>
+
+                  {isExpanded && (
+                    <div className="border-t border-gray-100">
+                      {sessionPBs.length > 0 && (
+                        <div className="px-4 py-3 bg-orange-50 border-b border-orange-100">
+                          <p className="text-[10px] font-bold text-orange-500 uppercase tracking-wide mb-2">PBs This Session</p>
+                          <div className="space-y-1">
+                            {sessionPBs.map(pb => {
+                              const PB_LABELS = { '1rm': 'Est. 1RM', 'best_set': 'Best Set', 'volume': 'Volume' }
+                              return (
+                                <div key={pb.id} className="flex items-center justify-between">
+                                  <span className="text-xs text-orange-700 font-semibold">{pb.exercises?.name} — {PB_LABELS[pb.pb_type] || pb.pb_type}</span>
+                                  <span className="text-xs font-black text-orange-500">{pb.value} {pb.pb_type === 'volume' ? 'kg vol' : 'kg'}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {sets.length === 0 ? (
+                        <div className="px-4 py-4 text-center">
+                          <p className="text-xs text-gray-400">No set data recorded for this session.</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {exerciseList.map((ex, i) => (
+                            <div key={i} className="px-4 py-3">
+                              <p className="text-xs font-bold text-gray-700 mb-2">{ex.name}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {ex.sets.map((s, si) => (
+                                  <div key={si} className="bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-center">
+                                    <p className="text-[10px] text-gray-400 font-medium">Set {s.set_number}</p>
+                                    {s.weight_kg > 0 ? (
+                                      <p className="text-xs font-bold text-gray-900">{s.weight_kg}kg × {s.reps_completed}</p>
+                                    ) : (
+                                      <p className="text-xs font-bold text-gray-900">{s.reps_completed} reps</p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            <div className="h-20" />
+          </div>
+        ) : (<>
 
         {/* Month navigation */}
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
@@ -1821,7 +2012,9 @@ export default function ClientApp() {
           )}
         </div>
         <div className="h-20" />
-      </div>
+      </>
+      )}
+    </div>
     )
   }
 
