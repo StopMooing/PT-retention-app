@@ -624,7 +624,19 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         }
       }
 
-      await supabase.from('workout_logs').insert({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, workout_id: scheduledWorkout.id, logged_by: user.id, completed: true, completed_at: new Date().toISOString(), total_volume_kg: totalVolume })
+      try {
+        const { error: logError } = await supabase.from('workout_logs').insert({
+          client_id: client.id,
+          scheduled_workout_id: scheduledWorkout.id ?? null,
+          logged_by: user.id,
+          completed: true,
+          completed_at: new Date().toISOString(),
+          total_volume_kg: totalVolume,
+        })
+        if (logError) console.error('workout_logs insert error:', logError)
+      } catch (logErr) {
+        console.error('workout_logs insert exception:', logErr)
+      }
       onComplete && onComplete(scheduledWorkout.id, { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: exercises.length, workoutName })
     } catch (e) {
       console.error('Complete error:', e)
@@ -637,10 +649,22 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
     setCompleting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      await supabase.from('workout_logs').insert({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, workout_id: scheduledWorkout.id, logged_by: user.id, completed: true, completed_at: new Date().toISOString(), total_volume_kg: 0 })
+      try {
+        const { error: logError } = await supabase.from('workout_logs').insert({
+          client_id: client.id,
+          scheduled_workout_id: scheduledWorkout.id ?? null,
+          logged_by: user.id,
+          completed: true,
+          completed_at: new Date().toISOString(),
+          total_volume_kg: 0,
+        })
+        if (logError) console.error('workout_logs insert error:', logError)
+      } catch (logErr) {
+        console.error('workout_logs insert exception:', logErr)
+      }
       onComplete && onComplete(scheduledWorkout.id, { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName })
     } catch (e) {
-      console.error(e)
+      console.error('Complete error:', e)
       alert('Something went wrong: ' + e.message)
     }
     setCompleting(false)
