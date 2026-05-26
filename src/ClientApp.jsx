@@ -509,6 +509,12 @@ export default function ClientApp() {
   const [showTDEE, setShowTDEE] = useState(false)
   const [tdeeInputs, setTdeeInputs] = useState({ age: '', gender: 'male', heightCm: '', weightKg: '', activity: '1.55' })
   const [tdeeResult, setTdeeResult] = useState(null)
+  const [nutritionTargets, setNutritionTargets] = useState({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fats: 0,
+  })
 
   // Saved meals
   const [savedMeals, setSavedMeals] = useState([])
@@ -635,6 +641,13 @@ export default function ClientApp() {
       const { data: wlData } = await supabase.from('body_weight_logs').select('weight_kg, logged_date').eq('client_id', clientRow.id).gte('logged_date', ninetyAgo.toISOString().split('T')[0]).order('logged_date', { ascending: true })
       setWeightLogs(wlData ?? [])
 
+      setNutritionTargets({
+        calories: clientRow?.calorie_target || 0,
+        protein: clientRow?.protein_target_g || 0,
+        carbs: clientRow?.carbs_target_g || 0,
+        fats: clientRow?.fats_target_g || 0,
+      })
+
       setLoading(false)
     }
     init()
@@ -686,6 +699,7 @@ export default function ClientApp() {
         })
         .eq('id', client.id)
       if (error) throw error
+      setNutritionTargets({ calories, protein, carbs, fats })
       setClient(prev => ({
         ...prev,
         calorie_target: calories,
@@ -695,7 +709,6 @@ export default function ClientApp() {
       }))
       setTdeeResult(null)
       setShowTDEE(false)
-      alert(`Goal set! ${calories} kcal · P${protein}g · C${carbs}g · F${fats}g`)
     } catch (e) {
       console.error('Set goal error:', e)
       alert('Could not set goal: ' + e.message)
@@ -876,7 +889,7 @@ export default function ClientApp() {
   const todayProtein = Math.round(foodLogs.reduce((s, f) => s + (f.protein_g || 0), 0))
   const todayCarbs = Math.round(foodLogs.reduce((s, f) => s + (f.carbs_g || 0), 0))
   const todayFats = Math.round(foodLogs.reduce((s, f) => s + (f.fats_g || 0), 0))
-  const calTarget = client?.calorie_target || 0
+  const calTarget = nutritionTargets.calories || client?.calorie_target || 0
   const calPct = calTarget > 0 ? Math.min(100, Math.round((todayCalories / calTarget) * 100)) : 0
 
   if (loading) return (
@@ -1580,10 +1593,10 @@ export default function ClientApp() {
   }
 
   function renderNutrition() {
-    const calTarget = client?.calorie_target || 0
-    const proTarget = client?.protein_target_g || 0
-    const carbTarget = client?.carbs_target_g || 0
-    const fatTarget = client?.fats_target_g || 0
+    const calTarget = nutritionTargets.calories || client?.calorie_target || 0
+    const proTarget = nutritionTargets.protein || client?.protein_target_g || 0
+    const carbTarget = nutritionTargets.carbs || client?.carbs_target_g || 0
+    const fatTarget = nutritionTargets.fats || client?.fats_target_g || 0
 
     const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'other']
     const MEAL_COLOURS = {
@@ -1730,11 +1743,29 @@ export default function ClientApp() {
                   { label: 'Fats', value: todayFats, unit: 'g', target: fatTarget, colour: 'text-blue-500', bar: 'bg-blue-400' },
                 ].map(m => {
                   const pct = m.target > 0 ? Math.min(100, Math.round((m.value / m.target) * 100)) : 0
+                  const remaining = m.target > 0 ? m.target - m.value : null
+                  const over = remaining !== null && remaining < 0
                   return (
                     <div key={m.label} className="flex flex-col items-center">
-                      <span className={`text-lg font-black ${m.colour}`}>{m.value}</span>
+                      {m.target > 0 ? (
+                        <div className="text-center">
+                          <span className={`text-base font-black ${m.colour}`}>{m.value}</span>
+                          <span className="text-[10px] text-gray-300 font-medium">/{m.target}</span>
+                        </div>
+                      ) : (
+                        <span className={`text-lg font-black ${m.colour}`}>{m.value}</span>
+                      )}
                       <span className="text-[10px] text-gray-400 mt-0.5">{m.unit}</span>
-                      {m.target > 0 && (<div className="w-full h-1.5 bg-gray-100 rounded-full mt-1.5 overflow-hidden"><div className={`h-full rounded-full ${m.bar}`} style={{ width: `${pct}%` }} /></div>)}
+                      {m.target > 0 && (
+                        <>
+                          <div className="w-full h-1.5 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${over ? 'bg-red-400' : m.bar}`} style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className={`text-[9px] font-semibold mt-0.5 ${over ? 'text-red-400' : 'text-gray-300'}`}>
+                            {over ? `${Math.abs(remaining)}${m.unit} over` : `${remaining}${m.unit} left`}
+                          </span>
+                        </>
+                      )}
                       <span className="text-[10px] text-gray-400 mt-0.5">{m.label}</span>
                     </div>
                   )
