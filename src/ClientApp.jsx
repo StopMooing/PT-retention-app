@@ -551,14 +551,14 @@ export default function ClientApp() {
       // Scheduled workouts
       const from = new Date(); from.setDate(from.getDate() - 28)
       const to = new Date(); to.setDate(to.getDate() + 56)
-      const { data: swData } = await supabase
+      const { data: fetchedSW } = await supabase
         .from('scheduled_workouts')
         .select('id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)')
         .eq('client_id', clientRow.id)
         .gte('scheduled_date', from.toISOString().split('T')[0])
         .lte('scheduled_date', to.toISOString().split('T')[0])
         .order('scheduled_date', { ascending: true })
-      const enrichedSW = (swData ?? []).map(sw => ({
+      const enrichedSW = (fetchedSW ?? []).map(sw => ({
         ...sw,
         program_workouts: sw.program_workouts ?? (sw.saved_workouts ? { name: sw.saved_workouts.name, day_number: 0 } : null),
         _isCustom: !!sw.custom_workout_id,
