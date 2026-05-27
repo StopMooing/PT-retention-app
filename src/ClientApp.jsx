@@ -502,30 +502,50 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
 
   useEffect(() => {
     async function loadPreviousData() {
-      if (!exercises.length || !client?.id) return
-      const exerciseIds = exercises.map(ex => ex.exercise_id || ex.exercises?.id).filter(Boolean)
-      if (!exerciseIds.length) return
-      const { data } = await supabase
-        .from('workout_set_logs')
-        .select('exercise_id, set_number, reps_completed, weight_kg, logged_at')
+      if (!exercises.length || !client?.id || !scheduledWorkout?.program_workout_id) return
+
+      // Step 1: find the single most recent completed session for this program workout
+      const { data: lastLogs } = await supabase
+        .from('workout_logs')
+        .select('id, logged_at')
         .eq('client_id', client.id)
-        .in('exercise_id', exerciseIds)
+        .eq('completed', true)
+        .eq('program_workout_id', scheduledWorkout.program_workout_id)
+        .lt('logged_at', new Date().toISOString())
         .order('logged_at', { ascending: false })
-      if (!data) return
+        .limit(1)
+      if (!lastLogs?.length) { setPreviousSets({}); return }
+      const lastLog = lastLogs[0]
+
+      // Step 2: derive local session date and next day for range query
+      const sessionDate = toLocalDateStr(new Date(lastLog.logged_at))
+      const nextDayDate = (() => {
+        const [y, m, d] = sessionDate.split('-').map(Number)
+        const nd = new Date(y, m - 1, d + 1)
+        return toLocalDateStr(nd)
+      })()
+
+      // Step 3: fetch all set logs for that session by Adelaide date range
+      const { data: setRows } = await supabase
+        .from('workout_set_logs')
+        .select('exercise_id, set_number, weight_kg, reps_completed, logged_at')
+        .eq('client_id', client.id)
+        .gte('logged_at', sessionDate + 'T00:00:00+09:30')
+        .lt('logged_at', nextDayDate + 'T00:00:00+09:30')
+        .order('set_number', { ascending: true })
+
+      // Step 4: group by exercise_id
       const prev = {}
-      const seenSessions = {}
-      for (const row of data) {
+      for (const row of setRows ?? []) {
         const eid = row.exercise_id
-        if (!seenSessions[eid]) seenSessions[eid] = row.logged_at?.split('T')[0]
-        if (row.logged_at?.split('T')[0] === seenSessions[eid]) {
-          if (!prev[eid]) prev[eid] = []
-          prev[eid].push({ reps: row.reps_completed, weight_kg: row.weight_kg })
-        }
+        if (!prev[eid]) prev[eid] = []
+        prev[eid].push({ reps: row.reps_completed, weight_kg: row.weight_kg, set_number: row.set_number })
       }
+
       setPreviousSets(prev)
     }
     loadPreviousData()
-  }, [exercises, client?.id])
+  }, [exercises, client?.id, scheduledWorkout?.program_workout_id])
 
   useEffect(() => {
     return () => { if (restInterval) clearInterval(restInterval) }
@@ -1003,6 +1023,8 @@ export default function ClientApp() {
         .eq('client_id', clientRow.id)
         .eq('completed', true)
       const todayStr = toLocalDateStr(new Date())
+      console.log('todayStr:', todayStr)
+      console.log('all completed logs:', (logsData ?? []).map(l => ({ logged_at: l.logged_at, localDate: toLocalDateStr(new Date(l.logged_at)), program_workout_id: l.program_workout_id })))
       const todayLogs = (logsData ?? []).filter(l => l.logged_at && toLocalDateStr(new Date(l.logged_at)) === todayStr)
       setWorkoutLogs(todayLogs)
       setCompletedIds(new Set(
