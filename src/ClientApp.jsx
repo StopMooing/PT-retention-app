@@ -577,13 +577,20 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         const exSets = setData[exerciseId] || {}
         for (let s = 1; s <= (ex.sets || 0); s++) {
           const set = exSets[s] || {}
-          const reps = parseFloat(set.reps) || ex.reps || 0
-          const weight = parseFloat(set.weight) || 0
+          const prevSet = previousSets[exerciseId]?.[s - 1]
+          const reps = parseFloat(set.reps) || prevSet?.reps || ex.reps || 0
+          const weight = parseFloat(set.weight) || prevSet?.weight_kg || 0
           totalVolume += reps * weight
           setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight, logged_at: new Date().toISOString() })
         }
       }
-      if (setLogsToInsert.length > 0) await supabase.from('workout_set_logs').insert(setLogsToInsert)
+      if (setLogsToInsert.length > 0) {
+        console.log('workout_set_logs insert payload:', setLogsToInsert)
+        try {
+          const { error: setsError } = await supabase.from('workout_set_logs').insert(setLogsToInsert)
+          if (setsError) console.error('workout_set_logs error:', setsError)
+        } catch (e) { console.error('workout_set_logs exception:', e) }
+      }
 
       const newPBs = []
       for (const ex of exercises) {
@@ -1074,7 +1081,26 @@ export default function ClientApp() {
         .order('logged_at', { ascending: false })
         .limit(30)
       if (error) throw error
-      setWorkoutHistory(logs ?? [])
+
+      // Two-step: fetch program workout names for any program_workout_id present
+      const pwIds = [...new Set((logs ?? []).map(l => l.program_workout_id).filter(Boolean))]
+      const nameMap = {}
+      if (pwIds.length > 0) {
+        const { data: pwData } = await supabase
+          .from('program_workouts')
+          .select('id, name')
+          .in('id', pwIds)
+        if (pwData) pwData.forEach(pw => { nameMap[pw.id] = pw.name })
+      }
+      console.log('program workout name map:', nameMap)
+
+      const enrichedLogs = (logs ?? []).map(l => ({
+        ...l,
+        _workoutName: nameMap[l.program_workout_id] || null,
+      }))
+      console.log('history logs with names:', enrichedLogs)
+
+      setWorkoutHistory(enrichedLogs)
       setHistoryPBs({})
     } catch (e) { console.error('History load error:', e) }
     finally { setHistoryLoading(false) }
@@ -1818,7 +1844,7 @@ export default function ClientApp() {
                 <p className="text-xs text-gray-400 mt-1">Complete your first session to see history here.</p>
               </div>
             ) : workoutHistory.map(log => {
-              const workoutName = log.program_workouts?.name || 'Workout'
+              const workoutName = log._workoutName || 'Workout'
               const sessionDate = log.logged_at
                 ? new Date(log.logged_at).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
                 : 'Unknown date'
