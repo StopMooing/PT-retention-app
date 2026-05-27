@@ -627,10 +627,9 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       try {
         const { error: logError } = await supabase.from('workout_logs').insert({
           client_id: client.id,
-          scheduled_workout_id: scheduledWorkout.id ?? null,
-          logged_by: user.id,
+          program_workout_id: scheduledWorkout.program_workout_id ?? null,
+          logged_at: new Date().toISOString(),
           completed: true,
-          completed_at: new Date().toISOString(),
           total_volume_kg: totalVolume,
         })
         if (logError) console.error('workout_logs insert error:', logError)
@@ -652,10 +651,9 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       try {
         const { error: logError } = await supabase.from('workout_logs').insert({
           client_id: client.id,
-          scheduled_workout_id: scheduledWorkout.id ?? null,
-          logged_by: user.id,
+          program_workout_id: scheduledWorkout.program_workout_id ?? null,
+          logged_at: new Date().toISOString(),
           completed: true,
-          completed_at: new Date().toISOString(),
           total_volume_kg: 0,
         })
         if (logError) console.error('workout_logs insert error:', logError)
