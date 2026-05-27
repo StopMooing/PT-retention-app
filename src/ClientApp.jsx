@@ -636,7 +636,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       } catch (logErr) {
         console.error('workout_logs insert exception:', logErr)
       }
-      onComplete && onComplete(scheduledWorkout.program_workout_id, { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: exercises.length, workoutName })
+      onComplete && onComplete(`${scheduledWorkout.program_workout_id}_${scheduledWorkout.scheduled_date}`, { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: exercises.length, workoutName })
     } catch (e) {
       console.error('Complete error:', e)
       alert('Something went wrong: ' + e.message)
@@ -660,7 +660,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       } catch (logErr) {
         console.error('workout_logs insert exception:', logErr)
       }
-      onComplete && onComplete(scheduledWorkout.program_workout_id, { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName })
+      onComplete && onComplete(`${scheduledWorkout.program_workout_id}_${scheduledWorkout.scheduled_date}`, { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName })
     } catch (e) {
       console.error('Complete error:', e)
       alert('Something went wrong: ' + e.message)
@@ -989,7 +989,7 @@ export default function ClientApp() {
         setWorkoutExercises(exMap)
       }
 
-      // Workout logs for completion status — today only, keyed by program_workout_id
+      // Workout logs for completion status — today only, composite key: program_workout_id_date
       const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
       const tomorrowMidnight = new Date(todayMidnight); tomorrowMidnight.setDate(tomorrowMidnight.getDate() + 1)
       const { data: logsData } = await supabase
@@ -1000,7 +1000,11 @@ export default function ClientApp() {
         .gte('logged_at', todayMidnight.toISOString())
         .lt('logged_at', tomorrowMidnight.toISOString())
       setWorkoutLogs(logsData ?? [])
-      setCompletedIds(new Set((logsData ?? []).map(l => l.program_workout_id).filter(Boolean)))
+      setCompletedIds(new Set(
+        (logsData ?? [])
+          .filter(l => l.program_workout_id)
+          .map(l => `${l.program_workout_id}_${toLocalDateStr(new Date(l.logged_at))}`)
+      ))
 
       // Food logs for today
       const localMidnight = new Date()
@@ -1419,7 +1423,7 @@ export default function ClientApp() {
     const weightChange = filteredWeightLogs.length > 1 ? (parseFloat(filteredWeightLogs[filteredWeightLogs.length-1].weight_kg) - parseFloat(filteredWeightLogs[0].weight_kg)).toFixed(1) : null
 
     // Streak
-    const sortedCompletedDates = [...new Set(scheduledWorkouts.filter(sw => completedIds.has(sw.program_workout_id)).map(sw => sw.scheduled_date))].sort().reverse()
+    const sortedCompletedDates = [...new Set(scheduledWorkouts.filter(sw => completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`)).map(sw => sw.scheduled_date))].sort().reverse()
     let streak = 0
     let checkDate = new Date()
     for (const dateStr of sortedCompletedDates) {
@@ -1430,7 +1434,7 @@ export default function ClientApp() {
 
     // Weekly workouts
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
-    const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(sw.program_workout_id) && sw.scheduled_date >= toLocalDateStr(weekAgo)).length
+    const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`) && sw.scheduled_date >= toLocalDateStr(weekAgo)).length
 
     // Week strip data
     const today = new Date()
@@ -1499,7 +1503,7 @@ export default function ClientApp() {
               const isCurrentDay = dateStr === todayStr
               const isSelected = dateStr === selectedHomeDate
               const hasWorkout = !!(groupedByDate[dateStr]?.length)
-              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(sw.program_workout_id))
+              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`))
               return (
                 <button
                   key={dateStr}
@@ -1558,7 +1562,7 @@ export default function ClientApp() {
                 )}
               </div>
             ) : selectedDateWorkouts.map(sw => {
-              const done = completedIds.has(sw.program_workout_id)
+              const done = completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`)
               const name = sw.program_workouts?.name || sw._customWorkout?.name || 'Workout'
               const exercises = workoutExercises[sw.program_workout_id] ?? []
               const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
@@ -1950,7 +1954,7 @@ export default function ClientApp() {
               const isCurrentDay = dateStr === todayStr
               const isSelected = dateStr === selectedCalDate
               const hasWorkout = !!(groupedByDate[dateStr]?.length)
-              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(sw.program_workout_id))
+              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`))
               return (
                 <button
                   key={dateStr}
@@ -1998,7 +2002,7 @@ export default function ClientApp() {
           ) : (
             <div className="divide-y divide-gray-100">
               {selectedWorkouts.map(sw => {
-                const done = completedIds.has(sw.program_workout_id)
+                const done = completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`)
                 const exercises = workoutExercises[sw.program_workout_id] ?? []
                 const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
                 return (
