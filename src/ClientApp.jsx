@@ -996,19 +996,17 @@ export default function ClientApp() {
         setWorkoutExercises(exMap)
       }
 
-      // Workout logs for completion status — today only, composite key: program_workout_id_date
-      const todayMidnight = new Date(); todayMidnight.setHours(0, 0, 0, 0)
-      const tomorrowMidnight = new Date(todayMidnight); tomorrowMidnight.setDate(tomorrowMidnight.getDate() + 1)
+      // Workout logs for completion status — filter in JS using Adelaide local date
       const { data: logsData } = await supabase
         .from('workout_logs')
         .select('id, completed, program_workout_id, logged_at')
         .eq('client_id', clientRow.id)
         .eq('completed', true)
-        .gte('logged_at', todayMidnight.toISOString())
-        .lt('logged_at', tomorrowMidnight.toISOString())
-      setWorkoutLogs(logsData ?? [])
+      const todayStr = toLocalDateStr(new Date())
+      const todayLogs = (logsData ?? []).filter(l => l.logged_at && toLocalDateStr(new Date(l.logged_at)) === todayStr)
+      setWorkoutLogs(todayLogs)
       setCompletedIds(new Set(
-        (logsData ?? [])
+        todayLogs
           .filter(l => l.program_workout_id)
           .map(l => `${l.program_workout_id}_${toLocalDateStr(new Date(l.logged_at))}`)
       ))
