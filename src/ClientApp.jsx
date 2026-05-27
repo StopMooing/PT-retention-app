@@ -992,11 +992,11 @@ export default function ClientApp() {
       // Workout logs for completion status
       const { data: logsData } = await supabase
         .from('workout_logs')
-        .select('id, completed, workout_id')
+        .select('id, completed, program_workout_id')
         .eq('client_id', clientRow.id)
         .eq('completed', true)
       setWorkoutLogs(logsData ?? [])
-      setCompletedIds(new Set((logsData ?? []).map(l => l.workout_id)))
+      setCompletedIds(new Set((logsData ?? []).map(l => l.program_workout_id)))
 
       // Food logs for today
       const localMidnight = new Date()
