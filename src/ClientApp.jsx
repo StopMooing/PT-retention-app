@@ -1060,7 +1060,7 @@ export default function ClientApp() {
     try {
       const { data: logs, error } = await supabase
         .from('workout_logs')
-        .select('id, client_id, program_workout_id, logged_at, completed, total_volume_kg, program_workouts(name)')
+        .select('id, client_id, program_workout_id, logged_at, completed, total_volume_kg')
         .eq('client_id', client.id)
         .eq('completed', true)
         .order('logged_at', { ascending: false })
