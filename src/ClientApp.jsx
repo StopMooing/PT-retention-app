@@ -580,7 +580,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
           const reps = parseFloat(set.reps) || ex.reps || 0
           const weight = parseFloat(set.weight) || 0
           totalVolume += reps * weight
-          setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight })
+          setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight, logged_at: new Date().toISOString() })
         }
       }
       if (setLogsToInsert.length > 0) await supabase.from('workout_set_logs').insert(setLogsToInsert)
@@ -1021,7 +1021,7 @@ export default function ClientApp() {
       setSavedMeals(savedMData ?? [])
 
       // Progress photos
-      const { data: ppData } = await supabase.from('progress_photos').select('*').eq('client_id', clientRow.id).order('taken_at', { ascending: false })
+      const { data: ppData } = await supabase.from('progress_photos').select('*').eq('client_id', clientRow.id).order('taken_date', { ascending: false })
       setProgressPhotos(ppData ?? [])
 
       // Weight logs (90 days)
@@ -1060,42 +1060,32 @@ export default function ClientApp() {
     try {
       const { data: logs, error } = await supabase
         .from('workout_logs')
-        .select('id, completed_at, total_volume_kg, scheduled_workout_id, scheduled_workouts(id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(name), saved_workouts(name))')
+        .select('id, client_id, program_workout_id, logged_at, completed, total_volume_kg, program_workouts(name)')
         .eq('client_id', client.id)
         .eq('completed', true)
-        .order('completed_at', { ascending: false })
+        .order('logged_at', { ascending: false })
         .limit(30)
       if (error) throw error
       setWorkoutHistory(logs ?? [])
-
-      const { data: pbs } = await supabase
-        .from('personal_bests')
-        .select('id, pb_type, value, exercise_id, achieved_at, scheduled_workout_id, exercises(name)')
-        .eq('client_id', client.id)
-        .order('achieved_at', { ascending: false })
-      if (pbs) {
-        const pbMap = {}
-        for (const pb of pbs) {
-          if (!pb.scheduled_workout_id) continue
-          if (!pbMap[pb.scheduled_workout_id]) pbMap[pb.scheduled_workout_id] = []
-          pbMap[pb.scheduled_workout_id].push(pb)
-        }
-        setHistoryPBs(pbMap)
-      }
+      setHistoryPBs({})
     } catch (e) { console.error('History load error:', e) }
     finally { setHistoryLoading(false) }
   }
 
-  async function loadHistorySetLogs(workoutLogId, scheduledWorkoutId) {
+  async function loadHistorySetLogs(workoutLogId, loggedAt) {
     if (historySetLogs[workoutLogId]) return
     try {
-      const { data } = await supabase
+      const dateStr = loggedAt ? loggedAt.split('T')[0] : null
+      let query = supabase
         .from('workout_set_logs')
         .select('id, set_number, reps_completed, weight_kg, exercise_id, exercises(name, muscle_group)')
-        .eq('scheduled_workout_id', scheduledWorkoutId)
         .eq('client_id', client.id)
         .order('exercise_id')
         .order('set_number')
+      if (dateStr) {
+        query = query.gte('logged_at', dateStr + 'T00:00:00.000Z').lte('logged_at', dateStr + 'T23:59:59.999Z')
+      }
+      const { data } = await query
       if (data) {
         setHistorySetLogs(prev => ({ ...prev, [workoutLogId]: data }))
       }
@@ -1304,7 +1294,7 @@ export default function ClientApp() {
       const { error: uploadError } = await supabase.storage.from('progress-photos').upload(path, file, { upsert: false })
       if (uploadError) throw uploadError
       const { data: { publicUrl } } = supabase.storage.from('progress-photos').getPublicUrl(path)
-      const { data, error } = await supabase.from('progress_photos').insert({ client_id: client.id, uploaded_by: user.id, photo_url: publicUrl, taken_at: new Date().toISOString() }).select().single()
+      const { data, error } = await supabase.from('progress_photos').insert({ client_id: client.id, photo_url: publicUrl, taken_date: toLocalDateStr() }).select().single()
       if (error) throw error
       setProgressPhotos(prev => [data, ...prev])
     } catch (e) { console.error(e) }
@@ -1820,16 +1810,13 @@ export default function ClientApp() {
                 <p className="text-xs text-gray-400 mt-1">Complete your first session to see history here.</p>
               </div>
             ) : workoutHistory.map(log => {
-              const sw = log.scheduled_workouts
-              const workoutName = sw?.program_workouts?.name || sw?.saved_workouts?.name || 'Workout'
-              const sessionDate = log.completed_at
-                ? new Date(log.completed_at).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-                : sw?.scheduled_date
-                  ? new Date(sw.scheduled_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
-                  : 'Unknown date'
+              const workoutName = log.program_workouts?.name || 'Workout'
+              const sessionDate = log.logged_at
+                ? new Date(log.logged_at).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+                : 'Unknown date'
               const isExpanded = expandedHistoryId === log.id
               const sets = historySetLogs[log.id] ?? []
-              const sessionPBs = historyPBs[log.scheduled_workout_id] ?? []
+              const sessionPBs = historyPBs[log.program_workout_id] ?? []
 
               const exerciseMap = {}
               for (const s of sets) {
@@ -1843,7 +1830,7 @@ export default function ClientApp() {
                 <div key={log.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                   <button
                     onClick={() => {
-                      if (!isExpanded) loadHistorySetLogs(log.id, log.scheduled_workout_id)
+                      if (!isExpanded) loadHistorySetLogs(log.id, log.logged_at)
                       setExpandedHistoryId(isExpanded ? null : log.id)
                     }}
                     className="w-full text-left px-4 py-4 flex items-start gap-3"
