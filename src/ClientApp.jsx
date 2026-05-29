@@ -766,18 +766,6 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
                     </div>
                   </div>
                 </div>
-                {prevSets.length > 0 && (
-                  <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-                    <p className="text-[10px] font-semibold text-blue-500 uppercase tracking-wide mb-1">Last session</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {prevSets.map((ps, i) => (
-                        <span key={i} className="text-xs text-blue-600 font-semibold bg-white border border-blue-200 px-2 py-0.5 rounded-full">
-                          Set {i + 1}: {ps.weight_kg > 0 ? `${ps.weight_kg}kg × ` : ''}{ps.reps}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
                 <div className="divide-y divide-gray-50">
                   {Array.from({ length: ex.sets || 0 }, (_, i) => {
                     const setNum = i + 1
@@ -853,6 +841,110 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
   )
 }
 
+// ─── DATE PICKER MODAL ────────────────────────────────────────────────────────
+function DatePickerModal({ title, scheduledWorkouts, onConfirm, onCancel }) {
+  const today = toLocalDateStr()
+  const [selected, setSelected] = useState(today)
+
+  const days = Array.from({ length: 28 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() + i)
+    return toLocalDateStr(d)
+  })
+
+  const firstDay = new Date(days[0] + 'T00:00:00')
+  const dow = firstDay.getDay()
+  const startPad = dow === 0 ? 6 : dow - 1
+  const busyDates = new Set((scheduledWorkouts ?? []).map(sw => sw.scheduled_date))
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end justify-center" onClick={onCancel}>
+      <div className="bg-white rounded-t-3xl w-full max-w-md p-5 pb-8" onClick={e => e.stopPropagation()}>
+        <h3 className="text-base font-bold text-gray-900 mb-4">{title}</h3>
+        <div className="grid grid-cols-7 mb-1">
+          {['M','T','W','T','F','S','S'].map((d, i) => (
+            <div key={i} className="text-center text-[10px] font-semibold text-gray-400 py-1">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7">
+          {Array.from({ length: startPad }).map((_, i) => (
+            <div key={`pad-${i}`} />
+          ))}
+          {days.map(dateStr => {
+            const isTodayDate = dateStr === today
+            const isSelected = dateStr === selected
+            const hasDot = busyDates.has(dateStr)
+            const dayNum = parseInt(dateStr.split('-')[2])
+            return (
+              <button
+                key={dateStr}
+                onClick={() => setSelected(dateStr)}
+                className={`h-10 flex flex-col items-center justify-center rounded-xl transition-colors ${
+                  isSelected ? 'bg-black' : isTodayDate ? 'bg-emerald-500' : 'hover:bg-gray-100'
+                }`}
+              >
+                <span className={`text-xs font-semibold ${isSelected || isTodayDate ? 'text-white' : 'text-gray-700'}`}>
+                  {dayNum}
+                </span>
+                {hasDot && (
+                  <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected || isTodayDate ? 'bg-white/70' : 'bg-gray-400'}`} />
+                )}
+              </button>
+            )
+          })}
+        </div>
+        <div className="flex gap-2 mt-5">
+          <button
+            onClick={() => onConfirm(selected)}
+            className="flex-1 bg-black text-white text-sm font-semibold py-3 rounded-xl hover:bg-gray-800 transition-colors"
+          >
+            Confirm
+          </button>
+          <button
+            onClick={onCancel}
+            className="flex-1 border border-gray-200 text-gray-500 text-sm py-3 rounded-xl hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const COMMON_FOODS = [
+  { name: 'Chicken breast, raw, skinless', brand: 'Whole food', calories: 110, protein: 23.1, carbs: 0, fats: 1.2 },
+  { name: 'Chicken breast, cooked, skinless', brand: 'Whole food', calories: 157, protein: 32.1, carbs: 0, fats: 3.2 },
+  { name: 'Chicken thigh, raw, skinless', brand: 'Whole food', calories: 130, protein: 19.7, carbs: 0, fats: 5.6 },
+  { name: 'Chicken thigh, cooked, skinless', brand: 'Whole food', calories: 179, protein: 24.8, carbs: 0, fats: 8.9 },
+  { name: 'Beef mince, lean, raw', brand: 'Whole food', calories: 149, protein: 20.7, carbs: 0, fats: 7.1 },
+  { name: 'Beef steak, lean, raw', brand: 'Whole food', calories: 144, protein: 21.0, carbs: 0, fats: 6.3 },
+  { name: 'Salmon, raw', brand: 'Whole food', calories: 208, protein: 20.0, carbs: 0, fats: 13.4 },
+  { name: 'Tuna, canned in springwater', brand: 'Whole food', calories: 116, protein: 25.5, carbs: 0, fats: 0.8 },
+  { name: 'Egg, whole, raw', brand: 'Whole food', calories: 143, protein: 12.6, carbs: 0.7, fats: 9.5 },
+  { name: 'Egg whites, raw', brand: 'Whole food', calories: 52, protein: 10.9, carbs: 0.7, fats: 0.2 },
+  { name: 'White rice, cooked', brand: 'Whole food', calories: 130, protein: 2.7, carbs: 28.0, fats: 0.3 },
+  { name: 'Brown rice, cooked', brand: 'Whole food', calories: 123, protein: 2.7, carbs: 25.6, fats: 1.0 },
+  { name: 'Oats, rolled, dry', brand: 'Whole food', calories: 389, protein: 16.9, carbs: 66.3, fats: 6.9 },
+  { name: 'Sweet potato, raw', brand: 'Whole food', calories: 86, protein: 1.6, carbs: 20.1, fats: 0.1 },
+  { name: 'Potato, raw', brand: 'Whole food', calories: 77, protein: 2.0, carbs: 17.0, fats: 0.1 },
+  { name: 'Broccoli, raw', brand: 'Whole food', calories: 34, protein: 2.8, carbs: 6.6, fats: 0.4 },
+  { name: 'Spinach, raw', brand: 'Whole food', calories: 23, protein: 2.9, carbs: 3.6, fats: 0.4 },
+  { name: 'Banana', brand: 'Whole food', calories: 89, protein: 1.1, carbs: 22.8, fats: 0.3 },
+  { name: 'Apple', brand: 'Whole food', calories: 52, protein: 0.3, carbs: 13.8, fats: 0.2 },
+  { name: 'Greek yoghurt, plain, full fat', brand: 'Whole food', calories: 97, protein: 9.0, carbs: 3.6, fats: 5.0 },
+  { name: 'Milk, full cream', brand: 'Whole food', calories: 61, protein: 3.2, carbs: 4.8, fats: 3.3 },
+  { name: 'Cottage cheese, full fat', brand: 'Whole food', calories: 98, protein: 11.1, carbs: 3.4, fats: 4.3 },
+  { name: 'Almonds, raw', brand: 'Whole food', calories: 579, protein: 21.2, carbs: 21.7, fats: 49.9 },
+  { name: 'Peanut butter, no added salt', brand: 'Whole food', calories: 588, protein: 25.0, carbs: 20.0, fats: 50.0 },
+  { name: 'Olive oil', brand: 'Whole food', calories: 884, protein: 0, carbs: 0, fats: 100.0 },
+  { name: 'White bread', brand: 'Whole food', calories: 265, protein: 9.0, carbs: 49.0, fats: 3.2 },
+  { name: 'Pasta, dry', brand: 'Whole food', calories: 371, protein: 13.0, carbs: 74.7, fats: 1.5 },
+  { name: 'Whey protein powder', brand: 'Whole food', calories: 400, protein: 80.0, carbs: 8.0, fats: 5.0 },
+  { name: 'Avocado', brand: 'Whole food', calories: 160, protein: 2.0, carbs: 8.5, fats: 14.7 },
+  { name: 'Pork loin, lean, raw', brand: 'Whole food', calories: 143, protein: 21.3, carbs: 0, fats: 6.3 },
+]
+
 // ─── MAIN CLIENT APP ──────────────────────────────────────────────────────────
 export default function ClientApp() {
   const [loading, setLoading] = useState(true)
@@ -896,6 +988,11 @@ export default function ClientApp() {
   const [foodInput, setFoodInput] = useState({ name: '', calories: '', protein: '', carbs: '', fats: '', meal_type: 'breakfast' })
   const [addingFood, setAddingFood] = useState(false)
   const [showAddFood, setShowAddFood] = useState(false)
+  const [foodSearchQuery, setFoodSearchQuery] = useState('')
+  const [foodSearchResults, setFoodSearchResults] = useState([])
+  const [foodSearchLoading, setFoodSearchLoading] = useState(false)
+  const [foodServingSize, setFoodServingSize] = useState(100)
+  const [foodBase, setFoodBase] = useState(null)
 
   // Database
   const [resourceFilter, setResourceFilter] = useState('all')
@@ -911,6 +1008,14 @@ export default function ClientApp() {
   const [expandedHistoryId, setExpandedHistoryId] = useState(null)
   const [historySetLogs, setHistorySetLogs] = useState({}) // { [workout_log_id]: [sets] }
   const [historyPBs, setHistoryPBs] = useState({}) // { [scheduled_workout_id]: [pbs] }
+  const [calDetailWorkout, setCalDetailWorkout] = useState(null)
+  const [datePickerMode, setDatePickerMode] = useState(null) // 'move' | 'duplicate' | 'schedule'
+  const [programWorkoutToSchedule, setProgramWorkoutToSchedule] = useState(null)
+  const [scheduleSuccessMsg, setScheduleSuccessMsg] = useState('')
+  const [showAddToCalModal, setShowAddToCalModal] = useState(false)
+  const [addToCalDates, setAddToCalDates] = useState([])
+  const [showWorkoutPickerModal, setShowWorkoutPickerModal] = useState(false)
+  const [workoutPickerSelected, setWorkoutPickerSelected] = useState(null)
   const [expandedMealId, setExpandedMealId] = useState(null)
   const [workoutToSchedule, setWorkoutToSchedule] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(toLocalDateStr())
@@ -1016,19 +1121,15 @@ export default function ClientApp() {
         setWorkoutExercises(exMap)
       }
 
-      // Workout logs for completion status — filter in JS using Adelaide local date
+      // Workout logs for completion status — all completed logs, keyed by workout+date
       const { data: logsData } = await supabase
         .from('workout_logs')
         .select('id, completed, program_workout_id, logged_at')
         .eq('client_id', clientRow.id)
         .eq('completed', true)
-      const todayStr = toLocalDateStr(new Date())
-      console.log('todayStr:', todayStr)
-      console.log('all completed logs:', (logsData ?? []).map(l => ({ logged_at: l.logged_at, localDate: toLocalDateStr(new Date(l.logged_at)), program_workout_id: l.program_workout_id })))
-      const todayLogs = (logsData ?? []).filter(l => l.logged_at && toLocalDateStr(new Date(l.logged_at)) === todayStr)
-      setWorkoutLogs(todayLogs)
+      setWorkoutLogs(logsData ?? [])
       setCompletedIds(new Set(
-        todayLogs
+        (logsData ?? [])
           .filter(l => l.program_workout_id)
           .map(l => `${l.program_workout_id}_${toLocalDateStr(new Date(l.logged_at))}`)
       ))
@@ -1087,6 +1188,148 @@ export default function ClientApp() {
       setWeightInput('')
     } catch (e) { console.error(e) }
     finally { setSavingWeight(false) }
+  }
+
+  async function reloadScheduledWorkouts() {
+    if (!client?.id) return
+    const from = new Date(); from.setDate(from.getDate() - 28)
+    const to = new Date(); to.setDate(to.getDate() + 56)
+    const { data: fetchedSW } = await supabase
+      .from('scheduled_workouts')
+      .select('id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)')
+      .eq('client_id', client.id)
+      .gte('scheduled_date', toLocalDateStr(from))
+      .lte('scheduled_date', toLocalDateStr(to))
+      .order('scheduled_date', { ascending: true })
+    const enrichedSW = (fetchedSW ?? []).map(sw => ({
+      ...sw,
+      program_workouts: sw.program_workouts ?? (sw.saved_workouts ? { name: sw.saved_workouts.name, day_number: 0 } : null),
+      _isCustom: !!sw.custom_workout_id,
+      _customWorkout: sw.saved_workouts ?? null,
+    }))
+    setScheduledWorkouts(enrichedSW)
+  }
+
+  async function handleMoveWorkout(date) {
+    if (!calDetailWorkout || !date) return
+    try {
+      const { error } = await supabase
+        .from('scheduled_workouts')
+        .update({ scheduled_date: date })
+        .eq('id', calDetailWorkout.id)
+      if (error) throw error
+      await reloadScheduledWorkouts()
+      setDatePickerMode(null)
+      setCalDetailWorkout(null)
+      setScheduleSuccessMsg('Workout moved!')
+      setTimeout(() => setScheduleSuccessMsg(''), 2500)
+    } catch (e) {
+      console.error('Move workout error:', e)
+      alert('Could not move workout: ' + e.message)
+    }
+  }
+
+  async function handleDuplicateWorkout(date) {
+    if (!calDetailWorkout || !date) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error } = await supabase.from('scheduled_workouts').insert({
+        client_id: client.id,
+        program_workout_id: calDetailWorkout.program_workout_id ?? null,
+        custom_workout_id: calDetailWorkout.custom_workout_id ?? null,
+        scheduled_date: date,
+        created_by: user.id,
+      })
+      if (error) throw error
+      await reloadScheduledWorkouts()
+      setDatePickerMode(null)
+      setCalDetailWorkout(null)
+      setScheduleSuccessMsg('Workout duplicated!')
+      setTimeout(() => setScheduleSuccessMsg(''), 2500)
+    } catch (e) {
+      console.error('Duplicate workout error:', e)
+      alert('Could not duplicate workout: ' + e.message)
+    }
+  }
+
+  async function handleScheduleProgramWorkout(date) {
+    if (!programWorkoutToSchedule || !date) return
+    const exists = scheduledWorkouts.some(
+      sw => sw.program_workout_id === programWorkoutToSchedule.id && sw.scheduled_date === date
+    )
+    if (exists) {
+      alert('This workout is already scheduled for that day.')
+      return
+    }
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const { error } = await supabase.from('scheduled_workouts').insert({
+        client_id: client.id,
+        program_workout_id: programWorkoutToSchedule.id,
+        custom_workout_id: null,
+        scheduled_date: date,
+        created_by: user.id,
+      })
+      if (error) throw error
+      await reloadScheduledWorkouts()
+      setDatePickerMode(null)
+      setProgramWorkoutToSchedule(null)
+      setScheduleSuccessMsg('Added to calendar!')
+      setTimeout(() => setScheduleSuccessMsg(''), 2500)
+    } catch (e) {
+      console.error('Schedule program workout error:', e)
+      alert('Could not schedule: ' + e.message)
+    }
+  }
+
+  function handleDatePickerConfirm(date) {
+    if (datePickerMode === 'move') handleMoveWorkout(date)
+    else if (datePickerMode === 'duplicate') handleDuplicateWorkout(date)
+    else if (datePickerMode === 'schedule') handleScheduleProgramWorkout(date)
+  }
+
+  async function handleAddToCalConfirm() {
+    if (!addToCalDates.length || !selectedProgramDay) return
+    let added = 0
+    for (const dateStr of addToCalDates) {
+      const exists = scheduledWorkouts.some(
+        sw => sw.program_workout_id === selectedProgramDay.id && sw.scheduled_date === dateStr
+      )
+      if (exists) continue
+      const { error } = await supabase.from('scheduled_workouts').insert({
+        client_id: client.id,
+        program_workout_id: selectedProgramDay.id,
+        custom_workout_id: null,
+        scheduled_date: dateStr,
+        created_by: client.user_id,
+      })
+      if (!error) added++
+    }
+    await reloadScheduledWorkouts()
+    setShowAddToCalModal(false)
+    setAddToCalDates([])
+    if (added > 0) {
+      setScheduleSuccessMsg(`Added to ${added} day${added !== 1 ? 's' : ''}`)
+      setTimeout(() => setScheduleSuccessMsg(''), 2500)
+    }
+  }
+
+  async function handleWorkoutPickerConfirm() {
+    if (!workoutPickerSelected) return
+    const isProgram = workoutPickerSelected.type === 'program'
+    const { error } = await supabase.from('scheduled_workouts').insert({
+      client_id: client.id,
+      program_workout_id: isProgram ? workoutPickerSelected.workout.id : null,
+      custom_workout_id: isProgram ? null : workoutPickerSelected.workout.id,
+      scheduled_date: selectedCalDate,
+      created_by: client.user_id,
+    })
+    if (error) { alert('Could not add workout: ' + error.message); return }
+    await reloadScheduledWorkouts()
+    setShowWorkoutPickerModal(false)
+    setWorkoutPickerSelected(null)
+    setScheduleSuccessMsg(`Workout added to ${formatShortDate(selectedCalDate)}`)
+    setTimeout(() => setScheduleSuccessMsg(''), 2500)
   }
 
   async function loadWorkoutHistory() {
@@ -1195,6 +1438,34 @@ export default function ClientApp() {
     }
   }
 
+  async function searchFood(query) {
+    if (!query || query.trim().length < 2) { setFoodSearchResults([]); return }
+    setFoodSearchLoading(true)
+    const q = query.trim().toLowerCase()
+    const commonMatches = COMMON_FOODS.filter(f => f.name.toLowerCase().includes(q))
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query.trim())}&search_simple=1&action=process&json=1&page_size=6&lc=en&cc=au&fields=product_name,brands,nutriments,code`)
+      const json = await res.json()
+      const apiResults = (json.products || [])
+        .filter(p => p.product_name && typeof p.nutriments?.['energy-kcal_100g'] === 'number')
+        .map(p => ({
+          name: p.product_name,
+          brand: p.brands || '',
+          calories: Math.round(p.nutriments['energy-kcal_100g'] || 0),
+          protein: parseFloat((p.nutriments['proteins_100g'] || 0).toFixed(1)),
+          carbs: parseFloat((p.nutriments['carbohydrates_100g'] || 0).toFixed(1)),
+          fats: parseFloat((p.nutriments['fat_100g'] || 0).toFixed(1)),
+        }))
+      const combined = [...commonMatches, ...apiResults].slice(0, 8)
+      setFoodSearchResults(combined)
+    } catch (e) {
+      console.error('Food search error:', e)
+      setFoodSearchResults(commonMatches.slice(0, 8))
+    } finally {
+      setFoodSearchLoading(false)
+    }
+  }
+
   async function handleAddFood() {
     if (!foodInput.name.trim()) return
     setAddingFood(true)
@@ -1219,30 +1490,34 @@ export default function ClientApp() {
   }
 
   async function handleSaveWorkout(content) {
-    const lines = content.split('\n').map(l => l.trim()).filter(l => l.length > 0)
-    const SKIP_HEADERS = ['WARM UP', 'MAIN SESSION', 'MAIN WORKOUT', 'COOL DOWN', 'SESSION']
-    const firstLine = lines[0] || ''
-    const isHeader = SKIP_HEADERS.some(h => firstLine.toUpperCase().startsWith(h))
-    const name = isHeader
-      ? `AI Workout ${toLocalDateStr()}`
-      : firstLine.substring(0, 50)
+    if (!content?.trim()) return
+    let parsedWorkout = null
+    let cleanContent = content.trim()
+    try {
+      const jsonMatch = cleanContent.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0])
+        if (parsed.title && Array.isArray(parsed.exercises)) {
+          parsedWorkout = parsed
+          cleanContent = JSON.stringify(parsed)
+        }
+      }
+    } catch (e) {
+      console.warn('AI workout JSON parse failed, saving as plain text:', e)
+    }
+    const name = parsedWorkout?.title || content.split('\n').find(l => l.trim())?.substring(0, 50) || `AI Workout ${toLocalDateStr()}`
     try {
       const { data, error } = await supabase.from('saved_workouts').insert({
         client_id: client.id,
         name,
-        content,
+        content: cleanContent,
       }).select().single()
-      if (error) {
-        console.error('Save workout error:', error)
-        alert('Could not save workout: ' + error.message)
-        return
-      }
+      if (error) { alert('Could not save workout: ' + error.message); return }
       setSavedWorkouts(prev => [data, ...prev])
       setShowWorkoutAI(false)
       setProgramSubTab('saved')
     } catch (e) {
-      console.error('Save workout exception:', e)
-      alert('Something went wrong saving the workout.')
+      alert('Could not save workout: ' + e.message)
     }
   }
 
@@ -1397,7 +1672,8 @@ export default function ClientApp() {
   )
 
   // AI overlays
-  if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt="You are an expert personal trainer. When giving a workout, the VERY FIRST LINE must be a short descriptive workout title (e.g. '45 Min Upper Body Strength' or '30 Min Full Body HIIT'). Then use this exact format with no markdown symbols, no asterisks, no hashtags:\n\nWARM UP\nExercise name — X minutes or X reps\nExercise name — X minutes or X reps\n\nMAIN SESSION\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nExercise name\nSets: X  Reps: X  Rest: Xs\n\nCOOL DOWN\nExercise name — X minutes\n\nUse plain text only. No bullet points, no asterisks, no hashtags, no bold markers. The first line is always the workout title, then section headers in CAPS, then exercise details on separate lines." onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
+  const workoutAIPrompt = `You are an expert personal trainer. You must respond to workout requests with ONLY a valid JSON object — no markdown, no backticks, no explanation before or after. The JSON must follow this exact structure: {"title": "45 Min Upper Body Strength", "exercises": [{"name": "Bench Press", "sets": 4, "reps": "8-10", "rest_seconds": 90, "notes": "Keep elbows at 45 degrees"}]}. Rules: title is a short descriptive workout name. exercises is an array of all exercises. name is the exercise name as a string. sets is an integer. reps is a string like "8-10" or "12" or "30 seconds". rest_seconds is an integer in seconds, use 0 for warm up and cool down exercises. notes is an optional coaching cue string or empty string. Respond with ONLY the JSON object. No other text.`
+  if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt={workoutAIPrompt} onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
   if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={handleSaveMeal} saveLabel="Save meal" />
 
   // Workout preview (between card tap and logging)
@@ -2032,8 +2308,16 @@ export default function ClientApp() {
         {/* Selected date panel */}
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <p className="text-sm font-bold text-gray-900">{selectedDateLabel}</p>
-            {isToday(selectedCalDate) && <span className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">TODAY</span>}
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-bold text-gray-900">{selectedDateLabel}</p>
+              {isToday(selectedCalDate) && <span className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full">TODAY</span>}
+            </div>
+            <button
+              onClick={() => { setWorkoutPickerSelected(null); setShowWorkoutPickerModal(true) }}
+              className="text-xs font-semibold bg-black text-white rounded-lg px-3 py-1"
+            >
+              + Add
+            </button>
           </div>
           {selectedWorkouts.length === 0 ? (
             <div className="px-4 py-6 text-center">
@@ -2052,7 +2336,7 @@ export default function ClientApp() {
                 const exercises = workoutExercises[sw.program_workout_id] ?? []
                 const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
                 return (
-                  <button key={sw.id} onClick={() => setPreviewWorkout(sw)}
+                  <button key={sw.id} onClick={() => setCalDetailWorkout(sw)}
                     className="w-full text-left px-4 py-4 flex items-center gap-3 hover:bg-gray-50 transition-colors">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${done ? 'bg-emerald-500' : 'border-2 border-gray-200'}`}>
                       {done && <Check size={14} className="text-white" />}
@@ -2085,13 +2369,21 @@ export default function ClientApp() {
     if (programView === 'detail' && selectedProgramDay) {
       const exercises = allProgramExercises[selectedProgramDay.id] ?? []
       return (
-        <div className="px-4 py-4">
+        <div className="px-4 py-4 pb-28">
           <button onClick={() => { setProgramView('list'); setSelectedProgramDay(null) }} className="flex items-center gap-2 text-sm text-gray-500 mb-4">
             <ArrowLeft size={16} /><span>Back to program</span>
           </button>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">{selectedProgramDay.name}</h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-xl font-bold text-gray-900">{selectedProgramDay.name}</h2>
+            <button
+              onClick={() => setShowAddToCalModal(true)}
+              className="bg-black text-white text-xs font-semibold px-3 py-2 rounded-xl flex-shrink-0"
+            >
+              + Schedule
+            </button>
+          </div>
           <p className="text-xs text-gray-400 mb-4">Day {selectedProgramDay.day_number} · {exercises.length} exercises</p>
-          <div className="space-y-3">
+          <div className="space-y-3 mb-6">
             {exercises.map((ex, idx) => {
               const muscle = ex.exercises?.muscle_group
               const chipClass = MUSCLE_CHIP[muscle] ?? MUSCLE_CHIP.Other
@@ -2111,7 +2403,6 @@ export default function ClientApp() {
               )
             })}
           </div>
-          <div className="h-20" />
         </div>
       )
     }
@@ -2147,23 +2438,26 @@ export default function ClientApp() {
                 </div>
                 <div className="space-y-2">
                   {programWorkouts.map(pw => {
-                    const exercises = allProgramExercises[pw.id] ?? []
-                    const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
                     return (
-                      <button key={pw.id} onClick={() => { setSelectedProgramDay(pw); setProgramView('detail') }}
-                        className="w-full text-left bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center gap-4 hover:border-emerald-200 hover:shadow-sm transition-all">
-                        <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-black text-gray-500">D{pw.day_number}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-gray-900 truncate">{pw.name}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-gray-400">{exercises.length} exercises</span>
-                            {estMin > 0 && <><span className="text-gray-300 text-xs">·</span><span className="text-xs text-gray-400">~{estMin} min</span></>}
+                      <div key={pw.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center justify-between hover:border-emerald-200 hover:shadow-sm transition-all">
+                        <button
+                          onClick={() => { setPreviewWorkout(null); setSelectedProgramDay(pw); setProgramView('detail') }}
+                          className="flex-1 text-left flex items-center gap-4 min-w-0"
+                        >
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-black text-gray-500">D{pw.day_number}</span>
                           </div>
-                        </div>
-                        <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
-                      </button>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-gray-900 truncate">{pw.name}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-xs text-gray-400">{(allProgramExercises[pw.id] ?? []).length} exercises</span>
+                              {Math.round((allProgramExercises[pw.id] ?? []).reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5) > 0 && (
+                                <><span className="text-gray-300 text-xs">·</span><span className="text-xs text-gray-400">~{Math.round((allProgramExercises[pw.id] ?? []).reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)} min</span></>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      </div>
                     )
                   })}
                 </div>
@@ -2223,11 +2517,35 @@ export default function ClientApp() {
                           <Plus size={12} /> Schedule
                         </button>
                       </div>
-                      {isExpanded && (
-                        <div className="px-4 pb-4 pt-1 border-t border-gray-50">
-                          <pre className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap font-sans">{sw.content}</pre>
-                        </div>
-                      )}
+                      {expandedWorkoutId === sw.id && (() => {
+                        let parsed = null
+                        try { parsed = JSON.parse(sw.content) } catch (e) {}
+                        if (parsed?.exercises) {
+                          return (
+                            <div className="px-4 pb-4 space-y-2">
+                              {parsed.exercises.map((ex, i) => (
+                                <div key={i} className="bg-gray-50 rounded-xl px-3 py-2.5 flex items-start gap-3">
+                                  <div className="w-6 h-6 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold text-gray-900">{ex.name}</p>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      {ex.sets > 0 && <span className="text-xs text-gray-500">{ex.sets} sets × {ex.reps} reps</span>}
+                                      {ex.sets === 0 && <span className="text-xs text-gray-500">{ex.reps}</span>}
+                                      {ex.rest_seconds > 0 && <span className="text-xs text-gray-400">· {ex.rest_seconds}s rest</span>}
+                                    </div>
+                                    {ex.notes && <p className="text-xs text-gray-400 mt-0.5 italic">{ex.notes}</p>}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )
+                        }
+                        return (
+                          <div className="px-4 pb-4">
+                            <pre className="text-xs text-gray-600 whitespace-pre-wrap font-sans">{sw.content}</pre>
+                          </div>
+                        )
+                      })()}
                     </div>
                   )
                 })}
@@ -2452,24 +2770,147 @@ export default function ClientApp() {
 
               {showAddFood && (
                 <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-3 space-y-3">
-                  <input type="text" placeholder="Food name" value={foodInput.name} onChange={e => setFoodInput(f => ({ ...f, name: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
-                  <select value={foodInput.meal_type} onChange={e => setFoodInput(f => ({ ...f, meal_type: e.target.value }))}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white">
-                    {MEAL_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search food e.g. chicken breast, oats..."
+                      value={foodSearchQuery}
+                      onChange={e => {
+                        setFoodSearchQuery(e.target.value)
+                        setFoodInput(f => ({ ...f, name: e.target.value }))
+                        clearTimeout(window._foodSearchTimer)
+                        window._foodSearchTimer = setTimeout(() => searchFood(e.target.value), 400)
+                      }}
+                      className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 pr-8"
+                    />
+                    {foodSearchLoading && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                    )}
+                  </div>
+
+                  {foodSearchResults.length > 0 && (
+                    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm max-h-48 overflow-y-auto">
+                      {foodSearchResults.map((r, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            setFoodBase({ calories: r.calories, protein: r.protein, carbs: r.carbs, fats: r.fats })
+                            setFoodInput(f => ({ ...f, name: r.name, calories: String(r.calories), protein: String(r.protein), carbs: String(r.carbs), fats: String(r.fats) }))
+                            setFoodSearchQuery(r.name)
+                            setFoodServingSize(100)
+                            setFoodSearchResults([])
+                          }}
+                          className="w-full text-left px-3 py-2.5 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
+                        >
+                          <p className="text-sm font-semibold text-gray-900 truncate">{r.name}</p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            {r.brand && <span className="text-xs text-gray-400 truncate max-w-[120px]">{r.brand}</span>}
+                            <span className="text-xs text-orange-500 font-medium">{r.calories} kcal</span>
+                            <span className="text-xs text-red-400">P {r.protein}g</span>
+                            <span className="text-xs text-yellow-500">C {r.carbs}g</span>
+                            <span className="text-xs text-blue-400">F {r.fats}g</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <select
+                    value={foodInput.meal_type}
+                    onChange={e => setFoodInput(f => ({ ...f, meal_type: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+                  >
+                    {['breakfast', 'lunch', 'dinner', 'snack', 'other'].map(t => (
+                      <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                    ))}
                   </select>
+
+                  {foodInput.calories && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-emerald-700">Serving size</p>
+                        <p className="text-xs text-emerald-600 font-medium">
+                          {Math.round(parseFloat(foodInput.calories) * (foodServingSize / 100))} kcal
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          max="2000"
+                          value={foodServingSize}
+                          onChange={e => {
+                            setFoodServingSize(e.target.value)
+                          }}
+                          onBlur={e => {
+                            const size = parseFloat(e.target.value) || 100
+                            setFoodServingSize(size)
+                            if (foodBase) {
+                              const scale = size / 100
+                              setFoodInput(f => ({
+                                ...f,
+                                calories: String(Math.round(foodBase.calories * scale)),
+                                protein: String(parseFloat((foodBase.protein * scale).toFixed(1))),
+                                carbs: String(parseFloat((foodBase.carbs * scale).toFixed(1))),
+                                fats: String(parseFloat((foodBase.fats * scale).toFixed(1))),
+                              }))
+                            }
+                          }}
+                          className="w-20 border border-emerald-300 rounded-lg px-2 py-1.5 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white"
+                        />
+                        <span className="text-xs text-emerald-600 font-medium">g</span>
+                        <span className="text-xs text-gray-400 ml-1">P {foodInput.protein}g · C {foodInput.carbs}g · F {foodInput.fats}g</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-2">
-                    {[{ key: 'calories', label: 'Calories (kcal)' }, { key: 'protein', label: 'Protein (g)' }, { key: 'carbs', label: 'Carbs (g)' }, { key: 'fats', label: 'Fats (g)' }].map(f => (
-                      <input key={f.key} type="number" placeholder={f.label} value={foodInput[f.key]} onChange={e => setFoodInput(prev => ({ ...prev, [f.key]: e.target.value }))}
-                        className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400" />
+                    {[
+                      { key: 'calories', label: 'Calories (kcal)', colour: 'text-orange-500' },
+                      { key: 'protein', label: 'Protein (g)', colour: 'text-red-500' },
+                      { key: 'carbs', label: 'Carbs (g)', colour: 'text-yellow-500' },
+                      { key: 'fats', label: 'Fats (g)', colour: 'text-blue-500' },
+                    ].map(f => (
+                      <div key={f.key} className="relative">
+                        <input
+                          type="number"
+                          placeholder={f.label}
+                          value={foodInput[f.key]}
+                          onChange={e => setFoodInput(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                        />
+                      </div>
                     ))}
                   </div>
+
                   <div className="flex gap-2">
-                    <button onClick={handleAddFood} disabled={addingFood || !foodInput.name.trim()}
-                      className="flex-1 bg-black text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition-colors">
+                    <button
+                      onClick={() => {
+                        handleAddFood()
+                        setFoodSearchQuery('')
+                        setFoodSearchResults([])
+                        setFoodServingSize(100)
+                        setFoodBase(null)
+                      }}
+                      disabled={addingFood || !foodInput.name.trim()}
+                      className="flex-1 bg-black text-white text-sm font-semibold py-2.5 rounded-xl disabled:opacity-50 transition-colors"
+                    >
                       {addingFood ? 'Saving...' : 'Add'}
                     </button>
-                    <button onClick={() => setShowAddFood(false)} className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+                    <button
+                      onClick={() => {
+                        setShowAddFood(false)
+                        setFoodSearchQuery('')
+                        setFoodSearchResults([])
+                        setFoodServingSize(100)
+                        setFoodBase(null)
+                        setFoodInput({ name: '', calories: '', protein: '', carbs: '', fats: '', meal_type: 'breakfast' })
+                      }}
+                      className="flex-1 border border-gray-200 text-gray-500 text-sm font-medium py-2.5 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               )}
@@ -2631,6 +3072,242 @@ export default function ClientApp() {
       <div className="max-w-lg mx-auto">
         {tabContent[activeTab]?.()}
       </div>
+
+      {/* Calendar workout detail bottom sheet */}
+      {calDetailWorkout && (
+        <div
+          className="fixed inset-0 z-40 bg-black/40 flex items-end justify-center"
+          onClick={() => setCalDetailWorkout(null)}
+        >
+          <div
+            className="bg-white rounded-t-3xl w-full max-w-md p-5 pb-safe"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="mb-5">
+              <p className="text-base font-bold text-gray-900 truncate">
+                {calDetailWorkout.program_workouts?.name || calDetailWorkout._customWorkout?.name || 'Workout'}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {formatShortDate(calDetailWorkout.scheduled_date)}
+              </p>
+            </div>
+            <button
+              onClick={e => { e.stopPropagation(); setPreviewWorkout(calDetailWorkout); setCalDetailWorkout(null) }}
+              className="w-full bg-black text-white text-sm font-bold py-3.5 rounded-2xl mb-2 hover:bg-gray-800 transition-colors"
+            >
+              Start Workout
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); setDatePickerMode('move') }}
+              className="w-full bg-white border border-black text-gray-900 text-sm font-semibold py-3.5 rounded-2xl mb-2 hover:bg-gray-50 transition-colors"
+            >
+              Move to another day
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); setDatePickerMode('duplicate') }}
+              className="w-full bg-white border border-black text-gray-900 text-sm font-semibold py-3.5 rounded-2xl mb-2 hover:bg-gray-50 transition-colors"
+            >
+              Duplicate to another day
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); setCalDetailWorkout(null) }}
+              className="w-full text-center text-sm text-gray-400 py-2"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Date picker modal */}
+      {datePickerMode && (
+        <DatePickerModal
+          title={
+            datePickerMode === 'move' ? 'Move to another day' :
+            datePickerMode === 'duplicate' ? 'Duplicate to another day' :
+            'Add to calendar'
+          }
+          scheduledWorkouts={scheduledWorkouts}
+          onConfirm={handleDatePickerConfirm}
+          onCancel={() => {
+            setDatePickerMode(null)
+            if (datePickerMode === 'schedule') setProgramWorkoutToSchedule(null)
+          }}
+        />
+      )}
+
+      {/* MODAL A — Add to calendar (multi-date picker from program detail) */}
+      {showAddToCalModal && selectedProgramDay && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center" onClick={() => { setShowAddToCalModal(false); setAddToCalDates([]) }}>
+          <div className="bg-white rounded-t-2xl w-full max-w-md max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-5 pt-5 pb-3 border-b border-gray-100 flex-shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Add to calendar</h3>
+              <p className="text-xs text-gray-400 mt-0.5">{selectedProgramDay.name}</p>
+            </div>
+            <div className="overflow-y-auto flex-1 px-4 py-4">
+              <div className="grid grid-cols-7 mb-2">
+                {['M','T','W','T','F','S','S'].map((d, i) => (
+                  <div key={i} className="text-center text-[10px] font-semibold text-gray-400 py-1">{d}</div>
+                ))}
+              </div>
+              {(() => {
+                const todayStr = toLocalDateStr()
+                const days = Array.from({ length: 42 }, (_, i) => {
+                  const d = new Date()
+                  d.setDate(d.getDate() + i)
+                  return toLocalDateStr(d)
+                })
+                const firstDay = new Date(days[0] + 'T00:00:00')
+                const dow = firstDay.getDay()
+                const startPad = dow === 0 ? 6 : dow - 1
+                const busyDates = new Set(
+                  scheduledWorkouts
+                    .filter(sw => sw.program_workout_id === selectedProgramDay.id)
+                    .map(sw => sw.scheduled_date)
+                )
+                return (
+                  <div className="grid grid-cols-7 gap-y-1">
+                    {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} />)}
+                    {days.map(dateStr => {
+                      const isSelected = addToCalDates.includes(dateStr)
+                      const hasDot = busyDates.has(dateStr)
+                      const isToday = dateStr === todayStr
+                      const dayNum = parseInt(dateStr.split('-')[2])
+                      return (
+                        <button
+                          key={dateStr}
+                          onClick={() => setAddToCalDates(prev =>
+                            prev.includes(dateStr) ? prev.filter(d => d !== dateStr) : [...prev, dateStr]
+                          )}
+                          className={`h-10 flex flex-col items-center justify-center rounded-lg transition-colors ${
+                            isSelected ? 'bg-black' : isToday ? 'ring-2 ring-inset ring-black' : 'hover:bg-gray-100'
+                          }`}
+                        >
+                          <span className={`text-xs font-semibold ${isSelected ? 'text-white' : 'text-gray-700'}`}>
+                            {dayNum}
+                          </span>
+                          {hasDot && (
+                            <div className={`w-1 h-1 rounded-full mt-0.5 ${isSelected ? 'bg-white/70' : 'bg-emerald-500'}`} />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
+              <button
+                disabled={addToCalDates.length === 0}
+                onClick={handleAddToCalConfirm}
+                className="w-full bg-black text-white font-semibold py-3.5 rounded-xl text-sm disabled:opacity-40 mb-2"
+              >
+                {addToCalDates.length === 0 ? 'Select days' : `Add to ${addToCalDates.length} day${addToCalDates.length !== 1 ? 's' : ''}`}
+              </button>
+              <button
+                onClick={() => { setShowAddToCalModal(false); setAddToCalDates([]) }}
+                className="w-full text-center text-sm text-gray-400 py-1.5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL B — Workout picker (from "+ Add" on schedule day panel) */}
+      {showWorkoutPickerModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center" onClick={() => { setShowWorkoutPickerModal(false); setWorkoutPickerSelected(null) }}>
+          <div className="bg-white rounded-t-2xl w-full max-w-md max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="px-5 pt-5 pb-3 border-b border-gray-100 flex-shrink-0">
+              <h3 className="text-base font-bold text-gray-900">Add workout</h3>
+              <p className="text-xs text-gray-400 mt-0.5">{formatShortDate(selectedCalDate)}</p>
+            </div>
+            <div className="overflow-y-auto flex-1">
+              {programWorkouts.length > 0 && (
+                <>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide px-4 pt-4 pb-2">My Program</p>
+                  {programWorkouts.map(pw => {
+                    const exCount = (allProgramExercises[pw.id] ?? []).length
+                    const isSelected = workoutPickerSelected?.type === 'program' && workoutPickerSelected.workout.id === pw.id
+                    return (
+                      <button
+                        key={pw.id}
+                        onClick={() => setWorkoutPickerSelected({ type: 'program', workout: pw })}
+                        className={`w-full text-left px-4 py-3 border-b border-gray-100 flex items-center gap-3 transition-colors ${isSelected ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : 'hover:bg-gray-50'}`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-black text-gray-500">D{pw.day_number}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{pw.name}</p>
+                          <p className="text-xs text-gray-400">{exCount} exercise{exCount !== 1 ? 's' : ''}</p>
+                        </div>
+                        {isSelected && <Check size={16} className="text-emerald-500 flex-shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </>
+              )}
+              {savedWorkouts.length > 0 && (
+                <>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide px-4 pt-4 pb-2">Saved Workouts</p>
+                  {savedWorkouts.map(sw => {
+                    const isSelected = workoutPickerSelected?.type === 'saved' && workoutPickerSelected.workout.id === sw.id
+                    return (
+                      <button
+                        key={sw.id}
+                        onClick={() => setWorkoutPickerSelected({ type: 'saved', workout: sw })}
+                        className={`w-full text-left px-4 py-3 border-b border-gray-100 flex items-center gap-3 transition-colors ${isSelected ? 'bg-emerald-50 border-l-4 border-l-emerald-500' : 'hover:bg-gray-50'}`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Dumbbell size={14} className="text-gray-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 truncate">{sw.name}</p>
+                          <p className="text-xs text-gray-400">Saved workout</p>
+                        </div>
+                        {isSelected && <Check size={16} className="text-emerald-500 flex-shrink-0" />}
+                      </button>
+                    )
+                  })}
+                </>
+              )}
+              {programWorkouts.length === 0 && savedWorkouts.length === 0 && (
+                <div className="px-5 py-10 text-center">
+                  <p className="text-sm text-gray-400">No workouts available.</p>
+                  <p className="text-xs text-gray-300 mt-1">Ask your trainer to assign a program, or build one with AI.</p>
+                </div>
+              )}
+              <div className="h-4" />
+            </div>
+            <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
+              <button
+                disabled={!workoutPickerSelected}
+                onClick={handleWorkoutPickerConfirm}
+                className="w-full bg-black text-white font-semibold py-3.5 rounded-xl text-sm disabled:opacity-40 mb-2"
+              >
+                {workoutPickerSelected
+                  ? `Schedule for ${formatShortDate(selectedCalDate)}`
+                  : 'Select a workout'}
+              </button>
+              <button
+                onClick={() => { setShowWorkoutPickerModal(false); setWorkoutPickerSelected(null) }}
+                className="w-full text-center text-sm text-gray-400 py-1.5"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success toast */}
+      {scheduleSuccessMsg && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[60] bg-black text-white text-sm font-semibold px-5 py-3 rounded-2xl shadow-lg pointer-events-none whitespace-nowrap">
+          {scheduleSuccessMsg}
+        </div>
+      )}
 
       {/* Bottom tab bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20 safe-area-pb">
