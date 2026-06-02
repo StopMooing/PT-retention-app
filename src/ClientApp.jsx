@@ -71,6 +71,11 @@ function toLocalDateStr(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+function workoutKey(programWorkoutId, scheduledWorkoutId, dateStr) {
+  const base = programWorkoutId || scheduledWorkoutId || 'unknown'
+  return `${base}_${dateStr}`
+}
+
 function isToday(dateStr) {
   return dateStr === toLocalDateStr()
 }
@@ -1071,10 +1076,6 @@ export default function ClientApp() {
   const [previewWorkout, setPreviewWorkout] = useState(null)
   const [workoutCompleteData, setWorkoutCompleteData] = useState(null)
   const [completedIds, setCompletedIds] = useState(new Set())
-  function workoutKey(programWorkoutId, scheduledWorkoutId, dateStr) {
-    const base = programWorkoutId || scheduledWorkoutId || 'unknown'
-    return `${base}_${dateStr}`
-  }
   const [calYear, setCalYear] = useState(() => new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
   const [selectedCalDate, setSelectedCalDate] = useState(() => {
