@@ -535,41 +535,38 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
 
   useEffect(() => {
     async function loadPreviousData() {
-      if (!exercises.length || !client?.id || !scheduledWorkout?.program_workout_id) return
-      const { data: lastLogs } = await supabase
-        .from('workout_logs')
-        .select('id, logged_at')
-        .eq('client_id', client.id)
-        .eq('completed', true)
-        .eq('program_workout_id', scheduledWorkout.program_workout_id)
-        .lt('logged_at', new Date().toISOString())
-        .order('logged_at', { ascending: false })
-        .limit(1)
-      if (!lastLogs?.length) { setPreviousSets({}); return }
-      const lastLog = lastLogs[0]
-      const sessionDate = toLocalDateStr(new Date(lastLog.logged_at))
-      const nextDayDate = (() => {
-        const [y, m, d] = sessionDate.split('-').map(Number)
-        const nd = new Date(y, m - 1, d + 1)
-        return toLocalDateStr(nd)
-      })()
+      if (!client?.id) return
+      const target = trackedExercises
+      if (!target.length) return
+      const wantedIds = target
+        .map(ex => ex.exercise_id ?? ex.exercises?.id)
+        .filter(Boolean)
+      if (!wantedIds.length) { setPreviousSets({}); return }
       const { data: setRows } = await supabase
         .from('workout_set_logs')
         .select('exercise_id, set_number, weight_kg, reps_completed, logged_at')
         .eq('client_id', client.id)
-        .gte('logged_at', sessionDate + 'T00:00:00+09:30')
-        .lt('logged_at', nextDayDate + 'T00:00:00+09:30')
+        .in('exercise_id', wantedIds)
+        .lt('logged_at', new Date().toISOString())
+        .order('logged_at', { ascending: false })
         .order('set_number', { ascending: true })
+      const latestSessionDate = {}
       const prev = {}
       for (const row of setRows ?? []) {
         const eid = row.exercise_id
+        const dateStr = toLocalDateStr(new Date(row.logged_at))
+        if (!latestSessionDate[eid]) latestSessionDate[eid] = dateStr
+        if (dateStr !== latestSessionDate[eid]) continue
         if (!prev[eid]) prev[eid] = []
         prev[eid].push({ reps: row.reps_completed, weight_kg: row.weight_kg, set_number: row.set_number })
+      }
+      for (const eid of Object.keys(prev)) {
+        prev[eid].sort((a, b) => a.set_number - b.set_number)
       }
       setPreviousSets(prev)
     }
     loadPreviousData()
-  }, [exercises, client?.id, scheduledWorkout?.program_workout_id])
+  }, [trackedExercises, client?.id])
 
   useEffect(() => {
     if (!isCustom || !customContent) return
@@ -743,6 +740,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         const { error: logError } = await supabase.from('workout_logs').insert({
           client_id: client.id,
           program_workout_id: scheduledWorkout.program_workout_id ?? null,
+          scheduled_workout_id: scheduledWorkout.id ?? null,
           logged_at: new Date().toISOString(),
           completed: true,
           total_volume_kg: totalVolume,
@@ -751,7 +749,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       } catch (logErr) {
         console.error('workout_logs insert exception:', logErr)
       }
-      onComplete && onComplete(`${scheduledWorkout.program_workout_id}_${scheduledWorkout.scheduled_date}`, { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: trackedExercises.length, workoutName })
+      onComplete && onComplete(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: trackedExercises.length, workoutName })
     } catch (e) {
       console.error('Complete error:', e)
       alert('Something went wrong: ' + e.message)
@@ -766,6 +764,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         const { error: logError } = await supabase.from('workout_logs').insert({
           client_id: client.id,
           program_workout_id: scheduledWorkout.program_workout_id ?? null,
+          scheduled_workout_id: scheduledWorkout.id ?? null,
           logged_at: new Date().toISOString(),
           completed: true,
           total_volume_kg: 0,
@@ -774,7 +773,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       } catch (logErr) {
         console.error('workout_logs insert exception:', logErr)
       }
-      onComplete && onComplete(`${scheduledWorkout.program_workout_id}_${scheduledWorkout.scheduled_date}`, { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName })
+      onComplete && onComplete(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName })
     } catch (e) {
       console.error('Complete error:', e)
       alert('Something went wrong: ' + e.message)
@@ -1062,6 +1061,10 @@ export default function ClientApp() {
   const [previewWorkout, setPreviewWorkout] = useState(null)
   const [workoutCompleteData, setWorkoutCompleteData] = useState(null)
   const [completedIds, setCompletedIds] = useState(new Set())
+  function workoutKey(programWorkoutId, scheduledWorkoutId, dateStr) {
+    const base = programWorkoutId || scheduledWorkoutId || 'unknown'
+    return `${base}_${dateStr}`
+  }
   const [calYear, setCalYear] = useState(() => new Date().getFullYear())
   const [calMonth, setCalMonth] = useState(() => new Date().getMonth())
   const [selectedCalDate, setSelectedCalDate] = useState(() => {
@@ -1217,14 +1220,14 @@ export default function ClientApp() {
       // Workout logs for completion status — all completed logs, keyed by workout+date
       const { data: logsData } = await supabase
         .from('workout_logs')
-        .select('id, completed, program_workout_id, logged_at')
+        .select('id, completed, program_workout_id, scheduled_workout_id, logged_at')
         .eq('client_id', clientRow.id)
         .eq('completed', true)
       setWorkoutLogs(logsData ?? [])
       setCompletedIds(new Set(
         (logsData ?? [])
-          .filter(l => l.program_workout_id)
-          .map(l => `${l.program_workout_id}_${toLocalDateStr(new Date(l.logged_at))}`)
+          .filter(l => l.program_workout_id || l.scheduled_workout_id)
+          .map(l => workoutKey(l.program_workout_id, l.scheduled_workout_id, toLocalDateStr(new Date(l.logged_at))))
       ))
 
       // Food logs for today
@@ -1838,7 +1841,7 @@ export default function ClientApp() {
     const weightChange = filteredWeightLogs.length > 1 ? (parseFloat(filteredWeightLogs[filteredWeightLogs.length-1].weight_kg) - parseFloat(filteredWeightLogs[0].weight_kg)).toFixed(1) : null
 
     // Streak
-    const sortedCompletedDates = [...new Set(scheduledWorkouts.filter(sw => completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`)).map(sw => sw.scheduled_date))].sort().reverse()
+    const sortedCompletedDates = [...new Set(scheduledWorkouts.filter(sw => completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date))).map(sw => sw.scheduled_date))].sort().reverse()
     let streak = 0
     let checkDate = new Date()
     for (const dateStr of sortedCompletedDates) {
@@ -1849,7 +1852,7 @@ export default function ClientApp() {
 
     // Weekly workouts
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
-    const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`) && sw.scheduled_date >= toLocalDateStr(weekAgo)).length
+    const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date)) && sw.scheduled_date >= toLocalDateStr(weekAgo)).length
 
     // Week strip data
     const today = new Date()
@@ -1918,7 +1921,7 @@ export default function ClientApp() {
               const isCurrentDay = dateStr === todayStr
               const isSelected = dateStr === selectedHomeDate
               const hasWorkout = !!(groupedByDate[dateStr]?.length)
-              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`))
+              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date)))
               return (
                 <button
                   key={dateStr}
@@ -1977,7 +1980,7 @@ export default function ClientApp() {
                 )}
               </div>
             ) : selectedDateWorkouts.map(sw => {
-              const done = completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`)
+              const done = completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date))
               const name = sw.program_workouts?.name || sw._customWorkout?.name || 'Workout'
               const exercises = workoutExercises[sw.program_workout_id] ?? []
               const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
@@ -2369,7 +2372,7 @@ export default function ClientApp() {
               const isCurrentDay = dateStr === todayStr
               const isSelected = dateStr === selectedCalDate
               const hasWorkout = !!(groupedByDate[dateStr]?.length)
-              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`))
+              const hasCompleted = groupedByDate[dateStr]?.some(sw => completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date)))
               return (
                 <button
                   key={dateStr}
@@ -2425,7 +2428,7 @@ export default function ClientApp() {
           ) : (
             <div className="divide-y divide-gray-100">
               {selectedWorkouts.map(sw => {
-                const done = completedIds.has(`${sw.program_workout_id}_${sw.scheduled_date}`)
+                const done = completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date))
                 const exercises = workoutExercises[sw.program_workout_id] ?? []
                 const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
                 return (
