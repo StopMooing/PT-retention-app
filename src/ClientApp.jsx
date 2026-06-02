@@ -573,35 +573,66 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
 
   useEffect(() => {
     if (!isCustom || !customContent) return
+    let cancelled = false
+    const failSafe = setTimeout(() => {
+      if (!cancelled) setAiParseError(true)
+    }, 10000)
     async function buildAiExercises() {
-      let parsed = null
       try {
-        const jsonMatch = customContent.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const p = JSON.parse(jsonMatch[0])
-          if (p.title && Array.isArray(p.exercises)) parsed = p
+        let parsed = null
+        try {
+          const jsonMatch = customContent.match(/\{[\s\S]*\}/)
+          if (jsonMatch) {
+            const p = JSON.parse(jsonMatch[0])
+            if (p && Array.isArray(p.exercises) && p.exercises.length > 0) parsed = p
+          }
+        } catch (e) {
+          console.warn('AI workout JSON parse failed:', e)
         }
-      } catch (e) { /* not JSON */ }
-      if (!parsed) { setAiParseError(true); return }
-      const names = parsed.exercises.map(e => e.name)
-      const { data: resolved } = await supabase.rpc('resolve_exercise_ids', { p_names: names })
-      const resolvedMap = {}
-      for (const row of resolved ?? []) resolvedMap[row.name.toLowerCase()] = row
-      const built = parsed.exercises.map((e, idx) => {
-        const match = resolvedMap[e.name.toLowerCase()] || {}
-        return {
-          id: `ai_${idx}`,
-          exercise_id: match.id || null,
-          exercises: { id: match.id || null, name: e.name, muscle_group: match.muscle_group || null },
-          sets: e.sets || 3,
-          reps: String(e.reps || ''),
-          rest_seconds: e.rest_seconds || null,
-          notes: e.notes || null,
+        if (!parsed) {
+          if (!cancelled) { clearTimeout(failSafe); setAiParseError(true) }
+          return
         }
-      })
-      setAiExercises(built)
+
+        const names = parsed.exercises
+          .map(e => (e?.name ?? '').trim())
+          .filter(Boolean)
+
+        const resolvedMap = {}
+        try {
+          const { data: resolved, error } = await supabase.rpc('resolve_exercise_ids', { p_names: names })
+          if (error) console.error('resolve_exercise_ids error:', error)
+          for (const row of resolved ?? []) {
+            const key = (row?.input_name ?? '').trim().toLowerCase()
+            if (key) resolvedMap[key] = row
+          }
+        } catch (e) {
+          console.error('resolve_exercise_ids exception:', e)
+        }
+
+        const built = parsed.exercises.map((e, idx) => {
+          const name = (e?.name ?? 'Exercise').trim()
+          const match = resolvedMap[name.toLowerCase()] || {}
+          const resolvedId = match.exercise_id || null
+          return {
+            id: `ai_${idx}`,
+            exercise_id: resolvedId,
+            exercises: { id: resolvedId, name, muscle_group: match.muscle_group || null },
+            sets: parseInt(e?.sets, 10) || 1,
+            reps: String(e?.reps ?? ''),
+            rest_seconds: e?.rest_seconds || null,
+            notes: e?.notes || null,
+          }
+        })
+
+        if (!cancelled) { clearTimeout(failSafe); setAiExercises(built) }
+      } catch (e) {
+        console.error('buildAiExercises fatal error:', e)
+        if (!cancelled) { clearTimeout(failSafe); setAiParseError(true) }
+      }
     }
     buildAiExercises()
+    return () => { cancelled = true; clearTimeout(failSafe) }
   }, [isCustom, customContent])
 
   useEffect(() => {
