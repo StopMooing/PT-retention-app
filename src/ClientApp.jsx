@@ -533,6 +533,9 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
   const [aiExercises, setAiExercises] = useState(null)
   const [aiParseError, setAiParseError] = useState(false)
 
+  const trackedExercises = isCustom ? (aiExercises || []) : exercises
+  const hasSetTracking = !isCustom || (aiExercises !== null && !aiParseError)
+
   useEffect(() => {
     async function loadPreviousData() {
       if (!client?.id) return
@@ -663,9 +666,6 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
     setActiveSet({ rowKey, setNumber })
     if (restSeconds) startRestTimer(restSeconds)
   }
-
-  const trackedExercises = isCustom ? (aiExercises || []) : exercises
-  const hasSetTracking = !isCustom || (aiExercises !== null && !aiParseError)
 
   const totalSetsCount = trackedExercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)
   const doneSetsCount = Object.values(setData).reduce((sum, ex) =>
