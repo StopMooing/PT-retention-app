@@ -661,7 +661,17 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
     }))
   }
 
-  function markSetDone(rowKey, setNumber, restSeconds) {
+  function markSetDone(ex, setNumber, restSeconds) {
+    const rowKey = ex.id
+    const exerciseId = ex.exercise_id ?? ex.exercises?.id ?? null
+    const prevSet = (previousSets[exerciseId] || [])[setNumber - 1]
+    const current = setData[rowKey]?.[setNumber] || {}
+    if ((current.weight === undefined || current.weight === '') && prevSet?.weight_kg > 0) {
+      updateSet(rowKey, setNumber, 'weight', String(prevSet.weight_kg))
+    }
+    if ((current.reps === undefined || current.reps === '') && prevSet?.reps) {
+      updateSet(rowKey, setNumber, 'reps', String(prevSet.reps))
+    }
     updateSet(rowKey, setNumber, 'done', true)
     setActiveSet({ rowKey, setNumber })
     if (restSeconds) startRestTimer(restSeconds)
@@ -687,8 +697,8 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         for (let s = 1; s <= (ex.sets || 0); s++) {
           const set = exSets[s] || {}
           const prevSet = prevSetsForEx[s - 1]
-          const reps = parseFloat(set.reps) || prevSet?.reps || parseFloat(ex.reps) || 0
-          const weight = parseFloat(set.weight) || prevSet?.weight_kg || 0
+          const reps = parseFloat(set.reps) || 0
+          const weight = parseFloat(set.weight) || 0
           totalVolume += reps * weight
           setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight, logged_at: new Date().toISOString() })
         }
@@ -872,7 +882,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
                         <div className="flex items-center gap-2 flex-1">
                           <div className="flex items-center gap-1 flex-1">
                             <input type="number" step="0.5" min="0"
-                              placeholder={prevSet?.weight_kg > 0 ? `${prevSet.weight_kg}` : '0'}
+                              placeholder={prevSet?.weight_kg > 0 ? `${prevSet.weight_kg}` : ''}
                               value={setInfo.weight || ''}
                               onChange={e => updateSet(rowKey, setNum, 'weight', e.target.value)}
                               disabled={isDone}
@@ -882,7 +892,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
                           <span className="text-gray-300 text-sm">×</span>
                           <div className="flex items-center gap-1 flex-1">
                             <input type="number" min="0"
-                              placeholder={`${prevSet?.reps || ex.reps || ''}`}
+                              placeholder={prevSet?.reps ? `${prevSet.reps}` : ''}
                               value={setInfo.reps || ''}
                               onChange={e => updateSet(rowKey, setNum, 'reps', e.target.value)}
                               disabled={isDone}
@@ -891,7 +901,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
                           </div>
                         </div>
                         {!isDone ? (
-                          <button onClick={() => markSetDone(rowKey, setNum, ex.rest_seconds)}
+                          <button onClick={() => markSetDone(ex, setNum, ex.rest_seconds)}
                             className="flex-shrink-0 bg-black text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-gray-800 transition-colors">Done</button>
                         ) : (
                           <button onClick={() => updateSet(rowKey, setNum, 'done', false)}
