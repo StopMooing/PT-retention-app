@@ -206,26 +206,30 @@ function AIChat({ context, placeholder, systemPrompt, onClose, onSave, saveLabel
                 ? 'bg-emerald-500 text-white rounded-br-sm'
                 : 'bg-gray-100 text-gray-800 rounded-bl-sm'
             }`}>
-              {msg.role === 'assistant' ? (
-                <div className="space-y-2">
-                  {msg.content.split('\n').filter(line => line.trim() !== '').map((line, li) => {
-                    if (line.startsWith('### ')) return <p key={li} className="font-bold text-gray-900 text-sm mt-2">{line.replace('### ', '')}</p>
-                    if (line.startsWith('## ')) return <p key={li} className="font-bold text-gray-900 text-base mt-3 mb-1">{line.replace('## ', '')}</p>
-                    if (line.startsWith('# ')) return <p key={li} className="font-bold text-gray-900 text-lg mt-3 mb-1">{line.replace('# ', '')}</p>
-                    if (line.startsWith('- ') || line.startsWith('* ')) {
-                      return <div key={li} className="flex items-start gap-2"><span className="text-emerald-500 mt-0.5 flex-shrink-0">•</span><span>{line.replace(/^[-*] /, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span></div>
-                    }
-                    if (/^\d+\. /.test(line)) {
-                      const num = line.match(/^(\d+)\. /)[1]
-                      return <div key={li} className="flex items-start gap-2"><span className="text-emerald-500 font-bold flex-shrink-0">{num}.</span><span>{line.replace(/^\d+\. /, '').replace(/\*\*(.*?)\*\*/g, '$1')}</span></div>
-                    }
-                    const formatted = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>')
-                    return <p key={li} dangerouslySetInnerHTML={{ __html: formatted }} />
-                  })}
-                </div>
-              ) : (
-                msg.content
-              )}
+              {msg.role === 'assistant' ? (() => {
+                let parsed = null
+                try {
+                  const jsonMatch = msg.content.match(/\{[\s\S]*\}/)
+                  if (jsonMatch) parsed = JSON.parse(jsonMatch[0])
+                } catch (e) {}
+                if (parsed?.title && Array.isArray(parsed?.exercises)) {
+                  return (
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 mb-2">{parsed.title}</p>
+                      <div className="space-y-1.5">
+                        {parsed.exercises.map((ex, i) => (
+                          <div key={i} className="text-xs text-gray-700">
+                            <span className="font-semibold">{ex.name}</span>
+                            {ex.sets > 0 && <span className="text-gray-500"> — {ex.sets} sets × {ex.reps}</span>}
+                            {ex.sets === 0 && <span className="text-gray-500"> — {ex.reps}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                }
+                return <p className="text-sm text-gray-800 whitespace-pre-wrap">{msg.content}</p>
+              })() : <p className="text-sm text-gray-800 whitespace-pre-wrap">{msg.content}</p>}
             </div>
           </div>
         ))}
