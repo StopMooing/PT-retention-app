@@ -433,12 +433,39 @@ function WorkoutPreview({ scheduledWorkout, exercises, client, onBack, onStart }
 
       {/* Exercise list or AI content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {isCustom && customContent ? (
-          <div className="bg-gray-50 rounded-2xl p-4">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Workout Plan</p>
-            <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{customContent}</pre>
-          </div>
-        ) : exercises.length === 0 ? (
+        {isCustom && customContent ? (() => {
+          let parsed = null
+          try {
+            const jsonMatch = customContent.match(/\{[\s\S]*\}/)
+            if (jsonMatch) parsed = JSON.parse(jsonMatch[0])
+          } catch (e) {}
+          if (parsed?.title && Array.isArray(parsed?.exercises)) {
+            return (
+              <div className="space-y-3">
+                {parsed.exercises.map((ex, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900">{ex.name}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        {ex.sets > 0 && <span className="text-xs text-gray-500">{ex.sets} sets × {ex.reps} reps</span>}
+                        {ex.sets === 0 && <span className="text-xs text-gray-500">{ex.reps}</span>}
+                        {ex.rest_seconds > 0 && <span className="text-xs text-gray-400">· {ex.rest_seconds}s rest</span>}
+                      </div>
+                      {ex.notes && <p className="text-xs text-gray-400 mt-1 italic">{ex.notes}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          }
+          return (
+            <div className="bg-gray-50 rounded-2xl p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Workout Plan</p>
+              <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{customContent}</pre>
+            </div>
+          )
+        })() : exercises.length === 0 ? (
           <div className="text-center py-12">
             <Dumbbell size={32} className="text-gray-200 mx-auto mb-3" />
             <p className="text-sm text-gray-400">No exercises loaded.</p>
