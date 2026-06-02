@@ -744,10 +744,13 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
           const { data: existing } = await supabase.from('personal_bests').select('value').eq('client_id', client.id).eq('exercise_id', exerciseId).eq('pb_type', check.type).maybeSingle()
           if (!existing || check.value > existing.value) {
             await supabase.from('personal_bests').upsert({ client_id: client.id, exercise_id: exerciseId, pb_type: check.type, value: check.value, achieved_at: new Date().toISOString(), scheduled_workout_id: scheduledWorkout.id }, { onConflict: 'client_id,exercise_id,pb_type' })
-            if (!existing) {
-              if (check.type === '1rm') newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, isFirst: true })
-            } else {
-              newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, previous: existing.value, isFirst: false })
+            const celebrateTypes = ['1rm', 'volume']
+            if (celebrateTypes.includes(check.type)) {
+              if (!existing) {
+                newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, isFirst: true })
+              } else {
+                newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, previous: existing.value, isFirst: false })
+              }
             }
           }
         }
