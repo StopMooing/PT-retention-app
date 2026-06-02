@@ -702,8 +702,10 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         for (let s = 1; s <= (ex.sets || 0); s++) {
           const set = exSets[s] || {}
           const prevSet = prevSetsForEx[s - 1]
-          const reps = parseFloat(set.reps) || 0
-          const weight = parseFloat(set.weight) || 0
+          let reps = parseFloat(set.reps) || 0
+          let weight = parseFloat(set.weight) || 0
+          if (reps < 0) reps = 0; if (reps > 100) reps = 100
+          if (weight < 0) weight = 0; if (weight > 500) weight = 500
           totalVolume += reps * weight
           setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight, logged_at: new Date().toISOString() })
         }
@@ -886,20 +888,20 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
                         </div>
                         <div className="flex items-center gap-2 flex-1">
                           <div className="flex items-center gap-1 flex-1">
-                            <input type="number" step="0.5" min="0"
+                            <input type="number" step="0.5" min="0" max="500"
                               placeholder={prevSet?.weight_kg > 0 ? `${prevSet.weight_kg}` : ''}
                               value={setInfo.weight || ''}
-                              onChange={e => updateSet(rowKey, setNum, 'weight', e.target.value)}
+                              onChange={e => { const v = e.target.value; if (v === '' || (parseFloat(v) >= 0 && parseFloat(v) <= 500)) updateSet(rowKey, setNum, 'weight', v) }}
                               disabled={isDone}
                               className={`w-16 border rounded-xl px-2 py-1.5 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 ${isDone ? 'bg-gray-50 border-gray-100 text-gray-400' : 'border-gray-200'}`} />
                             <span className="text-xs text-gray-400 flex-shrink-0">kg</span>
                           </div>
                           <span className="text-gray-300 text-sm">×</span>
                           <div className="flex items-center gap-1 flex-1">
-                            <input type="number" min="0"
+                            <input type="number" min="0" max="100"
                               placeholder={prevSet?.reps ? `${prevSet.reps}` : ''}
                               value={setInfo.reps || ''}
-                              onChange={e => updateSet(rowKey, setNum, 'reps', e.target.value)}
+                              onChange={e => { const v = e.target.value; if (v === '' || (parseInt(v, 10) >= 0 && parseInt(v, 10) <= 100)) updateSet(rowKey, setNum, 'reps', v) }}
                               disabled={isDone}
                               className={`w-16 border rounded-xl px-2 py-1.5 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 ${isDone ? 'bg-gray-50 border-gray-100 text-gray-400' : 'border-gray-200'}`} />
                             <span className="text-xs text-gray-400 flex-shrink-0">reps</span>
