@@ -530,12 +530,12 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
   const [restTimer, setRestTimer] = useState(null)
   const [restInterval, setRestInterval] = useState(null)
   const [activeSet, setActiveSet] = useState(null)
+  const [aiExercises, setAiExercises] = useState(null)
+  const [aiParseError, setAiParseError] = useState(false)
 
   useEffect(() => {
     async function loadPreviousData() {
       if (!exercises.length || !client?.id || !scheduledWorkout?.program_workout_id) return
-
-      // Step 1: find the single most recent completed session for this program workout
       const { data: lastLogs } = await supabase
         .from('workout_logs')
         .select('id, logged_at')
@@ -547,16 +547,12 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         .limit(1)
       if (!lastLogs?.length) { setPreviousSets({}); return }
       const lastLog = lastLogs[0]
-
-      // Step 2: derive local session date and next day for range query
       const sessionDate = toLocalDateStr(new Date(lastLog.logged_at))
       const nextDayDate = (() => {
         const [y, m, d] = sessionDate.split('-').map(Number)
         const nd = new Date(y, m - 1, d + 1)
         return toLocalDateStr(nd)
       })()
-
-      // Step 3: fetch all set logs for that session by Adelaide date range
       const { data: setRows } = await supabase
         .from('workout_set_logs')
         .select('exercise_id, set_number, weight_kg, reps_completed, logged_at')
@@ -564,19 +560,49 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         .gte('logged_at', sessionDate + 'T00:00:00+09:30')
         .lt('logged_at', nextDayDate + 'T00:00:00+09:30')
         .order('set_number', { ascending: true })
-
-      // Step 4: group by exercise_id
       const prev = {}
       for (const row of setRows ?? []) {
         const eid = row.exercise_id
         if (!prev[eid]) prev[eid] = []
         prev[eid].push({ reps: row.reps_completed, weight_kg: row.weight_kg, set_number: row.set_number })
       }
-
       setPreviousSets(prev)
     }
     loadPreviousData()
   }, [exercises, client?.id, scheduledWorkout?.program_workout_id])
+
+  useEffect(() => {
+    if (!isCustom || !customContent) return
+    async function buildAiExercises() {
+      let parsed = null
+      try {
+        const jsonMatch = customContent.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+          const p = JSON.parse(jsonMatch[0])
+          if (p.title && Array.isArray(p.exercises)) parsed = p
+        }
+      } catch (e) { /* not JSON */ }
+      if (!parsed) { setAiParseError(true); return }
+      const names = parsed.exercises.map(e => e.name)
+      const { data: resolved } = await supabase.rpc('resolve_exercise_ids', { p_names: names })
+      const resolvedMap = {}
+      for (const row of resolved ?? []) resolvedMap[row.name.toLowerCase()] = row
+      const built = parsed.exercises.map((e, idx) => {
+        const match = resolvedMap[e.name.toLowerCase()] || {}
+        return {
+          id: `ai_${idx}`,
+          exercise_id: match.id || null,
+          exercises: { id: match.id || null, name: e.name, muscle_group: match.muscle_group || null },
+          sets: e.sets || 3,
+          reps: String(e.reps || ''),
+          rest_seconds: e.rest_seconds || null,
+          notes: e.notes || null,
+        }
+      })
+      setAiExercises(built)
+    }
+    buildAiExercises()
+  }, [isCustom, customContent])
 
   useEffect(() => {
     return () => { if (restInterval) clearInterval(restInterval) }
@@ -594,49 +620,52 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
     setRestInterval(interval)
   }
 
-  function updateSet(exerciseId, setNumber, field, value) {
+  function updateSet(rowKey, setNumber, field, value) {
     setSetData(prev => ({
       ...prev,
-      [exerciseId]: {
-        ...(prev[exerciseId] || {}),
-        [setNumber]: { ...(prev[exerciseId]?.[setNumber] || {}), [field]: value }
+      [rowKey]: {
+        ...(prev[rowKey] || {}),
+        [setNumber]: { ...(prev[rowKey]?.[setNumber] || {}), [field]: value }
       }
     }))
   }
 
-  function markSetDone(exerciseId, setNumber, restSeconds) {
-    updateSet(exerciseId, setNumber, 'done', true)
-    setActiveSet({ exerciseId, setNumber })
+  function markSetDone(rowKey, setNumber, restSeconds) {
+    updateSet(rowKey, setNumber, 'done', true)
+    setActiveSet({ rowKey, setNumber })
     if (restSeconds) startRestTimer(restSeconds)
   }
 
-  const totalSetsCount = exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)
+  const trackedExercises = isCustom ? (aiExercises || []) : exercises
+  const hasSetTracking = !isCustom || (aiExercises !== null && !aiParseError)
+
+  const totalSetsCount = trackedExercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)
   const doneSetsCount = Object.values(setData).reduce((sum, ex) =>
     sum + Object.values(ex).filter(s => s.done).length, 0)
-  const allDone = !isCustom && totalSetsCount > 0 && doneSetsCount >= totalSetsCount
+  const allDone = hasSetTracking && totalSetsCount > 0 && doneSetsCount >= totalSetsCount
   const progressPct = totalSetsCount > 0 ? Math.round((doneSetsCount / totalSetsCount) * 100) : 0
 
   async function handleComplete() {
     setCompleting(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
       let totalVolume = 0
       const setLogsToInsert = []
-      for (const ex of exercises) {
+      for (const ex of trackedExercises) {
+        const rowKey = ex.id
         const exerciseId = ex.exercise_id || ex.exercises?.id
         if (!exerciseId) continue
-        const exSets = setData[exerciseId] || {}
+        const exSets = setData[rowKey] || {}
+        const prevSetsForEx = previousSets[exerciseId] || []
         for (let s = 1; s <= (ex.sets || 0); s++) {
           const set = exSets[s] || {}
-          const prevSet = previousSets[exerciseId]?.[s - 1]
-          const reps = parseFloat(set.reps) || prevSet?.reps || ex.reps || 0
+          const prevSet = prevSetsForEx[s - 1]
+          const reps = parseFloat(set.reps) || prevSet?.reps || parseFloat(ex.reps) || 0
           const weight = parseFloat(set.weight) || prevSet?.weight_kg || 0
           totalVolume += reps * weight
           setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight, logged_at: new Date().toISOString() })
         }
       }
       if (setLogsToInsert.length > 0) {
-        console.log('workout_set_logs insert payload:', setLogsToInsert)
         try {
           const { error: setsError } = await supabase.from('workout_set_logs').insert(setLogsToInsert)
           if (setsError) console.error('workout_set_logs error:', setsError)
@@ -644,15 +673,16 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       }
 
       const newPBs = []
-      for (const ex of exercises) {
+      for (const ex of trackedExercises) {
+        const rowKey = ex.id
         const exerciseId = ex.exercise_id || ex.exercises?.id
         if (!exerciseId) continue
-        const exSets = setData[exerciseId] || {}
+        const exSets = setData[rowKey] || {}
         const exerciseName = ex.exercises?.name || 'Exercise'
         let best1RM = 0, bestSet = 0, sessionVolume = 0
         for (let s = 1; s <= (ex.sets || 0); s++) {
           const set = exSets[s] || {}
-          const reps = parseFloat(set.reps) || ex.reps || 0
+          const reps = parseFloat(set.reps) || parseFloat(ex.reps) || 0
           const weight = parseFloat(set.weight) || 0
           if (weight === 0) continue
           const estimated1RM = reps === 1 ? weight : weight * (1 + reps / 30)
@@ -670,12 +700,8 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
           if (!existing || check.value > existing.value) {
             await supabase.from('personal_bests').upsert({ client_id: client.id, exercise_id: exerciseId, pb_type: check.type, value: check.value, achieved_at: new Date().toISOString(), scheduled_workout_id: scheduledWorkout.id }, { onConflict: 'client_id,exercise_id,pb_type' })
             if (!existing) {
-              // On first session only show 1RM — it's the most meaningful
-              if (check.type === '1rm') {
-                newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, isFirst: true })
-              }
+              if (check.type === '1rm') newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, isFirst: true })
             } else {
-              // On subsequent sessions show any improvement
               newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, label: check.label, previous: existing.value, isFirst: false })
             }
           }
@@ -694,7 +720,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       } catch (logErr) {
         console.error('workout_logs insert exception:', logErr)
       }
-      onComplete && onComplete(`${scheduledWorkout.program_workout_id}_${scheduledWorkout.scheduled_date}`, { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: exercises.length, workoutName })
+      onComplete && onComplete(`${scheduledWorkout.program_workout_id}_${scheduledWorkout.scheduled_date}`, { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: trackedExercises.length, workoutName })
     } catch (e) {
       console.error('Complete error:', e)
       alert('Something went wrong: ' + e.message)
@@ -705,7 +731,6 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
   async function handleCompleteCustom() {
     setCompleting(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
       try {
         const { error: logError } = await supabase.from('workout_logs').insert({
           client_id: client.id,
@@ -726,6 +751,13 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
     setCompleting(false)
   }
 
+  const MUSCLE_COLOURS = {
+    Chest: 'bg-red-50 text-red-600', Back: 'bg-blue-50 text-blue-600',
+    Shoulders: 'bg-purple-50 text-purple-600', Legs: 'bg-emerald-50 text-emerald-600',
+    Arms: 'bg-orange-50 text-orange-600', Core: 'bg-yellow-50 text-yellow-600',
+    Glutes: 'bg-pink-50 text-pink-600', Other: 'bg-gray-100 text-gray-600',
+  }
+
   return (
     <div className="fixed inset-0 bg-white z-40 flex flex-col max-w-lg mx-auto">
       <div className="flex items-center gap-3 px-4 pt-12 pb-3 border-b border-gray-100">
@@ -734,9 +766,9 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-base font-bold text-gray-900 truncate">{workoutName}</h1>
-          {!isCustom && <p className="text-xs text-gray-400 mt-0.5">{doneSetsCount}/{totalSetsCount} sets completed</p>}
+          {hasSetTracking && <p className="text-xs text-gray-400 mt-0.5">{doneSetsCount}/{totalSetsCount} sets completed</p>}
         </div>
-        {!isCustom && totalSetsCount > 0 && (
+        {hasSetTracking && totalSetsCount > 0 && (
           <div className="flex-shrink-0 w-10 h-10 relative">
             <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
               <circle cx="18" cy="18" r="15" fill="none" stroke="#f3f4f6" strokeWidth="3" />
@@ -760,7 +792,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       )}
 
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {isCustom && customContent ? (
+        {isCustom && aiParseError ? (
           <div className="space-y-4">
             <div className="bg-gray-50 rounded-2xl p-4">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Workout Plan</p>
@@ -771,21 +803,20 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
               {completing ? <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />Saving...</> : <><CheckCircle2 size={20} />Complete Workout</>}
             </button>
           </div>
+        ) : isCustom && aiExercises === null ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : (
-          exercises.map((ex, idx) => {
+          trackedExercises.map((ex, idx) => {
+            const rowKey = ex.id
             const exerciseId = ex.exercise_id || ex.exercises?.id
-            const exSetData = setData[exerciseId] || {}
+            const exSetData = setData[rowKey] || {}
             const prevSets = previousSets[exerciseId] || []
             const muscle = ex.exercises?.muscle_group
-            const MUSCLE_COLOURS = {
-              Chest: 'bg-red-50 text-red-600', Back: 'bg-blue-50 text-blue-600',
-              Shoulders: 'bg-purple-50 text-purple-600', Legs: 'bg-emerald-50 text-emerald-600',
-              Arms: 'bg-orange-50 text-orange-600', Core: 'bg-yellow-50 text-yellow-600',
-              Glutes: 'bg-pink-50 text-pink-600', Other: 'bg-gray-100 text-gray-600',
-            }
             const chipClass = MUSCLE_COLOURS[muscle] ?? MUSCLE_COLOURS.Other
             return (
-              <div key={ex.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+              <div key={rowKey} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-50 flex items-center gap-3">
                   <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold flex-shrink-0">{idx + 1}</div>
                   <div className="flex-1 min-w-0">
@@ -813,7 +844,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
                             <input type="number" step="0.5" min="0"
                               placeholder={prevSet?.weight_kg > 0 ? `${prevSet.weight_kg}` : '0'}
                               value={setInfo.weight || ''}
-                              onChange={e => updateSet(exerciseId, setNum, 'weight', e.target.value)}
+                              onChange={e => updateSet(rowKey, setNum, 'weight', e.target.value)}
                               disabled={isDone}
                               className={`w-16 border rounded-xl px-2 py-1.5 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 ${isDone ? 'bg-gray-50 border-gray-100 text-gray-400' : 'border-gray-200'}`} />
                             <span className="text-xs text-gray-400 flex-shrink-0">kg</span>
@@ -823,17 +854,17 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
                             <input type="number" min="0"
                               placeholder={`${prevSet?.reps || ex.reps || ''}`}
                               value={setInfo.reps || ''}
-                              onChange={e => updateSet(exerciseId, setNum, 'reps', e.target.value)}
+                              onChange={e => updateSet(rowKey, setNum, 'reps', e.target.value)}
                               disabled={isDone}
                               className={`w-16 border rounded-xl px-2 py-1.5 text-sm text-center font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-400 ${isDone ? 'bg-gray-50 border-gray-100 text-gray-400' : 'border-gray-200'}`} />
                             <span className="text-xs text-gray-400 flex-shrink-0">reps</span>
                           </div>
                         </div>
                         {!isDone ? (
-                          <button onClick={() => markSetDone(exerciseId, setNum, ex.rest_seconds)}
+                          <button onClick={() => markSetDone(rowKey, setNum, ex.rest_seconds)}
                             className="flex-shrink-0 bg-black text-white text-xs font-bold px-3 py-2 rounded-xl hover:bg-gray-800 transition-colors">Done</button>
                         ) : (
-                          <button onClick={() => updateSet(exerciseId, setNum, 'done', false)}
+                          <button onClick={() => updateSet(rowKey, setNum, 'done', false)}
                             className="flex-shrink-0 text-xs text-gray-400 px-3 py-2 rounded-xl border border-gray-200 hover:bg-gray-50">Undo</button>
                         )}
                       </div>
@@ -847,7 +878,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         <div className="h-32" />
       </div>
 
-      {!isCustom && (
+      {hasSetTracking && trackedExercises.length > 0 && (
         <div className="px-4 pb-8 pt-3 border-t border-gray-100 bg-white">
           {allDone ? (
             <button onClick={handleComplete} disabled={completing}
@@ -862,7 +893,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
                 <div className="bg-emerald-500 h-2 rounded-full transition-all duration-300" style={{ width: `${progressPct}%` }} />
               </div>
               <p className="text-center text-xs text-gray-400 font-medium">
-                Complete all {totalSetsCount} sets to finish — {totalSetsCount - doneSetsCount} remaining
+                Complete all {totalSetsCount} sets to finish. {totalSetsCount - doneSetsCount} to go.
               </p>
             </div>
           )}
