@@ -326,7 +326,7 @@ function WorkoutComplete({ workoutName, stats, onDone }) {
                       <p className="text-sm font-bold text-gray-900 truncate">{pb.exerciseName}</p>
                       <p className="text-xs text-yellow-600 font-semibold mt-0.5">
                         {pb.isFirst
-                          ? `🌟 First time logged — ${pbMeta.desc}`
+                          ? `🌟 First time logged · ${pbMeta.desc}`
                           : `${pb.previous}${pb.unit} → ${pb.value}${pb.unit}`
                         }
                       </p>
@@ -727,7 +727,7 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
         if (bestSet > 0) pbChecks.push({ type: 'best_set', value: bestSet, label: 'Best Set Score', unit: 'pts' })
         if (sessionVolume > 0) pbChecks.push({ type: 'volume', value: Math.round(sessionVolume), label: 'Session Volume', unit: 'kg' })
         for (const check of pbChecks) {
-          const { data: existing } = await supabase.from('personal_bests').select('value').eq('client_id', client.id).eq('exercise_id', exerciseId).eq('pb_type', check.type).single()
+          const { data: existing } = await supabase.from('personal_bests').select('value').eq('client_id', client.id).eq('exercise_id', exerciseId).eq('pb_type', check.type).maybeSingle()
           if (!existing || check.value > existing.value) {
             await supabase.from('personal_bests').upsert({ client_id: client.id, exercise_id: exerciseId, pb_type: check.type, value: check.value, achieved_at: new Date().toISOString(), scheduled_workout_id: scheduledWorkout.id }, { onConflict: 'client_id,exercise_id,pb_type' })
             if (!existing) {
