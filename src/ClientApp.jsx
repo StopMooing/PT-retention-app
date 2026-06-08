@@ -1176,6 +1176,8 @@ export default function ClientApp() {
   // Weight graph
   const [weightPeriod, setWeightPeriod] = useState(30)
   const [weightLogs, setWeightLogs] = useState([])
+  const [allWeightLogs, setAllWeightLogs] = useState([])
+  const [selectedWeightPoint, setSelectedWeightPoint] = useState(null)
 
   const getTodayStr = () => toLocalDateStr()
   const todayStr = getTodayStr()
@@ -1291,6 +1293,8 @@ export default function ClientApp() {
       const ninetyAgo = new Date(); ninetyAgo.setDate(ninetyAgo.getDate() - 90)
       const { data: wlData } = await supabase.from('body_weight_logs').select('weight_kg, logged_date').eq('client_id', clientRow.id).gte('logged_date', toLocalDateStr(ninetyAgo)).order('logged_date', { ascending: true })
       setWeightLogs(wlData ?? [])
+      const { data: allWlData } = await supabase.from('body_weight_logs').select('id, weight_kg, logged_date').eq('client_id', clientRow.id).order('logged_date', { ascending: false })
+      setAllWeightLogs(allWlData ?? [])
 
       setNutritionTargets({
         calories: clientRow?.calorie_target || 0,
@@ -1315,6 +1319,17 @@ export default function ClientApp() {
       setWeightInput('')
     } catch (e) { console.error(e) }
     finally { setSavingWeight(false) }
+  }
+
+  async function handleDeleteWeight(id) {
+    if (!window.confirm('Delete this weight entry? This cannot be undone.')) return
+    try {
+      const { error } = await supabase.from('body_weight_logs').delete().eq('id', id)
+      if (error) { alert('Could not delete: ' + error.message); return }
+      setAllWeightLogs(prev => prev.filter(w => w.id !== id))
+      setWeightLogs(prev => prev.filter(w => w.logged_date !== allWeightLogs.find(a => a.id === id)?.logged_date))
+      setSelectedWeightPoint(null)
+    } catch (e) { alert('Could not delete: ' + e.message) }
   }
 
   async function reloadScheduledWorkouts() {
@@ -2218,9 +2233,18 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
                 {svgFill && <path d={svgFill} fill="url(#wGrad)" />}
                 {svgPath && <path d={svgPath} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
                 {wPoints.map((p, i) => (
-                  <circle key={i} cx={p.x} cy={p.y} r="3" fill="#10b981" stroke="white" strokeWidth="1.5" />
+                  <g key={i} onClick={() => setSelectedWeightPoint(selectedWeightPoint?.i === i ? null : { i, weight: p.weight, date: p.date })} style={{ cursor: 'pointer' }}>
+                    <circle cx={p.x} cy={p.y} r="10" fill="transparent" />
+                    <circle cx={p.x} cy={p.y} r={selectedWeightPoint?.i === i ? '5' : '3'} fill="#10b981" stroke="white" strokeWidth="1.5" />
+                  </g>
                 ))}
               </svg>
+              {selectedWeightPoint && (
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  <span className="text-sm font-bold text-gray-900">{selectedWeightPoint.weight} kg</span>
+                  <span className="text-xs text-gray-400">{new Date(selectedWeightPoint.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                </div>
+              )}
               <div className="flex justify-between mt-1">
                 <span className="text-[10px] text-gray-300">{filteredWeightLogs[0]?.logged_date ? new Date(filteredWeightLogs[0].logged_date + 'T00:00:00').toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' }) : ''}</span>
                 <span className="text-[10px] text-gray-300">{filteredWeightLogs[filteredWeightLogs.length-1]?.logged_date ? new Date(filteredWeightLogs[filteredWeightLogs.length-1].logged_date + 'T00:00:00').toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit' }) : ''}</span>
@@ -2236,6 +2260,24 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
                   </button>
                 </div>
               )}
+            </div>
+          )}
+          {allWeightLogs.length > 0 && (
+            <div className="px-4 pb-4 pt-2 border-t border-gray-50">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">History</p>
+              <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                {allWeightLogs.map(w => (
+                  <div key={w.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                    <span className="text-xs text-gray-500">{new Date(w.logged_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold text-gray-900">{w.weight_kg} kg</span>
+                      <button onClick={() => handleDeleteWeight(w.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
