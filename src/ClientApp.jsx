@@ -1920,16 +1920,13 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
       else if (dateStr < checkStr) break
     }
 
-    // Weekly workouts
-    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
-    const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date)) && sw.scheduled_date >= toLocalDateStr(weekAgo)).length
-
     // Week strip data
     const today = new Date()
     const dayOfWeek = today.getDay()
     const monday = new Date(today)
     monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
     monday.setHours(0, 0, 0, 0)
+    const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date)) && sw.scheduled_date >= toLocalDateStr(monday)).length
     const weekDays = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(monday)
       d.setDate(monday.getDate() + i)
