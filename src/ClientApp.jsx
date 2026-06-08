@@ -1263,10 +1263,8 @@ export default function ClientApp() {
           .map(l => workoutKey(l.program_workout_id, l.scheduled_workout_id, toLocalDateStr(new Date(l.logged_at))))
       ))
 
-      // Food logs for today
-      const localMidnight = new Date()
-      localMidnight.setHours(0, 0, 0, 0)
-      const { data: foodData } = await supabase.from('food_logs').select('*').eq('client_id', clientRow.id).gte('logged_at', localMidnight.toISOString()).order('logged_at', { ascending: false })
+      // Food logs (fetch all; consumers filter by local date)
+      const { data: foodData } = await supabase.from('food_logs').select('*').eq('client_id', clientRow.id).order('logged_at', { ascending: false })
       setFoodLogs(foodData ?? [])
 
       // Resources from PT (global or created by this client's PT)
@@ -1521,17 +1519,13 @@ export default function ClientApp() {
   async function loadHomeDateData(dateStr) {
     setHomeDateLoading(true)
     try {
-      const d = new Date(dateStr + 'T00:00:00')
-      const nextD = new Date(d)
-      nextD.setDate(nextD.getDate() + 1)
       const { data } = await supabase
         .from('food_logs')
         .select('*')
         .eq('client_id', client.id)
-        .gte('logged_at', d.toISOString())
-        .lt('logged_at', nextD.toISOString())
         .order('logged_at', { ascending: false })
-      setHomeDateFoodLogs(data ?? [])
+      const dayLogs = (data ?? []).filter(f => f.logged_at && toLocalDateStr(new Date(f.logged_at)) === dateStr)
+      setHomeDateFoodLogs(dayLogs)
     } catch (e) { console.error(e) }
     finally { setHomeDateLoading(false) }
   }
@@ -1539,17 +1533,13 @@ export default function ClientApp() {
   async function loadNutritionDateData(dateStr) {
     setNutritionDateLoading(true)
     try {
-      const d = new Date(dateStr + 'T00:00:00')
-      const nextD = new Date(d)
-      nextD.setDate(nextD.getDate() + 1)
       const { data } = await supabase
         .from('food_logs')
         .select('*')
         .eq('client_id', client.id)
-        .gte('logged_at', d.toISOString())
-        .lt('logged_at', nextD.toISOString())
         .order('logged_at', { ascending: false })
-      setNutritionDateLogs(data ?? [])
+      const dayLogs = (data ?? []).filter(f => f.logged_at && toLocalDateStr(new Date(f.logged_at)) === dateStr)
+      setNutritionDateLogs(dayLogs)
     } catch (e) { console.error('Nutrition date load error:', e) }
     finally { setNutritionDateLoading(false) }
   }
