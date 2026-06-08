@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
-import { Home, Calendar, Dumbbell, Utensils, BookOpen, ArrowLeft, Check, CheckCircle2, Clock, ChevronRight, Plus, X, Send, Mic, Camera, Upload, ExternalLink, FileText, Headphones, Globe, Play, Target, Flame, Droplets, Search } from 'lucide-react'
+import { Home, Calendar, Dumbbell, Utensils, BookOpen, ArrowLeft, Check, CheckCircle2, Clock, ChevronLeft, ChevronRight, Plus, X, Send, Mic, Camera, Upload, ExternalLink, FileText, Headphones, Globe, Play, Target, Flame, Droplets, Search } from 'lucide-react'
 
 const TABS = ['home', 'calendar', 'program', 'nutrition', 'database']
 
@@ -1164,6 +1164,9 @@ export default function ClientApp() {
   // Saved meals
   const [savedMeals, setSavedMeals] = useState([])
   const [nutritionSubTab, setNutritionSubTab] = useState('log')
+  const [selectedNutritionDate, setSelectedNutritionDate] = useState(() => toLocalDateStr())
+  const [nutritionDateLogs, setNutritionDateLogs] = useState([])
+  const [nutritionDateLoading, setNutritionDateLoading] = useState(false)
 
   // Progress photos
   const [progressPhotos, setProgressPhotos] = useState([])
@@ -1533,6 +1536,28 @@ export default function ClientApp() {
     finally { setHomeDateLoading(false) }
   }
 
+  async function loadNutritionDateData(dateStr) {
+    setNutritionDateLoading(true)
+    try {
+      const d = new Date(dateStr + 'T00:00:00')
+      const nextD = new Date(d)
+      nextD.setDate(nextD.getDate() + 1)
+      const { data } = await supabase
+        .from('food_logs')
+        .select('*')
+        .eq('client_id', client.id)
+        .gte('logged_at', d.toISOString())
+        .lt('logged_at', nextD.toISOString())
+        .order('logged_at', { ascending: false })
+      setNutritionDateLogs(data ?? [])
+    } catch (e) { console.error('Nutrition date load error:', e) }
+    finally { setNutritionDateLoading(false) }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'nutrition') loadNutritionDateData(selectedNutritionDate)
+  }, [activeTab, selectedNutritionDate])
+
   async function handleSetGoal(calories) {
     try {
       const protein = Math.round((calories * 0.30) / 4)
@@ -1605,10 +1630,11 @@ export default function ClientApp() {
         protein_g: parseFloat(foodInput.protein) || 0,
         carbs_g: parseFloat(foodInput.carbs) || 0,
         fats_g: parseFloat(foodInput.fats) || 0,
-        logged_at: new Date().toISOString(),
+        logged_at: new Date(selectedNutritionDate + 'T12:00:00').toISOString(),
       }).select().single()
       if (error) throw error
       setFoodLogs(prev => [data, ...prev])
+      loadNutritionDateData(selectedNutritionDate)
       setFoodInput({ name: '', calories: '', protein: '', carbs: '', fats: '', meal_type: 'breakfast' })
       setShowAddFood(false)
     } catch (e) { console.error(e) }
@@ -1688,7 +1714,7 @@ export default function ClientApp() {
         protein_g: meal.protein_g || 0,
         carbs_g: meal.carbs_g || 0,
         fats_g: meal.fats_g || 0,
-        logged_at: new Date().toISOString(),
+        logged_at: new Date(selectedNutritionDate + 'T12:00:00').toISOString(),
       }).select().single()
       if (error) {
         console.error('Add meal error:', error)
@@ -1696,6 +1722,7 @@ export default function ClientApp() {
         return
       }
       setFoodLogs(prev => [data, ...prev])
+      loadNutritionDateData(selectedNutritionDate)
       setNutritionSubTab('log')
     } catch (e) {
       console.error('Add meal exception:', e)
@@ -1759,6 +1786,7 @@ export default function ClientApp() {
   async function handleDeleteFood(id) {
     await supabase.from('food_logs').delete().eq('id', id)
     setFoodLogs(prev => prev.filter(f => f.id !== id))
+    loadNutritionDateData(selectedNutritionDate)
   }
 
   // Grouped scheduled workouts
@@ -1772,10 +1800,12 @@ export default function ClientApp() {
   const nextWorkouts = nextWorkoutDate ? groupedByDate[nextWorkoutDate] : []
 
   // Today nutrition totals
-  const todayCalories = Math.round(foodLogs.reduce((s, f) => s + (f.calories || 0), 0))
-  const todayProtein = Math.round(foodLogs.reduce((s, f) => s + (f.protein_g || 0), 0))
-  const todayCarbs = Math.round(foodLogs.reduce((s, f) => s + (f.carbs_g || 0), 0))
-  const todayFats = Math.round(foodLogs.reduce((s, f) => s + (f.fats_g || 0), 0))
+  const _todayStr = toLocalDateStr()
+  const _todaysLogs = foodLogs.filter(f => f.logged_at && toLocalDateStr(new Date(f.logged_at)) === _todayStr)
+  const todayCalories = Math.round(_todaysLogs.reduce((s, f) => s + (f.calories || 0), 0))
+  const todayProtein = Math.round(_todaysLogs.reduce((s, f) => s + (f.protein_g || 0), 0))
+  const todayCarbs = Math.round(_todaysLogs.reduce((s, f) => s + (f.carbs_g || 0), 0))
+  const todayFats = Math.round(_todaysLogs.reduce((s, f) => s + (f.fats_g || 0), 0))
   const calTarget = nutritionTargets.calories || client?.calorie_target || 0
   const calPct = calTarget > 0 ? Math.min(100, Math.round((todayCalories / calTarget) * 100)) : 0
 
@@ -2742,6 +2772,11 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
   }
 
   function renderNutrition() {
+    const nutDateIsToday = selectedNutritionDate === toLocalDateStr()
+    const nutCalories = Math.round(nutritionDateLogs.reduce((s, f) => s + (f.calories || 0), 0))
+    const nutProtein = Math.round(nutritionDateLogs.reduce((s, f) => s + (f.protein_g || 0), 0))
+    const nutCarbs = Math.round(nutritionDateLogs.reduce((s, f) => s + (f.carbs_g || 0), 0))
+    const nutFats = Math.round(nutritionDateLogs.reduce((s, f) => s + (f.fats_g || 0), 0))
     const calTarget = nutritionTargets.calories || client?.calorie_target || 0
     const proTarget = nutritionTargets.protein || client?.protein_target_g || 0
     const carbTarget = nutritionTargets.carbs || client?.carbs_target_g || 0
@@ -2881,15 +2916,25 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
 
         {nutritionSubTab === 'log' ? (
           <>
+            {/* Day navigation */}
+            <div className="flex items-center justify-between mb-3">
+              <button onClick={() => { const d = new Date(selectedNutritionDate + 'T00:00:00'); d.setDate(d.getDate() - 1); setSelectedNutritionDate(toLocalDateStr(d)) }} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">
+                <ChevronLeft size={16} />
+              </button>
+              <p className="text-sm font-bold text-gray-900">{nutDateIsToday ? 'Today' : new Date(selectedNutritionDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' })}</p>
+              <button disabled={nutDateIsToday} onClick={() => { const d = new Date(selectedNutritionDate + 'T00:00:00'); d.setDate(d.getDate() + 1); const ns = toLocalDateStr(d); if (ns <= toLocalDateStr()) setSelectedNutritionDate(ns) }} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                <ChevronRight size={16} />
+              </button>
+            </div>
             {/* Macro totals */}
             <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">Today's Totals</p>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-4">{nutDateIsToday ? "Today's Totals" : new Date(selectedNutritionDate + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'short' }) + ' Totals'}</p>
               <div className="grid grid-cols-4 gap-3">
                 {[
-                  { label: 'Calories', value: todayCalories, unit: 'kcal', target: calTarget, colour: 'text-orange-500', bar: 'bg-orange-400' },
-                  { label: 'Protein', value: todayProtein, unit: 'g', target: proTarget, colour: 'text-red-500', bar: 'bg-red-400' },
-                  { label: 'Carbs', value: todayCarbs, unit: 'g', target: carbTarget, colour: 'text-yellow-500', bar: 'bg-yellow-400' },
-                  { label: 'Fats', value: todayFats, unit: 'g', target: fatTarget, colour: 'text-blue-500', bar: 'bg-blue-400' },
+                  { label: 'Calories', value: nutCalories, unit: 'kcal', target: calTarget, colour: 'text-orange-500', bar: 'bg-orange-400' },
+                  { label: 'Protein', value: nutProtein, unit: 'g', target: proTarget, colour: 'text-red-500', bar: 'bg-red-400' },
+                  { label: 'Carbs', value: nutCarbs, unit: 'g', target: carbTarget, colour: 'text-yellow-500', bar: 'bg-yellow-400' },
+                  { label: 'Fats', value: nutFats, unit: 'g', target: fatTarget, colour: 'text-blue-500', bar: 'bg-blue-400' },
                 ].map(m => {
                   const pct = m.target > 0 ? Math.min(100, Math.round((m.value / m.target) * 100)) : 0
                   const remaining = m.target > 0 ? m.target - m.value : null
@@ -3078,14 +3123,14 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
                 </div>
               )}
 
-              {foodLogs.length === 0 ? (
+              {nutritionDateLogs.length === 0 ? (
                 <div className="bg-gray-50 border border-dashed border-gray-200 rounded-2xl px-5 py-8 text-center">
                   <Utensils size={24} className="text-gray-200 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">Nothing logged yet today.</p>
+                  <p className="text-sm text-gray-400">{nutDateIsToday ? 'Nothing logged yet today.' : 'Nothing logged this day.'}</p>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {foodLogs.map(log => {
+                  {nutritionDateLogs.map(log => {
                     const mealColour = MEAL_COLOURS[log.meal_type?.toLowerCase()] ?? MEAL_COLOURS.other
                     return (
                       <div key={log.id} className="bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3">
