@@ -1145,6 +1145,7 @@ export default function ClientApp() {
   const [expandedMealId, setExpandedMealId] = useState(null)
   const [workoutToSchedule, setWorkoutToSchedule] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(toLocalDateStr())
+  const [homeWeekOffset, setHomeWeekOffset] = useState(0)
   const [selectedHomeDate, setSelectedHomeDate] = useState(() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -1963,9 +1964,11 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
     monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
     monday.setHours(0, 0, 0, 0)
     const weeklyCount = scheduledWorkouts.filter(sw => completedIds.has(workoutKey(sw.program_workout_id, sw.id, sw.scheduled_date)) && sw.scheduled_date >= toLocalDateStr(monday)).length
+    const viewMonday = new Date(monday)
+    viewMonday.setDate(monday.getDate() + homeWeekOffset * 7)
     const weekDays = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(monday)
-      d.setDate(monday.getDate() + i)
+      const d = new Date(viewMonday)
+      d.setDate(viewMonday.getDate() + i)
       return d
     })
     const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -2011,9 +2014,24 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
         {/* ── WEEK STRIP ── */}
         <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              {today.toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })}
-            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setHomeWeekOffset(o => o - 1)}
+                className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide min-w-[120px] text-center">
+                {homeWeekOffset === 0 ? 'This Week' : `${viewMonday.toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })} - ${weekDays[6].toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`}
+              </p>
+              <button
+                onClick={() => setHomeWeekOffset(o => Math.min(0, o + 1))}
+                disabled={homeWeekOffset === 0}
+                className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
             <button onClick={() => setActiveTab('calendar')} className="text-xs text-emerald-600 font-semibold">
               Full calendar →
             </button>
