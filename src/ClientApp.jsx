@@ -1092,6 +1092,20 @@ export default function ClientApp() {
   const [programView, setProgramView] = useState('list')
   const [selectedProgramDay, setSelectedProgramDay] = useState(null)
   const [showWorkoutAI, setShowWorkoutAI] = useState(false)
+  const [workoutLibrary, setWorkoutLibrary] = useState(null)
+  useEffect(() => {
+    if (!showWorkoutAI) return
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('exercises')
+        .select('name, muscle_group, category')
+      if (cancelled) return
+      if (error) { console.error('Workout library load error:', error); return }
+      setWorkoutLibrary(data || [])
+    })()
+    return () => { cancelled = true }
+  }, [showWorkoutAI])
   const [customWorkouts, setCustomWorkouts] = useState([])
 
   // Nutrition
@@ -1784,7 +1798,47 @@ export default function ClientApp() {
   )
 
   // AI overlays
-  const workoutAIPrompt = `You are an expert personal trainer. You must respond to workout requests with ONLY a valid JSON object — no markdown, no backticks, no explanation before or after. The JSON must follow this exact structure: {"title": "45 Min Upper Body Strength", "exercises": [{"name": "Bench Press", "sets": 4, "reps": "8-10", "rest_seconds": 90, "notes": "Keep elbows at 45 degrees"}]}. Rules: title is a short descriptive workout name. exercises is an array of all exercises. name is the exercise name as a string. sets is an integer. reps is a string like "8-10" or "12" or "30 seconds". rest_seconds is an integer in seconds, use 0 for warm up and cool down exercises. notes is an optional coaching cue string or empty string. Respond with ONLY the JSON object. No other text.`
+  const workoutAIPrompt = (() => {
+    const lib = workoutLibrary || []
+    const mainEx = lib.filter(e => !['warmup', 'cooldown', 'cardio'].includes(e.category))
+    const warmups = lib.filter(e => e.category === 'warmup').map(e => e.name)
+    const cooldowns = lib.filter(e => e.category === 'cooldown').map(e => e.name)
+    const cardio = lib.filter(e => e.category === 'cardio').map(e => e.name)
+    const byMuscle = {}
+    mainEx.forEach(e => {
+      const mg = e.muscle_group || 'Other'
+      if (!byMuscle[mg]) byMuscle[mg] = []
+      byMuscle[mg].push(e.name)
+    })
+    let libSection = ''
+    if (mainEx.length > 0) {
+      libSection = 'MAIN EXERCISE LIBRARY (choose working exercises ONLY from these, using the exact name as written):\n'
+      Object.keys(byMuscle).sort().forEach(mg => {
+        libSection += `${mg}: ${byMuscle[mg].join(', ')}\n`
+      })
+      libSection += `\nWARMUP options (only if a warmup is requested): ${warmups.join(', ') || 'none available'}\n`
+      libSection += `COOLDOWN options (only if a cooldown is requested): ${cooldowns.join(', ') || 'none available'}\n`
+      libSection += `CARDIO / CONDITIONING options (only if cardio or conditioning is requested): ${cardio.join(', ') || 'none available'}\n`
+    }
+    return `You are an expert personal trainer and strength coach building a single workout session.
+
+${libSection}
+PROGRAMMING RULES (follow exactly):
+- Every workout serves ONE primary goal. Infer the goal from the user request. If ambiguous, default to hypertrophy.
+- Rep ranges by goal: strength 3 to 6 reps; hypertrophy 6 to 12 reps; muscular endurance 15 to 20 plus reps; power 1 to 5 explosive reps.
+- Rest by goal: strength 120 to 240 seconds; hypertrophy 60 to 90 seconds; endurance 30 to 60 seconds; power 120 to 180 seconds.
+- Volume: every targeted muscle group gets 4 to 9 working sets in the session and never more than 9. Total session is 16 to 24 working sets across all exercises.
+- Bias volume to the primary muscle of the session, near 9 sets. Secondary muscles get 4 to 6 sets.
+- Order compound movements before isolation. Balance pushing and pulling where it makes sense.
+- A session has 4 to 8 exercises. Never more than 8.
+- Never prescribe heavy compounds like squats, deadlifts or bench press at high reps for a strength or power goal.
+- Choose working exercises ONLY from the MAIN EXERCISE LIBRARY above, using the exact name as written. Never invent an exercise name. If you want a movement that is not listed, pick the closest one that IS listed.
+- Do not include a warmup or cooldown unless the user explicitly asks. If asked, use only the WARMUP or COOLDOWN options above.
+- Only include cardio or conditioning exercises if the user asks for cardio or conditioning, using the CARDIO options above.
+- Notes are short, plain English coaching cues. No anatomy jargon. No em dashes.
+
+OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks, no text before or after. Structure: {"title": "Upper Body Hypertrophy", "exercises": [{"name": "Bench Press", "sets": 4, "reps": "8-12", "rest_seconds": 90, "notes": "Control the descent"}]}. title is a short descriptive workout name. exercises is an array. name must be an exact library name as a string. sets is an integer. reps is a string like "8-12" or "5". rest_seconds is an integer in seconds. notes is a short cue string or empty string. Respond with ONLY the JSON object and nothing else.`
+  })()
   if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt={workoutAIPrompt} onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
   if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={handleSaveMeal} saveLabel="Save meal" />
 
