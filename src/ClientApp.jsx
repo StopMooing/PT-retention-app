@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
-import { Home, Calendar, Dumbbell, Utensils, BookOpen, ArrowLeft, Check, CheckCircle2, Clock, ChevronLeft, ChevronRight, Plus, X, Send, Mic, Camera, Upload, ExternalLink, FileText, Headphones, Globe, Play, Target, Flame, Droplets, Search } from 'lucide-react'
+import { Home, Calendar, Dumbbell, Utensils, BookOpen, ArrowLeft, Check, CheckCircle2, Clock, ChevronLeft, ChevronRight, ChevronDown, Plus, X, Send, Mic, Camera, Upload, ExternalLink, FileText, Headphones, Globe, Play, Target, Flame, Droplets, Search } from 'lucide-react'
 
 const TABS = ['home', 'calendar', 'program', 'nutrition', 'database']
 
@@ -1178,6 +1178,7 @@ export default function ClientApp() {
   const [weightLogs, setWeightLogs] = useState([])
   const [allWeightLogs, setAllWeightLogs] = useState([])
   const [selectedWeightPoint, setSelectedWeightPoint] = useState(null)
+  const [showWeightHistory, setShowWeightHistory] = useState(false)
 
   const getTodayStr = () => toLocalDateStr()
   const todayStr = getTodayStr()
@@ -2264,20 +2265,25 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
           )}
           {allWeightLogs.length > 0 && (
             <div className="px-4 pb-4 pt-2 border-t border-gray-50">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">History</p>
-              <div className="space-y-1.5 max-h-56 overflow-y-auto">
-                {allWeightLogs.map(w => (
-                  <div key={w.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
-                    <span className="text-xs text-gray-500">{new Date(w.logged_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-gray-900">{w.weight_kg} kg</span>
-                      <button onClick={() => handleDeleteWeight(w.id)} className="text-gray-300 hover:text-red-400 transition-colors">
-                        <X size={14} />
-                      </button>
+              <button onClick={() => setShowWeightHistory(v => !v)} className="w-full flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">History ({allWeightLogs.length})</span>
+                <ChevronDown size={14} className={`text-gray-400 transition-transform ${showWeightHistory ? 'rotate-180' : ''}`} />
+              </button>
+              {showWeightHistory && (
+                <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                  {allWeightLogs.map(w => (
+                    <div key={w.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2">
+                      <span className="text-xs text-gray-500">{new Date(w.logged_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-semibold text-gray-900">{w.weight_kg} kg</span>
+                        <button onClick={() => handleDeleteWeight(w.id)} className="text-gray-300 hover:text-red-400 transition-colors">
+                          <X size={14} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
