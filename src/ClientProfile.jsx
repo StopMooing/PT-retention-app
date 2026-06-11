@@ -1642,9 +1642,12 @@ export default function ClientProfile() {
                       acc[key].sets.push(s)
                       return acc
                     }, {})
+                    const pbLabelByType = { "1rm": "1RM", best_set: "Best Set", volume: "Volume" }
+                    const pbTypeOrder = ["1rm", "best_set", "volume"]
                     const pbDatesByExercise = personalBests.reduce((acc, pb) => {
                       if (pb.achieved_at && toLocalDateStr(new Date(pb.achieved_at)) === sessionDateStr) {
-                        acc[pb.exercise_id] = true
+                        if (!acc[pb.exercise_id]) acc[pb.exercise_id] = new Set()
+                        acc[pb.exercise_id].add(pb.pb_type)
                       }
                       return acc
                     }, {})
@@ -1692,9 +1695,9 @@ export default function ClientProfile() {
                                       >
                                         <span className="flex items-center gap-2">
                                           <span className="text-sm font-medium text-gray-800">{ex.name}</span>
-                                          {hitPB && (
+                                          {hitPB && hitPB.size > 0 && (
                                             <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
-                                              <Trophy size={10} /> PB
+                                              <Trophy size={10} /> {pbTypeOrder.filter(t => hitPB.has(t)).map(t => pbLabelByType[t]).join(" · ")}
                                             </span>
                                           )}
                                         </span>
