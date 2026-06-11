@@ -75,13 +75,138 @@ function SectionCard({ children, className = "" }) {
   )
 }
 
-function CalendarDayModal({ selectedDay, onClose, onStartWorkout }) {
+function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
+  const [loggedSets, setLoggedSets] = useState([])
+  const [editedSets, setEditedSets] = useState({})
+  const [loadingSets, setLoadingSets] = useState(false)
+  const [savingEdits, setSavingEdits] = useState(false)
+
+  const completedLog = selectedDay?.workout?.completedLog ?? null
+
+  useEffect(() => {
+    setLoggedSets([])
+    setEditedSets({})
+    if (!selectedDay || !completedLog || !clientId) return
+    let cancelled = false
+    async function fetchLoggedSets() {
+      setLoadingSets(true)
+      const sessionDateStr = toLocalDateStr(new Date(completedLog.logged_at))
+      const dayStart = new Date(sessionDateStr + "T00:00:00")
+      dayStart.setDate(dayStart.getDate() - 1)
+      const dayEnd = new Date(sessionDateStr + "T00:00:00")
+      dayEnd.setDate(dayEnd.getDate() + 2)
+      const { data } = await supabase
+        .from("workout_set_logs")
+        .select("id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises(name)")
+        .eq("client_id", clientId)
+        .gte("logged_at", dayStart.toISOString())
+        .lte("logged_at", dayEnd.toISOString())
+        .order("set_number", { ascending: true })
+      if (cancelled) return
+      const sameDay = (data ?? []).filter(r => toLocalDateStr(new Date(r.logged_at)) === sessionDateStr)
+      setLoggedSets(sameDay)
+      setLoadingSets(false)
+    }
+    fetchLoggedSets()
+    return () => { cancelled = true }
+  }, [selectedDay, completedLog, clientId])
+
   if (!selectedDay) return null;
   const { date, workout } = selectedDay;
   const exercises = workout.exercises || workout.workout_exercises || [];
   const totalSets = exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0);
   const estMinutes = Math.round(totalSets * 2.5);
   const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
+  const hasEdits = Object.keys(editedSets).length > 0
+
+  const setsByExercise = loggedSets.reduce((acc, s) => {
+    const key = s.exercise_id || 'unknown'
+    if (!acc[key]) acc[key] = { name: s.exercises?.name || 'Exercise', sets: [] }
+    acc[key].sets.push(s)
+    return acc
+  }, {})
+
+  function handleSetEdit(setId, field, rawValue) {
+    if (rawValue === '') {
+      setEditedSets(prev => ({ ...prev, [setId]: { ...prev[setId], [field]: '' } }))
+      return
+    }
+    const n = field === 'weight_kg' ? parseFloat(rawValue) : parseInt(rawValue)
+    if (isNaN(n)) return
+    const clamped = field === 'weight_kg' ? Math.min(500, Math.max(0, n)) : Math.min(100, Math.max(0, n))
+    setEditedSets(prev => ({ ...prev, [setId]: { ...prev[setId], [field]: clamped } }))
+  }
+
+  function displayValue(s, field) {
+    const edited = editedSets[s.id]
+    if (edited && edited[field] !== undefined) return edited[field]
+    return field === 'weight_kg' ? s.weight_kg : s.reps_completed
+  }
+
+  async function handleSaveEdits() {
+    if (!hasEdits || savingEdits) return
+    setSavingEdits(true)
+    try {
+      const touchedExerciseIds = new Set()
+      for (const [setId, fields] of Object.entries(editedSets)) {
+        const original = loggedSets.find(s => String(s.id) === String(setId))
+        if (!original) continue
+        const weight = fields.weight_kg !== undefined && fields.weight_kg !== '' ? Math.min(500, Math.max(0, parseFloat(fields.weight_kg) || 0)) : (parseFloat(original.weight_kg) || 0)
+        const reps = fields.reps_completed !== undefined && fields.reps_completed !== '' ? Math.min(100, Math.max(0, parseInt(fields.reps_completed) || 0)) : (parseInt(original.reps_completed) || 0)
+        const { error } = await supabase.from('workout_set_logs').update({ weight_kg: weight, reps_completed: reps }).eq('id', original.id)
+        if (error) throw error
+        if (original.exercise_id) touchedExerciseIds.add(original.exercise_id)
+      }
+      for (const exerciseId of touchedExerciseIds) {
+        const { data: allSets, error: fetchError } = await supabase
+          .from('workout_set_logs')
+          .select('weight_kg, reps_completed, logged_at')
+          .eq('client_id', clientId)
+          .eq('exercise_id', exerciseId)
+        if (fetchError) throw fetchError
+        let best1RM = 0, best1RMAt = null, bestSetScore = 0, bestSetAt = null
+        const volumeByDay = {}
+        for (const row of allSets ?? []) {
+          const weight = parseFloat(row.weight_kg) || 0
+          const reps = parseFloat(row.reps_completed) || 0
+          if (weight === 0) continue
+          const estimated1RM = reps === 1 ? weight : weight * (1 + reps / 30)
+          if (estimated1RM > best1RM) { best1RM = estimated1RM; best1RMAt = row.logged_at }
+          const setScore = weight * reps
+          if (setScore > bestSetScore) { bestSetScore = setScore; bestSetAt = row.logged_at }
+          const day = toLocalDateStr(new Date(row.logged_at))
+          if (!volumeByDay[day]) volumeByDay[day] = { total: 0, at: row.logged_at }
+          volumeByDay[day].total += weight * reps
+        }
+        let bestVolume = 0, bestVolumeAt = null
+        for (const day of Object.keys(volumeByDay)) {
+          if (volumeByDay[day].total > bestVolume) { bestVolume = volumeByDay[day].total; bestVolumeAt = volumeByDay[day].at }
+        }
+        const upserts = []
+        if (best1RM > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: '1rm', value: Math.round(best1RM * 10) / 10, achieved_at: best1RMAt })
+        if (bestSetScore > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: 'best_set', value: bestSetScore, achieved_at: bestSetAt })
+        if (bestVolume > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: 'volume', value: Math.round(bestVolume), achieved_at: bestVolumeAt })
+        if (upserts.length > 0) {
+          const { error: pbError } = await supabase.from('personal_bests').upsert(upserts, { onConflict: 'client_id,exercise_id,pb_type' })
+          if (pbError) throw pbError
+        }
+      }
+      setLoggedSets(prev => prev.map(s => {
+        const fields = editedSets[s.id]
+        if (!fields) return s
+        return {
+          ...s,
+          weight_kg: fields.weight_kg !== undefined && fields.weight_kg !== '' ? fields.weight_kg : s.weight_kg,
+          reps_completed: fields.reps_completed !== undefined && fields.reps_completed !== '' ? fields.reps_completed : s.reps_completed,
+        }
+      }))
+      setEditedSets({})
+    } catch (e) {
+      console.error('Save edits error:', e)
+      alert('Failed to save changes: ' + e.message)
+    }
+    setSavingEdits(false)
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
@@ -90,7 +215,12 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout }) {
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
           <div>
             <p className="text-xs text-gray-500 mb-0.5">{dateLabel}</p>
-            <h2 className="text-lg font-bold text-gray-900">{workout.name}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold text-gray-900">{workout.name}</h2>
+              {completedLog && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Completed</span>
+              )}
+            </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors text-lg leading-none">×</button>
         </div>
@@ -109,7 +239,50 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout }) {
           )}
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
-          {workout._isCustom && workout.customContent ? (
+          {completedLog ? (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Logged Results</p>
+              {loadingSets ? (
+                <p className="text-sm text-gray-400 text-center py-6">Loading logged sets...</p>
+              ) : Object.keys(setsByExercise).length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-6">No set data was recorded for this session.</p>
+              ) : (
+                <div className="space-y-4">
+                  {Object.entries(setsByExercise).map(([exKey, ex]) => (
+                    <div key={exKey}>
+                      <p className="text-sm font-semibold text-gray-900 mb-1.5">{ex.name}</p>
+                      <div className="space-y-1.5">
+                        {ex.sets.map((s) => (
+                          <div key={s.id} className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 w-10 flex-shrink-0">Set {s.set_number}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="500"
+                              step="0.5"
+                              value={displayValue(s, 'weight_kg')}
+                              onChange={(e) => handleSetEdit(s.id, 'weight_kg', e.target.value)}
+                              className="w-20 px-2 py-1.5 text-sm text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition text-center"
+                            />
+                            <span className="text-xs text-gray-400">kg ×</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={displayValue(s, 'reps_completed')}
+                              onChange={(e) => handleSetEdit(s.id, 'reps_completed', e.target.value)}
+                              className="w-16 px-2 py-1.5 text-sm text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition text-center"
+                            />
+                            <span className="text-xs text-gray-400">reps</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : workout._isCustom && workout.customContent ? (
             (() => {
               let parsed = null
               try {
@@ -150,7 +323,7 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout }) {
           ) : exercises.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No exercises added to this workout yet.</p>
           ) : null}
-          {!workout._isCustom && exercises.map((ex, idx) => {
+          {!completedLog && !workout._isCustom && exercises.map((ex, idx) => {
             const exName = ex.exercise?.name || ex.exercises?.name || ex.name || 'Exercise';
             const sets = ex.sets || 0;
             const reps = ex.reps || '–';
@@ -169,12 +342,22 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout }) {
           })}
         </div>
         <div className="px-5 py-4 border-t border-gray-100">
-          <button
-            onClick={() => { onStartWorkout && onStartWorkout(workout); onClose(); }}
-            className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 active:bg-gray-900 transition-colors text-sm"
-          >
-            Start Workout
-          </button>
+          {completedLog ? (
+            <button
+              onClick={handleSaveEdits}
+              disabled={!hasEdits || savingEdits}
+              className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 active:bg-gray-900 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {savingEdits ? 'Saving...' : hasEdits ? 'Save Changes' : 'No Changes'}
+            </button>
+          ) : (
+            <button
+              onClick={() => { onStartWorkout && onStartWorkout(workout); onClose(); }}
+              className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 active:bg-gray-900 transition-colors text-sm"
+            >
+              Start Workout
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -1579,7 +1762,7 @@ export default function ClientProfile() {
                         onMouseLeave={() => setHoveredDay(null)}
                         onAddClick={() => { setModalTargetDate(day); setShowWorkoutModal(true) }}
                         onRemoveClick={handleRemoveScheduledWorkout}
-                        onWorkoutClick={(wo) => setSelectedCalendarDay({ date: dateStr, workout: { id: wo.id, name: wo._displayName || wo.program_workouts?.name || wo.saved_workouts?.name || 'Workout', exercises: workoutExercises[wo.program_workout_id] ?? [], _isCustom: wo._isCustom, customContent: wo.saved_workouts?.content || null } })}
+                        onWorkoutClick={(wo) => setSelectedCalendarDay({ date: dateStr, workout: { id: wo.id, name: wo._displayName || wo.program_workouts?.name || wo.saved_workouts?.name || 'Workout', exercises: workoutExercises[wo.program_workout_id] ?? [], _isCustom: wo._isCustom, customContent: wo.saved_workouts?.content || null, completedLog: workoutLogs.find(l => l.scheduled_workout_id === wo.id && l.completed) ?? null } })}
                       />
                     )
                   })}
@@ -1772,6 +1955,7 @@ export default function ClientProfile() {
 
         <CalendarDayModal
           selectedDay={selectedCalendarDay}
+          clientId={clientId}
           onClose={() => setSelectedCalendarDay(null)}
           onStartWorkout={(workout) => {
             setSelectedCalendarDay(null);
