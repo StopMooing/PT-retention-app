@@ -1418,25 +1418,27 @@ export default function ClientProfile() {
           </div>
         </div>
 
+        {/* Training mode toggle — always visible */}
+        <div className="flex items-center bg-gray-100 rounded-lg p-0.5 w-fit mb-3">
+          <button
+            onClick={() => setTrainingMode("assignment")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${trainingMode === "assignment" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Assignment
+          </button>
+          <button
+            onClick={() => setTrainingMode("history")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${trainingMode === "history" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            History
+          </button>
+        </div>
+
         {/* Calendar — Assignment mode only */}
         {trainingMode === "assignment" && (
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm">
           <div className="flex items-center justify-between px-5 py-3 border-b border-gray-50">
             <div className="flex items-center gap-3">
-              <div className="flex items-center bg-gray-100 rounded-lg p-0.5">
-                <button
-                  onClick={() => setTrainingMode("assignment")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${trainingMode === "assignment" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                >
-                  Assignment
-                </button>
-                <button
-                  onClick={() => setTrainingMode("history")}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition ${trainingMode === "history" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                >
-                  History
-                </button>
-              </div>
               <div className="flex items-center gap-1">
                 <button onClick={goToToday} className="px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition">Today</button>
                 <button onClick={() => navigateCalendar(-1)} className="w-7 h-7 flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 transition">
