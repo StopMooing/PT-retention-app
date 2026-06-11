@@ -781,7 +781,7 @@ export default function ClientProfile() {
     setSavingSchedule(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const dateStr = modalTargetDate.toISOString().split("T")[0]
+      const dateStr = toLocalDateStr(modalTargetDate)
       const { data, error } = await supabase
         .from("scheduled_workouts")
         .insert({
@@ -1387,7 +1387,7 @@ export default function ClientProfile() {
       weeks.push(calendarDays.slice(i * 7, i * 7 + 7))
     }
 
-    const todayStr = new Date().toISOString().split("T")[0]
+    const todayStr = toLocalDateStr()
 
     const filteredProgramWorkouts = programWorkouts.filter(pw =>
       pw.name?.toLowerCase().includes(modalSearch.toLowerCase())
@@ -1516,7 +1516,7 @@ export default function ClientProfile() {
               {weeks.map((week, weekIndex) => (
                 <div key={weekIndex} className={`grid grid-cols-7 ${weekIndex < weeks.length - 1 ? "border-b border-gray-50" : ""}`}>
                   {week.map((day, dayIndex) => {
-                    const dateStr = day.toISOString().split("T")[0]
+                    const dateStr = toLocalDateStr(day)
                     const isToday = dateStr === todayStr
                     const scheduledForDay = scheduledWorkouts.filter(sw => sw.scheduled_date === dateStr)
                     const isHovered = hoveredDay === dateStr
