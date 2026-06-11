@@ -1418,7 +1418,8 @@ export default function ClientProfile() {
           </div>
         </div>
 
-        {/* Calendar toolbar */}
+        {/* Calendar — Assignment mode only */}
+        {trainingMode === "assignment" && (
         <div className="bg-white border border-gray-100 rounded-2xl shadow-sm">
           <div className="flex items-center justify-between px-5 py-3 border-b border-gray-50">
             <div className="flex items-center gap-3">
@@ -1529,6 +1530,7 @@ export default function ClientProfile() {
             </DragOverlay>
           </DndContext>
         </div>
+        )}
 
         {/* History mode */}
         {trainingMode === "history" && (
