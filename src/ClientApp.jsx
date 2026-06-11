@@ -218,7 +218,7 @@ function AIChat({ context, placeholder, systemPrompt, onClose, onSave, saveLabel
                   const jsonMatch = msg.content.match(/\{[\s\S]*\}/)
                   if (jsonMatch) {
                     parsed = JSON.parse(jsonMatch[0])
-                    textOnly = msg.content.replace(jsonMatch[0], '').trim()
+                    textOnly = msg.content.replace(jsonMatch[0], '').replace(/```json/gi, '').replace(/```/g, '').trim()
                   }
                 } catch (e) {}
                 if (parsed?.title && Array.isArray(parsed?.exercises)) {
