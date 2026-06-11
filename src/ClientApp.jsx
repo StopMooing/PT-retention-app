@@ -1681,20 +1681,57 @@ export default function ClientApp() {
   }
 
   async function handleSaveMeal(content) {
-    const calorieMatch = content.match(/[Cc]alories?:?\s*(\d+)/)
-    const proteinMatch = content.match(/[Pp]rotein:?\s*(\d+)/)
-    const carbsMatch = content.match(/[Cc]arbs?:?\s*(\d+)/)
-    const fatsMatch = content.match(/[Ff]ats?:?\s*(\d+)/)
-    const name = content.split('\n').find(l => l.trim().length > 3)?.trim().substring(0, 50) || 'AI Meal'
+    // Try structured per-meal JSON first (new format)
+    let parsed = null
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (jsonMatch) {
+        const p = JSON.parse(jsonMatch[0])
+        if (p && Array.isArray(p.meals) && p.meals.length > 0) parsed = p
+      }
+    } catch (e) { console.warn('Meal JSON parse failed, falling back to legacy:', e) }
+
+    let name, calories, protein, carbs, fats, storedContent
+    if (parsed) {
+      const VALID_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
+      parsed.meals = parsed.meals.map(m => ({
+        name: (m?.name || 'Meal').toString().slice(0, 80),
+        meal_type: VALID_TYPES.includes((m?.meal_type || '').toLowerCase()) ? m.meal_type.toLowerCase() : 'other',
+        description: (m?.description || '').toString(),
+        calories: Math.round(parseFloat(m?.calories) || 0),
+        protein_g: Math.round(parseFloat(m?.protein_g) || 0),
+        carbs_g: Math.round(parseFloat(m?.carbs_g) || 0),
+        fats_g: Math.round(parseFloat(m?.fats_g) || 0),
+      }))
+      name = (parsed.title || parsed.meals[0].name || 'AI Meal Plan').slice(0, 50)
+      calories = parsed.meals.reduce((s, m) => s + m.calories, 0)
+      protein = parsed.meals.reduce((s, m) => s + m.protein_g, 0)
+      carbs = parsed.meals.reduce((s, m) => s + m.carbs_g, 0)
+      fats = parsed.meals.reduce((s, m) => s + m.fats_g, 0)
+      storedContent = JSON.stringify(parsed)
+    } else {
+      // Legacy fallback: old regex behaviour for plain-text responses
+      const calorieMatch = content.match(/[Cc]alories?:?\s*(\d+)/)
+      const proteinMatch = content.match(/[Pp]rotein:?\s*(\d+)/)
+      const carbsMatch = content.match(/[Cc]arbs?:?\s*(\d+)/)
+      const fatsMatch = content.match(/[Ff]ats?:?\s*(\d+)/)
+      name = content.split('\n').find(l => l.trim().length > 3)?.trim().substring(0, 50) || 'AI Meal'
+      calories = parseFloat(calorieMatch?.[1]) || 0
+      protein = parseFloat(proteinMatch?.[1]) || 0
+      carbs = parseFloat(carbsMatch?.[1]) || 0
+      fats = parseFloat(fatsMatch?.[1]) || 0
+      storedContent = content
+    }
+
     try {
       const { data, error } = await supabase.from('saved_meals').insert({
         client_id: client.id,
         name,
-        content,
-        calories: parseFloat(calorieMatch?.[1]) || 0,
-        protein_g: parseFloat(proteinMatch?.[1]) || 0,
-        carbs_g: parseFloat(carbsMatch?.[1]) || 0,
-        fats_g: parseFloat(fatsMatch?.[1]) || 0,
+        content: storedContent,
+        calories,
+        protein_g: protein,
+        carbs_g: carbs,
+        fats_g: fats,
       }).select().single()
       if (error) {
         console.error('Save meal error:', error)
@@ -1710,31 +1747,52 @@ export default function ClientApp() {
     }
   }
 
-  async function handleAddMealToLog(meal) {
+  async function handleAddMealItemsToLog(items) {
+    // items: array of { name, meal_type, calories, protein_g, carbs_g, fats_g }
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      const { data, error } = await supabase.from('food_logs').insert({
+      const rows = items.map(item => ({
         client_id: client.id,
-        food_name: meal.name,
-        meal_type: 'other',
-        calories: meal.calories || 0,
-        protein_g: meal.protein_g || 0,
-        carbs_g: meal.carbs_g || 0,
-        fats_g: meal.fats_g || 0,
+        food_name: item.name,
+        meal_type: item.meal_type || 'other',
+        calories: item.calories || 0,
+        protein_g: item.protein_g || 0,
+        carbs_g: item.carbs_g || 0,
+        fats_g: item.fats_g || 0,
         logged_at: new Date(selectedNutritionDate + 'T12:00:00').toISOString(),
-      }).select().single()
+      }))
+      const { data, error } = await supabase.from('food_logs').insert(rows).select()
       if (error) {
         console.error('Add meal error:', error)
-        alert('Could not add meal: ' + error.message)
+        alert('Could not add to log: ' + error.message)
         return
       }
-      setFoodLogs(prev => [data, ...prev])
+      setFoodLogs(prev => [...(data ?? []), ...prev])
       loadNutritionDateData(selectedNutritionDate)
       setNutritionSubTab('log')
     } catch (e) {
       console.error('Add meal exception:', e)
       alert('Something went wrong: ' + e.message)
     }
+  }
+
+  function parseSavedMealContent(meal) {
+    try {
+      const p = JSON.parse(meal.content)
+      if (p && Array.isArray(p.meals) && p.meals.length > 0) return p
+    } catch (e) {}
+    return null
+  }
+
+  async function handleAddMealToLog(meal) {
+    // Legacy path for old plain-text saved meals: one row from the meal's top-level macros
+    await handleAddMealItemsToLog([{
+      name: meal.name,
+      meal_type: 'other',
+      calories: meal.calories,
+      protein_g: meal.protein_g,
+      carbs_g: meal.carbs_g,
+      fats_g: meal.fats_g,
+    }])
   }
 
   async function handleScheduleWorkout() {
@@ -1877,7 +1935,20 @@ PROGRAMMING RULES (follow exactly):
 OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks, no text before or after. Structure: {"title": "Upper Body Hypertrophy", "exercises": [{"name": "Bench Press", "sets": 4, "reps": "8-12", "rest_seconds": 90, "notes": "Control the descent"}]}. title is a short descriptive workout name. exercises is an array. name must be an exact library name as a string. sets is an integer. reps is a string like "8-12" or "5". rest_seconds is an integer in seconds. notes is a short cue string or empty string. Respond with ONLY the JSON object and nothing else.`
   })()
   if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt={workoutAIPrompt} onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
-  if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt="You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions with macros where helpful. Keep advice evidence-based and actionable. When giving a meal or recipe, always end with a MACROS section showing: Calories: X, Protein: Xg, Carbs: Xg, Fats: Xg" onClose={() => setShowNutritionAI(false)} onSave={handleSaveMeal} saveLabel="Save meal" />
+  const nutritionAIPrompt = `You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions. Keep advice evidence-based and actionable.
+
+CRITICAL OUTPUT FORMAT: whenever you provide a meal, recipe, or full day meal plan, write your conversational answer first, then end your response with a single valid JSON object in exactly this shape (no markdown code fences around it, raw JSON as the last thing in the message):
+
+{"title":"Plan name","meals":[{"name":"Meal name","meal_type":"breakfast","description":"Short description with key ingredients and rough amounts","calories":500,"protein_g":40,"carbs_g":50,"fats_g":15}]}
+
+Rules:
+- meal_type must be exactly one of: breakfast, lunch, dinner, snack
+- A single meal idea is a meals array with ONE item. A full day plan has one item per meal (typically 3 to 5 items)
+- calories, protein_g, carbs_g, fats_g must be numbers, not strings, and must be per-meal values (not day totals)
+- For a full day plan, the per-meal calories must sum to approximately the requested daily target
+- The JSON must be valid and must be the final thing in your message`
+
+  if (showNutritionAI) return <AIChat context="Nutrition & meal ideas" placeholder="e.g. Give me a high protein breakfast under 500 calories" systemPrompt={nutritionAIPrompt} onClose={() => setShowNutritionAI(false)} onSave={handleSaveMeal} saveLabel="Save meal" />
 
   // Workout preview (between card tap and logging)
   if (workoutCompleteData) return (
@@ -3217,6 +3288,7 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
               <div className="space-y-3">
                 {savedMeals.map(meal => {
                   const isExpanded = expandedMealId === meal.id
+                  const parsedMeal = parseSavedMealContent(meal)
                   return (
                     <div key={meal.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
                       <div className="px-4 py-3 flex items-center justify-between">
@@ -3237,14 +3309,38 @@ OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks,
                           </div>
                         </button>
                         <button
-                          onClick={() => handleAddMealToLog(meal)}
+                          onClick={() => parsedMeal
+                            ? handleAddMealItemsToLog(parsedMeal.meals)
+                            : handleAddMealToLog(meal)}
                           className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors flex-shrink-0">
-                          <Plus size={12} /> Add to Log
+                          <Plus size={12} /> {parsedMeal && parsedMeal.meals.length > 1 ? 'Add full day' : 'Add to Log'}
                         </button>
                       </div>
                       {isExpanded && (
                         <div className="px-4 pb-4 pt-1 border-t border-gray-50">
-                          <pre className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap font-sans">{meal.content}</pre>
+                          {parsedMeal ? (
+                            <div className="space-y-2 mt-2">
+                              {parsedMeal.meals.map((m, i) => {
+                                const mealColour = MEAL_COLOURS[m.meal_type] ?? MEAL_COLOURS.other
+                                return (
+                                  <div key={i} className="bg-gray-50 rounded-xl px-3 py-2.5 flex items-start gap-3">
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border capitalize flex-shrink-0 mt-0.5 ${mealColour}`}>{m.meal_type}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-semibold text-gray-900">{m.name}</p>
+                                      {m.description && <p className="text-xs text-gray-400 mt-0.5">{m.description}</p>}
+                                      <p className="text-xs text-gray-500 mt-1">{m.calories} kcal · P{m.protein_g}g · C{m.carbs_g}g · F{m.fats_g}g</p>
+                                    </div>
+                                    <button onClick={() => handleAddMealItemsToLog([m])}
+                                      className="flex-shrink-0 bg-black hover:bg-gray-800 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors">
+                                      Add
+                                    </button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          ) : (
+                            <pre className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap font-sans">{meal.content}</pre>
+                          )}
                         </div>
                       )}
                     </div>
