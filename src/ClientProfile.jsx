@@ -75,17 +75,23 @@ function SectionCard({ children, className = "" }) {
   )
 }
 
-function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
+function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
   const [loggedSets, setLoggedSets] = useState([])
   const [editedSets, setEditedSets] = useState({})
   const [loadingSets, setLoadingSets] = useState(false)
   const [savingEdits, setSavingEdits] = useState(false)
+  const [loggingMode, setLoggingMode] = useState(false)
+  const [liveSetData, setLiveSetData] = useState({})
+  const [coachAiExercises, setCoachAiExercises] = useState(null)
+  const [aiParseError, setAiParseError] = useState(false)
+  const [completing, setCompleting] = useState(false)
 
   const completedLog = selectedDay?.workout?.completedLog ?? null
+  const workoutRef = selectedDay?.workout ?? null
+  const isCustom = !!workoutRef?._isCustom
 
   useEffect(() => {
-    setLoggedSets([])
-    setEditedSets({})
+    setLoggedSets([]); setEditedSets({}); setLoggingMode(false); setLiveSetData({}); setCoachAiExercises(null); setAiParseError(false)
     if (!selectedDay || !completedLog || !clientId) return
     let cancelled = false
     async function fetchLoggedSets() {
@@ -111,6 +117,55 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
     return () => { cancelled = true }
   }, [selectedDay, completedLog, clientId])
 
+  useEffect(() => {
+    if (!loggingMode || !isCustom || !workoutRef?.customContent) return
+    let cancelled = false
+    const failSafe = setTimeout(() => { if (!cancelled) setAiParseError(true) }, 10000)
+    async function buildAiExercises() {
+      try {
+        let parsed = null
+        try {
+          const jsonMatch = workoutRef.customContent.match(/\{[\s\S]*\}/)
+          if (jsonMatch) {
+            const p = JSON.parse(jsonMatch[0])
+            if (p && Array.isArray(p.exercises) && p.exercises.length > 0) parsed = p
+          }
+        } catch (e) { console.warn('AI workout JSON parse failed:', e) }
+        if (!parsed) { if (!cancelled) { clearTimeout(failSafe); setAiParseError(true) } ; return }
+        const names = parsed.exercises.map(e => (e?.name ?? '').trim()).filter(Boolean)
+        const resolvedMap = {}
+        try {
+          const { data: resolved, error } = await supabase.rpc('resolve_exercise_ids', { p_names: names })
+          if (error) console.error('resolve_exercise_ids error:', error)
+          for (const row of resolved ?? []) {
+            const key = (row?.input_name ?? '').trim().toLowerCase()
+            if (key) resolvedMap[key] = row
+          }
+        } catch (e) { console.error('resolve_exercise_ids exception:', e) }
+        const built = parsed.exercises.map((e, idx) => {
+          const name = (e?.name ?? 'Exercise').trim()
+          const match = resolvedMap[name.toLowerCase()] || {}
+          const resolvedId = match.exercise_id || null
+          return {
+            id: `ai_${idx}`,
+            exercise_id: resolvedId,
+            exercises: { id: resolvedId, name, muscle_group: match.muscle_group || null },
+            sets: parseInt(e?.sets, 10) || 1,
+            reps: String(e?.reps ?? ''),
+            rest_seconds: e?.rest_seconds || null,
+            notes: e?.notes || null,
+          }
+        })
+        if (!cancelled) { clearTimeout(failSafe); setCoachAiExercises(built) }
+      } catch (e) {
+        console.error('buildAiExercises fatal error:', e)
+        if (!cancelled) { clearTimeout(failSafe); setAiParseError(true) }
+      }
+    }
+    buildAiExercises()
+    return () => { cancelled = true; clearTimeout(failSafe) }
+  }, [loggingMode, isCustom, workoutRef])
+
   if (!selectedDay) return null;
   const { date, workout } = selectedDay;
   const exercises = workout.exercises || workout.workout_exercises || [];
@@ -125,6 +180,28 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
     acc[key].sets.push(s)
     return acc
   }, {})
+
+  const trackedExercises = loggingMode
+    ? (isCustom ? (coachAiExercises || []) : exercises.map(ex => ({
+        id: ex.id,
+        exercise_id: ex.exercise_id || ex.exercises?.id || null,
+        exercises: { name: ex.exercise?.name || ex.exercises?.name || ex.name || 'Exercise' },
+        sets: ex.sets || 1,
+        reps: String(ex.reps || ''),
+      })))
+    : []
+
+  function updateLiveSet(exerciseIdx, setIdx, field, rawValue) {
+    setLiveSetData(prev => {
+      const key = `${exerciseIdx}_${setIdx}`
+      const existing = prev[key] || {}
+      if (rawValue === '') return { ...prev, [key]: { ...existing, [field]: '' } }
+      const n = field === 'weight_kg' ? parseFloat(rawValue) : parseInt(rawValue)
+      if (isNaN(n)) return prev
+      const clamped = field === 'weight_kg' ? Math.min(500, Math.max(0, n)) : Math.min(100, Math.max(0, n))
+      return { ...prev, [key]: { ...existing, [field]: clamped } }
+    })
+  }
 
   function handleSetEdit(setId, field, rawValue) {
     if (rawValue === '') {
@@ -143,6 +220,41 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
     return field === 'weight_kg' ? s.weight_kg : s.reps_completed
   }
 
+  async function recomputePBsForExercise(exerciseId) {
+    const { data: allSets, error: fetchError } = await supabase
+      .from('workout_set_logs')
+      .select('weight_kg, reps_completed, logged_at')
+      .eq('client_id', clientId)
+      .eq('exercise_id', exerciseId)
+    if (fetchError) throw fetchError
+    let best1RM = 0, best1RMAt = null, bestSetScore = 0, bestSetAt = null
+    const volumeByDay = {}
+    for (const row of allSets ?? []) {
+      const weight = parseFloat(row.weight_kg) || 0
+      const reps = parseFloat(row.reps_completed) || 0
+      if (weight === 0) continue
+      const estimated1RM = reps === 1 ? weight : weight * (1 + reps / 30)
+      if (estimated1RM > best1RM) { best1RM = estimated1RM; best1RMAt = row.logged_at }
+      const setScore = weight * reps
+      if (setScore > bestSetScore) { bestSetScore = setScore; bestSetAt = row.logged_at }
+      const day = toLocalDateStr(new Date(row.logged_at))
+      if (!volumeByDay[day]) volumeByDay[day] = { total: 0, at: row.logged_at }
+      volumeByDay[day].total += weight * reps
+    }
+    let bestVolume = 0, bestVolumeAt = null
+    for (const day of Object.keys(volumeByDay)) {
+      if (volumeByDay[day].total > bestVolume) { bestVolume = volumeByDay[day].total; bestVolumeAt = volumeByDay[day].at }
+    }
+    const upserts = []
+    if (best1RM > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: '1rm', value: Math.round(best1RM * 10) / 10, achieved_at: best1RMAt })
+    if (bestSetScore > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: 'best_set', value: bestSetScore, achieved_at: bestSetAt })
+    if (bestVolume > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: 'volume', value: Math.round(bestVolume), achieved_at: bestVolumeAt })
+    if (upserts.length > 0) {
+      const { error: pbError } = await supabase.from('personal_bests').upsert(upserts, { onConflict: 'client_id,exercise_id,pb_type' })
+      if (pbError) throw pbError
+    }
+  }
+
   async function handleSaveEdits() {
     if (!hasEdits || savingEdits) return
     setSavingEdits(true)
@@ -158,38 +270,7 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
         if (original.exercise_id) touchedExerciseIds.add(original.exercise_id)
       }
       for (const exerciseId of touchedExerciseIds) {
-        const { data: allSets, error: fetchError } = await supabase
-          .from('workout_set_logs')
-          .select('weight_kg, reps_completed, logged_at')
-          .eq('client_id', clientId)
-          .eq('exercise_id', exerciseId)
-        if (fetchError) throw fetchError
-        let best1RM = 0, best1RMAt = null, bestSetScore = 0, bestSetAt = null
-        const volumeByDay = {}
-        for (const row of allSets ?? []) {
-          const weight = parseFloat(row.weight_kg) || 0
-          const reps = parseFloat(row.reps_completed) || 0
-          if (weight === 0) continue
-          const estimated1RM = reps === 1 ? weight : weight * (1 + reps / 30)
-          if (estimated1RM > best1RM) { best1RM = estimated1RM; best1RMAt = row.logged_at }
-          const setScore = weight * reps
-          if (setScore > bestSetScore) { bestSetScore = setScore; bestSetAt = row.logged_at }
-          const day = toLocalDateStr(new Date(row.logged_at))
-          if (!volumeByDay[day]) volumeByDay[day] = { total: 0, at: row.logged_at }
-          volumeByDay[day].total += weight * reps
-        }
-        let bestVolume = 0, bestVolumeAt = null
-        for (const day of Object.keys(volumeByDay)) {
-          if (volumeByDay[day].total > bestVolume) { bestVolume = volumeByDay[day].total; bestVolumeAt = volumeByDay[day].at }
-        }
-        const upserts = []
-        if (best1RM > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: '1rm', value: Math.round(best1RM * 10) / 10, achieved_at: best1RMAt })
-        if (bestSetScore > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: 'best_set', value: bestSetScore, achieved_at: bestSetAt })
-        if (bestVolume > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: 'volume', value: Math.round(bestVolume), achieved_at: bestVolumeAt })
-        if (upserts.length > 0) {
-          const { error: pbError } = await supabase.from('personal_bests').upsert(upserts, { onConflict: 'client_id,exercise_id,pb_type' })
-          if (pbError) throw pbError
-        }
+        await recomputePBsForExercise(exerciseId)
       }
       setLoggedSets(prev => prev.map(s => {
         const fields = editedSets[s.id]
@@ -208,6 +289,60 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
     setSavingEdits(false)
   }
 
+  async function handleCompleteSession() {
+    if (completing) return
+    setCompleting(true)
+    try {
+      const now = new Date().toISOString()
+      const { data: newLog, error: logError } = await supabase
+        .from('workout_logs')
+        .insert({ client_id: clientId, logged_at: now, notes: workout.name || 'Workout' })
+        .select()
+        .single()
+      if (logError) throw logError
+
+      const setInserts = []
+      const touchedExerciseIds = new Set()
+      trackedExercises.forEach((ex, exIdx) => {
+        const exerciseId = ex.exercise_id
+        for (let setIdx = 0; setIdx < (ex.sets || 1); setIdx++) {
+          const key = `${exIdx}_${setIdx}`
+          const val = liveSetData[key] || {}
+          const weight = parseFloat(val.weight_kg) || 0
+          const reps = parseInt(val.reps_completed) || 0
+          if (weight > 0 || reps > 0) {
+            setInserts.push({
+              client_id: clientId,
+              workout_log_id: newLog.id,
+              exercise_id: exerciseId || null,
+              set_number: setIdx + 1,
+              weight_kg: weight,
+              reps_completed: reps,
+              logged_at: now,
+            })
+            if (exerciseId) touchedExerciseIds.add(exerciseId)
+          }
+        }
+      })
+
+      if (setInserts.length > 0) {
+        const { error: setsError } = await supabase.from('workout_set_logs').insert(setInserts)
+        if (setsError) throw setsError
+      }
+
+      for (const exerciseId of touchedExerciseIds) {
+        await recomputePBsForExercise(exerciseId)
+      }
+
+      onWorkoutDone && onWorkoutDone(newLog)
+      onClose()
+    } catch (e) {
+      console.error('Complete session error:', e)
+      alert('Failed to complete session: ' + e.message)
+    }
+    setCompleting(false)
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -219,6 +354,9 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
               <h2 className="text-lg font-bold text-gray-900">{workout.name}</h2>
               {completedLog && (
                 <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Completed</span>
+              )}
+              {loggingMode && (
+                <span className="flex items-center gap-1 text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Live Logging</span>
               )}
             </div>
           </div>
@@ -282,6 +420,59 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
                 </div>
               )}
             </div>
+          ) : loggingMode ? (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Log Sets</p>
+              {isCustom && !coachAiExercises && !aiParseError && (
+                <p className="text-sm text-gray-400 text-center py-6">Preparing exercises...</p>
+              )}
+              {aiParseError && (
+                <p className="text-sm text-red-500 text-center py-6">Could not parse AI workout. Check the workout content.</p>
+              )}
+              {trackedExercises.length === 0 && !aiParseError && !(isCustom && !coachAiExercises) && (
+                <p className="text-sm text-gray-400 text-center py-6">No exercises to log.</p>
+              )}
+              <div className="space-y-4">
+                {trackedExercises.map((ex, exIdx) => (
+                  <div key={ex.id || exIdx}>
+                    <p className="text-sm font-semibold text-gray-900 mb-1.5">{ex.exercises?.name || 'Exercise'}</p>
+                    <p className="text-xs text-gray-500 mb-2">{ex.sets || 1} sets × {ex.reps || '–'} reps</p>
+                    <div className="space-y-1.5">
+                      {Array.from({ length: ex.sets || 1 }).map((_, setIdx) => {
+                        const key = `${exIdx}_${setIdx}`
+                        const val = liveSetData[key] || {}
+                        return (
+                          <div key={setIdx} className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 w-10 flex-shrink-0">Set {setIdx + 1}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="500"
+                              step="0.5"
+                              value={val.weight_kg ?? ''}
+                              onChange={(e) => updateLiveSet(exIdx, setIdx, 'weight_kg', e.target.value)}
+                              placeholder="0"
+                              className="w-20 px-2 py-1.5 text-sm text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition text-center"
+                            />
+                            <span className="text-xs text-gray-400">kg ×</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              value={val.reps_completed ?? ''}
+                              onChange={(e) => updateLiveSet(exIdx, setIdx, 'reps_completed', e.target.value)}
+                              placeholder="0"
+                              className="w-16 px-2 py-1.5 text-sm text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition text-center"
+                            />
+                            <span className="text-xs text-gray-400">reps</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : workout._isCustom && workout.customContent ? (
             (() => {
               let parsed = null
@@ -323,7 +514,7 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
           ) : exercises.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No exercises added to this workout yet.</p>
           ) : null}
-          {!completedLog && !workout._isCustom && exercises.map((ex, idx) => {
+          {!completedLog && !loggingMode && !workout._isCustom && exercises.map((ex, idx) => {
             const exName = ex.exercise?.name || ex.exercises?.name || ex.name || 'Exercise';
             const sets = ex.sets || 0;
             const reps = ex.reps || '–';
@@ -350,9 +541,25 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout, clientId }) {
             >
               {savingEdits ? 'Saving...' : hasEdits ? 'Save Changes' : 'No Changes'}
             </button>
+          ) : loggingMode ? (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setLoggingMode(false)}
+                className="flex-1 bg-gray-100 text-gray-700 font-semibold py-3.5 rounded-xl hover:bg-gray-200 active:bg-gray-300 transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCompleteSession}
+                disabled={completing}
+                className="flex-1 bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 active:bg-gray-900 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {completing ? 'Saving...' : 'Complete Session'}
+              </button>
+            </div>
           ) : (
             <button
-              onClick={() => { onStartWorkout && onStartWorkout(workout); onClose(); }}
+              onClick={() => setLoggingMode(true)}
               className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 active:bg-gray-900 transition-colors text-sm"
             >
               Start Workout
@@ -1957,9 +2164,7 @@ export default function ClientProfile() {
           selectedDay={selectedCalendarDay}
           clientId={clientId}
           onClose={() => setSelectedCalendarDay(null)}
-          onStartWorkout={(workout) => {
-            setSelectedCalendarDay(null);
-          }}
+          onWorkoutDone={(newLog) => { if (newLog) setWorkoutLogs(prev => [newLog, ...prev]) }}
         />
 
         {/* Find a Workout Modal */}
