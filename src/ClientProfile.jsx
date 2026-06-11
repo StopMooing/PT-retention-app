@@ -294,45 +294,54 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
     setCompleting(true)
     try {
       const now = new Date().toISOString()
-      const { data: newLog, error: logError } = await supabase
-        .from('workout_logs')
-        .insert({ client_id: clientId, logged_at: now, notes: workout.name || 'Workout' })
-        .select()
-        .single()
-      if (logError) throw logError
-
+      let totalVolume = 0
       const setInserts = []
       const touchedExerciseIds = new Set()
       trackedExercises.forEach((ex, exIdx) => {
-        const exerciseId = ex.exercise_id
+        const exerciseId = ex.exercise_id || ex.exercises?.id
+        if (!exerciseId) return
         for (let setIdx = 0; setIdx < (ex.sets || 1); setIdx++) {
           const key = `${exIdx}_${setIdx}`
           const val = liveSetData[key] || {}
-          const weight = parseFloat(val.weight_kg) || 0
-          const reps = parseInt(val.reps_completed) || 0
+          let weight = parseFloat(val.weight_kg) || 0
+          let reps = parseInt(val.reps_completed) || 0
+          if (weight < 0) weight = 0; if (weight > 500) weight = 500
+          if (reps < 0) reps = 0; if (reps > 100) reps = 100
           if (weight > 0 || reps > 0) {
+            totalVolume += reps * weight
             setInserts.push({
               client_id: clientId,
-              exercise_id: exerciseId || null,
+              scheduled_workout_id: workout.id ?? null,
+              exercise_id: exerciseId,
               set_number: setIdx + 1,
               weight_kg: weight,
               reps_completed: reps,
               logged_at: now,
             })
-            if (exerciseId) touchedExerciseIds.add(exerciseId)
+            touchedExerciseIds.add(exerciseId)
           }
         }
       })
-
       if (setInserts.length > 0) {
         const { error: setsError } = await supabase.from('workout_set_logs').insert(setInserts)
         if (setsError) throw setsError
       }
-
       for (const exerciseId of touchedExerciseIds) {
         await recomputePBsForExercise(exerciseId)
       }
-
+      const { data: newLog, error: logError } = await supabase
+        .from('workout_logs')
+        .insert({
+          client_id: clientId,
+          program_workout_id: workout._isCustom ? null : (workout.program_workout_id ?? null),
+          scheduled_workout_id: workout.id ?? null,
+          logged_at: now,
+          completed: true,
+          total_volume_kg: totalVolume,
+        })
+        .select()
+        .single()
+      if (logError) throw logError
       onWorkoutDone && onWorkoutDone(newLog)
       onClose()
     } catch (e) {
