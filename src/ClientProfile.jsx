@@ -14,6 +14,9 @@ const TABS = [
   { id: "notes",     label: "Notes"     },
 ]
 
+function toLocalDateStr(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 function formatDate(dateStr) {
   if (!dateStr) return "—"
   return new Date(dateStr).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })
