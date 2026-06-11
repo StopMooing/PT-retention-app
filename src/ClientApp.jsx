@@ -1747,6 +1747,15 @@ export default function ClientApp() {
     }
   }
 
+  async function handleDeleteSavedMeal(id) {
+    if (!window.confirm('Delete this saved meal? This cannot be undone.')) return
+    try {
+      const { error } = await supabase.from('saved_meals').delete().eq('id', id)
+      if (error) { alert('Could not delete: ' + error.message); return }
+      setSavedMeals(prev => prev.filter(m => m.id !== id))
+    } catch (e) { alert('Could not delete: ' + e.message) }
+  }
+
   async function handleAddMealItemsToLog(items) {
     // items: array of { name, meal_type, calories, protein_g, carbs_g, fats_g }
     try {
@@ -3308,13 +3317,18 @@ Rules:
                             </span>
                           </div>
                         </button>
-                        <button
-                          onClick={() => parsedMeal
-                            ? handleAddMealItemsToLog(parsedMeal.meals)
-                            : handleAddMealToLog(meal)}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors flex-shrink-0">
-                          <Plus size={12} /> {parsedMeal && parsedMeal.meals.length > 1 ? 'Add full day' : 'Add to Log'}
-                        </button>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => parsedMeal
+                              ? handleAddMealItemsToLog(parsedMeal.meals)
+                              : handleAddMealToLog(meal)}
+                            className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors flex-shrink-0">
+                            <Plus size={12} /> {parsedMeal && parsedMeal.meals.length > 1 ? 'Add full day' : 'Add to Log'}
+                          </button>
+                          <button onClick={() => handleDeleteSavedMeal(meal.id)} className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0">
+                            <X size={14} />
+                          </button>
+                        </div>
                       </div>
                       {isExpanded && (
                         <div className="px-4 pb-4 pt-1 border-t border-gray-50">
