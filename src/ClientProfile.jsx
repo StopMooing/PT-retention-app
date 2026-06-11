@@ -313,7 +313,6 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
           if (weight > 0 || reps > 0) {
             setInserts.push({
               client_id: clientId,
-              workout_log_id: newLog.id,
               exercise_id: exerciseId || null,
               set_number: setIdx + 1,
               weight_kg: weight,
