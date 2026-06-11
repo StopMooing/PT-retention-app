@@ -1023,6 +1023,8 @@ export default function ClientProfile() {
     const scheduledLast7 = scheduledWorkouts.filter(sw => sw.scheduled_date >= weekStartLocal && sw.scheduled_date <= todayLocal).length
     const workoutsThisMonth = completedLogs.filter(w => toLocalDateStr(new Date(w.logged_at)).slice(0, 7) === monthLocal).length
     const scheduledThisMonth = scheduledWorkouts.filter(sw => sw.scheduled_date.slice(0, 7) === monthLocal && sw.scheduled_date <= todayLocal).length
+    const adherenceLast7 = scheduledLast7 > 0 ? Math.round((workoutsLast7 / scheduledLast7) * 100) : null
+    const adherenceThisMonth = scheduledThisMonth > 0 ? Math.round((workoutsThisMonth / scheduledThisMonth) * 100) : null
     const workoutsTotal = completedLogs.length
 
     const weightChange = filteredWeightLogs.length > 1
@@ -1057,12 +1059,12 @@ export default function ClientProfile() {
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Last 7 Days</span>
                   <span className="text-2xl font-black text-gray-900">{workoutsLast7}{scheduledLast7 > 0 && <span className="text-base text-gray-400 font-medium">/{scheduledLast7}</span>}</span>
-                  <span className={`text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full ${workoutsLast7 > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>{workoutsLast7 > 0 ? "Active" : "No sessions"}</span>
+                  <span className={`text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full ${adherenceLast7 !== null ? (adherenceLast7 >= 85 ? "bg-emerald-50 text-emerald-600" : adherenceLast7 >= 1 ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400") : (workoutsLast7 > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400")}`}>{adherenceLast7 !== null ? `${adherenceLast7}% adherence` : (workoutsLast7 > 0 ? "Active" : "No sessions")}</span>
                 </div>
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">This Month</span>
                   <span className="text-2xl font-black text-gray-900">{workoutsThisMonth}{scheduledThisMonth > 0 && <span className="text-base text-gray-400 font-medium">/{scheduledThisMonth}</span>}</span>
-                  <span className={`text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full ${scheduledThisMonth > 0 && workoutsThisMonth >= scheduledThisMonth ? "bg-emerald-50 text-emerald-600" : workoutsThisMonth >= 1 ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}>{scheduledThisMonth > 0 && workoutsThisMonth >= scheduledThisMonth ? "On track" : workoutsThisMonth >= 1 ? "Partial" : "Not tracked"}</span>
+                  <span className={`text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full ${adherenceThisMonth !== null ? (adherenceThisMonth >= 85 ? "bg-emerald-50 text-emerald-600" : adherenceThisMonth >= 1 ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400") : (workoutsThisMonth > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400")}`}>{adherenceThisMonth !== null ? `${adherenceThisMonth}% adherence` : (workoutsThisMonth > 0 ? "Active" : "No sessions")}</span>
                 </div>
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Total</span>
