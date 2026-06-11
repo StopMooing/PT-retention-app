@@ -367,7 +367,7 @@ export default function ClientProfile() {
           supabase.from("program_assignments").select("*, programs(*)").eq("client_id", clientId).eq("is_active", true).limit(1),
           supabase.from("habits").select("*").eq("client_id", clientId).eq("is_active", true),
           supabase.from("meal_plans").select("*").eq("client_id", clientId).eq("is_active", true).limit(1),
-          supabase.from("workout_logs").select("*").eq("client_id", clientId).order("logged_at", { ascending: false }).limit(10),
+          supabase.from("workout_logs").select("*").eq("client_id", clientId).order("logged_at", { ascending: false }).limit(200),
           supabase.from("body_weight_logs").select("*").eq("client_id", clientId).order("logged_date", { ascending: true }),
           supabase.from("food_logs").select("*").eq("client_id", clientId).order("logged_at", { ascending: false }).limit(20),
           supabase.from("exercise_logs").select("*, exercises(name)").eq("client_id", clientId).order("created_at", { ascending: false }).limit(20),
@@ -1009,16 +1009,21 @@ export default function ClientProfile() {
       }
     }
 
-    const engagedCount = checkins.filter(c => {
-      const daysAgo = Math.floor((new Date() - new Date(c.submitted_at)) / (1000 * 60 * 60 * 24))
-      return daysAgo <= 7
-    }).length
+    const todayLocal = toLocalDateStr()
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6)
+    const weekStartLocal = toLocalDateStr(sevenDaysAgo)
+    const monthLocal = todayLocal.slice(0, 7)
 
-    const thisMonthCheckins = checkins.filter(c => {
-      const d = new Date(c.submitted_at)
-      const now = new Date()
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    const completedLogs = workoutLogs.filter(w => w.completed)
+    const workoutsLast7 = completedLogs.filter(w => {
+      const d = toLocalDateStr(new Date(w.logged_at))
+      return d >= weekStartLocal && d <= todayLocal
     }).length
+    const scheduledLast7 = scheduledWorkouts.filter(sw => sw.scheduled_date >= weekStartLocal && sw.scheduled_date <= todayLocal).length
+    const workoutsThisMonth = completedLogs.filter(w => toLocalDateStr(new Date(w.logged_at)).slice(0, 7) === monthLocal).length
+    const scheduledThisMonth = scheduledWorkouts.filter(sw => sw.scheduled_date.slice(0, 7) === monthLocal && sw.scheduled_date <= todayLocal).length
+    const workoutsTotal = completedLogs.length
 
     const weightChange = filteredWeightLogs.length > 1
       ? parseFloat(filteredWeightLogs[filteredWeightLogs.length - 1].weight_kg) - parseFloat(filteredWeightLogs[0].weight_kg)
@@ -1051,17 +1056,17 @@ export default function ClientProfile() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Last 7 Days</span>
-                  <span className="text-2xl font-black text-gray-900">{checkins.filter(c => Math.floor((new Date() - new Date(c.submitted_at)) / 86400000) <= 7).length}<span className="text-base text-gray-400 font-medium">/1</span></span>
-                  <span className={`text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full ${engagedCount > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>{engagedCount > 0 ? "On track" : "Not tracked"}</span>
+                  <span className="text-2xl font-black text-gray-900">{workoutsLast7}{scheduledLast7 > 0 && <span className="text-base text-gray-400 font-medium">/{scheduledLast7}</span>}</span>
+                  <span className={`text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full ${workoutsLast7 > 0 ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-400"}`}>{workoutsLast7 > 0 ? "Active" : "No sessions"}</span>
                 </div>
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">This Month</span>
-                  <span className="text-2xl font-black text-gray-900">{thisMonthCheckins}<span className="text-base text-gray-400 font-medium">/4</span></span>
-                  <span className={`text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full ${thisMonthCheckins >= 3 ? "bg-emerald-50 text-emerald-600" : thisMonthCheckins >= 1 ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}>{thisMonthCheckins >= 3 ? "Strong" : thisMonthCheckins >= 1 ? "Partial" : "Not tracked"}</span>
+                  <span className="text-2xl font-black text-gray-900">{workoutsThisMonth}{scheduledThisMonth > 0 && <span className="text-base text-gray-400 font-medium">/{scheduledThisMonth}</span>}</span>
+                  <span className={`text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full ${scheduledThisMonth > 0 && workoutsThisMonth >= scheduledThisMonth ? "bg-emerald-50 text-emerald-600" : workoutsThisMonth >= 1 ? "bg-amber-50 text-amber-600" : "bg-gray-100 text-gray-400"}`}>{scheduledThisMonth > 0 && workoutsThisMonth >= scheduledThisMonth ? "On track" : workoutsThisMonth >= 1 ? "Partial" : "Not tracked"}</span>
                 </div>
                 <div className="flex flex-col items-center bg-gray-50 rounded-xl py-5 px-3">
                   <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Total</span>
-                  <span className="text-2xl font-black text-gray-900">{checkins.length}</span>
+                  <span className="text-2xl font-black text-gray-900">{workoutsTotal}</span>
                   <span className="text-xs font-semibold mt-2 px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-400">All time</span>
                 </div>
               </div>
