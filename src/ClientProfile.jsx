@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
-import { ArrowLeft, Phone, Target, Calendar, Activity, CheckCircle2, Clock, Dumbbell, Utensils, Heart, FileText, TrendingUp, Flame, Edit3, Send, Plus, ChevronRight, Circle, Mail, Scale, AlertCircle, Camera, Flag, Timer, MoreHorizontal, Droplets, Trophy } from "lucide-react";
+import { ArrowLeft, Phone, Target, Calendar, Activity, CheckCircle2, Clock, Dumbbell, Utensils, Heart, FileText, TrendingUp, Flame, Edit3, Send, Plus, ChevronRight, ChevronDown, Circle, Mail, Scale, AlertCircle, Camera, Flag, Timer, MoreHorizontal, Droplets, Trophy, Search } from "lucide-react";
 import { DndContext, DragOverlay, PointerSensor, MouseSensor, TouchSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 
@@ -229,6 +229,10 @@ export default function ClientProfile() {
   const [mealPlan, setMealPlan]                   = useState(null)
   const [workoutLogs, setWorkoutLogs]             = useState([])
   const [personalBests, setPersonalBests]         = useState([])
+  const [pbSearch, setPbSearch]                   = useState("")
+  const [expandedSessionId, setExpandedSessionId] = useState(null)
+  const [expandedExerciseKey, setExpandedExerciseKey] = useState(null)
+  const [sessionSetLogs, setSessionSetLogs]       = useState({})
   const [activeTab, setActiveTab]                 = useState("overview")
   const [loading, setLoading]                     = useState(true)
   const [notes, setNotes]                         = useState("")
@@ -731,6 +735,24 @@ export default function ClientProfile() {
       days.push(d)
     }
     return days
+  }
+
+  async function loadSessionSets(log) {
+    if (sessionSetLogs[log.id]) return
+    const sessionDateStr = toLocalDateStr(new Date(log.logged_at))
+    const dayStart = new Date(sessionDateStr + "T00:00:00")
+    dayStart.setDate(dayStart.getDate() - 1)
+    const dayEnd = new Date(sessionDateStr + "T00:00:00")
+    dayEnd.setDate(dayEnd.getDate() + 2)
+    const { data } = await supabase
+      .from("workout_set_logs")
+      .select("id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises(name)")
+      .eq("client_id", clientId)
+      .gte("logged_at", dayStart.toISOString())
+      .lte("logged_at", dayEnd.toISOString())
+      .order("set_number", { ascending: true })
+    const sameDay = (data ?? []).filter(r => toLocalDateStr(new Date(r.logged_at)) === sessionDateStr)
+    setSessionSetLogs(prev => ({ ...prev, [log.id]: sameDay }))
   }
 
   function navigateCalendar(direction) {
@@ -1539,30 +1561,41 @@ export default function ClientProfile() {
           <>
           <SectionCard>
             <div className="px-6 pt-5 pb-4 border-b border-gray-50">
-              <h3 className="text-sm font-semibold text-gray-800">Personal Bests</h3>
+              <h3 className="text-sm font-semibold text-gray-800">Personal Best Lookup</h3>
             </div>
             <div className="px-6 py-4">
-              {personalBests.length === 0 ? (
-                <div className="text-center py-8">
-                  <Trophy size={28} className="text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm text-gray-300 italic">No personal bests yet</p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {Object.values(
-                    personalBests.reduce((acc, pb) => {
-                      const key = pb.exercise_id || pb.id
-                      if (!acc[key]) acc[key] = { name: pb.exercises?.name || "Exercise", types: {} }
-                      acc[key].types[pb.pb_type] = pb
-                      return acc
-                    }, {})
-                  ).map((row, idx) => {
-                    const meta = {
-                      "1rm": { label: "Est. 1RM", unit: "kg" },
-                      best_set: { label: "Best Set", unit: "pts" },
-                      volume: { label: "Volume", unit: "kg" },
-                    }
-                    return (
+              <div className="relative mb-3">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300" />
+                <input
+                  type="text"
+                  value={pbSearch}
+                  onChange={(e) => setPbSearch(e.target.value)}
+                  placeholder="Search an exercise to see its PBs"
+                  className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition"
+                />
+              </div>
+              {pbSearch.trim() === "" ? (
+                <p className="text-xs text-gray-300 italic py-2">Start typing to find an exercise's personal bests.</p>
+              ) : (() => {
+                const meta = {
+                  "1rm": { label: "Est. 1RM", unit: "kg" },
+                  best_set: { label: "Best Set", unit: "pts" },
+                  volume: { label: "Volume", unit: "kg" },
+                }
+                const grouped = Object.values(
+                  personalBests.reduce((acc, pb) => {
+                    const key = pb.exercise_id || pb.id
+                    if (!acc[key]) acc[key] = { name: pb.exercises?.name || "Exercise", types: {} }
+                    acc[key].types[pb.pb_type] = pb
+                    return acc
+                  }, {})
+                ).filter(row => row.name.toLowerCase().includes(pbSearch.trim().toLowerCase()))
+                if (grouped.length === 0) {
+                  return <p className="text-xs text-gray-300 italic py-2">No personal bests found for that exercise.</p>
+                }
+                return (
+                  <div className="space-y-1">
+                    {grouped.map((row, idx) => (
                       <div key={idx} className="py-3 border-b border-gray-50 last:border-0">
                         <p className="text-sm font-semibold text-gray-800 mb-1.5">{row.name}</p>
                         <div className="flex flex-wrap gap-2">
@@ -1578,10 +1611,10 @@ export default function ClientProfile() {
                           })}
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
           </SectionCard>
           <SectionCard>
@@ -1595,26 +1628,95 @@ export default function ClientProfile() {
                   <p className="text-sm text-gray-300 italic">No workouts logged yet</p>
                 </div>
               ) : (
-                <div className="space-y-1">
-                  {workoutLogs.map(log => (
-                    <div key={log.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">{formatDate(log.logged_at)}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{timeAgo(log.logged_at)}</p>
+                <div className="space-y-2">
+                  {workoutLogs.map(log => {
+                    const sessionDateStr = toLocalDateStr(new Date(log.logged_at))
+                    const isSessionOpen = expandedSessionId === log.id
+                    const sets = sessionSetLogs[log.id] || []
+                    const byExercise = sets.reduce((acc, s) => {
+                      const key = s.exercise_id || "unknown"
+                      if (!acc[key]) acc[key] = { name: s.exercises?.name || "Exercise", sets: [] }
+                      acc[key].sets.push(s)
+                      return acc
+                    }, {})
+                    const pbDatesByExercise = personalBests.reduce((acc, pb) => {
+                      if (pb.achieved_at && toLocalDateStr(new Date(pb.achieved_at)) === sessionDateStr) {
+                        acc[pb.exercise_id] = true
+                      }
+                      return acc
+                    }, {})
+                    return (
+                      <div key={log.id} className="border border-gray-100 rounded-xl overflow-hidden">
+                        <button
+                          onClick={() => {
+                            if (isSessionOpen) {
+                              setExpandedSessionId(null)
+                            } else {
+                              setExpandedSessionId(log.id)
+                              setExpandedExerciseKey(null)
+                              loadSessionSets(log)
+                            }
+                          }}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition text-left"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-gray-800">{formatDate(log.logged_at)}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{timeAgo(log.logged_at)}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {log.completed ? (
+                              <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium"><CheckCircle2 size={14} className="text-emerald-500" /> Completed</span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-xs text-gray-400"><Circle size={14} className="text-gray-200" /> Incomplete</span>
+                            )}
+                            <ChevronDown size={15} className={`text-gray-300 transition-transform ${isSessionOpen ? "rotate-180" : ""}`} />
+                          </div>
+                        </button>
+                        {isSessionOpen && (
+                          <div className="border-t border-gray-50 px-4 py-3 bg-gray-50/40">
+                            {Object.keys(byExercise).length === 0 ? (
+                              <p className="text-xs text-gray-300 italic py-2">No set data recorded for this session.</p>
+                            ) : (
+                              <div className="space-y-1">
+                                {Object.entries(byExercise).map(([exKey, ex]) => {
+                                  const exOpen = expandedExerciseKey === `${log.id}_${exKey}`
+                                  const hitPB = pbDatesByExercise[exKey]
+                                  return (
+                                    <div key={exKey} className="bg-white border border-gray-100 rounded-lg">
+                                      <button
+                                        onClick={() => setExpandedExerciseKey(exOpen ? null : `${log.id}_${exKey}`)}
+                                        className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-gray-50 transition rounded-lg"
+                                      >
+                                        <span className="flex items-center gap-2">
+                                          <span className="text-sm font-medium text-gray-800">{ex.name}</span>
+                                          {hitPB && (
+                                            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                                              <Trophy size={10} /> PB
+                                            </span>
+                                          )}
+                                        </span>
+                                        <ChevronDown size={13} className={`text-gray-300 transition-transform ${exOpen ? "rotate-180" : ""}`} />
+                                      </button>
+                                      {exOpen && (
+                                        <div className="px-3 pb-3 pt-1 flex flex-wrap gap-2">
+                                          {ex.sets.map((s, i) => (
+                                            <div key={s.id || i} className="bg-gray-50 rounded-lg px-2.5 py-1.5 text-center min-w-[64px]">
+                                              <p className="text-[10px] text-gray-400">Set {s.set_number}</p>
+                                              <p className="text-xs font-semibold text-gray-800">{s.weight_kg}kg × {s.reps_completed}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      {log.completed ? (
-                        <div className="flex items-center gap-1.5">
-                          <CheckCircle2 size={15} className="text-emerald-500" />
-                          <span className="text-xs text-emerald-600 font-medium">Completed</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5">
-                          <Circle size={15} className="text-gray-200" />
-                          <span className="text-xs text-gray-400">Incomplete</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
