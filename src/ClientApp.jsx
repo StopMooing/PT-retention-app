@@ -213,20 +213,42 @@ function AIChat({ context, placeholder, systemPrompt, onClose, onSave, saveLabel
             }`}>
               {msg.role === 'assistant' ? (() => {
                 let parsed = null
+                let textOnly = msg.content
                 try {
                   const jsonMatch = msg.content.match(/\{[\s\S]*\}/)
-                  if (jsonMatch) parsed = JSON.parse(jsonMatch[0])
+                  if (jsonMatch) {
+                    parsed = JSON.parse(jsonMatch[0])
+                    textOnly = msg.content.replace(jsonMatch[0], '').trim()
+                  }
                 } catch (e) {}
                 if (parsed?.title && Array.isArray(parsed?.exercises)) {
                   return (
                     <div>
+                      {textOnly && <p className="text-sm text-gray-800 whitespace-pre-wrap mb-3">{textOnly}</p>}
                       <p className="text-sm font-bold text-gray-900 mb-2">{parsed.title}</p>
                       <div className="space-y-1.5">
                         {parsed.exercises.map((ex, i) => (
                           <div key={i} className="text-xs text-gray-700">
                             <span className="font-semibold">{ex.name}</span>
-                            {ex.sets > 0 && <span className="text-gray-500"> — {ex.sets} sets × {ex.reps}</span>}
-                            {ex.sets === 0 && <span className="text-gray-500"> — {ex.reps}</span>}
+                            {ex.sets > 0 && <span className="text-gray-500"> · {ex.sets} sets × {ex.reps}</span>}
+                            {ex.sets === 0 && <span className="text-gray-500"> · {ex.reps}</span>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                }
+                if (parsed?.title && Array.isArray(parsed?.meals)) {
+                  return (
+                    <div>
+                      {textOnly && <p className="text-sm text-gray-800 whitespace-pre-wrap mb-3">{textOnly}</p>}
+                      <p className="text-sm font-bold text-gray-900 mb-2">{parsed.title}</p>
+                      <div className="space-y-2">
+                        {parsed.meals.map((m, i) => (
+                          <div key={i} className="text-xs text-gray-700">
+                            <span className="font-semibold capitalize">{m.meal_type}: </span>
+                            <span className="font-semibold">{m.name}</span>
+                            <span className="text-gray-500"> · {m.calories} kcal · P{m.protein_g}g · C{m.carbs_g}g · F{m.fats_g}g</span>
                           </div>
                         ))}
                       </div>
