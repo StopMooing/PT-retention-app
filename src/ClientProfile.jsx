@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "./supabase";
-import { ArrowLeft, Phone, Target, Calendar, Activity, CheckCircle2, Clock, Dumbbell, Utensils, Heart, FileText, TrendingUp, Flame, Edit3, Send, Plus, ChevronRight, Circle, Mail, Scale, AlertCircle, Camera, Flag, Timer, MoreHorizontal, Droplets } from "lucide-react";
+import { ArrowLeft, Phone, Target, Calendar, Activity, CheckCircle2, Clock, Dumbbell, Utensils, Heart, FileText, TrendingUp, Flame, Edit3, Send, Plus, ChevronRight, Circle, Mail, Scale, AlertCircle, Camera, Flag, Timer, MoreHorizontal, Droplets, Trophy } from "lucide-react";
 import { DndContext, DragOverlay, PointerSensor, MouseSensor, TouchSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 
@@ -228,6 +228,7 @@ export default function ClientProfile() {
   const [habitLogs, setHabitLogs]                 = useState([])
   const [mealPlan, setMealPlan]                   = useState(null)
   const [workoutLogs, setWorkoutLogs]             = useState([])
+  const [personalBests, setPersonalBests]         = useState([])
   const [activeTab, setActiveTab]                 = useState("overview")
   const [loading, setLoading]                     = useState(true)
   const [notes, setNotes]                         = useState("")
@@ -378,6 +379,13 @@ export default function ClientProfile() {
           .eq("client_id", clientId)
           .order("created_at", { ascending: false })
         setSavedNotes(ptNotesData ?? [])
+
+        const { data: pbData } = await supabase
+          .from("personal_bests")
+          .select("id, exercise_id, pb_type, value, achieved_at, exercises(name)")
+          .eq("client_id", clientId)
+          .order("achieved_at", { ascending: false })
+        setPersonalBests(pbData ?? [])
         const { data: { user: currentUserForFetch } } = await supabase.auth.getUser()
 
         const { data: allProgramsData } = await supabase
@@ -1524,6 +1532,54 @@ export default function ClientProfile() {
 
         {/* History mode */}
         {trainingMode === "history" && (
+          <>
+          <SectionCard>
+            <div className="px-6 pt-5 pb-4 border-b border-gray-50">
+              <h3 className="text-sm font-semibold text-gray-800">Personal Bests</h3>
+            </div>
+            <div className="px-6 py-4">
+              {personalBests.length === 0 ? (
+                <div className="text-center py-8">
+                  <Trophy size={28} className="text-gray-200 mx-auto mb-3" />
+                  <p className="text-sm text-gray-300 italic">No personal bests yet</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {Object.values(
+                    personalBests.reduce((acc, pb) => {
+                      const key = pb.exercise_id || pb.id
+                      if (!acc[key]) acc[key] = { name: pb.exercises?.name || "Exercise", types: {} }
+                      acc[key].types[pb.pb_type] = pb
+                      return acc
+                    }, {})
+                  ).map((row, idx) => {
+                    const meta = {
+                      "1rm": { label: "Est. 1RM", unit: "kg" },
+                      best_set: { label: "Best Set", unit: "pts" },
+                      volume: { label: "Volume", unit: "kg" },
+                    }
+                    return (
+                      <div key={idx} className="py-3 border-b border-gray-50 last:border-0">
+                        <p className="text-sm font-semibold text-gray-800 mb-1.5">{row.name}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {["1rm", "best_set", "volume"].map(t => {
+                            const pb = row.types[t]
+                            if (!pb) return null
+                            return (
+                              <div key={t} className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-2.5 py-1">
+                                <span className="text-xs text-gray-400">{meta[t].label}</span>
+                                <span className="text-xs font-semibold text-gray-800">{pb.value} {meta[t].unit}</span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </SectionCard>
           <SectionCard>
             <div className="px-6 pt-5 pb-4 border-b border-gray-50">
               <h3 className="text-sm font-semibold text-gray-800">Workout History</h3>
@@ -1559,6 +1615,7 @@ export default function ClientProfile() {
               )}
             </div>
           </SectionCard>
+          </>
         )}
 
         <CalendarDayModal
