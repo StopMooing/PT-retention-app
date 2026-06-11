@@ -110,10 +110,43 @@ function CalendarDayModal({ selectedDay, onClose, onStartWorkout }) {
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-3 space-y-3">
           {workout._isCustom && workout.customContent ? (
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">AI Workout Plan</p>
-              <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans bg-gray-50 rounded-xl p-4">{workout.customContent}</pre>
-            </div>
+            (() => {
+              let parsed = null
+              try {
+                const candidate = JSON.parse(workout.customContent)
+                if (candidate && Array.isArray(candidate.exercises)) parsed = candidate
+              } catch (e) { /* legacy plain-text content, fall through to pre */ }
+              if (parsed) {
+                return (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">AI Workout Plan</p>
+                    <div className="space-y-3">
+                      {parsed.exercises.map((ex, idx) => {
+                        const rest = ex.rest_seconds ? `${ex.rest_seconds}s rest between sets` : null
+                        return (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className="w-6 h-6 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0 mt-0.5">
+                              <span className="text-xs font-semibold text-emerald-700">{idx + 1}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 leading-tight">{ex.name || 'Exercise'}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">{ex.sets || 0} sets × {ex.reps || '–'} reps{rest ? ` · ${rest}` : ''}</p>
+                              {ex.notes && <p className="text-xs text-gray-400 mt-0.5 italic">{ex.notes}</p>}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              }
+              return (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">AI Workout Plan</p>
+                  <pre className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap font-sans bg-gray-50 rounded-xl p-4">{workout.customContent}</pre>
+                </div>
+              )
+            })()
           ) : exercises.length === 0 ? (
             <p className="text-sm text-gray-400 text-center py-6">No exercises added to this workout yet.</p>
           ) : null}
