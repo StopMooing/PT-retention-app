@@ -732,10 +732,12 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
           setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight, logged_at: new Date().toISOString() })
         }
       }
+      let insertedSetIds = []
       if (setLogsToInsert.length > 0) {
         try {
-          const { error: setsError } = await supabase.from('workout_set_logs').insert(setLogsToInsert)
+          const { data: insertedSets, error: setsError } = await supabase.from('workout_set_logs').insert(setLogsToInsert).select('id')
           if (setsError) console.error('workout_set_logs error:', setsError)
+          else insertedSetIds = (insertedSets ?? []).map(r => r.id)
         } catch (e) { console.error('workout_set_logs exception:', e) }
       }
 
@@ -779,15 +781,19 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
       }
 
       try {
-        const { error: logError } = await supabase.from('workout_logs').insert({
+        const { data: newLog, error: logError } = await supabase.from('workout_logs').insert({
           client_id: client.id,
           program_workout_id: scheduledWorkout.program_workout_id ?? null,
           scheduled_workout_id: scheduledWorkout.id ?? null,
           logged_at: new Date().toISOString(),
           completed: true,
           total_volume_kg: totalVolume,
-        })
+        }).select('id').single()
         if (logError) console.error('workout_logs insert error:', logError)
+        if (newLog && insertedSetIds.length > 0) {
+          const { error: stampError } = await supabase.from('workout_set_logs').update({ workout_log_id: newLog.id }).in('id', insertedSetIds)
+          if (stampError) console.error('workout_log_id stamp error:', stampError)
+        }
       } catch (logErr) {
         console.error('workout_logs insert exception:', logErr)
       }
@@ -1538,17 +1544,12 @@ export default function ClientApp() {
   async function loadHistorySetLogs(workoutLogId, loggedAt) {
     if (historySetLogs[workoutLogId]) return
     try {
-      const dateStr = loggedAt ? loggedAt.split('T')[0] : null
-      let query = supabase
+      const { data } = await supabase
         .from('workout_set_logs')
         .select('id, set_number, reps_completed, weight_kg, exercise_id, exercises(name, muscle_group)')
-        .eq('client_id', client.id)
+        .eq('workout_log_id', workoutLogId)
         .order('exercise_id')
         .order('set_number')
-      if (dateStr) {
-        query = query.gte('logged_at', dateStr + 'T00:00:00.000Z').lte('logged_at', dateStr + 'T23:59:59.999Z')
-      }
-      const { data } = await query
       if (data) {
         setHistorySetLogs(prev => ({ ...prev, [workoutLogId]: data }))
       }

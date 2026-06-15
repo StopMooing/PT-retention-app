@@ -322,9 +322,11 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
           }
         }
       })
+      let insertedSetIds = []
       if (setInserts.length > 0) {
-        const { error: setsError } = await supabase.from('workout_set_logs').insert(setInserts)
+        const { data: insertedSets, error: setsError } = await supabase.from('workout_set_logs').insert(setInserts).select('id')
         if (setsError) throw setsError
+        insertedSetIds = (insertedSets ?? []).map(r => r.id)
       }
       for (const exerciseId of touchedExerciseIds) {
         await recomputePBsForExercise(exerciseId)
@@ -342,6 +344,10 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
         .select()
         .single()
       if (logError) throw logError
+      if (newLog && insertedSetIds.length > 0) {
+        const { error: stampError } = await supabase.from('workout_set_logs').update({ workout_log_id: newLog.id }).in('id', insertedSetIds)
+        if (stampError) console.error('workout_log_id stamp error:', stampError)
+      }
       onWorkoutDone && onWorkoutDone(newLog)
       onClose()
     } catch (e) {
@@ -1173,20 +1179,12 @@ export default function ClientProfile() {
 
   async function loadSessionSets(log) {
     if (sessionSetLogs[log.id]) return
-    const sessionDateStr = toLocalDateStr(new Date(log.logged_at))
-    const dayStart = new Date(sessionDateStr + "T00:00:00")
-    dayStart.setDate(dayStart.getDate() - 1)
-    const dayEnd = new Date(sessionDateStr + "T00:00:00")
-    dayEnd.setDate(dayEnd.getDate() + 2)
     const { data } = await supabase
       .from("workout_set_logs")
       .select("id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises(name)")
-      .eq("client_id", clientId)
-      .gte("logged_at", dayStart.toISOString())
-      .lte("logged_at", dayEnd.toISOString())
+      .eq("workout_log_id", log.id)
       .order("set_number", { ascending: true })
-    const sameDay = (data ?? []).filter(r => toLocalDateStr(new Date(r.logged_at)) === sessionDateStr)
-    setSessionSetLogs(prev => ({ ...prev, [log.id]: sameDay }))
+    setSessionSetLogs(prev => ({ ...prev, [log.id]: data ?? [] }))
   }
 
   function navigateCalendar(direction) {
