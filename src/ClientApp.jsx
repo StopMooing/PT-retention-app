@@ -1624,6 +1624,30 @@ export default function ClientApp() {
     setFoodSearchLoading(true)
     const q = query.trim().toLowerCase()
     const commonMatches = COMMON_FOODS.filter(f => f.name.toLowerCase().includes(q))
+
+    // Source 1: AFCD generic foods via Supabase RPC. Resilient: on any error
+    // it contributes an empty array rather than throwing, so one source
+    // failing never breaks the whole search.
+    let afcdResults = []
+    try {
+      const { data: afcdData, error: afcdError } = await supabase.rpc('search_foods', { search_query: query.trim() })
+      if (afcdError) throw afcdError
+      afcdResults = (afcdData || [])
+        .map(f => ({
+          name: f.name,
+          brand: '',
+          calories: Math.round(f.calories || 0),
+          protein: parseFloat((f.protein_g || 0).toFixed(1)),
+          carbs: parseFloat((f.carbs_g || 0).toFixed(1)),
+          fats: parseFloat((f.fats_g || 0).toFixed(1)),
+        }))
+        .slice(0, 5)
+    } catch (e) {
+      console.error('AFCD search error:', e)
+      afcdResults = []
+    }
+
+    // Source 2: Open Food Facts branded products.
     try {
       const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query.trim())}&search_simple=1&action=process&json=1&page_size=6&lc=en&cc=au&fields=product_name,brands,nutriments,code`)
       const json = await res.json()
@@ -1637,11 +1661,12 @@ export default function ClientApp() {
           carbs: parseFloat((p.nutriments['carbohydrates_100g'] || 0).toFixed(1)),
           fats: parseFloat((p.nutriments['fat_100g'] || 0).toFixed(1)),
         }))
-      const combined = [...commonMatches, ...apiResults].slice(0, 8)
+      const combined = [...afcdResults, ...commonMatches, ...apiResults].slice(0, 8)
       setFoodSearchResults(combined)
     } catch (e) {
       console.error('Food search error:', e)
-      setFoodSearchResults(commonMatches.slice(0, 8))
+      const combined = [...afcdResults, ...commonMatches].slice(0, 8)
+      setFoodSearchResults(combined)
     } finally {
       setFoodSearchLoading(false)
     }
