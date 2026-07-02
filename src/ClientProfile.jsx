@@ -96,21 +96,13 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
     let cancelled = false
     async function fetchLoggedSets() {
       setLoadingSets(true)
-      const sessionDateStr = toLocalDateStr(new Date(completedLog.logged_at))
-      const dayStart = new Date(sessionDateStr + "T00:00:00")
-      dayStart.setDate(dayStart.getDate() - 1)
-      const dayEnd = new Date(sessionDateStr + "T00:00:00")
-      dayEnd.setDate(dayEnd.getDate() + 2)
       const { data } = await supabase
         .from("workout_set_logs")
         .select("id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises(name)")
-        .eq("client_id", clientId)
-        .gte("logged_at", dayStart.toISOString())
-        .lte("logged_at", dayEnd.toISOString())
+        .eq("workout_log_id", completedLog.id)
         .order("set_number", { ascending: true })
       if (cancelled) return
-      const sameDay = (data ?? []).filter(r => toLocalDateStr(new Date(r.logged_at)) === sessionDateStr)
-      setLoggedSets(sameDay)
+      setLoggedSets(data ?? [])
       setLoadingSets(false)
     }
     fetchLoggedSets()
