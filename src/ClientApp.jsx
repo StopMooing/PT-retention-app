@@ -72,7 +72,8 @@ function toLocalDateStr(date = new Date()) {
 }
 
 function workoutKey(programWorkoutId, scheduledWorkoutId, dateStr) {
-  const base = programWorkoutId || scheduledWorkoutId || 'unknown'
+  if (scheduledWorkoutId) return `sw_${scheduledWorkoutId}`
+  const base = programWorkoutId || 'unknown'
   return `${base}_${dateStr}`
 }
 
