@@ -740,33 +740,60 @@ function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBa
 
   async function handleComplete() {
     setCompleting(true)
+    const isEditing = !!existingLog?.id
     try {
       let totalVolume = 0
-      const setLogsToInsert = []
+      const setRows = []
       for (const ex of trackedExercises) {
         const rowKey = ex.id
         const exerciseId = ex.exercise_id || ex.exercises?.id
         if (!exerciseId) continue
         const exSets = setData[rowKey] || {}
-        const prevSetsForEx = previousSets[exerciseId] || []
         for (let s = 1; s <= (ex.sets || 0); s++) {
           const set = exSets[s] || {}
-          const prevSet = prevSetsForEx[s - 1]
           let reps = parseFloat(set.reps) || 0
           let weight = parseFloat(set.weight) || 0
           if (reps < 0) reps = 0; if (reps > 100) reps = 100
           if (weight < 0) weight = 0; if (weight > 500) weight = 500
           totalVolume += reps * weight
-          setLogsToInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight, logged_at: new Date().toISOString() })
+          setRows.push({ exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight })
         }
       }
+
       let insertedSetIds = []
-      if (setLogsToInsert.length > 0) {
-        try {
-          const { data: insertedSets, error: setsError } = await supabase.from('workout_set_logs').insert(setLogsToInsert).select('id')
-          if (setsError) console.error('workout_set_logs error:', setsError)
-          else insertedSetIds = (insertedSets ?? []).map(r => r.id)
-        } catch (e) { console.error('workout_set_logs exception:', e) }
+      if (isEditing) {
+        // Fetch existing set rows for this session so we can update-in-place by exercise+set_number
+        const { data: existingRows } = await supabase
+          .from('workout_set_logs')
+          .select('id, exercise_id, set_number')
+          .eq('workout_log_id', existingLog.id)
+        const existingByKey = {}
+        for (const r of existingRows ?? []) existingByKey[`${r.exercise_id}_${r.set_number}`] = r.id
+        const toInsert = []
+        for (const row of setRows) {
+          const matchId = existingByKey[`${row.exercise_id}_${row.set_number}`]
+          if (matchId) {
+            const { error: updErr } = await supabase.from('workout_set_logs')
+              .update({ reps_completed: row.reps_completed, weight_kg: row.weight_kg })
+              .eq('id', matchId)
+            if (updErr) console.error('set update error:', updErr)
+          } else {
+            toInsert.push({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: row.exercise_id, set_number: row.set_number, reps_completed: row.reps_completed, weight_kg: row.weight_kg, logged_at: new Date().toISOString(), workout_log_id: existingLog.id })
+          }
+        }
+        if (toInsert.length > 0) {
+          const { error: insErr } = await supabase.from('workout_set_logs').insert(toInsert)
+          if (insErr) console.error('set insert (edit) error:', insErr)
+        }
+      } else {
+        const setLogsToInsert = setRows.map(row => ({ client_id: client.id, scheduled_workout_id: scheduledWorkout.id, exercise_id: row.exercise_id, set_number: row.set_number, reps_completed: row.reps_completed, weight_kg: row.weight_kg, logged_at: new Date().toISOString() }))
+        if (setLogsToInsert.length > 0) {
+          try {
+            const { data: insertedSets, error: setsError } = await supabase.from('workout_set_logs').insert(setLogsToInsert).select('id')
+            if (setsError) console.error('workout_set_logs error:', setsError)
+            else insertedSetIds = (insertedSets ?? []).map(r => r.id)
+          } catch (e) { console.error('workout_set_logs exception:', e) }
+        }
       }
 
       const newPBs = []
@@ -808,22 +835,29 @@ function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBa
         }
       }
 
-      try {
-        const { data: newLog, error: logError } = await supabase.from('workout_logs').insert({
-          client_id: client.id,
-          program_workout_id: scheduledWorkout.program_workout_id ?? null,
-          scheduled_workout_id: scheduledWorkout.id ?? null,
-          logged_at: new Date().toISOString(),
-          completed: true,
-          total_volume_kg: totalVolume,
-        }).select('id').single()
-        if (logError) console.error('workout_logs insert error:', logError)
-        if (newLog && insertedSetIds.length > 0) {
-          const { error: stampError } = await supabase.from('workout_set_logs').update({ workout_log_id: newLog.id }).in('id', insertedSetIds)
-          if (stampError) console.error('workout_log_id stamp error:', stampError)
+      if (isEditing) {
+        const { error: logErr } = await supabase.from('workout_logs')
+          .update({ total_volume_kg: totalVolume, logged_at: new Date().toISOString() })
+          .eq('id', existingLog.id)
+        if (logErr) console.error('workout_logs update error:', logErr)
+      } else {
+        try {
+          const { data: newLog, error: logError } = await supabase.from('workout_logs').insert({
+            client_id: client.id,
+            program_workout_id: scheduledWorkout.program_workout_id ?? null,
+            scheduled_workout_id: scheduledWorkout.id ?? null,
+            logged_at: new Date().toISOString(),
+            completed: true,
+            total_volume_kg: totalVolume,
+          }).select('id').single()
+          if (logError) console.error('workout_logs insert error:', logError)
+          if (newLog && insertedSetIds.length > 0) {
+            const { error: stampError } = await supabase.from('workout_set_logs').update({ workout_log_id: newLog.id }).in('id', insertedSetIds)
+            if (stampError) console.error('workout_log_id stamp error:', stampError)
+          }
+        } catch (logErr) {
+          console.error('workout_logs insert exception:', logErr)
         }
-      } catch (logErr) {
-        console.error('workout_logs insert exception:', logErr)
       }
       onComplete && onComplete(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: trackedExercises.length, workoutName })
     } catch (e) {
