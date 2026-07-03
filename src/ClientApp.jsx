@@ -2263,7 +2263,7 @@ Rules:
               const exercises = workoutExercises[sw.program_workout_id] ?? []
               const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
               return (
-                <button key={sw.id} onClick={() => setPreviewWorkout({ ...sw, _existingLog: workoutLogs.find(l => l.scheduled_workout_id === sw.id && l.completed) ?? null })}
+                <button key={sw.id} onClick={() => { const existing = workoutLogs.find(l => l.scheduled_workout_id === sw.id && l.completed) ?? null; if (existing) { setLoggingWorkout({ ...sw, _existingLog: existing }) } else { setPreviewWorkout({ ...sw, _existingLog: null }) } }}
                   className="w-full text-left flex items-center gap-3 group">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
                     done ? 'bg-emerald-500' : 'border-2 border-gray-200 group-hover:border-emerald-400'
