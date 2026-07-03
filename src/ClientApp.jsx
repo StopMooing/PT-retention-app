@@ -738,6 +738,51 @@ function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBa
   const allDone = hasSetTracking && totalSetsCount > 0 && doneSetsCount >= totalSetsCount
   const progressPct = totalSetsCount > 0 ? Math.round((doneSetsCount / totalSetsCount) * 100) : 0
 
+  async function reconcilePBsForExercises(exerciseIds) {
+    for (const exerciseId of exerciseIds) {
+      if (!exerciseId) continue
+      const { data: allSets, error } = await supabase
+        .from('workout_set_logs')
+        .select('weight_kg, reps_completed, workout_log_id')
+        .eq('client_id', client.id)
+        .eq('exercise_id', exerciseId)
+      if (error) { console.error('PB reconcile fetch error:', error); continue }
+      let best1RM = 0, bestSet = 0
+      const volumeByLog = {}
+      for (const s of allSets ?? []) {
+        const weight = parseFloat(s.weight_kg) || 0
+        const reps = parseFloat(s.reps_completed) || 0
+        if (weight <= 0) continue
+        const oneRM = reps === 1 ? weight : weight * (1 + reps / 30)
+        if (oneRM > best1RM) best1RM = oneRM
+        const setScore = weight * reps
+        if (setScore > bestSet) bestSet = setScore
+        const logKey = s.workout_log_id || 'none'
+        volumeByLog[logKey] = (volumeByLog[logKey] || 0) + weight * reps
+      }
+      let bestVolume = 0
+      for (const k of Object.keys(volumeByLog)) {
+        if (volumeByLog[k] > bestVolume) bestVolume = volumeByLog[k]
+      }
+      const recomputed = [
+        { type: '1rm', value: Math.round(best1RM * 10) / 10 },
+        { type: 'best_set', value: bestSet },
+        { type: 'volume', value: Math.round(bestVolume) },
+      ]
+      for (const pb of recomputed) {
+        if (pb.value > 0) {
+          const { error: upErr } = await supabase.from('personal_bests').upsert(
+            { client_id: client.id, exercise_id: exerciseId, pb_type: pb.type, value: pb.value, achieved_at: new Date().toISOString() },
+            { onConflict: 'client_id,exercise_id,pb_type' }
+          )
+          if (upErr) console.error('PB reconcile upsert error:', upErr)
+        } else {
+          await supabase.from('personal_bests').delete().eq('client_id', client.id).eq('exercise_id', exerciseId).eq('pb_type', pb.type)
+        }
+      }
+    }
+  }
+
   async function handleComplete() {
     setCompleting(true)
     const isEditing = !!existingLog?.id
@@ -797,6 +842,10 @@ function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBa
       }
 
       const newPBs = []
+      if (isEditing) {
+        const editedExerciseIds = [...new Set(trackedExercises.map(ex => ex.exercise_id || ex.exercises?.id).filter(Boolean))]
+        await reconcilePBsForExercises(editedExerciseIds)
+      } else {
       for (const ex of trackedExercises) {
         const rowKey = ex.id
         const exerciseId = ex.exercise_id || ex.exercises?.id
@@ -833,6 +882,7 @@ function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBa
             }
           }
         }
+      }
       }
 
       if (isEditing) {
