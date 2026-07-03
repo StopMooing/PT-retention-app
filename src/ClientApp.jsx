@@ -837,7 +837,7 @@ function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBa
 
       if (isEditing) {
         const { error: logErr } = await supabase.from('workout_logs')
-          .update({ total_volume_kg: totalVolume, logged_at: new Date().toISOString() })
+          .update({ total_volume_kg: totalVolume })
           .eq('id', existingLog.id)
         if (logErr) console.error('workout_logs update error:', logErr)
       } else {
