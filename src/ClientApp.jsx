@@ -547,7 +547,7 @@ function WorkoutPreview({ scheduledWorkout, exercises, client, onBack, onStart }
   )
 }
 
-function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplete }) {
+function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBack, onComplete }) {
   const isCustom = scheduledWorkout._isCustom || !scheduledWorkout.program_workout_id
   const customContent = scheduledWorkout._customWorkout?.content || scheduledWorkout.saved_workouts?.content || null
   const workoutName = scheduledWorkout.program_workouts?.name || scheduledWorkout._customWorkout?.name || scheduledWorkout.saved_workouts?.name || 'Workout'
@@ -598,6 +598,33 @@ function WorkoutLogging({ scheduledWorkout, exercises, client, onBack, onComplet
     }
     loadPreviousData()
   }, [trackedExercises, client?.id])
+
+  useEffect(() => {
+    if (!existingLog?.id) return
+    let cancelled = false
+    async function seedFromExistingLog() {
+      const { data: existingSetRows } = await supabase
+        .from('workout_set_logs')
+        .select('exercise_id, set_number, weight_kg, reps_completed')
+        .eq('workout_log_id', existingLog.id)
+      if (cancelled || !existingSetRows) return
+      const seeded = {}
+      for (const ex of trackedExercises) {
+        const rowKey = ex.id
+        const exerciseId = ex.exercise_id ?? ex.exercises?.id
+        if (!exerciseId) continue
+        const rowsForEx = existingSetRows.filter(r => r.exercise_id === exerciseId)
+        if (!rowsForEx.length) continue
+        seeded[rowKey] = {}
+        for (const r of rowsForEx) {
+          seeded[rowKey][r.set_number] = { weight: String(r.weight_kg ?? ''), reps: String(r.reps_completed ?? ''), done: true }
+        }
+      }
+      if (Object.keys(seeded).length > 0) setSetData(seeded)
+    }
+    seedFromExistingLog()
+    return () => { cancelled = true }
+  }, [existingLog?.id, trackedExercises])
 
   useEffect(() => {
     if (!isCustom || !customContent) return
@@ -2038,6 +2065,7 @@ Rules:
   if (loggingWorkout) return (
     <WorkoutLogging
       scheduledWorkout={loggingWorkout}
+      existingLog={loggingWorkout._existingLog ?? null}
       exercises={workoutExercises[loggingWorkout.program_workout_id] ?? []}
       client={client}
       onBack={() => setLoggingWorkout(null)}
@@ -2235,7 +2263,7 @@ Rules:
               const exercises = workoutExercises[sw.program_workout_id] ?? []
               const estMin = Math.round(exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
               return (
-                <button key={sw.id} onClick={() => setPreviewWorkout(sw)}
+                <button key={sw.id} onClick={() => setPreviewWorkout({ ...sw, _existingLog: workoutLogs.find(l => l.scheduled_workout_id === sw.id && l.completed) ?? null })}
                   className="w-full text-left flex items-center gap-3 group">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${
                     done ? 'bg-emerald-500' : 'border-2 border-gray-200 group-hover:border-emerald-400'
