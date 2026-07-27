@@ -2062,6 +2062,7 @@ export default function ClientProfile() {
                 <div className="space-y-2">
                   {workoutLogs.map(log => {
                     const sessionDateStr = toLocalDateStr(new Date(log.logged_at))
+                    const schedForLog = scheduledWorkouts.find(sw => sw.id === log.scheduled_workout_id) ?? null
                     const isSessionOpen = expandedSessionId === log.id
                     const sets = sessionSetLogs[log.id] || []
                     const byExercise = sets.reduce((acc, s) => {
@@ -2108,6 +2109,16 @@ export default function ClientProfile() {
                         </button>
                         {isSessionOpen && (
                           <div className="border-t border-gray-50 px-4 py-3 bg-gray-50/40">
+                            {schedForLog && (
+                              <div className="mb-3">
+                                <button
+                                  onClick={() => setSelectedCalendarDay({ date: schedForLog.scheduled_date, workout: { id: schedForLog.id, name: schedForLog._displayName || schedForLog.program_workouts?.name || schedForLog.saved_workouts?.name || 'Workout', exercises: workoutExercises[schedForLog.program_workout_id] ?? [], _isCustom: schedForLog._isCustom, customContent: schedForLog.saved_workouts?.content || null, completedLog: log } })}
+                                  className="bg-black hover:bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                                >
+                                  Edit session
+                                </button>
+                              </div>
+                            )}
                             {Object.keys(byExercise).length === 0 ? (
                               <p className="text-xs text-gray-300 italic py-2">No set data recorded for this session.</p>
                             ) : (
