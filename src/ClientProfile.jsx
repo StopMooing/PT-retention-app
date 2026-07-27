@@ -80,6 +80,7 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
   const [editedSets, setEditedSets] = useState({})
   const [loadingSets, setLoadingSets] = useState(false)
   const [savingEdits, setSavingEdits] = useState(false)
+  const [savedFlash, setSavedFlash] = useState(false)
   const [loggingMode, setLoggingMode] = useState(false)
   const [liveSetData, setLiveSetData] = useState({})
   const [coachAiExercises, setCoachAiExercises] = useState(null)
@@ -274,6 +275,8 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
         }
       }))
       setEditedSets({})
+      setSavedFlash(true)
+      setTimeout(() => setSavedFlash(false), 2500)
     } catch (e) {
       console.error('Save edits error:', e)
       alert('Failed to save changes: ' + e.message)
@@ -543,9 +546,9 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
             <button
               onClick={handleSaveEdits}
               disabled={!hasEdits || savingEdits}
-              className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 active:bg-gray-900 transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+              className={`w-full text-white font-semibold py-3.5 rounded-xl transition-colors text-sm disabled:opacity-40 disabled:cursor-not-allowed ${savedFlash ? 'bg-emerald-600' : 'bg-black hover:bg-gray-800 active:bg-gray-900'}`}
             >
-              {savingEdits ? 'Saving...' : hasEdits ? 'Save Changes' : 'No Changes'}
+              {savingEdits ? 'Saving...' : savedFlash ? 'Saved ✓' : hasEdits ? 'Save Changes' : 'No Changes'}
             </button>
           ) : loggingMode ? (
             <div className="flex gap-2">
