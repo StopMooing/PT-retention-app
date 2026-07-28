@@ -47,9 +47,7 @@ export default function CheckInPage() {
   useEffect(() => {
     async function fetchClient() {
       const { data, error } = await supabasePublic
-        .from('clients')
-        .select('id, full_name')
-        .eq('id', clientId)
+        .rpc('get_checkin_client', { p_client_id: clientId })
         .single()
       if (error || !data) setNotFound(true)
       else setClient(data)
