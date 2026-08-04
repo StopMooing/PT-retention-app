@@ -743,36 +743,39 @@ function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBa
       if (!exerciseId) continue
       const { data: allSets, error } = await supabase
         .from('workout_set_logs')
-        .select('weight_kg, reps_completed, workout_log_id')
+        .select('weight_kg, reps_completed, logged_at, workout_log_id')
         .eq('client_id', client.id)
         .eq('exercise_id', exerciseId)
       if (error) { console.error('PB reconcile fetch error:', error); continue }
-      let best1RM = 0, bestSet = 0
+      let best1RM = 0, best1RMAt = null, bestSet = 0, bestSetAt = null
       const volumeByLog = {}
       for (const s of allSets ?? []) {
         const weight = parseFloat(s.weight_kg) || 0
         const reps = parseFloat(s.reps_completed) || 0
         if (weight <= 0) continue
         const oneRM = reps === 1 ? weight : weight * (1 + reps / 30)
-        if (oneRM > best1RM) best1RM = oneRM
+        if (oneRM > best1RM) { best1RM = oneRM; best1RMAt = s.logged_at }
         const setScore = weight * reps
-        if (setScore > bestSet) bestSet = setScore
-        const logKey = s.workout_log_id || 'none'
-        volumeByLog[logKey] = (volumeByLog[logKey] || 0) + weight * reps
+        if (setScore > bestSet) { bestSet = setScore; bestSetAt = s.logged_at }
+        if (!s.workout_log_id) continue
+        const logKey = s.workout_log_id
+        if (!volumeByLog[logKey]) volumeByLog[logKey] = { total: 0, at: s.logged_at }
+        volumeByLog[logKey].total += weight * reps
+        if (s.logged_at > volumeByLog[logKey].at) volumeByLog[logKey].at = s.logged_at
       }
-      let bestVolume = 0
+      let bestVolume = 0, bestVolumeAt = null
       for (const k of Object.keys(volumeByLog)) {
-        if (volumeByLog[k] > bestVolume) bestVolume = volumeByLog[k]
+        if (volumeByLog[k].total > bestVolume) { bestVolume = volumeByLog[k].total; bestVolumeAt = volumeByLog[k].at }
       }
       const recomputed = [
-        { type: '1rm', value: Math.round(best1RM * 10) / 10 },
-        { type: 'best_set', value: bestSet },
-        { type: 'volume', value: Math.round(bestVolume) },
+        { type: '1rm', value: Math.round(best1RM * 10) / 10, at: best1RMAt },
+        { type: 'best_set', value: bestSet, at: bestSetAt },
+        { type: 'volume', value: Math.round(bestVolume), at: bestVolumeAt },
       ]
       for (const pb of recomputed) {
         if (pb.value > 0) {
           const { error: upErr } = await supabase.from('personal_bests').upsert(
-            { client_id: client.id, exercise_id: exerciseId, pb_type: pb.type, value: pb.value, achieved_at: new Date().toISOString() },
+            { client_id: client.id, exercise_id: exerciseId, pb_type: pb.type, value: pb.value, achieved_at: pb.at },
             { onConflict: 'client_id,exercise_id,pb_type' }
           )
           if (upErr) console.error('PB reconcile upsert error:', upErr)

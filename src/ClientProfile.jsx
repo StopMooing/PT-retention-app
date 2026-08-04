@@ -216,12 +216,12 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
   async function recomputePBsForExercise(exerciseId) {
     const { data: allSets, error: fetchError } = await supabase
       .from('workout_set_logs')
-      .select('weight_kg, reps_completed, logged_at')
+      .select('weight_kg, reps_completed, logged_at, workout_log_id')
       .eq('client_id', clientId)
       .eq('exercise_id', exerciseId)
     if (fetchError) throw fetchError
     let best1RM = 0, best1RMAt = null, bestSetScore = 0, bestSetAt = null
-    const volumeByDay = {}
+    const volumeByLog = {}
     for (const row of allSets ?? []) {
       const weight = parseFloat(row.weight_kg) || 0
       const reps = parseFloat(row.reps_completed) || 0
@@ -230,21 +230,36 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
       if (estimated1RM > best1RM) { best1RM = estimated1RM; best1RMAt = row.logged_at }
       const setScore = weight * reps
       if (setScore > bestSetScore) { bestSetScore = setScore; bestSetAt = row.logged_at }
-      const day = toLocalDateStr(new Date(row.logged_at))
-      if (!volumeByDay[day]) volumeByDay[day] = { total: 0, at: row.logged_at }
-      volumeByDay[day].total += weight * reps
+      if (!row.workout_log_id) continue
+      const logKey = row.workout_log_id
+      if (!volumeByLog[logKey]) volumeByLog[logKey] = { total: 0, at: row.logged_at }
+      volumeByLog[logKey].total += weight * reps
+      if (row.logged_at > volumeByLog[logKey].at) volumeByLog[logKey].at = row.logged_at
     }
     let bestVolume = 0, bestVolumeAt = null
-    for (const day of Object.keys(volumeByDay)) {
-      if (volumeByDay[day].total > bestVolume) { bestVolume = volumeByDay[day].total; bestVolumeAt = volumeByDay[day].at }
+    for (const logKey of Object.keys(volumeByLog)) {
+      if (volumeByLog[logKey].total > bestVolume) { bestVolume = volumeByLog[logKey].total; bestVolumeAt = volumeByLog[logKey].at }
     }
-    const upserts = []
-    if (best1RM > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: '1rm', value: Math.round(best1RM * 10) / 10, achieved_at: best1RMAt })
-    if (bestSetScore > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: 'best_set', value: bestSetScore, achieved_at: bestSetAt })
-    if (bestVolume > 0) upserts.push({ client_id: clientId, exercise_id: exerciseId, pb_type: 'volume', value: Math.round(bestVolume), achieved_at: bestVolumeAt })
-    if (upserts.length > 0) {
-      const { error: pbError } = await supabase.from('personal_bests').upsert(upserts, { onConflict: 'client_id,exercise_id,pb_type' })
-      if (pbError) throw pbError
+    const results = [
+      { type: '1rm', value: Math.round(best1RM * 10) / 10, at: best1RMAt },
+      { type: 'best_set', value: bestSetScore, at: bestSetAt },
+      { type: 'volume', value: Math.round(bestVolume), at: bestVolumeAt },
+    ]
+    for (const pb of results) {
+      if (pb.value > 0) {
+        const { error: pbError } = await supabase.from('personal_bests').upsert(
+          { client_id: clientId, exercise_id: exerciseId, pb_type: pb.type, value: pb.value, achieved_at: pb.at },
+          { onConflict: 'client_id,exercise_id,pb_type' }
+        )
+        if (pbError) throw pbError
+      } else {
+        const { error: delError } = await supabase.from('personal_bests')
+          .delete()
+          .eq('client_id', clientId)
+          .eq('exercise_id', exerciseId)
+          .eq('pb_type', pb.type)
+        if (delError) throw delError
+      }
     }
   }
 
