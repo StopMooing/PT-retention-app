@@ -71,15 +71,18 @@ export default function CheckInPage() {
       blocker: blocker.trim() || null,
       submitted_at: new Date().toISOString(),
     }
-    console.log('[CheckIn] clientId from useParams:', clientId)
-    console.log('[CheckIn] client object fetched earlier:', client)
-    console.log('[CheckIn] insert payload:', payload)
-
     const { error: insertError } = await supabasePublic
       .from('checkins')
       .insert(payload)
     if (insertError) {
-      setError(insertError.message)
+      const isRateLimited =
+        insertError.code === '42501' ||
+        insertError.message?.includes('row-level security policy')
+      setError(
+        isRateLimited
+          ? "You've already checked in recently. Please try again later."
+          : 'Something went wrong sending your check-in. Please try again.'
+      )
       setLoading(false)
       return
     }
