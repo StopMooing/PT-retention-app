@@ -323,9 +323,6 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
         if (setsError) throw setsError
         insertedSetIds = (insertedSets ?? []).map(r => r.id)
       }
-      for (const exerciseId of touchedExerciseIds) {
-        await recomputePBsForExercise(exerciseId)
-      }
       const { data: newLog, error: logError } = await supabase
         .from('workout_logs')
         .insert({
@@ -342,6 +339,9 @@ function CalendarDayModal({ selectedDay, onClose, clientId, onWorkoutDone }) {
       if (newLog && insertedSetIds.length > 0) {
         const { error: stampError } = await supabase.from('workout_set_logs').update({ workout_log_id: newLog.id }).in('id', insertedSetIds)
         if (stampError) console.error('workout_log_id stamp error:', stampError)
+      }
+      for (const exerciseId of touchedExerciseIds) {
+        await recomputePBsForExercise(exerciseId)
       }
       onWorkoutDone && onWorkoutDone(newLog)
       onClose()
