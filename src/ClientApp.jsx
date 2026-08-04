@@ -1639,13 +1639,11 @@ export default function ClientApp() {
           .in('id', pwIds)
         if (pwData) pwData.forEach(pw => { nameMap[pw.id] = pw.name })
       }
-      console.log('program workout name map:', nameMap)
 
       const enrichedLogs = (logs ?? []).map(l => ({
         ...l,
         _workoutName: nameMap[l.program_workout_id] || null,
       }))
-      console.log('history logs with names:', enrichedLogs)
 
       setWorkoutHistory(enrichedLogs)
       setHistoryPBs({})

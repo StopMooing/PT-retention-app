@@ -793,7 +793,7 @@ export default function ClientProfile() {
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [clientRes, checkinsRes, programRes, habitsRes, mealPlanRes, workoutRes, weightRes, foodLogsRes, exerciseLogsRes] = await Promise.all([
+        const [clientRes, checkinsRes, programRes, habitsRes, mealPlanRes, workoutRes, weightRes, foodLogsRes] = await Promise.all([
           supabase.from("clients").select("*").eq("id", clientId).single(),
           supabase.from("checkins").select("*").eq("client_id", clientId).order("submitted_at", { ascending: false }),
           supabase.from("program_assignments").select("*, programs(*)").eq("client_id", clientId).eq("is_active", true).limit(1),
@@ -802,7 +802,6 @@ export default function ClientProfile() {
           supabase.from("workout_logs").select("*").eq("client_id", clientId).order("logged_at", { ascending: false }).limit(200),
           supabase.from("body_weight_logs").select("*").eq("client_id", clientId).order("logged_date", { ascending: true }),
           supabase.from("food_logs").select("*").eq("client_id", clientId).order("logged_at", { ascending: false }).limit(20),
-          supabase.from("exercise_logs").select("*, exercises(name)").eq("client_id", clientId).order("created_at", { ascending: false }).limit(20),
         ])
         setClient(clientRes.data)
         setCheckins(checkinsRes.data ?? [])
