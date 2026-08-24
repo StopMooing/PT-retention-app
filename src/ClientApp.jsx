@@ -1236,16 +1236,28 @@ export default function ClientApp() {
   const [selectedProgramDay, setSelectedProgramDay] = useState(null)
   const [showWorkoutAI, setShowWorkoutAI] = useState(false)
   const [workoutLibrary, setWorkoutLibrary] = useState(null)
+  const [workoutLibraryError, setWorkoutLibraryError] = useState(false)
   useEffect(() => {
     if (!showWorkoutAI) return
+    if (workoutLibrary && workoutLibrary.length > 0) return
     let cancelled = false
+    setWorkoutLibraryError(false)
     ;(async () => {
       const { data, error } = await supabase
         .from('exercises')
         .select('name, muscle_group, category')
       if (cancelled) return
-      if (error) { console.error('Workout library load error:', error); return }
-      setWorkoutLibrary(data || [])
+      if (error) {
+        console.error('Workout library load error:', error)
+        setWorkoutLibraryError(true)
+        return
+      }
+      if (!data || data.length === 0) {
+        console.error('Workout library loaded but returned no rows')
+        setWorkoutLibraryError(true)
+        return
+      }
+      setWorkoutLibrary(data)
     })()
     return () => { cancelled = true }
   }, [showWorkoutAI])
@@ -1825,6 +1837,54 @@ export default function ClientApp() {
     } catch (e) {
       console.warn('AI workout JSON parse failed, saving as plain text:', e)
     }
+
+    let droppedNames = []
+    if (parsedWorkout && parsedWorkout.exercises.length > 0) {
+      const names = parsedWorkout.exercises
+        .map(e => (e?.name ?? '').trim())
+        .filter(Boolean)
+      let resolvedRows = null
+      if (names.length > 0) {
+        try {
+          const { data: resolved, error: resolveError } = await supabase.rpc('resolve_exercise_ids', { p_names: names })
+          if (resolveError) {
+            console.error('resolve_exercise_ids error at save, saving names unchanged:', resolveError)
+          } else {
+            resolvedRows = resolved ?? []
+          }
+        } catch (e) {
+          console.error('resolve_exercise_ids exception at save, saving names unchanged:', e)
+        }
+      }
+      if (resolvedRows !== null) {
+        const resolvedMap = {}
+        for (const row of resolvedRows) {
+          const key = (row?.input_name ?? '').trim().toLowerCase()
+          if (key && row?.matched_name) resolvedMap[key] = row.matched_name
+        }
+        const keptExercises = []
+        for (const ex of parsedWorkout.exercises) {
+          const rawName = (ex?.name ?? '').trim()
+          const canonical = resolvedMap[rawName.toLowerCase()]
+          if (canonical) {
+            keptExercises.push({ ...ex, name: canonical })
+          } else {
+            droppedNames.push(rawName || '(unnamed)')
+          }
+        }
+        if (keptExercises.length === 0) {
+          console.error('All AI exercise names unresolved, workout not saved:', droppedNames)
+          alert('None of these exercises are in the exercise library, so this workout was not saved. Please try generating it again.')
+          return
+        }
+        if (droppedNames.length > 0) {
+          console.error('Unresolved AI exercise names dropped at save:', droppedNames)
+        }
+        parsedWorkout = { ...parsedWorkout, exercises: keptExercises }
+        cleanContent = JSON.stringify(parsedWorkout)
+      }
+    }
+
     const name = parsedWorkout?.title || content.split('\n').find(l => l.trim())?.substring(0, 50) || `AI Workout ${toLocalDateStr()}`
     try {
       const { data, error } = await supabase.from('saved_workouts').insert({
@@ -1836,6 +1896,9 @@ export default function ClientApp() {
       setSavedWorkouts(prev => [data, ...prev])
       setShowWorkoutAI(false)
       setProgramSubTab('saved')
+      if (droppedNames.length > 0) {
+        alert('Workout saved, but these exercises are not in the exercise library and were left out: ' + droppedNames.join(', '))
+      }
     } catch (e) {
       alert('Could not save workout: ' + e.message)
     }
@@ -2102,8 +2165,30 @@ PROGRAMMING RULES (follow exactly):
 - Only include cardio or conditioning exercises if the user asks for cardio or conditioning, using the CARDIO options above.
 - Notes are short, plain English coaching cues. No anatomy jargon. No em dashes.
 
-OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks, no text before or after. Structure: {"title": "Upper Body Hypertrophy", "exercises": [{"name": "Bench Press", "sets": 4, "reps": "8-12", "rest_seconds": 90, "notes": "Control the descent"}]}. title is a short descriptive workout name. exercises is an array. name must be an exact library name as a string. sets is an integer. reps is a string like "8-12" or "5". rest_seconds is an integer in seconds. notes is a short cue string or empty string. Respond with ONLY the JSON object and nothing else.`
+OUTPUT FORMAT. Respond with ONLY a valid JSON object. No markdown, no backticks, no text before or after. Structure: {"title": "Upper Body Hypertrophy", "exercises": [{"name": "Barbell Bench Press", "sets": 4, "reps": "8-12", "rest_seconds": 90, "notes": "Control the descent"}]}. title is a short descriptive workout name. exercises is an array. name must be an exact library name as a string. sets is an integer. reps is a string like "8-12" or "5". rest_seconds is an integer in seconds. notes is a short cue string or empty string. Respond with ONLY the JSON object and nothing else.`
   })()
+  if (showWorkoutAI && workoutLibraryError) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-6">
+      <div className="text-center max-w-sm w-full">
+        <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+          <Dumbbell size={24} className="text-gray-300" />
+        </div>
+        <p className="text-gray-900 font-semibold">Could not load the exercise library</p>
+        <p className="text-sm text-gray-400 mt-1">The workout builder needs the exercise library. Please try again in a moment.</p>
+        <button
+          onClick={() => { setWorkoutLibraryError(false); setShowWorkoutAI(false) }}
+          className="mt-6 w-full bg-black hover:bg-gray-800 text-white text-base font-bold py-4 rounded-2xl transition-colors"
+        >
+          Go back
+        </button>
+      </div>
+    </div>
+  )
+  if (showWorkoutAI && (!workoutLibrary || workoutLibrary.length === 0)) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-gray-200 border-t-emerald-500 rounded-full animate-spin" />
+    </div>
+  )
   if (showWorkoutAI) return <AIChat context="Build a custom workout" placeholder="e.g. Give me a 45 minute upper body workout with dumbbells only" systemPrompt={workoutAIPrompt} onClose={() => setShowWorkoutAI(false)} onSave={handleSaveWorkout} saveLabel="Save workout" />
   const nutritionAIPrompt = `You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions. Keep advice evidence-based and actionable.
 
