@@ -1426,12 +1426,21 @@ export default function ClientApp() {
       const { data: foodData } = await supabase.from('food_logs').select('*').eq('client_id', clientRow.id).order('logged_at', { ascending: false })
       setFoodLogs(foodData ?? [])
 
-      // Resources from PT (global or created by this client's PT)
-      const { data: resourceData } = await supabase
+      // Resources: global library, plus this client's PT's own resources when they have a PT.
+      // pt_id is nullable (solo clients have no coach), so the created_by filter is only
+      // added when a pt_id actually exists. Interpolating a null pt_id produced the literal
+      // string "created_by.eq.undefined", which is not a valid filter.
+      const resourceOrFilter = clientRow.pt_id
+        ? `is_global.eq.true,created_by.eq.${clientRow.pt_id}`
+        : `is_global.eq.true`
+      const { data: resourceData, error: resourceError } = await supabase
         .from('resources')
         .select('*')
-        .or(`is_global.eq.true,created_by.eq.${clientRow.pt_id}`)
+        .or(resourceOrFilter)
         .order('created_at', { ascending: false })
+      if (resourceError) {
+        console.error('Failed to load resources:', resourceError.message, '| filter:', resourceOrFilter)
+      }
       setResources(resourceData ?? [])
 
       // Saved workouts
