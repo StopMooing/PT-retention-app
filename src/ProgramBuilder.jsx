@@ -98,6 +98,9 @@ export default function ProgramBuilder({ user }) {
   const [savingExercise, setSavingExercise]     = useState(false)
   const [deletingId, setDeletingId]             = useState(null)
   const [exerciseFormKey, setExerciseFormKey]   = useState(0)
+  const [editingExerciseId, setEditingExerciseId] = useState(null)
+  const [editExercise, setEditExercise]           = useState({ sets: '', reps: '', rest_seconds: '', notes: '' })
+  const [savingEdit, setSavingEdit]               = useState(false)
 
   // ── Assign program ──
   const [clients, setClients]               = useState([])
@@ -200,6 +203,7 @@ export default function ProgramBuilder({ user }) {
     setDayExercises([])
     setShowNewDay(false)
     setShowNewExercise(false)
+    setEditingExerciseId(null)
     setBanner(null)
     fetchWorkoutDays(program.id)
   }
@@ -208,6 +212,7 @@ export default function ProgramBuilder({ user }) {
     if (selectedDay?.id === day.id) return
     setSelectedDay(day)
     setShowNewExercise(false)
+    setEditingExerciseId(null)
     setBanner(null)
     fetchDayExercises(day.id)
   }
@@ -304,6 +309,49 @@ export default function ProgramBuilder({ user }) {
       })))
     }
     setDeletingId(null)
+  }
+
+  function startEditExercise(exercise) {
+    setEditingExerciseId(exercise.id)
+    setEditExercise({
+      sets: exercise.sets != null ? String(exercise.sets) : '',
+      reps: exercise.reps ?? '',
+      rest_seconds: exercise.rest_seconds != null ? String(exercise.rest_seconds) : '',
+      notes: exercise.notes ?? '',
+    })
+  }
+
+  function cancelEditExercise() {
+    setEditingExerciseId(null)
+    setEditExercise({ sets: '', reps: '', rest_seconds: '', notes: '' })
+  }
+
+  async function handleUpdateExercise(id) {
+    if (savingEdit) return
+    setSavingEdit(true)
+    const updates = {
+      sets: editExercise.sets ? parseInt(editExercise.sets, 10) : null,
+      reps: editExercise.reps.trim() || null,
+      rest_seconds: editExercise.rest_seconds ? parseInt(editExercise.rest_seconds, 10) : null,
+      notes: editExercise.notes.trim() || null,
+    }
+    const { data, error } = await supabase
+      .from('workout_exercises')
+      .update(updates)
+      .eq('id', id)
+      .select('*, exercises(id, name, muscle_group)')
+    setSavingEdit(false)
+    // An update blocked by RLS returns no error and no rows. Treat that as a failure, not a success.
+    if (error || !data || data.length === 0) { showBanner('Could not save changes.', 'error'); return }
+    const updated = data[0]
+    setDayExercises(prev => prev.map(e => e.id === id ? updated : e))
+    // Keep the day card count, time estimate and program total in sync without a refresh
+    setWorkoutDays(prev => prev.map(d => ({
+      ...d,
+      workout_exercises: (d.workout_exercises || []).map(e => e.id === id ? { ...e, ...updates } : e),
+    })))
+    cancelEditExercise()
+    showBanner('Exercise updated.')
   }
 
   function dayCount(program) {
@@ -851,47 +899,138 @@ export default function ProgramBuilder({ user }) {
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    {dayExercises.map((exercise, index) => (
-                      <div key={exercise.id} className={`bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-all ${deletingId === exercise.id ? 'opacity-30 pointer-events-none' : ''}`}>
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3 flex-1">
-                            <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">{index + 1}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-semibold text-gray-900 text-sm">{exercise.exercises?.name || exercise.name}</span>
-                                {(exercise.exercises?.muscle_group || exercise.muscle_group) && (
-                                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-                                    {exercise.exercises?.muscle_group || exercise.muscle_group}
-                                  </span>
+                    {dayExercises.map((exercise, index) => {
+                      const isEditing = editingExerciseId === exercise.id
+                      return (
+                        <div key={exercise.id} className={`bg-white border rounded-xl p-4 transition-all ${isEditing ? 'border-gray-900' : 'border-gray-200 hover:border-gray-300'} ${deletingId === exercise.id ? 'opacity-30 pointer-events-none' : ''}`}>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3 flex-1">
+                              <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">{index + 1}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-semibold text-gray-900 text-sm">{exercise.exercises?.name || exercise.name}</span>
+                                  {(exercise.exercises?.muscle_group || exercise.muscle_group) && (
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
+                                      {exercise.exercises?.muscle_group || exercise.muscle_group}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {isEditing ? (
+                                  <form
+                                    onSubmit={e => { e.preventDefault(); handleUpdateExercise(exercise.id) }}
+                                    className="flex flex-col gap-3 mt-3"
+                                  >
+                                    <div className="grid grid-cols-3 gap-3">
+                                      <Field label="Sets">
+                                        <input
+                                          type="number"
+                                          min="1"
+                                          autoFocus
+                                          value={editExercise.sets}
+                                          onChange={e => setEditExercise(x => ({ ...x, sets: e.target.value }))}
+                                          className={inputCls}
+                                        />
+                                      </Field>
+                                      <Field label="Reps">
+                                        <input
+                                          type="text"
+                                          value={editExercise.reps}
+                                          onChange={e => setEditExercise(x => ({ ...x, reps: e.target.value }))}
+                                          className={inputCls}
+                                        />
+                                      </Field>
+                                      <Field label="Rest (seconds)">
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          value={editExercise.rest_seconds}
+                                          onChange={e => setEditExercise(x => ({ ...x, rest_seconds: e.target.value }))}
+                                          className={inputCls}
+                                        />
+                                      </Field>
+                                    </div>
+                                    <Field label="Notes (optional)">
+                                      <textarea
+                                        rows={2}
+                                        value={editExercise.notes}
+                                        onChange={e => setEditExercise(x => ({ ...x, notes: e.target.value }))}
+                                        className={`${inputCls} resize-none`}
+                                      />
+                                    </Field>
+                                    <div className="flex items-center justify-end gap-3">
+                                      <button
+                                        type="button"
+                                        onClick={cancelEditExercise}
+                                        className="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-150"
+                                      >
+                                        Cancel
+                                      </button>
+                                      <button
+                                        type="submit"
+                                        disabled={savingEdit}
+                                        className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {savingEdit ? 'Saving...' : 'Save'}
+                                      </button>
+                                    </div>
+                                  </form>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                                      {exercise.sets != null && (
+                                        <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
+                                          <span className="text-gray-400">Sets</span> {exercise.sets}
+                                        </span>
+                                      )}
+                                      {exercise.reps && (
+                                        <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
+                                          <span className="text-gray-400">Reps</span> {exercise.reps}
+                                        </span>
+                                      )}
+                                      {exercise.rest_seconds != null && (
+                                        <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
+                                          <span className="text-gray-400">Rest</span> {exercise.rest_seconds}s
+                                        </span>
+                                      )}
+                                    </div>
+                                    {exercise.notes && (
+                                      <p className="text-xs text-gray-500 mt-2 italic">{exercise.notes}</p>
+                                    )}
+                                  </>
                                 )}
                               </div>
-                              <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
-                                  <span className="text-gray-400">Sets</span> {exercise.sets}
-                                </span>
-                                <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
-                                  <span className="text-gray-400">Reps</span> {exercise.reps}
-                                </span>
-                                <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
-                                  <span className="text-gray-400">Rest</span> {exercise.rest_seconds}s
-                                </span>
-                              </div>
-                              {exercise.notes && (
-                                <p className="text-xs text-gray-500 mt-2 italic">{exercise.notes}</p>
-                              )}
                             </div>
+                            {!isEditing && (
+                              <div className="flex items-center ml-2 flex-shrink-0">
+                                {editingExerciseId === null && (
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditExercise(exercise)}
+                                    title="Edit exercise"
+                                    className="text-gray-300 hover:text-gray-600 transition-colors p-1"
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteExercise(exercise.id)}
+                                  title="Delete exercise"
+                                  className="text-gray-300 hover:text-red-400 transition-colors p-1"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          <button
-                            onClick={() => handleDeleteExercise(exercise.id)}
-                            className="text-gray-300 hover:text-red-400 transition-colors ml-2 flex-shrink-0 p-1"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
