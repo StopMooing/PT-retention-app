@@ -97,11 +97,16 @@ export default function ProgramBuilder({ user }) {
   const [muscleFilter, setMuscleFilter]         = useState('')
   const [savingExercise, setSavingExercise]     = useState(false)
   const [deletingId, setDeletingId]             = useState(null)
+  const [exerciseFormKey, setExerciseFormKey]   = useState(0)
 
   // ── Assign program ──
   const [clients, setClients]               = useState([])
   const [assignClientId, setAssignClientId] = useState('')
-  const [assignStartDate, setAssignStartDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [assignStartDate, setAssignStartDate] = useState(() => {
+    // Local date, not UTC: toISOString() gives yesterday's date before 9:30am in Adelaide
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  })
   const [assignLoading, setAssignLoading]   = useState(false)
   const [assignBanner, setAssignBanner]     = useState(null)
 
@@ -182,6 +187,7 @@ export default function ProgramBuilder({ user }) {
       .from('workout_exercises')
       .select('*, exercises(id, name, muscle_group)')
       .eq('program_workout_id', workoutId)
+      .order('order_index')
       .order('created_at')
     if (!error && data) setDayExercises(data)
     setLoadingExercises(false)
@@ -250,8 +256,10 @@ export default function ProgramBuilder({ user }) {
 
   async function handleSaveExercise(e) {
     e.preventDefault()
-    if (!newExercise.exercise_id) return
+    if (!newExercise.exercise_id || savingExercise) return
     setSavingExercise(true)
+    // Next position in this day. Older rows may all be 0; created_at breaks ties when fetching.
+    const nextOrderIndex = dayExercises.reduce((max, ex) => Math.max(max, ex.order_index ?? 0), -1) + 1
     const { data, error } = await supabase
       .from('workout_exercises')
       .insert({
@@ -261,23 +269,40 @@ export default function ProgramBuilder({ user }) {
         reps: newExercise.reps.trim() || null,
         rest_seconds: newExercise.rest_seconds ? parseInt(newExercise.rest_seconds, 10) : null,
         notes: newExercise.notes.trim() || null,
+        order_index: nextOrderIndex,
       })
       .select('*, exercises(id, name, muscle_group)')
       .single()
     setSavingExercise(false)
     if (error) { showBanner('Could not add exercise.', 'error'); return }
     setDayExercises(prev => [...prev, data])
+    // Keep the day card count, time estimate and program total in sync without a refresh
+    setWorkoutDays(prev => prev.map(d =>
+      d.id === selectedDay.id
+        ? { ...d, workout_exercises: [...(d.workout_exercises || []), data] }
+        : d
+    ))
+    // Panel stays open so the coach can add the next exercise.
+    // Bumping the key remounts the form so the search box's autoFocus fires again.
     setNewExercise({ exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' })
     setExerciseSearch('')
-    setShowNewExercise(false)
+    setExerciseFormKey(k => k + 1)
     showBanner('Exercise added.')
   }
 
   async function handleDeleteExercise(id) {
     setDeletingId(id)
     const { error } = await supabase.from('workout_exercises').delete().eq('id', id)
-    if (error) { showBanner('Could not delete exercise.', 'error') }
-    else setDayExercises(prev => prev.filter(e => e.id !== id))
+    if (error) {
+      showBanner('Could not delete exercise.', 'error')
+    } else {
+      setDayExercises(prev => prev.filter(e => e.id !== id))
+      // Keep the day card count, time estimate and program total in sync without a refresh
+      setWorkoutDays(prev => prev.map(d => ({
+        ...d,
+        workout_exercises: (d.workout_exercises || []).filter(e => e.id !== id),
+      })))
+    }
     setDeletingId(null)
   }
 
@@ -645,8 +670,7 @@ export default function ProgramBuilder({ user }) {
                 {/* ── Add exercise form ── */}
                 {showNewExercise && (
                   <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
-                    <h3 className="font-semibold text-gray-900 mb-4">Add Exercise to {selectedDay?.name}</h3>
-                    <form onSubmit={handleSaveExercise} className="flex flex-col gap-4">
+                    <form key={exerciseFormKey} onSubmit={handleSaveExercise} className="flex flex-col gap-4">
 
                       <Field label="Exercise">
                         <div className="relative">
@@ -794,11 +818,14 @@ export default function ProgramBuilder({ user }) {
                           onClick={resetExerciseForm}
                           className="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-150"
                         >
-                          Cancel
+                          {newExercise.exercise_id || exerciseSearch.trim() || newExercise.sets || newExercise.reps.trim() || newExercise.rest_seconds || newExercise.notes.trim()
+                            ? 'Cancel'
+                            : 'Done'}
                         </button>
                         <button
                           type="submit"
-                          className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                          disabled={savingExercise}
+                          className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {savingExercise ? 'Adding...' : 'Add to Workout'}
                         </button>
