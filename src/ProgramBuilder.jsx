@@ -687,6 +687,8 @@ export default function ProgramBuilder({ user }) {
                             <option value="sled">Sled</option>
                             <option value="landmine">Landmine</option>
                             <option value="trap_bar">Trap Bar</option>
+                            <option value="functional">Functional</option>
+                            <option value="plate">Plate</option>
                           </select>
                           <select
                             value={muscleFilter}
