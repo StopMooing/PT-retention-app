@@ -21,6 +21,52 @@ const MUSCLE_CHIP = {
   Other:        { bg: 'bg-gray-100',   text: 'text-gray-600',    dot: 'bg-gray-400'    },
 }
 
+const EQUIPMENT_OPTIONS = [
+  { value: 'barbell',    label: 'Barbell' },
+  { value: 'dumbbell',   label: 'Dumbbell' },
+  { value: 'cable',      label: 'Cable' },
+  { value: 'machine',    label: 'Machine' },
+  { value: 'bodyweight', label: 'Bodyweight' },
+  { value: 'band',       label: 'Band' },
+  { value: 'kettlebell', label: 'Kettlebell' },
+  { value: 'trx',        label: 'TRX' },
+  { value: 'sled',       label: 'Sled' },
+  { value: 'landmine',   label: 'Landmine' },
+  { value: 'trap_bar',   label: 'Trap Bar' },
+  { value: 'functional', label: 'Functional' },
+  { value: 'plate',      label: 'Plate' },
+]
+
+const CATEGORY_OPTIONS = [
+  { value: 'strength',   label: 'Strength' },
+  { value: 'bodyweight', label: 'Bodyweight' },
+  { value: 'accessory',  label: 'Accessory' },
+  { value: 'power',      label: 'Power' },
+  { value: 'cardio',     label: 'Cardio' },
+  { value: 'warmup',     label: 'Warm-up' },
+  { value: 'cooldown',   label: 'Cool-down' },
+]
+
+const EMPTY_EXERCISE_FORM = { name: '', muscle_group: 'Chest', equipment: '', category: 'strength', instructions: '' }
+
+function equipmentLabel(value) {
+  return EQUIPMENT_OPTIONS.find(o => o.value === value)?.label ?? value ?? 'Unspecified'
+}
+
+function categoryLabel(value) {
+  return CATEGORY_OPTIONS.find(o => o.value === value)?.label ?? value ?? 'Unspecified'
+}
+
+function EquipmentChip({ equipment, size = 'sm' }) {
+  if (!equipment) return null
+  const textSize = size === 'lg' ? 'text-sm px-3 py-1' : 'text-[11px] px-2 py-0.5'
+  return (
+    <span className={`inline-flex items-center font-semibold rounded-full bg-gray-100 text-gray-600 ${textSize}`}>
+      {equipmentLabel(equipment)}
+    </span>
+  )
+}
+
 function MuscleChip({ group, size = 'sm' }) {
   const cfg = MUSCLE_CHIP[group] ?? MUSCLE_CHIP.Other
   const textSize = size === 'lg' ? 'text-sm px-3 py-1' : 'text-[11px] px-2 py-0.5'
@@ -38,6 +84,9 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
   const [editName, setEditName] = useState(exercise.name)
   const [editMuscle, setEditMuscle] = useState(exercise.muscle_group)
   const [editInstructions, setEditInstructions] = useState(exercise.instructions ?? '')
+  const [editEquipment, setEditEquipment] = useState(exercise.equipment ?? 'barbell')
+  const [editCategory, setEditCategory] = useState(exercise.category ?? 'strength')
+  const [editError, setEditError] = useState('')
   const [saving, setSaving] = useState(false)
   const [visible, setVisible] = useState(false)
 
@@ -54,20 +103,28 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
   async function handleSave() {
     if (!editName.trim()) return
     setSaving(true)
+    setEditError('')
+    const updates = {
+      name: editName.trim(),
+      muscle_group: editMuscle,
+      equipment: editEquipment,
+      category: editCategory,
+      instructions: editInstructions.trim() || null,
+    }
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('exercises')
-        .update({
-          name: editName.trim(),
-          muscle_group: editMuscle,
-          instructions: editInstructions.trim() || null,
-        })
+        .update(updates)
         .eq('id', exercise.id)
+        .select()
       if (error) throw error
-      onSave({ ...exercise, name: editName.trim(), muscle_group: editMuscle, instructions: editInstructions.trim() || null })
+      // An update blocked by RLS returns no error and no rows. Treat that as a failure, not a success.
+      if (!data || data.length === 0) throw new Error('No rows updated')
+      onSave({ ...exercise, ...data[0] })
       setEditing(false)
     } catch (e) {
       console.error(e)
+      setEditError('Could not save changes. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -103,17 +160,40 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
               )}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 {editing ? (
-                  <select
-                    value={editMuscle}
-                    onChange={e => setEditMuscle(e.target.value)}
-                    className="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
-                  >
-                    {MUSCLE_GROUPS.filter(g => g !== 'All').map(g => (
-                      <option key={g} value={g}>{g}</option>
-                    ))}
-                  </select>
+                  <>
+                    <select
+                      value={editMuscle}
+                      onChange={e => setEditMuscle(e.target.value)}
+                      className="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
+                    >
+                      {MUSCLE_GROUPS.filter(g => g !== 'All').map(g => (
+                        <option key={g} value={g}>{g}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={editEquipment}
+                      onChange={e => setEditEquipment(e.target.value)}
+                      className="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
+                    >
+                      {EQUIPMENT_OPTIONS.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={editCategory}
+                      onChange={e => setEditCategory(e.target.value)}
+                      className="text-sm border border-gray-300 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white"
+                    >
+                      {CATEGORY_OPTIONS.map(o => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </>
                 ) : (
-                  <MuscleChip group={exercise.muscle_group} size="lg" />
+                  <>
+                    <MuscleChip group={exercise.muscle_group} size="lg" />
+                    <EquipmentChip equipment={exercise.equipment} size="lg" />
+                  </>
                 )}
                 <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                   exercise.is_global
@@ -179,6 +259,23 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
             </div>
           )}
 
+          {/* Equipment and category */}
+          {!editing && (
+            <div>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Details</h3>
+              <div className="bg-gray-50 rounded-xl px-5 py-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-400">Equipment</span>
+                  <span className="font-semibold text-gray-700">{equipmentLabel(exercise.equipment)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-400">Category</span>
+                  <span className="font-semibold text-gray-700">{categoryLabel(exercise.category)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Tips section for global exercises */}
           {!editing && exercise.is_global && (
             <div>
@@ -198,11 +295,15 @@ function ExerciseDetailModal({ exercise, userId, onClose, onSave }) {
 
         </div>
 
+        {editing && editError && (
+          <p className="px-6 pb-2 text-xs text-red-500">{editError}</p>
+        )}
+
         {/* Footer */}
         {editing ? (
           <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex gap-3">
             <button
-              onClick={() => { setEditing(false); setEditName(exercise.name); setEditMuscle(exercise.muscle_group); setEditInstructions(exercise.instructions ?? '') }}
+              onClick={() => { setEditing(false); setEditName(exercise.name); setEditMuscle(exercise.muscle_group); setEditEquipment(exercise.equipment ?? 'barbell'); setEditCategory(exercise.category ?? 'strength'); setEditInstructions(exercise.instructions ?? ''); setEditError('') }}
               className="flex-1 py-2.5 border border-gray-200 text-gray-500 text-sm font-semibold rounded-xl hover:bg-gray-100 transition"
             >
               Cancel
@@ -1142,8 +1243,9 @@ export default function ExerciseLibrary({ user }) {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('All')
   const [search, setSearch] = useState('')
+  const [equipmentFilter, setEquipmentFilter] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', muscle_group: 'Chest', instructions: '' })
+  const [form, setForm] = useState(EMPTY_EXERCISE_FORM)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [selectedExercise, setSelectedExercise] = useState(null)
@@ -1162,23 +1264,26 @@ export default function ExerciseLibrary({ user }) {
 
   const filtered = exercises
     .filter(e => filter === 'All' || e.muscle_group === filter)
+    .filter(e => !equipmentFilter || e.equipment === equipmentFilter)
     .filter(e => e.name.toLowerCase().includes(search.toLowerCase()))
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.name.trim()) return
+    if (!form.name.trim() || !form.equipment) return
     setSaving(true)
     setSaveError('')
     const { error } = await supabase.from('exercises').insert({
       name: form.name.trim(),
       muscle_group: form.muscle_group,
+      equipment: form.equipment,
+      category: form.category,
       instructions: form.instructions.trim() || null,
       created_by: user.id,
       is_global: false,
     })
     setSaving(false)
     if (error) { setSaveError('Something went wrong. Please try again.'); return }
-    setForm({ name: '', muscle_group: 'Chest', instructions: '' })
+    setForm(EMPTY_EXERCISE_FORM)
     setShowForm(false)
     fetchExercises()
   }
@@ -1248,6 +1353,28 @@ export default function ExerciseLibrary({ user }) {
                   {MUSCLE_GROUPS.filter(g => g !== 'All').map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Equipment</label>
+                <select
+                  required
+                  value={form.equipment}
+                  onChange={e => setForm(f => ({ ...f, equipment: e.target.value }))}
+                  className="border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  <option value="" disabled>Select equipment</option>
+                  {EQUIPMENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Category</label>
+                <select
+                  value={form.category}
+                  onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+                  className="border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300"
+                >
+                  {CATEGORY_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
               <div className="flex flex-col gap-1.5 sm:col-span-2">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Instructions <span className="text-gray-300 font-normal">(optional)</span></label>
                 <textarea
@@ -1280,6 +1407,14 @@ export default function ExerciseLibrary({ user }) {
             className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent"
           />
           {search && <button onClick={() => setSearch('')} className="text-gray-300 hover:text-gray-500 text-lg leading-none">×</button>}
+          <select
+            value={equipmentFilter}
+            onChange={e => setEquipmentFilter(e.target.value)}
+            className="text-sm text-gray-600 border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-gray-300 shrink-0"
+          >
+            <option value="">All equipment</option>
+            {EQUIPMENT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
         </div>
 
         {/* Muscle group filter pills */}
@@ -1306,10 +1441,11 @@ export default function ExerciseLibrary({ user }) {
         </div>
 
         {/* Results count */}
-        {(search || filter !== 'All') && (
+        {(search || filter !== 'All' || equipmentFilter) && (
           <p className="text-sm text-gray-400 mb-4">
             {filtered.length} exercise{filtered.length !== 1 ? 's' : ''} found
             {filter !== 'All' && ` in ${filter}`}
+            {equipmentFilter && ` (${equipmentLabel(equipmentFilter)})`}
             {search && ` matching "${search}"`}
           </p>
         )}
@@ -1321,7 +1457,7 @@ export default function ExerciseLibrary({ user }) {
           <div className="py-16 text-center">
             <p className="text-sm font-semibold text-gray-900">No exercises found</p>
             <p className="text-xs text-gray-400 mt-1">
-              {search ? `No results for "${search}"` : `No ${filter} exercises yet.`}
+              {search ? `No results for "${search}"` : 'No exercises match these filters.'}
             </p>
           </div>
         ) : (
@@ -1341,8 +1477,11 @@ export default function ExerciseLibrary({ user }) {
                     <ChevronRight size={14} className="text-gray-300 group-hover:text-gray-500 transition shrink-0 mt-0.5" />
                   </div>
 
-                  {/* Muscle chip */}
-                  <MuscleChip group={exercise.muscle_group} />
+                  {/* Muscle and equipment chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <MuscleChip group={exercise.muscle_group} />
+                    <EquipmentChip equipment={exercise.equipment} />
+                  </div>
 
                   {/* Instructions preview */}
                   {exercise.instructions ? (
