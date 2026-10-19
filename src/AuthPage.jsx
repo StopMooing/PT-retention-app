@@ -20,7 +20,9 @@ export default function AuthPage({ defaultMode = 'login' }) {
       const { error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: fullName } },
+        // role is read by the handle_new_user trigger, which refuses a signup without
+        // one. This form is coach signup; clients are created via a claim link instead.
+        options: { data: { full_name: fullName, role: 'pt' } },
       })
       if (signUpError) {
         setError(signUpError.message)
