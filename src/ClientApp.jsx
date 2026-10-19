@@ -1218,6 +1218,15 @@ export default function ClientApp() {
   const [resources, setResources] = useState([])
   const [photoUrl, setPhotoUrl] = useState(null)
   const [activeTab, setActiveTab] = useState('home')
+  // Check-ins
+  const [checkins, setCheckins] = useState([])
+  const [showCheckinForm, setShowCheckinForm] = useState(false)
+  const [showCheckinHistory, setShowCheckinHistory] = useState(false)
+  const [checkinTraining, setCheckinTraining] = useState(0)
+  const [checkinEnergy, setCheckinEnergy] = useState(0)
+  const [checkinBlocker, setCheckinBlocker] = useState('')
+  const [savingCheckin, setSavingCheckin] = useState(false)
+  const [checkinError, setCheckinError] = useState(null)
 
   // Home
   const [weightInput, setWeightInput] = useState('')
@@ -1455,6 +1464,10 @@ export default function ClientApp() {
       // Saved meals
       const { data: savedMData } = await supabase.from('saved_meals').select('*').eq('client_id', clientRow.id).order('created_at', { ascending: false })
       setSavedMeals(savedMData ?? [])
+
+      // Check-ins
+      const { data: ciData } = await supabase.from('checkins').select('*').eq('client_id', clientRow.id).order('submitted_at', { ascending: false })
+      setCheckins(ciData ?? [])
 
       // Progress photos
       const { data: ppData } = await supabase.from('progress_photos').select('*').eq('client_id', clientRow.id).order('taken_date', { ascending: false })
@@ -1726,6 +1739,35 @@ export default function ClientApp() {
   useEffect(() => {
     if (activeTab === 'nutrition') loadNutritionDateData(selectedNutritionDate)
   }, [activeTab, selectedNutritionDate])
+
+  async function handleSubmitCheckin() {
+    if (!client || checkinTraining === 0 || checkinEnergy === 0) return
+    setSavingCheckin(true)
+    setCheckinError(null)
+    const { data, error } = await supabase
+      .from('checkins')
+      .insert({
+        client_id: client.id,
+        training_score: checkinTraining,
+        energy_score: checkinEnergy,
+        blocker: checkinBlocker.trim() || null,
+      })
+      .select()
+      .single()
+    setSavingCheckin(false)
+    if (error) {
+      // The 24h limit is enforced by checkin_rate_ok() inside the RLS policy, so a repeat
+      // submission surfaces as a policy violation rather than a friendly message.
+      const isRateLimit = error.message.toLowerCase().includes('row-level security')
+      setCheckinError(isRateLimit ? 'You have already checked in today. Try again tomorrow.' : error.message)
+      return
+    }
+    setCheckins(prev => [data, ...prev])
+    setShowCheckinForm(false)
+    setCheckinTraining(0)
+    setCheckinEnergy(0)
+    setCheckinBlocker('')
+  }
 
   async function handleSetGoal(calories) {
     try {
@@ -2211,6 +2253,12 @@ export default function ClientApp() {
   // ── TAB CONTENT ─────────────────────────────────────────────────────────────
 
   function renderHome() {
+    const latestCheckin = checkins[0] ?? null
+    const daysSinceCheckin = latestCheckin
+      ? Math.floor((Date.now() - new Date(latestCheckin.submitted_at)) / 86400000)
+      : null
+    const checkinDue = !latestCheckin || daysSinceCheckin >= 7
+    const repliedCheckins = checkins.filter(c => c.coach_reply)
     const firstName = client.full_name?.split(' ')[0] || client.full_name
 
     // Weight graph data
@@ -2469,6 +2517,134 @@ export default function ClientApp() {
               Log food →
             </button>
           </div>
+        </div>
+
+        {/* ── WEEKLY CHECK-IN ── */}
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <p className="text-sm font-bold text-gray-900">Weekly check-in</p>
+            {checkinDue && !showCheckinForm && (
+              <span className="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 rounded-full">Due</span>
+            )}
+          </div>
+
+          {showCheckinForm ? (
+            <div className="px-4 py-4 space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">How did training go?</p>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setCheckinTraining(n)}
+                      className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${checkinTraining === n ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-gray-200 text-gray-400'}`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Energy levels?</p>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button
+                      key={n}
+                      onClick={() => setCheckinEnergy(n)}
+                      className={`flex-1 h-11 rounded-lg text-sm font-bold border transition-colors ${checkinEnergy === n ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white border-gray-200 text-gray-400'}`}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Anything getting in the way?</p>
+                <textarea
+                  rows={3}
+                  placeholder="Optional - sleep, work, soreness, anything"
+                  value={checkinBlocker}
+                  onChange={e => setCheckinBlocker(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
+                />
+              </div>
+
+              {checkinError && <p className="text-xs text-red-500">{checkinError}</p>}
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleSubmitCheckin}
+                  disabled={savingCheckin || checkinTraining === 0 || checkinEnergy === 0}
+                  className="flex-1 h-11 rounded-xl bg-emerald-500 text-white text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+                >
+                  {savingCheckin ? 'Sending...' : 'Send check-in'}
+                </button>
+                <button
+                  onClick={() => { setShowCheckinForm(false); setCheckinError(null) }}
+                  className="text-sm font-medium text-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="px-4 py-4">
+              {checkinDue ? (
+                <>
+                  <p className="text-sm text-gray-500 mb-3">
+                    {latestCheckin
+                      ? `It has been ${daysSinceCheckin} days since your last check-in.`
+                      : 'Let your coach know how the week went.'}
+                  </p>
+                  <button
+                    onClick={() => setShowCheckinForm(true)}
+                    className="w-full h-11 rounded-xl bg-emerald-500 text-white text-sm font-bold"
+                  >
+                    Start check-in
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  Checked in {daysSinceCheckin === 0 ? 'today' : daysSinceCheckin === 1 ? 'yesterday' : `${daysSinceCheckin} days ago`}.
+                  {' '}Next one in {7 - daysSinceCheckin} {7 - daysSinceCheckin === 1 ? 'day' : 'days'}.
+                </p>
+              )}
+
+              {latestCheckin?.coach_reply && (
+                <div className="mt-4 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                  <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1">From your coach</p>
+                  <p className="text-sm text-emerald-900 leading-relaxed whitespace-pre-wrap">{latestCheckin.coach_reply}</p>
+                </div>
+              )}
+
+              {repliedCheckins.length > (latestCheckin?.coach_reply ? 1 : 0) && (
+                <button
+                  onClick={() => setShowCheckinHistory(v => !v)}
+                  className="text-xs font-semibold text-gray-400 mt-3"
+                >
+                  {showCheckinHistory ? 'Hide past check-ins' : 'Past check-ins'}
+                </button>
+              )}
+
+              {showCheckinHistory && (
+                <div className="mt-3 space-y-3">
+                  {repliedCheckins
+                    .filter(c => c.id !== latestCheckin?.id)
+                    .map(c => (
+                      <div key={c.id} className="border border-gray-100 rounded-xl px-4 py-3">
+                        <p className="text-xs text-gray-400">
+                          {new Date(c.submitted_at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {' · '}Training {c.training_score}/5 · Energy {c.energy_score}/5
+                        </p>
+                        <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap mt-1">{c.coach_reply}</p>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── STATS ROW ── */}
