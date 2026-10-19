@@ -690,6 +690,7 @@ export default function ClientProfile() {
   const [savedNotes, setSavedNotes]               = useState([])
   const [notesLoading, setNotesLoading] = useState(false)
   const [copied, setCopied]                       = useState(false)
+  const [inviteCopied, setInviteCopied] = useState(false)
 
   const [weightLogs, setWeightLogs] = useState([])
   const [weightPeriod, setWeightPeriod] = useState("30")
@@ -1023,6 +1024,12 @@ export default function ClientProfile() {
     navigator.clipboard.writeText(`${window.location.origin}/checkin/${clientId}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  function handleCopyInvite() {
+    navigator.clipboard.writeText(`${window.location.origin}/claim/${client.claim_token}`)
+    setInviteCopied(true)
+    setTimeout(() => setInviteCopied(false), 2000)
   }
 
   async function handleSaveNote() {
@@ -3859,6 +3866,19 @@ export default function ClientProfile() {
             <ArrowLeft size={16} /> Back to Dashboard
           </button>
           <div className="flex items-center gap-2">
+            {client.user_id ? (
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-lg">
+                <CheckCircle2 size={13} /> Account active
+              </span>
+            ) : (
+              <button
+                onClick={handleCopyInvite}
+                className="flex items-center gap-2 border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm font-medium px-4 py-2 rounded-lg transition"
+              >
+                <Send size={13} />
+                {inviteCopied ? "Copied!" : "Copy Invite Link"}
+              </button>
+            )}
             <button
               onClick={handleCopyLink}
               className="flex items-center gap-2 border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm font-medium px-4 py-2 rounded-lg transition"

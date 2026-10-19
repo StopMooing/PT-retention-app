@@ -4,6 +4,7 @@ import { LayoutDashboard, Dumbbell, ClipboardList, Utensils, Heart, CreditCard, 
 import { supabase } from './supabase'
 import AuthPage from './AuthPage'
 import CheckInPage from './CheckInPage'
+import ClaimPage from './ClaimPage'
 import LandingPage from './LandingPage'
 import ExerciseLibrary from './ExerciseLibrary'
 import ProgramBuilder from './ProgramBuilder'
@@ -963,6 +964,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/checkin/:clientId" element={<CheckInPage />} />
+      <Route path="/claim/:token" element={<ClaimPage />} />
       <Route path="/" element={session ? loggedInRedirect : <LandingPage />} />
       <Route path="/auth" element={session ? loggedInRedirect : <AuthPage />} />
       <Route path="/login" element={session ? loggedInRedirect : <AuthPage defaultMode="login" />} />
