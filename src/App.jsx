@@ -599,15 +599,18 @@ function Dashboard({ user }) {
 
     const { data: checkins } = await supabase
       .from('checkins')
-      .select('client_id, submitted_at, training_score, energy_score')
+      .select('client_id, submitted_at, training_score, energy_score, coach_reply')
       .in('client_id', clientIds)
       .order('submitted_at', { ascending: false })
 
     const map = {}
     ;(checkins ?? []).forEach((c) => {
       if (!map[c.client_id]) {
-        map[c.client_id] = { lastCheckIn: c.submitted_at, sessionsThisMonth: 0, recentScores: [] }
+        map[c.client_id] = { lastCheckIn: c.submitted_at, sessionsThisMonth: 0, recentScores: [], awaitingReply: 0 }
       }
+      // Counted across all check-ins, not just this month: an unanswered one from
+      // three weeks ago is still owed a reply.
+      if (!c.coach_reply) map[c.client_id].awaitingReply++
       if (new Date(c.submitted_at) >= startOfMonth) {
         map[c.client_id].sessionsThisMonth++
       }
@@ -668,6 +671,7 @@ function Dashboard({ user }) {
       lastCheckIn,
       sessionsThisMonth: stats?.sessionsThisMonth ?? 0,
       recentScores: stats?.recentScores ?? [],
+      awaitingReply: stats?.awaitingReply ?? 0,
       status: computeStatus(lastCheckIn),
     }
   })
@@ -824,6 +828,11 @@ function Dashboard({ user }) {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-700">
                 {statusFilter === 'All' ? 'All Clients' : statusFilter} <span className="text-gray-400 font-normal ml-1">{filteredClients.length} {filteredClients.length === 1 ? 'client' : 'clients'}</span>
+                {enrichedClients.reduce((sum, c) => sum + c.awaitingReply, 0) > 0 && (
+                  <span className="ml-2 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100 px-2.5 py-1 rounded-full">
+                    {enrichedClients.reduce((sum, c) => sum + c.awaitingReply, 0)} awaiting your reply
+                  </span>
+                )}
               </h3>
             </div>
 
@@ -863,6 +872,11 @@ function Dashboard({ user }) {
                           >
                             {client.status}
                           </span>
+                          {client.awaitingReply > 0 && (
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-50 text-amber-700 border border-amber-100">
+                              {client.awaitingReply} to reply
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-gray-500 truncate">{client.goal || 'No goal set'}</p>
                         <div className="flex items-center gap-2 mt-1 md:hidden">
