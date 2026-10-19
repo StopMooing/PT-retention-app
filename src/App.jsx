@@ -984,6 +984,11 @@ export default function App() {
 
   useEffect(() => {
     if (session === undefined) return
+    // The role gate must close again on every session change. Without this the redirect
+    // below is computed from the PREVIOUS user's role, which sends a signing-in coach to
+    // the client app. `cancelled` guards against an older fetch resolving last.
+    let cancelled = false
+    setRoleLoading(true)
     async function fetchRole() {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -993,15 +998,17 @@ export default function App() {
             .select('role')
             .eq('id', user.id)
             .single()
+          if (cancelled) return
           setUserRole(data?.role ?? null)
         } else {
           setUserRole(null)
         }
       } finally {
-        setRoleLoading(false)
+        if (!cancelled) setRoleLoading(false)
       }
     }
     fetchRole()
+    return () => { cancelled = true }
   }, [session])
 
   if (session === undefined || roleLoading) {
@@ -1047,7 +1054,9 @@ export default function App() {
         </Route>
       )}
       {session && (
-        <Route path="/my-workout" element={<ClientApp />} />
+        <Route path="/my-workout" element={
+          userRole === 'pt' ? <Navigate to="/dashboard" replace /> : <ClientApp />
+        } />
       )}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
