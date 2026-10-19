@@ -673,6 +673,10 @@ export default function ClientProfile() {
 
   const [client, setClient]                       = useState(null)
   const [checkins, setCheckins]                   = useState([])
+  const [replyDrafts, setReplyDrafts]             = useState({})
+  const [savingReplyId, setSavingReplyId]         = useState(null)
+  const [editingReplyId, setEditingReplyId]       = useState(null)
+  const [replyError, setReplyError]               = useState(null)
   const [programAssignment, setProgramAssignment] = useState(null)
   const [habits, setHabits]                       = useState([])
   const [habitLogs, setHabitLogs]                 = useState([])
@@ -1030,6 +1034,34 @@ export default function ClientProfile() {
     navigator.clipboard.writeText(`${window.location.origin}/claim/${client.claim_token}`)
     setInviteCopied(true)
     setTimeout(() => setInviteCopied(false), 2000)
+  }
+
+  async function handleSaveReply(checkinId) {
+    const current = checkins.find(c => c.id === checkinId)
+    const text = (replyDrafts[checkinId] ?? current?.coach_reply ?? "").trim()
+    if (!text) return
+    setSavingReplyId(checkinId)
+    setReplyError(null)
+    // The column GRANT means only coach_reply and replied_at can be written here. An
+    // attempt to touch the client's own scores or notes would be rejected by Postgres.
+    const { data, error } = await supabase
+      .from("checkins")
+      .update({ coach_reply: text, replied_at: new Date().toISOString() })
+      .eq("id", checkinId)
+      .select()
+      .single()
+    setSavingReplyId(null)
+    if (error) {
+      setReplyError({ id: checkinId, message: error.message })
+      return
+    }
+    setCheckins(prev => prev.map(c => (c.id === checkinId ? { ...c, ...data } : c)))
+    setReplyDrafts(prev => {
+      const next = { ...prev }
+      delete next[checkinId]
+      return next
+    })
+    setEditingReplyId(null)
   }
 
   async function handleSaveNote() {
@@ -3704,9 +3736,16 @@ export default function ClientProfile() {
                   <p className="text-sm font-bold text-gray-900">{formatDateLong(ci.submitted_at)}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{timeAgo(ci.submitted_at)}</p>
                 </div>
-                <span className="flex items-center gap-1.5 text-xs font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 py-1 rounded-full">
-                  <CheckCircle2 size={11} /> Check-in #{checkins.length - index}
-                </span>
+                <div className="flex items-center gap-2">
+                  {!ci.coach_reply && (
+                    <span className="text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100 px-3 py-1 rounded-full">
+                      Needs reply
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1.5 text-xs font-bold bg-indigo-50 text-indigo-600 border border-indigo-100 px-3 py-1 rounded-full">
+                    <CheckCircle2 size={11} /> Check-in #{checkins.length - index}
+                  </span>
+                </div>
               </div>
 
               {/* Scores */}
@@ -3762,6 +3801,63 @@ export default function ClientProfile() {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Coach reply */}
+              <div className="px-6 py-5 border-t border-gray-100 bg-gray-50">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Your reply</p>
+                {(editingReplyId === ci.id || !ci.coach_reply) ? (
+                  <>
+                    <textarea
+                      rows={3}
+                      placeholder={`Reply to ${client.full_name}...`}
+                      value={replyDrafts[ci.id] ?? ci.coach_reply ?? ""}
+                      onChange={e => setReplyDrafts(prev => ({ ...prev, [ci.id]: e.target.value }))}
+                      className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300 resize-none"
+                    />
+                    <div className="flex items-center gap-3 mt-3">
+                      <button
+                        onClick={() => handleSaveReply(ci.id)}
+                        disabled={savingReplyId === ci.id || !(replyDrafts[ci.id] ?? ci.coach_reply ?? "").trim()}
+                        className="flex items-center gap-2 bg-black hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 rounded-lg transition"
+                      >
+                        <Send size={14} />
+                        {savingReplyId === ci.id ? "Sending..." : ci.coach_reply ? "Update reply" : "Send reply"}
+                      </button>
+                      {ci.coach_reply && (
+                        <button
+                          onClick={() => {
+                            setEditingReplyId(null)
+                            setReplyDrafts(prev => {
+                              const next = { ...prev }
+                              delete next[ci.id]
+                              return next
+                            })
+                          }}
+                          className="text-sm font-medium text-gray-400 hover:text-gray-600"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <div className="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{ci.coach_reply}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <p className="text-xs text-gray-400">Replied {timeAgo(ci.replied_at)}</p>
+                      <button
+                        onClick={() => setEditingReplyId(ci.id)}
+                        className="text-xs font-semibold text-gray-500 hover:text-gray-800"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {replyError?.id === ci.id && (
+                  <p className="text-xs text-red-500 mt-2">{replyError.message}</p>
+                )}
               </div>
 
             </div>
