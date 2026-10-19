@@ -136,6 +136,48 @@ function CopyLinkButton({ clientId }) {
   )
 }
 
+// Dashboard row button. Before a client has an account the useful link is their invite,
+// after it is their weekly check-in link. CopyLinkButton stays check-in only, because
+// its other use sits in a check-ins empty state.
+function RowLinkButton({ client }) {
+  const [copied, setCopied] = useState(false)
+  const needsInvite = !client.user_id
+
+  function handleCopy(e) {
+    e.stopPropagation()
+    const url = needsInvite
+      ? `${window.location.origin}/claim/${client.claim_token}`
+      : `${window.location.origin}/checkin/${client.id}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      title={needsInvite ? 'Copy account invite link' : 'Copy check-in link'}
+      className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors"
+    >
+      {copied ? (
+        <>
+          <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          <span className="text-emerald-600">Copied</span>
+        </>
+      ) : (
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <span>{needsInvite ? 'Copy invite' : 'Copy link'}</span>
+        </>
+      )}
+    </button>
+  )
+}
+
 function ClientPanel({ client, onClose }) {
   const [checkins, setCheckins] = useState([])
   const [loading, setLoading] = useState(true)
@@ -826,7 +868,7 @@ function Dashboard({ user }) {
                           <p className="text-sm font-medium text-gray-700">{client.sessionsThisMonth || 0}/4</p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <CopyLinkButton clientId={client.id} />
+                          <RowLinkButton client={client} />
                           <button
                             onClick={e => { e.stopPropagation(); navigate(`/clients/${client.id}`) }}
                             className="text-xs font-medium text-gray-700 hover:text-gray-900 border border-gray-200 hover:border-gray-300 rounded-lg px-2.5 py-1.5 transition-colors"
