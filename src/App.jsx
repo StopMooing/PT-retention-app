@@ -262,6 +262,7 @@ function ClientPanel({ client, onClose }) {
 
 function AddClientModal({ onClose, onSave }) {
   const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
   const [goal, setGoal] = useState('')
   const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
@@ -271,7 +272,7 @@ function AddClientModal({ onClose, onSave }) {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const err = await onSave({ full_name: fullName, goal, phone })
+    const err = await onSave({ full_name: fullName, email: email.trim(), goal, phone })
     if (err) { setError(err); setLoading(false) }
   }
 
@@ -290,6 +291,11 @@ function AddClientModal({ onClose, onSave }) {
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Full name</label>
             <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Smith"
+              className="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-300 outline-none focus:border-black transition-colors" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</label>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@example.com"
               className="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder-gray-300 outline-none focus:border-black transition-colors" />
           </div>
           <div className="flex flex-col gap-1.5">
