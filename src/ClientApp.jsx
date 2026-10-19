@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
-import { Home, Calendar, Dumbbell, Utensils, BookOpen, ArrowLeft, Check, CheckCircle2, Clock, ChevronLeft, ChevronRight, ChevronDown, Plus, X, Send, Mic, Camera, Upload, ExternalLink, FileText, Headphones, Globe, Play, Target, Flame, Droplets, Search } from 'lucide-react'
+import { Home, Calendar, Dumbbell, Utensils, BookOpen, ArrowLeft, Check, CheckCircle2, Clock, ChevronLeft, ChevronRight, ChevronDown, Plus, X, Send, Mic, Camera, Upload, ExternalLink, FileText, Headphones, Globe, Play, Target, Flame, Droplets, Search, LogOut } from 'lucide-react'
 
 const TABS = ['home', 'calendar', 'program', 'nutrition', 'database']
 
@@ -2296,7 +2296,17 @@ export default function ClientApp() {
               </div>
             )}
           </div>
-          <ProfilePhoto client={{ ...client, profile_photo_url: photoUrl }} size="lg" onUpdate={setPhotoUrl} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => { await supabase.auth.signOut(); window.location.href = '/' }}
+              title="Sign out"
+              aria-label="Sign out"
+              className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors"
+            >
+              <LogOut size={16} />
+            </button>
+            <ProfilePhoto client={{ ...client, profile_photo_url: photoUrl }} size="lg" onUpdate={setPhotoUrl} />
+          </div>
         </div>
 
         {/* ── WEEK STRIP ── */}
