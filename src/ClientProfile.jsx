@@ -3870,6 +3870,13 @@ export default function ClientProfile() {
               <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-2 rounded-lg">
                 <CheckCircle2 size={13} /> Account active
               </span>
+            ) : !client.email ? (
+              <span
+                title="Add an email to this client before you can invite them"
+                className="flex items-center gap-2 border border-dashed border-gray-200 text-gray-400 text-sm font-medium px-4 py-2 rounded-lg"
+              >
+                <Send size={13} /> Needs an email
+              </span>
             ) : (
               <button
                 onClick={handleCopyInvite}

@@ -153,6 +153,19 @@ function RowLinkButton({ client }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  // A client with no email on file cannot be invited: the claim page has no address to
+  // register the account against. Say why rather than hand out a link that will fail.
+  if (needsInvite && !client.email) {
+    return (
+      <span
+        title="Add an email to this client before you can invite them"
+        className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-dashed border-gray-200 text-gray-300 cursor-default"
+      >
+        Needs email
+      </span>
+    )
+  }
+
   return (
     <button
       onClick={handleCopy}

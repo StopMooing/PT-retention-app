@@ -87,6 +87,22 @@ export default function ClaimPage() {
     )
   }
 
+  // The coach created this client without an email, so there is no address to register
+  // against. Better to say so than show a form that cannot succeed.
+  if (!client.email) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div className="text-center max-w-sm">
+          <p className="text-sm font-semibold text-gray-900 m-0">Almost ready</p>
+          <p className="text-xs text-gray-400 mt-1 leading-relaxed">
+            Your trainer hasn't added your email address yet. Ask them to add it, then
+            open this link again.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (done) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
