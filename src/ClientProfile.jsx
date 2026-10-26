@@ -693,7 +693,6 @@ export default function ClientProfile() {
   const [showNoteForm, setShowNoteForm]           = useState(false)
   const [savedNotes, setSavedNotes]               = useState([])
   const [notesLoading, setNotesLoading] = useState(false)
-  const [copied, setCopied]                       = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
 
   const [weightLogs, setWeightLogs] = useState([])
@@ -1024,11 +1023,6 @@ export default function ClientProfile() {
 
   const initials = client.full_name?.split(" ").filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join("") || "?"
 
-  function handleCopyLink() {
-    navigator.clipboard.writeText(`${window.location.origin}/checkin/${clientId}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
 
   function handleCopyInvite() {
     navigator.clipboard.writeText(`${window.location.origin}/claim/${client.claim_token}`)
@@ -1522,14 +1516,6 @@ export default function ClientProfile() {
                 </div>
                 <span className="text-sm font-semibold text-gray-800">Training</span>
               </div>
-              {checkins.length === 0 && (
-                <button
-                  onClick={handleCopyLink}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition"
-                >
-                  <Send size={11} /> Send Check-in Link
-                </button>
-              )}
             </div>
             <div className="px-6 py-5">
               <div className="grid grid-cols-3 gap-3">
@@ -3644,12 +3630,6 @@ export default function ClientProfile() {
         <div className="flex items-center justify-between mb-1">
           <h2 className="text-base font-semibold text-gray-800">Check-in History</h2>
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleCopyLink}
-              className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition"
-            >
-              <Send size={12} className="text-gray-400" /> {copied ? "Copied!" : "Send Check-in Link"}
-            </button>
             <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">{checkins.length} total</span>
           </div>
         </div>
@@ -3708,13 +3688,7 @@ export default function ClientProfile() {
               <CheckCircle2 size={24} className="text-indigo-300" />
             </div>
             <p className="text-gray-700 font-semibold text-base">No check-ins yet</p>
-            <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">Send {client.full_name} their check-in link to get started.</p>
-            <button
-              onClick={handleCopyLink}
-              className="mt-5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition shadow-sm"
-            >
-              {copied ? "Copied!" : "Copy Check-in Link"}
-            </button>
+            <p className="text-sm text-gray-400 mt-1.5 max-w-xs mx-auto">{client.full_name} checks in from the app once their account is active.</p>
           </div>
         )}
 
@@ -3982,13 +3956,6 @@ export default function ClientProfile() {
                 {inviteCopied ? "Copied!" : "Copy Invite Link"}
               </button>
             )}
-            <button
-              onClick={handleCopyLink}
-              className="flex items-center gap-2 border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm font-medium px-4 py-2 rounded-lg transition"
-            >
-              <Send size={13} />
-              {copied ? "Copied!" : "Send Check-in"}
-            </button>
             <button className="flex items-center gap-2 bg-black hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-lg transition shadow-sm">
               <Edit3 size={13} /> Edit Client
             </button>

@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, NavLink, Outlet, useLocation, useNavigate } fr
 import { LayoutDashboard, Dumbbell, ClipboardList, Utensils, Heart, CreditCard, Settings, LogOut, ChevronRight, Users, Menu, X } from 'lucide-react'
 import { supabase } from './supabase'
 import AuthPage from './AuthPage'
-import CheckInPage from './CheckInPage'
 import ClaimPage from './ClaimPage'
 import LandingPage from './LandingPage'
 import ExerciseLibrary from './ExerciseLibrary'
@@ -100,62 +99,21 @@ function ScoreDots({ score }) {
   )
 }
 
-function CopyLinkButton({ clientId }) {
-  const [copied, setCopied] = useState(false)
-
-  function handleCopy(e) {
-    e.stopPropagation()
-    const url = `${window.location.origin}/checkin/${clientId}`
-    navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <button
-      onClick={handleCopy}
-      title="Copy check-in link"
-      className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors"
-    >
-      {copied ? (
-        <>
-          <svg className="w-3.5 h-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          <span className="text-emerald-600">Copied</span>
-        </>
-      ) : (
-        <>
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          <span>Copy link</span>
-        </>
-      )}
-    </button>
-  )
-}
-
-// Dashboard row button. Before a client has an account the useful link is their invite,
-// after it is their weekly check-in link. CopyLinkButton stays check-in only, because
-// its other use sits in a check-ins empty state.
+// Dashboard row button. A client who has not claimed an account needs their invite link.
+// Once they have one they check in inside the app, so there is nothing to hand them.
 function RowLinkButton({ client }) {
   const [copied, setCopied] = useState(false)
-  const needsInvite = !client.user_id
 
   function handleCopy(e) {
     e.stopPropagation()
-    const url = needsInvite
-      ? `${window.location.origin}/claim/${client.claim_token}`
-      : `${window.location.origin}/checkin/${client.id}`
-    navigator.clipboard.writeText(url)
+    navigator.clipboard.writeText(`${window.location.origin}/claim/${client.claim_token}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // A client with no email on file cannot be invited: the claim page has no address to
-  // register the account against. Say why rather than hand out a link that will fail.
-  if (needsInvite && !client.email) {
+  if (client.user_id) return null
+
+  if (!client.email) {
     return (
       <span
         title="Add an email to this client before you can invite them"
@@ -169,7 +127,7 @@ function RowLinkButton({ client }) {
   return (
     <button
       onClick={handleCopy}
-      title={needsInvite ? 'Copy account invite link' : 'Copy check-in link'}
+      title="Copy account invite link"
       className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-gray-200 text-gray-400 hover:text-gray-700 hover:border-gray-300 transition-colors"
     >
       {copied ? (
@@ -184,7 +142,7 @@ function RowLinkButton({ client }) {
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
           </svg>
-          <span>{needsInvite ? 'Copy invite' : 'Copy link'}</span>
+          <span>Copy invite</span>
         </>
       )}
     </button>
@@ -272,9 +230,8 @@ function ClientPanel({ client, onClose }) {
             <div className="px-6 py-12 text-center flex flex-col items-center gap-4">
               <div>
                 <p className="text-sm font-semibold text-gray-900 m-0">No check-ins yet</p>
-                <p className="text-xs text-gray-400 mt-1">Send this client their check-in link to get started.</p>
+                <p className="text-xs text-gray-400 mt-1">They check in from the app once their account is active.</p>
               </div>
-              <CopyLinkButton clientId={client.id} />
             </div>
           ) : (
             <ul className="divide-y divide-gray-100 list-none m-0 p-0">
@@ -1039,7 +996,6 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/checkin/:clientId" element={<CheckInPage />} />
       <Route path="/claim/:token" element={<ClaimPage />} />
       <Route path="/" element={session ? loggedInRedirect : <LandingPage />} />
       <Route path="/auth" element={session ? loggedInRedirect : <AuthPage />} />
