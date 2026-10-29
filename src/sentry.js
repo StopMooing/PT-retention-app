@@ -38,11 +38,6 @@ export function initSentry() {
       return event
     },
   })
-
-  // One-off check that errors reach Sentry: open the app with ?sentry-test=1
-  if (new URLSearchParams(window.location.search).get('sentry-test') === '1') {
-    Sentry.captureException(new Error('UNFNSHD Sentry test error'))
-  }
 }
 
 export { Sentry }
