@@ -26,8 +26,8 @@ const EMPTY = []
 
 const TABS = [
   { id: 'home', label: 'Home', icon: Home },
-  { id: 'train', label: 'Train', icon: Dumbbell },
-  { id: 'food', label: 'Food', icon: Utensils },
+  { id: 'train', label: 'Training', icon: Dumbbell },
+  { id: 'food', label: 'Nutrition', icon: Utensils },
   { id: 'progress', label: 'Progress', icon: TrendingUp },
 ]
 

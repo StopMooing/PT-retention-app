@@ -36,8 +36,8 @@ export function WorkoutComplete({ workoutName, stats, onDone }) {
           <span className="inline-flex w-20 h-20 rounded-full bg-accent-soft text-ink items-center justify-center mb-4">
             <Mark size={44} />
           </span>
-          <h1 className="font-display text-[32px] leading-tight text-ink">Session done</h1>
-          <p className="text-muted mt-1">{workoutName}. That is another one in the bank.</p>
+          <h1 className="font-display text-[32px] leading-tight text-ink">Session completed</h1>
+          <p className="text-muted mt-1">{workoutName}. That's another one in the bank.</p>
         </div>
 
         <Card className={`grid divide-x divide-line ${tiles.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`} padded={false}>

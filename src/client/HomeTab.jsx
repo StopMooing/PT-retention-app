@@ -9,6 +9,7 @@ import {
   checkinStatus, logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg,
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
+import { NutritionSummary } from './common'
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
@@ -51,18 +52,6 @@ function CheckinCard({ status, onCheckIn, onSeeAll }) {
         </button>
       )}
     </Card>
-  )
-}
-
-function FoodRing({ label, value, target, unit = '', color }) {
-  return (
-    <div className="flex items-center gap-2.5 min-w-0">
-      <Ring value={target > 0 ? value / target : 0} size={44} stroke={6} color={color} />
-      <div className="min-w-0 whitespace-nowrap">
-        <p className="text-[15px] font-bold text-ink tabular-nums leading-tight">{value.toLocaleString('en-AU')}{unit} <span className="text-[13px] font-semibold text-muted">{label}</span></p>
-        {target > 0 && <p className="text-xs text-muted tabular-nums">of {target.toLocaleString('en-AU')}{unit}</p>}
-      </div>
-    </div>
   )
 }
 
@@ -122,7 +111,7 @@ export default function HomeTab({
                     <div className="flex-1 min-w-0">
                       <p className="text-[19px] font-bold text-ink truncate">{workoutName(sw)}</p>
                       <p className="text-[13px] text-muted">
-                        {done ? 'Done. Nice work.' : [exs.length ? `${exs.length} exercises` : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are'}
+                        {done ? 'Completed. Nice work.' : [exs.length ? `${exs.length} exercises` : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are'}
                       </p>
                     </div>
                     {done ? (
@@ -149,12 +138,11 @@ export default function HomeTab({
           )}
           <div className="border-t border-line px-4 pt-2 pb-4">
             <div className="flex items-center justify-between">
-              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted">Food</p>
+              <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted">Nutrition</p>
               <Button variant="ghost" size="sm" className="text-accent -mr-2" onClick={onLogFood}><Plus size={16} /> Log food</Button>
             </div>
-            <div className="grid grid-cols-2 gap-3 mt-1">
-              <FoodRing label="kcal" value={totals.kcal} target={targets.kcal} color="var(--kcal)" />
-              <FoodRing label="protein" value={totals.protein} target={targets.protein} unit="g" color="var(--protein)" />
+            <div className="mt-1">
+              <NutritionSummary compact totals={totals} targets={targets} />
             </div>
           </div>
         </Card>

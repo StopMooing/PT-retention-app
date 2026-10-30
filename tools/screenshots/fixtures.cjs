@@ -192,3 +192,9 @@ module.exports = {
   })
   t.resources.push({ id: id(), title: 'Protein made simple', description: 'A one page guide to hitting your protein most days.', type: 'pdf', url: 'https://example.com/protein.pdf', file_path: null, is_global: false, created_by: COACH, created_at: ts(-10) })
 }
+
+// NO_TARGETS=1: Jane has no calorie or macro targets (how a new client starts).
+if (process.env.NO_TARGETS) {
+  const j = module.exports.tables.clients.find((c) => c.id === CLIENT)
+  Object.assign(j, { calorie_target: null, protein_target_g: null, carbs_target_g: null, fats_target_g: null })
+}

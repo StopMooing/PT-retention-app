@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus, X, Sparkles, Calculator } from 'lucide-react'
 import { supabase } from '../supabase'
-import { PageTitle, Card, Button, Ring, Segmented, SectionLabel } from '../ui'
+import { PageTitle, Card, Button, Segmented, SectionLabel } from '../ui'
 import { toLocalDateStr, addDays, formatDateLabel } from './dates'
 import { logsForDate, foodTotals, nutritionTargetsFor } from './metrics'
 import { MEAL_ORDER, capitalise, parseSavedMealContent } from './foods'
-import { MacroBar } from './common'
+import { NutritionSummary } from './common'
 import AddFoodSheet from './AddFoodSheet'
 import TdeeSheet from './TdeeSheet'
 
@@ -131,7 +131,7 @@ export default function FoodTab({
 
   return (
     <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-5">
-      <PageTitle title="Food" action={<Button variant="secondary" size="sm" onClick={onOpenAI}><Sparkles size={16} /> Ideas</Button>} />
+      <PageTitle title="Nutrition" action={<Button variant="secondary" size="sm" onClick={onOpenAI}><Sparkles size={16} /> Ideas</Button>} />
 
       <div className="flex items-center gap-2">
         <button onClick={() => setDate(addDays(date, -1))} aria-label="Previous day" className="w-11 h-11 rounded-full flex items-center justify-center text-ink bg-surface border border-line hover:bg-surface-2">
@@ -151,20 +151,17 @@ export default function FoodTab({
         <SavedMeals savedMeals={savedMeals} onAddItems={handleAddMealItemsToLog} onDelete={handleDeleteSavedMeal} />
       ) : (
         <div className="space-y-3">
-          <Card className="flex items-center gap-5">
-            <Ring value={targets.kcal > 0 ? totals.kcal / targets.kcal : 0} size={116} stroke={10} color="var(--kcal)">
-              <span className="font-display text-[28px] leading-none text-ink tabular-nums">{totals.kcal.toLocaleString('en-AU')}</span>
-              <span className="text-[11px] font-bold text-muted mt-1">{targets.kcal > 0 ? `of ${targets.kcal.toLocaleString('en-AU')} kcal` : 'kcal'}</span>
-            </Ring>
-            <div className="flex-1 min-w-0 space-y-2.5">
-              <MacroBar label="Protein" value={totals.protein} target={targets.protein} color="var(--protein)" />
-              <MacroBar label="Carbs" value={totals.carbs} target={targets.carbs} color="var(--carbs)" />
-              <MacroBar label="Fats" value={totals.fats} target={targets.fats} color="var(--fats)" />
-            </div>
+          <Card>
+            <NutritionSummary totals={totals} targets={targets} />
           </Card>
-          {targets.kcal > 0 && (
+          {targets.kcal > 0 ? (
             <p className="text-[13px] text-muted text-center tabular-nums">
               {kcalLeft >= 0 ? `${kcalLeft.toLocaleString('en-AU')} kcal to go` : `${(-kcalLeft).toLocaleString('en-AU')} kcal over target`}
+            </p>
+          ) : (
+            <p className="text-[13px] text-muted text-center">
+              No daily target yet. Your coach can set one, or{' '}
+              <button onClick={() => setTdeeOpen(true)} className="font-bold text-accent underline underline-offset-2">work yours out</button>.
             </p>
           )}
 

@@ -330,7 +330,7 @@ export default function TrainTab({
   return (
     <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-5">
       <PageTitle
-        title="Train"
+        title="Training"
         action={
           view === 'schedule' && (
             <Button variant="secondary" size="sm" onClick={() => { setPickerSelected(null); setPickerOpen(true) }}>
