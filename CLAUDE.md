@@ -60,6 +60,13 @@ Fuller context lives in the claude.ai project "CRM": `claude/pt-blueprint-handof
   follows the phone. Define colours once per mode (CSS variables), never per screen.
 - Never yellow on black (the competitor CNDTND's look).
 
+## Design and screenshots
+- `docs/design-system.md` is binding for every screen: semantic colour tokens only (no raw hex,
+  no stock grey/black/white), `src/ui` building blocks, copy rules.
+- Client screens live in `src/client/`, coach pieces in `src/coach/` and `src/tools/`.
+- `tools/screenshots/` runs the built app against fake sample data (no real accounts). Use it
+  to check screens in light and dark before pushing.
+
 ## Agent skills in this repo
 `.claude/skills/`: supabase-postgres-best-practices (any database work),
 vercel-react-best-practices (React structure and performance), ponytail and
