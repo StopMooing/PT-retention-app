@@ -7,6 +7,16 @@ import { Button } from '../ui'
 import { Overlay, BackHeader } from './common'
 import { parseAiJson } from './foods'
 
+// True only when the reply holds something that can be saved: a workout with exercises
+// (mode "workout") or a plan with meals (mode "nutrition"). Questions and errors are not.
+function isSaveable(content, mode) {
+  const p = parseAiJson(content)
+  if (!p) return false
+  if (mode === 'workout') return !!p.title && Array.isArray(p.exercises) && p.exercises.some((e) => e?.name)
+  if (mode === 'nutrition') return Array.isArray(p.meals) && p.meals.some((m) => m?.name)
+  return false
+}
+
 function AssistantMessage({ content }) {
   const parsed = parseAiJson(content)
   const textOnly = parsed ? content.replace(/\{[\s\S]*\}/, '').replace(/```json/gi, '').replace(/```/g, '').trim() : content
@@ -68,19 +78,26 @@ export default function AIChat({ context, placeholder, mode, onClose, onSave, sa
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ mode, messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })) }),
+        body: JSON.stringify({ mode, messages: [...messages.filter((m) => !m.failed), userMsg].map((m) => ({ role: m.role, content: m.content })) }),
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Request failed')
       setMessages((prev) => [...prev, { role: 'assistant', content: data.text }])
     } catch (e) {
       console.error(e)
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Something went wrong. Please try again.' }])
+      setMessages((prev) => [...prev, { role: 'assistant', content: "Sorry, that didn't come through. Try sending it again.", failed: true }])
     }
     setLoading(false)
   }
 
   const last = messages[messages.length - 1]
+  const [saving, setSaving] = useState(false)
+  const canSave = !!onSave && !loading && last?.role === 'assistant' && !last.failed && isSaveable(last.content, mode)
+
+  async function save() {
+    setSaving(true)
+    try { await onSave(last.content) } finally { setSaving(false) }
+  }
 
   return (
     <Overlay z="z-50">
@@ -107,9 +124,9 @@ export default function AIChat({ context, placeholder, mode, onClose, onSave, sa
             </div>
           </div>
         ))}
-        {last?.role === 'assistant' && onSave && !loading && (
-          <Button variant="soft" size="sm" onClick={() => onSave(last.content)}>
-            <Plus size={16} /> {saveLabel}
+        {canSave && (
+          <Button variant="soft" size="sm" onClick={save} disabled={saving}>
+            <Plus size={16} /> {saving ? 'Saving...' : saveLabel}
           </Button>
         )}
         {loading && (

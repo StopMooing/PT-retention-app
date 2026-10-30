@@ -1,11 +1,14 @@
-// Saving what the AI helper made. Moved unchanged from ClientApp: same tables, same
-// columns, same exercise-name checks.
+// Saving what the AI helper made: same tables, same columns, same exercise-name checks.
+// Each returns { data, error, notice }: data is the saved row (null if nothing was saved),
+// error and notice are friendly messages for a toast. Raw errors go to the console.
 import { supabase } from '../supabase'
 import { toLocalDateStr } from './dates'
 
-// Returns the saved_workouts row, or null if nothing was saved.
+const SAVE_WORKOUT_FAILED = "Couldn't save that workout. Try again in a moment."
+const SAVE_MEAL_FAILED = "Couldn't save that meal. Try again in a moment."
+
 export async function saveAiWorkout(client, content) {
-  if (!content?.trim()) return null
+  if (!content?.trim()) return { data: null, error: SAVE_WORKOUT_FAILED }
   let parsedWorkout = null
   let cleanContent = content.trim()
   try {
@@ -49,8 +52,7 @@ export async function saveAiWorkout(client, content) {
       }
       if (keptExercises.length === 0) {
         console.error('All AI exercise names unresolved, workout not saved:', droppedNames)
-        alert('None of these exercises are in the exercise library, so this workout was not saved. Please try generating it again.')
-        return null
+        return { data: null, error: "These exercises aren't in the exercise library, so the workout wasn't saved. Try asking for it again." }
       }
       if (droppedNames.length > 0) console.error('Unresolved AI exercise names dropped at save:', droppedNames)
       parsedWorkout = { ...parsedWorkout, exercises: keptExercises }
@@ -61,18 +63,17 @@ export async function saveAiWorkout(client, content) {
   const name = parsedWorkout?.title || content.split('\n').find((l) => l.trim())?.substring(0, 50) || `AI Workout ${toLocalDateStr()}`
   try {
     const { data, error } = await supabase.from('saved_workouts').insert({ client_id: client.id, name, content: cleanContent }).select().single()
-    if (error) { alert('Could not save workout: ' + error.message); return null }
-    if (droppedNames.length > 0) {
-      alert('Workout saved, but these exercises are not in the exercise library and were left out: ' + droppedNames.join(', '))
-    }
-    return data
+    if (error) { console.error('Save workout error:', error); return { data: null, error: SAVE_WORKOUT_FAILED } }
+    const notice = droppedNames.length > 0
+      ? `Workout saved. ${droppedNames.join(', ')} ${droppedNames.length === 1 ? "isn't" : "aren't"} in the exercise library, so ${droppedNames.length === 1 ? "it's" : "they're"} left out.`
+      : null
+    return { data, notice }
   } catch (e) {
-    alert('Could not save workout: ' + e.message)
-    return null
+    console.error('Save workout exception:', e)
+    return { data: null, error: SAVE_WORKOUT_FAILED }
   }
 }
 
-// Returns the saved_meals row, or null.
 export async function saveAiMeal(client, content) {
   // Structured per-meal JSON first (new format)
   let parsed = null
@@ -122,13 +123,11 @@ export async function saveAiMeal(client, content) {
     }).select().single()
     if (error) {
       console.error('Save meal error:', error)
-      alert('Could not save meal: ' + error.message)
-      return null
+      return { data: null, error: SAVE_MEAL_FAILED }
     }
-    return data
+    return { data }
   } catch (e) {
     console.error('Save meal exception:', e)
-    alert('Something went wrong saving the meal.')
-    return null
+    return { data: null, error: SAVE_MEAL_FAILED }
   }
 }

@@ -1,6 +1,6 @@
 // The client app (PWA). This file loads the client's data, holds it in one place and
 // shows the four tabs: Home, Train, Food, Progress. Each tab lives in src/client/.
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Home, Dumbbell, Utensils, TrendingUp } from 'lucide-react'
 import { supabase } from './supabase'
 import { Button } from './ui'
@@ -59,7 +59,8 @@ export default function ClientApp() {
   const [addFoodOpen, setAddFoodOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [resourcesOpen, setResourcesOpen] = useState(false)
-  const [toast, setToast] = useState('')
+  const [toast, setToast] = useState(null)
+  const toastTimer = useRef(null)
 
   // Workout flow
   const [previewWorkout, setPreviewWorkout] = useState(null)
@@ -143,16 +144,32 @@ export default function ClientApp() {
     return () => { cancelled = true }
   }, [aiMode, workoutLibrary])
 
-  const showToast = useCallback((msg) => {
-    setToast(msg)
-    setTimeout(() => setToast(''), 2500)
+  // A short message near the bottom. Pass { action: { label, onClick }, ms } for an Undo.
+  const showToast = useCallback((message, opts = {}) => {
+    clearTimeout(toastTimer.current)
+    const action = opts.action
+      ? { label: opts.action.label, onClick: () => { clearTimeout(toastTimer.current); setToast(null); opts.action.onClick() } }
+      : null
+    setToast({ message, action })
+    toastTimer.current = setTimeout(() => setToast(null), opts.ms || (action ? 5000 : 2500))
   }, [])
+  useEffect(() => () => clearTimeout(toastTimer.current), [])
+
+  // Exercises for any program day: what was loaded for the schedule, falling back to the
+  // whole program, so a day scheduled after the app opened still shows its exercises.
+  const exerciseMap = useMemo(() => ({ ...allProgramExercises, ...workoutExercises }), [allProgramExercises, workoutExercises])
 
   const clientId = client?.id
   const reloadScheduledWorkouts = useCallback(async () => {
     if (!clientId) return
-    setScheduledWorkouts(await fetchScheduled(clientId))
-  }, [clientId])
+    const sw = await fetchScheduled(clientId)
+    setScheduledWorkouts(sw)
+    const missing = [...new Set(sw.map((s) => s.program_workout_id).filter(Boolean))].filter((id) => !exerciseMap[id])
+    if (missing.length > 0) {
+      const more = await fetchExercisesFor(missing)
+      setWorkoutExercises((prev) => ({ ...prev, ...more }))
+    }
+  }, [clientId, exerciseMap])
 
   const refreshFoodLogs = useCallback(async () => {
     if (!clientId) return
@@ -170,10 +187,12 @@ export default function ClientApp() {
     setAiMode('workout')
   }
 
+  // Called only after the session is confirmed saved.
   async function handleWorkoutDone(key, stats) {
     setCompletedIds((prev) => new Set([...prev, key]))
     setLoggingWorkout(null)
-    setWorkoutCompleteData(stats)
+    if (stats.edited) showToast('Session updated')
+    else setWorkoutCompleteData(stats)
     // Refresh so Home, Train and Progress all count the new session and any new bests.
     const [logs, str] = await Promise.all([fetchWorkoutLogs(client.id), fetchStrength(client.id)])
     setWorkoutLogs(logs)
@@ -182,21 +201,23 @@ export default function ClientApp() {
   }
 
   async function handleSaveWorkout(content) {
-    const data = await saveAiWorkout(client, content)
-    if (!data) return
+    const { data, error, notice } = await saveAiWorkout(client, content)
+    if (!data) { showToast(error, { ms: 5000 }); return }
     setSavedWorkouts((prev) => [data, ...prev])
     setAiMode(null)
     setTab('train')
     setTrainView('program')
+    showToast(notice || 'Workout saved', notice ? { ms: 6000 } : undefined)
   }
 
   async function handleSaveMeal(content) {
-    const data = await saveAiMeal(client, content)
-    if (!data) return
+    const { data, error } = await saveAiMeal(client, content)
+    if (!data) { showToast(error, { ms: 5000 }); return }
     setSavedMeals((prev) => [data, ...prev])
     setAiMode(null)
     setTab('food')
     setFoodView('saved')
+    showToast('Meal saved')
   }
 
   function goTab(id) {
@@ -215,15 +236,15 @@ export default function ClientApp() {
     </div>
   )
 
-  const shared = { client, scheduledWorkouts, completedIds, workoutLogs, workoutExercises, showToast }
+  const shared = { client, scheduledWorkouts, completedIds, workoutLogs, workoutExercises: exerciseMap, showToast }
 
   let overlay = null
   if (aiMode === 'workout' && workoutLibraryError) {
     overlay = (
       <div className="fixed inset-0 z-50 bg-bg flex items-center justify-center px-6">
         <div className="text-center max-w-sm w-full">
-          <p className="text-[17px] font-bold text-ink">Could not load the exercise library</p>
-          <p className="text-muted mt-1">The workout builder needs it. Please try again in a moment.</p>
+          <p className="text-[17px] font-bold text-ink">Couldn't load the exercise library.</p>
+          <p className="text-muted mt-1">The workout builder needs it. Try again in a moment.</p>
           <Button size="lg" block className="mt-6" onClick={() => { setWorkoutLibraryError(false); setAiMode(null) }}>Go back</Button>
         </div>
       </div>
@@ -247,7 +268,7 @@ export default function ClientApp() {
       <WorkoutLogging
         scheduledWorkout={loggingWorkout}
         existingLog={loggingWorkout._existingLog ?? null}
-        exercises={workoutExercises[loggingWorkout.program_workout_id] ?? EMPTY}
+        exercises={exerciseMap[loggingWorkout.program_workout_id] ?? EMPTY}
         client={client}
         onBack={() => setLoggingWorkout(null)}
         onComplete={handleWorkoutDone}
@@ -258,7 +279,7 @@ export default function ClientApp() {
       <WorkoutPreview
         eyebrow={previewWorkout.scheduled_date ? formatDateLabel(previewWorkout.scheduled_date) : ''}
         title={workoutName(previewWorkout)}
-        exercises={workoutExercises[previewWorkout.program_workout_id] ?? EMPTY}
+        exercises={exerciseMap[previewWorkout.program_workout_id] ?? EMPTY}
         customContent={previewWorkout._isCustom || !previewWorkout.program_workout_id ? (previewWorkout._customWorkout?.content || previewWorkout.saved_workouts?.content || '') : null}
         onBack={() => setPreviewWorkout(null)}
         footer={<Button size="lg" block onClick={() => { setLoggingWorkout(previewWorkout); setPreviewWorkout(null) }}><Dumbbell size={20} /> Start workout</Button>}
@@ -368,7 +389,7 @@ export default function ClientApp() {
       />
 
       {overlay}
-      <Toast message={toast} />
+      <Toast toast={toast} />
     </div>
   )
 }

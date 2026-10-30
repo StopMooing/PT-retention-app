@@ -40,11 +40,24 @@ export function BackHeader({ onBack, eyebrow, title, right, children }) {
   )
 }
 
-export function Toast({ message }) {
-  if (!message) return null
+/* toast: { message, action?: { label, onClick } } or a plain string. */
+export function Toast({ toast }) {
+  const t = typeof toast === 'string' ? { message: toast } : toast
+  if (!t?.message) return null
   return (
-    <div className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] bg-ink text-bg text-sm font-bold px-5 py-3 rounded-full shadow-lg pointer-events-none whitespace-nowrap">
-      {message}
+    <div
+      role="status"
+      className={cx(
+        'fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] w-max max-w-[calc(100vw-32px)] bg-ink text-bg text-sm font-bold rounded-full shadow-lg flex items-center gap-3 text-center',
+        t.action ? 'pl-5 pr-2 py-2' : 'px-5 py-3 pointer-events-none',
+      )}
+    >
+      <span>{t.message}</span>
+      {t.action && (
+        <button onClick={t.action.onClick} className="h-9 px-3.5 rounded-full font-bold shrink-0" style={{ color: 'var(--accent-soft)', backgroundColor: 'rgba(127,127,127,0.25)' }}>
+          {t.action.label}
+        </button>
+      )}
     </div>
   )
 }
@@ -68,7 +81,7 @@ export function MacroBar({ label, value, target, color, unit = 'g', share = 0, c
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
       </div>
       {!compact && left !== null && (
-        <p className="text-xs text-muted mt-1 tabular-nums">{left >= 0 ? `${left} ${unit} to go` : `${-left} ${unit} over`}</p>
+        <p className="text-xs text-muted mt-1 tabular-nums">{left >= 0 ? `${left} ${unit} to go` : `${-left} ${unit} above`}</p>
       )}
     </div>
   )
@@ -129,13 +142,19 @@ export function NutritionSummary({ totals, targets, compact }) {
   )
 }
 
-/* Grid of upcoming days (from today) for picking one or many dates.
-   selected: array of 'YYYY-MM-DD'. busy: Set of dates that already have a session. */
-export function DayGrid({ days = 28, selected = [], onToggle, busy }) {
+/* Grid of days for picking one or many dates: the past week, today and what's ahead.
+   selected: array of 'YYYY-MM-DD'. busy: Set of dates that already have a session.
+   When the range crosses into another month, each month gets its own label. */
+export function DayGrid({ days = 28, past = 7, selected = [], onToggle, busy }) {
   const today = toLocalDateStr()
-  const list = Array.from({ length: days }, (_, i) => addDays(today, i))
-  const dow = parseDay(list[0]).getDay()
-  const pad = dow === 0 ? 6 : dow - 1
+  const list = Array.from({ length: past + days }, (_, i) => addDays(today, i - past))
+  const months = []
+  for (const d of list) {
+    const key = d.slice(0, 7)
+    if (months[months.length - 1]?.key !== key) months.push({ key, days: [] })
+    months[months.length - 1].days.push(d)
+  }
+  const showMonths = months.length > 1
   return (
     <div>
       <div className="grid grid-cols-7 mb-1">
@@ -143,23 +162,41 @@ export function DayGrid({ days = 28, selected = [], onToggle, busy }) {
           <div key={i} className="text-center text-xs font-bold text-faint py-1">{d}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: pad }).map((_, i) => <div key={`p${i}`} />)}
-        {list.map((d) => {
-          const on = selected.includes(d)
-          const isToday = d === today
+      <div className="space-y-2">
+        {months.map((m) => {
+          const dow = parseDay(m.days[0]).getDay()
+          const pad = dow === 0 ? 6 : dow - 1
           return (
-            <button
-              key={d}
-              onClick={() => onToggle(d)}
-              className={cx(
-                'h-11 rounded-full flex flex-col items-center justify-center transition-colors',
-                on ? 'bg-accent text-on-accent' : isToday ? 'ring-2 ring-inset ring-accent text-ink' : 'text-ink hover:bg-surface-2',
+            <div key={m.key}>
+              {showMonths && (
+                <p className="text-[13px] font-bold text-muted px-1 pt-1 pb-1.5">
+                  {parseDay(m.days[0]).toLocaleDateString('en-AU', { month: 'long' })}
+                </p>
               )}
-            >
-              <span className="text-sm font-bold tabular-nums">{parseInt(d.slice(8), 10)}</span>
-              <span className={cx('w-1 h-1 rounded-full mt-0.5', busy?.has(d) ? (on ? 'bg-on-accent' : 'bg-muted') : 'bg-transparent')} />
-            </button>
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: pad }).map((_, i) => <div key={`p${i}`} />)}
+                {m.days.map((d) => {
+                  const on = selected.includes(d)
+                  const isToday = d === today
+                  const isPast = d < today
+                  return (
+                    <button
+                      key={d}
+                      onClick={() => onToggle(d)}
+                      aria-label={parseDay(d).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      aria-pressed={on}
+                      className={cx(
+                        'h-11 rounded-full flex flex-col items-center justify-center transition-colors',
+                        on ? 'bg-accent text-on-accent' : isToday ? 'ring-2 ring-inset ring-accent text-ink' : isPast ? 'text-muted hover:bg-surface-2' : 'text-ink hover:bg-surface-2',
+                      )}
+                    >
+                      <span className="text-sm font-bold tabular-nums">{parseInt(d.slice(8), 10)}</span>
+                      <span className={cx('w-1 h-1 rounded-full mt-0.5', busy?.has(d) ? (on ? 'bg-on-accent' : 'bg-muted') : 'bg-transparent')} />
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
           )
         })}
       </div>
