@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
+import { Mark, Field, Button } from './ui'
 
 export default function AuthPage({ defaultMode = 'login' }) {
   const [mode, setMode] = useState(defaultMode)
@@ -42,113 +43,43 @@ export default function AuthPage({ defaultMode = 'login' }) {
     setLoading(false)
   }
 
-  // Brand colours (light mode). These move into shared CSS variables in the redesign.
-  const ink = '#121212'
-  const forest = '#2E6B57'
-  const inputClass =
-    'w-full h-[50px] px-4 rounded-[14px] border bg-white text-base outline-none transition-colors focus:border-[#2E6B57]'
-
   return (
-    <div
-      className="min-h-screen flex flex-col px-7 pt-24 pb-10"
-      style={{ backgroundColor: '#F3F1EC', color: ink, fontFamily: 'system-ui, -apple-system, sans-serif' }}
-    >
+    <div className="min-h-screen flex flex-col px-7 pt-24 pb-10 bg-bg text-ink">
       <div className="w-full max-w-sm mx-auto">
         <div className="flex flex-col items-center gap-3.5 text-center">
-          <svg width="72" height="72" viewBox="0 0 240 240" role="img" aria-label="UNFNSHD">
-            <g transform="rotate(-30 120 120)">
-              <circle cx="120" cy="120" r="80" fill="none" stroke={ink} strokeWidth="26" strokeLinecap="round" strokeDasharray="400 102.65" />
-            </g>
-            <circle cx="160" cy="50.7" r="15" fill={forest} />
-          </svg>
-          <h1
-            className="m-0 mt-2 text-[46px] leading-none"
-            style={{ fontFamily: "'Baloo 2', 'Arial Rounded MT Bold', sans-serif", fontWeight: 800 }}
-          >
-            UNFNSHD
-          </h1>
-          <p className="m-0 text-[15px]" style={{ color: '#55534E' }}>
+          <Mark size={72} />
+          <h1 className="m-0 mt-2 font-display text-[46px] leading-none tracking-[0.01em]">UNFNSHD</h1>
+          <p className="m-0 text-[15px] text-muted">
             {mode === 'login' ? "We aren't done." : 'Create your coach account'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-16">
           {mode === 'signup' && (
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="auth-name" className="text-sm font-semibold">Full name</label>
-              <input
-                id="auth-name"
-                type="text"
-                required
-                autoComplete="name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Jane Smith"
-                className={inputClass}
-                style={{ borderColor: '#CFCBC2' }}
-              />
-            </div>
+            <Field id="auth-name" label="Full name" type="text" required autoComplete="name"
+              value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Smith" />
           )}
+          <Field id="auth-email" label="Email" type="email" required autoComplete="email"
+            value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          <Field id="auth-password" label="Password" type="password" required
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            value={password} onChange={(e) => setPassword(e.target.value)} />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="auth-email" className="text-sm font-semibold">Email</label>
-            <input
-              id="auth-email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className={inputClass}
-              style={{ borderColor: '#CFCBC2' }}
-            />
-          </div>
+          {error && <p className="m-0 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{error}</p>}
+          {message && <p className="m-0 text-sm text-accent bg-accent-soft rounded-[14px] px-4 py-3">{message}</p>}
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="auth-password" className="text-sm font-semibold">Password</label>
-            <input
-              id="auth-password"
-              type="password"
-              required
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-              style={{ borderColor: '#CFCBC2' }}
-            />
-          </div>
-
-          {error && (
-            <p className="m-0 text-sm text-red-700 bg-red-50 border border-red-100 rounded-[14px] px-4 py-3">
-              {error}
-            </p>
-          )}
-
-          {message && (
-            <p className="m-0 text-sm rounded-[14px] px-4 py-3" style={{ color: forest, backgroundColor: '#E3EEE8' }}>
-              {message}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="h-[52px] mt-2 rounded-full text-white text-base font-bold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: forest }}
-          >
+          <Button type="submit" size="lg" block disabled={loading} className="mt-2">
             {loading
               ? mode === 'login' ? 'Signing in…' : 'Creating account…'
               : mode === 'login' ? 'Sign in' : 'Create account'}
-          </button>
+          </Button>
         </form>
 
-        <p className="text-center text-sm mt-8" style={{ color: '#55534E' }}>
+        <p className="text-center text-sm mt-8 text-muted">
           {mode === 'login' ? 'Coach without an account? ' : 'Already have an account? '}
           <button
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setMessage(null) }}
-            className="font-semibold underline underline-offset-2"
-            style={{ color: forest }}
+            className="font-semibold underline underline-offset-2 text-accent"
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>

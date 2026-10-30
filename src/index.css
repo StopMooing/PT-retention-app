@@ -1,4 +1,217 @@
 @import "tailwindcss";
+@import "@fontsource-variable/nunito-sans";
+@import "@fontsource/baloo-2/800.css";
+
+/* Dark mode is switched by data-theme on <html> (see the script in index.html and
+   src/theme.js), not by the phone setting alone, so a client's choice sticks. */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* ------------------------------------------------------------------------------------
+   UNFNSHD colours. Defined once per mode. Screens use the semantic names below
+   (bg-surface, text-ink, text-muted, border-line, bg-accent, ...), never raw hex.
+   ------------------------------------------------------------------------------------ */
+:root {
+  color-scheme: light;
+  --bg: #F3F1EC;
+  --surface: #FFFFFF;
+  --surface-2: #EAE7E0;
+  --ink: #121212;
+  --muted: #55534E;
+  --faint: #8A877F;
+  --line: #DEDAD1;
+  --line-strong: #CFCBC2;
+  --accent: #2E6B57;
+  --accent-strong: #1F4D3E;
+  --on-accent: #FFFFFF;
+  --accent-soft: #E3EEE8;
+  --good: #2E6B57;
+  --warn: #B4690E;
+  --warn-soft: #FBF0DE;
+  --bad: #B3261E;
+  --bad-soft: #FBE7E5;
+  /* macro colours: same meaning on every screen */
+  --protein: #3B6FD8;
+  --carbs: #D19A12;
+  --fats: #D0573B;
+  --kcal: #2E6B57;
+}
+
+[data-theme=dark] {
+  color-scheme: dark;
+  --bg: #121212;
+  --surface: #1E1E1E;
+  --surface-2: #262626;
+  --ink: #F3F1EC;
+  --muted: #A8A6A0;
+  --faint: #7A7873;
+  --line: #2E2E2E;
+  --line-strong: #3A3A3A;
+  --accent: #7FD1A8;
+  --accent-strong: #A6E3C4;
+  --on-accent: #0B2A1E;
+  --accent-soft: #1F3329;
+  --good: #7FD1A8;
+  --warn: #F0B45A;
+  --warn-soft: #3A2C17;
+  --bad: #F2867D;
+  --bad-soft: #3B1F1D;
+  --protein: #7EA6F2;
+  --carbs: #E8C25A;
+  --fats: #EF8A72;
+  --kcal: #7FD1A8;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-protein: var(--protein);
+  --color-carbs: var(--carbs);
+  --color-fats: var(--fats);
+  --color-kcal: var(--kcal);
+}
+
+@theme {
+  --font-sans: "Nunito Sans Variable", "Nunito Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Baloo 2", "Arial Rounded MT Bold", ui-rounded, sans-serif;
+}
+
+/* ------------------------------------------------------------------------------------
+   Safety net: older screens still use Tailwind's stock greys, black, white and greens.
+   These lines repaint those in brand colours, and make them work in dark mode, so no
+   screen is left off-brand. New code should use the semantic names above instead.
+   ------------------------------------------------------------------------------------ */
+:root {
+  --color-white: var(--surface);
+  --color-black: var(--ink);
+  --color-gray-50: #F3F1EC;  --color-gray-100: #EAE7E0; --color-gray-200: #DEDAD1;
+  --color-gray-300: #CFCBC2; --color-gray-400: #9C988F; --color-gray-500: #77746D;
+  --color-gray-600: #55534E; --color-gray-700: #3D3B37; --color-gray-800: #262522;
+  --color-gray-900: #121212; --color-gray-950: #0B0B0B;
+  --color-green-50: #EEF4F1;  --color-green-100: #DCEAE3; --color-green-200: #BBD6C9;
+  --color-green-300: #8FBBA6; --color-green-400: #5E9A80; --color-green-500: #3F8068;
+  --color-green-600: #2E6B57; --color-green-700: #1F4D3E; --color-green-800: #173B30;
+  --color-green-900: #102A22;
+}
+:root {
+  --color-emerald-50: var(--color-green-50);   --color-emerald-100: var(--color-green-100);
+  --color-emerald-200: var(--color-green-200); --color-emerald-300: var(--color-green-300);
+  --color-emerald-400: var(--color-green-400); --color-emerald-500: var(--color-green-500);
+  --color-emerald-600: var(--color-green-600); --color-emerald-700: var(--color-green-700);
+  --color-emerald-800: var(--color-green-800); --color-emerald-900: var(--color-green-900);
+  --color-slate-50: var(--color-gray-50);   --color-slate-100: var(--color-gray-100);
+  --color-slate-200: var(--color-gray-200); --color-slate-300: var(--color-gray-300);
+  --color-slate-400: var(--color-gray-400); --color-slate-500: var(--color-gray-500);
+  --color-slate-600: var(--color-gray-600); --color-slate-700: var(--color-gray-700);
+  --color-slate-800: var(--color-gray-800); --color-slate-900: var(--color-gray-900);
+  --color-neutral-50: var(--color-gray-50);   --color-neutral-100: var(--color-gray-100);
+  --color-neutral-200: var(--color-gray-200); --color-neutral-300: var(--color-gray-300);
+  --color-neutral-400: var(--color-gray-400); --color-neutral-500: var(--color-gray-500);
+  --color-neutral-600: var(--color-gray-600); --color-neutral-700: var(--color-gray-700);
+  --color-neutral-800: var(--color-gray-800); --color-neutral-900: var(--color-gray-900);
+}
+[data-theme=dark] {
+  --color-gray-50: #181818;  --color-gray-100: #242424; --color-gray-200: #2E2E2E;
+  --color-gray-300: #3A3A3A; --color-gray-400: #6E6C67; --color-gray-500: #8E8C86;
+  --color-gray-600: #A8A6A0; --color-gray-700: #C9C6BF; --color-gray-800: #E2DFD8;
+  --color-gray-900: #F3F1EC; --color-gray-950: #FFFFFF;
+  --color-green-50: #1A2A22;  --color-green-100: #1F3329; --color-green-200: #2A4A3A;
+  --color-green-300: #3F6F57; --color-green-400: #5FA583; --color-green-500: #7FD1A8;
+  --color-green-600: #7FD1A8; --color-green-700: #A6E3C4; --color-green-800: #C4EDD8;
+  --color-green-900: #E0F6EA;
+}
+/* Other hues: soft tints become dark tints, dark text shades become light. */
+[data-theme=dark] {
+  --h-red: oklch(63.7% 0.237 25.331);   --h-orange: oklch(70.5% 0.213 47.604);
+  --h-amber: oklch(76.9% 0.188 70.08);  --h-yellow: oklch(79.5% 0.184 86.047);
+  --h-lime: oklch(76.8% 0.233 130.85);  --h-teal: oklch(70.4% 0.14 182.503);
+  --h-cyan: oklch(71.5% 0.143 215.221); --h-sky: oklch(68.5% 0.169 237.323);
+  --h-blue: oklch(62.3% 0.214 259.815); --h-indigo: oklch(58.5% 0.233 277.117);
+  --h-violet: oklch(60.6% 0.25 292.717); --h-purple: oklch(62.7% 0.265 303.9);
+  --h-pink: oklch(65.6% 0.241 354.308); --h-rose: oklch(64.5% 0.246 16.439);
+}
+[data-theme=dark] {
+  --color-red-50: color-mix(in oklab, var(--h-red) 14%, #1E1E1E);
+  --color-red-100: color-mix(in oklab, var(--h-red) 22%, #1E1E1E);
+  --color-red-200: color-mix(in oklab, var(--h-red) 34%, #1E1E1E);
+  --color-red-600: color-mix(in oklab, var(--h-red) 80%, white);
+  --color-red-700: color-mix(in oklab, var(--h-red) 65%, white);
+  --color-red-800: color-mix(in oklab, var(--h-red) 55%, white);
+  --color-orange-50: color-mix(in oklab, var(--h-orange) 14%, #1E1E1E);
+  --color-orange-100: color-mix(in oklab, var(--h-orange) 22%, #1E1E1E);
+  --color-orange-200: color-mix(in oklab, var(--h-orange) 34%, #1E1E1E);
+  --color-orange-600: color-mix(in oklab, var(--h-orange) 80%, white);
+  --color-orange-700: color-mix(in oklab, var(--h-orange) 65%, white);
+  --color-orange-800: color-mix(in oklab, var(--h-orange) 55%, white);
+  --color-amber-50: color-mix(in oklab, var(--h-amber) 14%, #1E1E1E);
+  --color-amber-100: color-mix(in oklab, var(--h-amber) 22%, #1E1E1E);
+  --color-amber-200: color-mix(in oklab, var(--h-amber) 34%, #1E1E1E);
+  --color-amber-600: color-mix(in oklab, var(--h-amber) 80%, white);
+  --color-amber-700: color-mix(in oklab, var(--h-amber) 65%, white);
+  --color-amber-800: color-mix(in oklab, var(--h-amber) 55%, white);
+  --color-yellow-50: color-mix(in oklab, var(--h-yellow) 14%, #1E1E1E);
+  --color-yellow-100: color-mix(in oklab, var(--h-yellow) 22%, #1E1E1E);
+  --color-yellow-200: color-mix(in oklab, var(--h-yellow) 34%, #1E1E1E);
+  --color-yellow-700: color-mix(in oklab, var(--h-yellow) 65%, white);
+  --color-yellow-800: color-mix(in oklab, var(--h-yellow) 55%, white);
+  --color-blue-50: color-mix(in oklab, var(--h-blue) 14%, #1E1E1E);
+  --color-blue-100: color-mix(in oklab, var(--h-blue) 22%, #1E1E1E);
+  --color-blue-200: color-mix(in oklab, var(--h-blue) 34%, #1E1E1E);
+  --color-blue-600: color-mix(in oklab, var(--h-blue) 80%, white);
+  --color-blue-700: color-mix(in oklab, var(--h-blue) 65%, white);
+  --color-blue-800: color-mix(in oklab, var(--h-blue) 55%, white);
+  --color-indigo-50: color-mix(in oklab, var(--h-indigo) 14%, #1E1E1E);
+  --color-indigo-100: color-mix(in oklab, var(--h-indigo) 22%, #1E1E1E);
+  --color-indigo-700: color-mix(in oklab, var(--h-indigo) 60%, white);
+  --color-purple-50: color-mix(in oklab, var(--h-purple) 14%, #1E1E1E);
+  --color-purple-100: color-mix(in oklab, var(--h-purple) 22%, #1E1E1E);
+  --color-purple-700: color-mix(in oklab, var(--h-purple) 60%, white);
+  --color-violet-50: color-mix(in oklab, var(--h-violet) 14%, #1E1E1E);
+  --color-violet-100: color-mix(in oklab, var(--h-violet) 22%, #1E1E1E);
+  --color-violet-700: color-mix(in oklab, var(--h-violet) 60%, white);
+  --color-pink-50: color-mix(in oklab, var(--h-pink) 14%, #1E1E1E);
+  --color-pink-100: color-mix(in oklab, var(--h-pink) 22%, #1E1E1E);
+  --color-pink-700: color-mix(in oklab, var(--h-pink) 60%, white);
+  --color-rose-50: color-mix(in oklab, var(--h-rose) 14%, #1E1E1E);
+  --color-rose-100: color-mix(in oklab, var(--h-rose) 22%, #1E1E1E);
+  --color-rose-700: color-mix(in oklab, var(--h-rose) 60%, white);
+  --color-sky-50: color-mix(in oklab, var(--h-sky) 14%, #1E1E1E);
+  --color-sky-100: color-mix(in oklab, var(--h-sky) 22%, #1E1E1E);
+  --color-sky-700: color-mix(in oklab, var(--h-sky) 60%, white);
+  --color-teal-50: color-mix(in oklab, var(--h-teal) 14%, #1E1E1E);
+  --color-teal-100: color-mix(in oklab, var(--h-teal) 22%, #1E1E1E);
+  --color-teal-700: color-mix(in oklab, var(--h-teal) 60%, white);
+  --color-cyan-50: color-mix(in oklab, var(--h-cyan) 14%, #1E1E1E);
+  --color-cyan-100: color-mix(in oklab, var(--h-cyan) 22%, #1E1E1E);
+  --color-lime-50: color-mix(in oklab, var(--h-lime) 14%, #1E1E1E);
+  --color-lime-100: color-mix(in oklab, var(--h-lime) 22%, #1E1E1E);
+}
+
+html {
+  background: var(--bg);
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
 
 /* iPhones zoom the page in when a text box under 16px is tapped, and stay zoomed.
    Kept outside Tailwind's layers on purpose so it wins over text-sm / text-xs.

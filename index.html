@@ -5,7 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <meta name="theme-color" content="#2E6B57" />
+    <meta name="theme-color" content="#F3F1EC" />
     <meta name="apple-mobile-web-app-title" content="UNFNSHD" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script>
@@ -15,10 +15,18 @@
         document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0')
       }
     </script>
+    <script>
+      // Light or dark mode before the first paint, so the screen never flashes the wrong
+      // colours. A choice made in Settings wins; otherwise follow the phone. See src/theme.js.
+      (function () {
+        var t = null
+        try { t = localStorage.getItem('unfnshd-theme') } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.setAttribute('data-theme', t)
+        document.querySelector('meta[name=theme-color]').setAttribute('content', t === 'dark' ? '#121212' : '#F3F1EC')
+      })()
+    </script>
     <title>UNFNSHD</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>
