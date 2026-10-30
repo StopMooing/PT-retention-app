@@ -5,7 +5,7 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { ChevronLeft, Link2, Check, Mail, MessageCircle, ClipboardList } from 'lucide-react'
 import { supabase } from './supabase'
 import { Avatar, Chip, Button, Mark, Card, EmptyState } from './ui'
-import { toLocalDateStr, clientStatus, STATUS, relativeDay, sessionsThisMonth, formatDate } from './coach/lib'
+import { toLocalDateStr, clientStatus, STATUS, relativeDay, sessionsThisMonth, formatDate, startedByClient, firstName } from './coach/lib'
 import OverviewTab from './coach/profile/OverviewTab'
 import CheckinsTab from './coach/profile/CheckinsTab'
 import TrainingTab from './coach/profile/TrainingTab'
@@ -56,6 +56,9 @@ export default function ClientProfile() {
   const [programWorkouts, setProgramWorkouts] = useState([])
   const [allPrograms, setAllPrograms] = useState([])
   const [allProgramWorkouts, setAllProgramWorkouts] = useState([])
+  // Workout name by program_workouts id, including on-demand workouts outside the coach's
+  // own list, so logged sessions without a schedule row still show their real name.
+  const [workoutNames, setWorkoutNames] = useState({})
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null)
   const [assignOpen, setAssignOpen] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
@@ -82,7 +85,7 @@ export default function ClientProfile() {
         const [clientRes, checkinsRes, programRes, habitsRes, mealPlanRes, workoutRes, weightRes] = await Promise.all([
           supabase.from('clients').select('*').eq('id', clientId).single(),
           supabase.from('checkins').select('*').eq('client_id', clientId).order('submitted_at', { ascending: false }),
-          supabase.from('program_assignments').select('*, programs(*)').eq('client_id', clientId).eq('is_active', true).limit(1),
+          supabase.from('program_assignments').select('*, programs(*)').eq('client_id', clientId).eq('is_active', true).order('created_at', { ascending: false }).limit(1),
           supabase.from('habits').select('*').eq('client_id', clientId).eq('is_active', true),
           supabase.from('meal_plans').select('*').eq('client_id', clientId).eq('is_active', true).limit(1),
           supabase.from('workout_logs').select('*').eq('client_id', clientId).order('logged_at', { ascending: false }).limit(200),
@@ -116,30 +119,28 @@ export default function ClientProfile() {
         const fetchedPrograms = allProgramsData ?? []
         setAllPrograms(fetchedPrograms)
 
+        let fetchedAllPW = []
+        const exerciseMap = {}
+        const loadExercises = (pws) => Promise.all(
+          pws.map(async (pw) => {
+            const { data: exData } = await supabase
+              .from('workout_exercises')
+              .select('id, sets, reps, order_index, exercises(id, name, muscle_group)')
+              .eq('program_workout_id', pw.id)
+              .order('order_index', { ascending: true })
+            exerciseMap[pw.id] = exData ?? []
+          }),
+        )
         if (fetchedPrograms.length > 0) {
           const { data: allPWData } = await supabase
             .from('program_workouts')
             .select('id, name, day_number, program_id')
             .in('program_id', fetchedPrograms.map((p) => p.id))
             .order('day_number', { ascending: true })
-          const fetchedAllPW = allPWData ?? []
+          fetchedAllPW = allPWData ?? []
           setAllProgramWorkouts(fetchedAllPW)
           setProgramWorkouts(fetchedAllPW.filter((pw) => pw.program_id === programRes.data?.[0]?.programs?.id))
-
-          if (fetchedAllPW.length > 0) {
-            const exerciseMap = {}
-            await Promise.all(
-              fetchedAllPW.map(async (pw) => {
-                const { data: exData } = await supabase
-                  .from('workout_exercises')
-                  .select('id, sets, reps, order_index, exercises(id, name, muscle_group)')
-                  .eq('program_workout_id', pw.id)
-                  .order('order_index', { ascending: true })
-                exerciseMap[pw.id] = exData ?? []
-              }),
-            )
-            setWorkoutExercises(exerciseMap)
-          }
+          await loadExercises(fetchedAllPW)
         }
 
         const threeMonthsAgo = new Date()
@@ -153,6 +154,31 @@ export default function ClientProfile() {
           .gte('scheduled_date', toLocalDateStr(threeMonthsAgo))
           .lte('scheduled_date', toLocalDateStr(threeMonthsAhead))
         setScheduledWorkouts((swData ?? []).map(enrichSW))
+
+        // Sessions can point at workouts outside the coach's own program list (an on-demand
+        // workout the client started). Load those names and exercises too, so they read
+        // exactly like program sessions.
+        const known = new Set(fetchedAllPW.map((pw) => pw.id))
+        const missing = [...new Set([...(swData ?? []), ...(workoutRes.data ?? [])].map((r) => r.program_workout_id).filter((pwId) => pwId && !known.has(pwId)))]
+        let extraPW = []
+        if (missing.length > 0) {
+          const { data: extraData } = await supabase.from('program_workouts').select('id, name, day_number, program_id').in('id', missing)
+          extraPW = extraData ?? []
+          await loadExercises(extraPW)
+        }
+        const activeProgramId = programRes.data?.[0]?.programs?.id ?? programRes.data?.[0]?.program_id
+        if (activeProgramId && !fetchedPrograms.some((p) => p.id === activeProgramId)) {
+          const { data: activePW } = await supabase
+            .from('program_workouts')
+            .select('id, name, day_number, program_id')
+            .eq('program_id', activeProgramId)
+            .order('day_number', { ascending: true })
+          setProgramWorkouts(activePW ?? [])
+          await loadExercises((activePW ?? []).filter((pw) => !exerciseMap[pw.id]))
+          extraPW = [...extraPW, ...(activePW ?? [])]
+        }
+        setWorkoutExercises(exerciseMap)
+        setWorkoutNames(Object.fromEntries([...fetchedAllPW, ...extraPW].map((pw) => [pw.id, pw.name || `Day ${pw.day_number}`])))
 
         const { data: photoData } = await supabase
           .from('progress_photos')
@@ -437,10 +463,11 @@ export default function ClientProfile() {
       if (programAssignment) {
         await supabase.from('program_assignments').update({ is_active: false }).eq('id', programAssignment.id)
       }
+      const { data: { user } } = await supabase.auth.getUser()
       const { data: newAssignment, error } = await supabase
         .from('program_assignments')
-        .insert({ client_id: clientId, program_id: program.id, start_date: toLocalDateStr(), is_active: true })
-        .select('id, start_date, programs(id, name)')
+        .insert({ client_id: clientId, program_id: program.id, assigned_by: user.id, start_date: toLocalDateStr(), is_active: true })
+        .select('id, start_date, assigned_by, programs(id, name)')
         .single()
       if (error) throw error
       setProgramAssignment(newAssignment)
@@ -578,6 +605,7 @@ export default function ClientProfile() {
               {checkins.length ? `Checked in ${relativeDay(checkins[0].submitted_at).toLowerCase()}` : 'No check-ins yet'}
               {' · '}{month} {month === 1 ? 'session' : 'sessions'} this month
               {programAssignment?.programs?.name ? ` · ${programAssignment.programs.name}` : ''}
+              {programAssignment?.programs?.name && startedByClient(programAssignment, client) ? `, started by ${firstName(client.full_name)} (on demand)` : ''}
               {' · '}Joined {formatDate(client.created_at, { month: 'short', year: 'numeric' })}
             </p>
           </div>
@@ -641,6 +669,7 @@ export default function ClientProfile() {
             allPrograms={allPrograms}
             allProgramWorkouts={allProgramWorkouts}
             workoutExercises={workoutExercises}
+            workoutNames={workoutNames}
             scheduledWorkouts={scheduledWorkouts}
             workoutLogs={workoutLogs}
             personalBests={personalBests}

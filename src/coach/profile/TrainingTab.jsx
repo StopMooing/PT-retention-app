@@ -5,7 +5,7 @@ import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensor
 import { ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Plus, X, CalendarPlus, Trophy, Search, Check, Dumbbell, AlertCircle } from 'lucide-react'
 import { Button, Card, Chip, Segmented, Sheet, EmptyState, SectionLabel } from '../../ui'
 import { Panel } from './parts'
-import { toLocalDateStr, dayOf, formatDate, relativeDay, addDays, firstName } from '../lib'
+import { toLocalDateStr, dayOf, formatDate, relativeDay, addDays, firstName, startedByClient } from '../lib'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -238,7 +238,7 @@ function AutoScheduleSheet({ open, onClose, programAssignment, programWorkouts, 
 const PB_LABEL = { '1rm': 'Est. 1RM', best_set: 'Best set', volume: 'Volume', max_weight: 'Heaviest', estimated_1rm: 'Est. 1RM' }
 const PB_UNIT = { best_set: 'pts' }
 
-function History({ workoutLogs, scheduledWorkouts, personalBests, sessionSetLogs, loadSessionSets, onOpenWorkout }) {
+function History({ workoutLogs, scheduledWorkouts, workoutNames, personalBests, sessionSetLogs, loadSessionSets, onOpenWorkout }) {
   const [openId, setOpenId] = useState(null)
   const [openEx, setOpenEx] = useState(null)
   if (workoutLogs.length === 0) return <Card><EmptyState icon={Dumbbell} title="No sessions logged yet" body="Sessions show here once they are logged in the app or from the schedule." /></Card>
@@ -264,7 +264,7 @@ function History({ workoutLogs, scheduledWorkouts, personalBests, sessionSetLogs
                 {log.completed ? <Check size={18} /> : <Dumbbell size={16} />}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold text-ink truncate">{sched?._displayName ?? 'Workout'}</span>
+                <span className="block font-semibold text-ink truncate">{sched?._displayName ?? workoutNames?.[log.program_workout_id] ?? 'Workout'}</span>
                 <span className="block text-[13px] text-muted">{formatDate(log.logged_at, { weekday: 'short', day: 'numeric', month: 'short' })} · {relativeDay(log.logged_at)}{log.completed ? '' : ' · Not finished'}</span>
               </span>
               <ChevronDown size={18} className={`text-faint shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
@@ -396,7 +396,10 @@ export default function TrainingTab(props) {
             {programAssignment ? (
               <>
                 <p className="font-bold text-ink truncate">{programAssignment.programs?.name}</p>
-                <p className="text-[13px] text-muted">Started {formatDate(programAssignment.start_date)} · {programWorkouts.length} {programWorkouts.length === 1 ? 'workout' : 'workouts'}</p>
+                <p className="text-[13px] text-muted">
+                  {startedByClient(programAssignment, client) ? `Started by ${firstName(client.full_name)} (on demand), ` : 'Started '}
+                  {formatDate(programAssignment.start_date)} · {programWorkouts.length} {programWorkouts.length === 1 ? 'workout' : 'workouts'}
+                </p>
               </>
             ) : (
               <>

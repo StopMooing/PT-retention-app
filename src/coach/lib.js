@@ -87,6 +87,12 @@ export function checkinNote(ci) {
   return text && !EMPTY_NOTE.includes(text.toLowerCase()) ? text : ''
 }
 
+// True when the client started this program themselves from the on-demand library,
+// rather than the coach assigning it. Used by the profile header and the Training tab.
+export function startedByClient(assignment, client) {
+  return !!assignment?.assigned_by && !!client?.user_id && assignment.assigned_by === client.user_id
+}
+
 export function firstName(name = '') {
   return name.trim().split(/\s+/)[0] || name
 }
