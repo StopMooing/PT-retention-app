@@ -4,7 +4,6 @@ import { LayoutDashboard, Dumbbell, ClipboardList, Utensils, Heart, CreditCard, 
 import { supabase } from './supabase'
 import AuthPage from './AuthPage'
 import ClaimPage from './ClaimPage'
-import LandingPage from './LandingPage'
 import ExerciseLibrary from './ExerciseLibrary'
 import ProgramBuilder from './ProgramBuilder'
 import NutritionPlanner from './NutritionPlanner'
@@ -995,7 +994,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/claim/:token" element={<ClaimPage />} />
-      <Route path="/" element={session ? loggedInRedirect : <LandingPage />} />
+      <Route path="/" element={session ? loggedInRedirect : <AuthPage defaultMode="login" />} />
       <Route path="/auth" element={session ? loggedInRedirect : <AuthPage />} />
       <Route path="/login" element={session ? loggedInRedirect : <AuthPage defaultMode="login" />} />
       <Route path="/signup" element={session ? loggedInRedirect : <AuthPage defaultMode="signup" />} />
