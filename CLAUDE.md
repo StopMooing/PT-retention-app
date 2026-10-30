@@ -4,7 +4,9 @@ Coaching app for Luke, a personal trainer at Revo Woodcroft, Adelaide. Clients p
 $30/week; the weekly check-in loop (client checks in, coach replies) is the product.
 Luke has no coding background: explain outcomes in plain English, not mechanics.
 
-Fuller context lives in the claude.ai project "CRM": `claude/pt-blueprint-handoff.md`
+Latest state: `docs/status-2026-10-30.md` (also in the claude.ai project as
+`claude/unfnshd-status-2026-10-30.md`); it wins over older notes. Fuller context lives in the
+claude.ai project "CRM": `claude/pt-blueprint-handoff.md`
 (state, open items, history), `claude/client-app-design-brief.md` (client app north star),
 `claude/unfnshd-brand.md` (logo, colours, light and dark mode).
 
