@@ -1,4 +1,4 @@
-// Progress: body weight trend, consistency, strength, photos and past check-ins.
+// Progress: body weight trend, consistency, past sessions, strength, photos and check-ins.
 // Everything comes from data the app already saves. Empty sections are hidden.
 import { useState, useRef } from 'react'
 import { ChevronDown, X, Camera, MessageCircle, Trash2 } from 'lucide-react'
@@ -10,6 +10,7 @@ import {
   weightSeries, currentWeight, weightAverage7, weightForDay, plural, sessionsThisMonth, bestWeekStreak, weekStreak, liftBests, fmtKg,
 } from './metrics'
 import WeightChart from './WeightChart'
+import SessionsList from './SessionsList'
 
 function WeightCard({ client, weightLogs, setWeightLogs }) {
   const [period, setPeriod] = useState('90')
@@ -270,6 +271,8 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
           </Card>
         </section>
       )}
+
+      <SessionsList client={client} />
 
       {lifts.length > 0 && (
         <section>

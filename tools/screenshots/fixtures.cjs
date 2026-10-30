@@ -207,3 +207,41 @@ if (process.env.CHECKIN_DUE) {
   const t = module.exports.tables
   t.checkins = t.checkins.filter((c) => c.client_id !== CLIENT || c.submitted_at < ts(-7, 18))
 }
+
+// ---- On-demand library (needs the on_demand_library migration in the real database) ----
+// Two single on-demand workouts and one 3-day program. NOT_MIGRATED=1 (mock.cjs) makes
+// the library and coach name reads fail the way they do before the migration.
+{
+  const t = module.exports.tables
+  const lib = [
+    { name: '20 Minute Upper Body', kind: 'workout', description: 'A quick push and pull session for busy days. Dumbbells and a cable station.', days: [
+      { name: '20 Minute Upper Body', items: [['Incline Dumbbell Press', 3, '10'], ['Seated Cable Row', 3, '10'], ['Lateral Raise', 2, '15'], ['Dumbbell Curl', 2, '12'], ['Triceps Pushdown', 2, '12']] },
+    ] },
+    { name: 'Glutes and Core', kind: 'workout', description: 'Lower body and trunk strength in about half an hour.', days: [
+      { name: 'Glutes and Core', items: [['Hip Thrust', 4, '10'], ['Walking Lunge', 3, '10 each'], ['Romanian Deadlift', 3, '10'], ['Plank', 3, '40s']] },
+    ] },
+    { name: '4-Week Beginner Strength', kind: 'program', description: 'Three full body sessions a week to learn the big lifts and build a base. Start light, add a little each week.', days: [
+      { name: 'Full Body A', items: [['Barbell Back Squat', 3, '8'], ['Barbell Bench Press', 3, '8'], ['Seated Cable Row', 3, '10'], ['Plank', 3, '30s']] },
+      { name: 'Full Body B', items: [['Romanian Deadlift', 3, '8'], ['Barbell Overhead Press', 3, '8'], ['Lat Pulldown', 3, '10'], ['Walking Lunge', 2, '10 each']] },
+      { name: 'Full Body C', items: [['Leg Press', 3, '10'], ['Incline Dumbbell Press', 3, '10'], ['Face Pull (Cable)', 3, '15'], ['Hip Thrust', 3, '10']] },
+    ] },
+  ]
+  for (const p of lib) {
+    const prog = { id: id(), name: p.name, description: p.description, created_by: COACH, created_at: ts(-60), is_on_demand: true, kind: p.kind }
+    t.programs.push(prog)
+    p.days.forEach((d, di) => {
+      const row = { id: id(), program_id: prog.id, day_number: di + 1, name: d.name, created_at: ts(-60) }
+      t.program_workouts.push(row)
+      d.items.forEach(([name, sets, reps], i) => t.workout_exercises.push({
+        id: id(), program_workout_id: row.id, exercise_id: ex(name).id, sets, reps, rest_seconds: 75, notes: null, order_index: i, created_at: ts(-60),
+      }))
+    })
+  }
+}
+
+// SOLO_PROGRAM=1: Jane has no coach program; she started the beginner program herself.
+if (process.env.SOLO_PROGRAM) {
+  const t = module.exports.tables
+  const beginner = t.programs.find((p) => p.name === '4-Week Beginner Strength')
+  t.program_assignments = [{ id: id(), program_id: beginner.id, client_id: CLIENT, assigned_by: CLIENT_USER, start_date: day(-8), is_active: true, created_at: ts(-8) }]
+}

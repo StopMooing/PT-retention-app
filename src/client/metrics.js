@@ -1,6 +1,6 @@
 // One source of truth for every number the client sees. If a number appears on more
 // than one screen, it is worked out here so the screens always agree.
-import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween } from './dates'
+import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween, weekdayName } from './dates'
 import { parseAiJson } from './foods'
 
 // "1 exercise", "3 exercises".
@@ -215,3 +215,70 @@ export function latestPB(personalBests, days = 14, today = toLocalDateStr()) {
 }
 
 export const fmtKg = (n) => (n == null ? '' : `${Math.round(n * 10) / 10}`)
+
+/* ---------- This week (the Home ring) ---------- */
+
+// Days with food logged that make a full week: 5, so the ring can close without
+// logging every single day.
+export const FOOD_DAYS_GOAL = 5
+
+// This week's three commitments (Monday to Sunday, local days), each 0..1:
+//   sessions: scheduled sessions this week that are done (left out when none are scheduled)
+//   checkin:  a check-in sent this week (Monday onwards)
+//   food:     days this week with any food logged, up to FOOD_DAYS_GOAL
+// Returns { parts: [{ key, value, done, label, hint }], complete, started }.
+export function weekCommitments({ scheduledWorkouts, completedIds, checkins, foodLogs, today = toLocalDateStr() }) {
+  const days = weekDays(today)
+  const parts = []
+
+  const s = sessionsThisWeek(scheduledWorkouts, completedIds, today)
+  if (s.scheduled > 0) {
+    const done = Math.min(s.done, s.scheduled)
+    parts.push({ key: 'sessions', value: done / s.scheduled, done: done >= s.scheduled, label: `${done} of ${plural(s.scheduled, 'session')}` })
+  }
+
+  const ci = checkinStatus(checkins, today)
+  const sent = !!ci.latest && toLocalDateStr(new Date(ci.latest.submitted_at)) >= days[0]
+  parts.push({
+    key: 'checkin',
+    value: sent ? 1 : 0,
+    done: sent,
+    label: sent ? 'Check-in sent' : 'Check-in',
+    hint: sent ? null : ci.due || !ci.nextDate || ci.nextDate <= today ? 'Due today' : `Due ${weekdayName(ci.nextDate)}`,
+  })
+
+  const foodDays = Math.min(days.filter((d) => d <= today && logsForDate(foodLogs, d).length > 0).length, FOOD_DAYS_GOAL)
+  parts.push({ key: 'food', value: foodDays / FOOD_DAYS_GOAL, done: foodDays >= FOOD_DAYS_GOAL, label: `${foodDays} of ${FOOD_DAYS_GOAL} days logged` })
+
+  return { parts, complete: parts.every((p) => p.done), started: parts.some((p) => p.value > 0) }
+}
+
+/* ---------- Programs ---------- */
+
+// Program length in weeks, read from its name or description ("4-Week Beginner
+// Strength", "12 week full body build"). null when neither says.
+export function programWeeks(program) {
+  const m = `${program?.name ?? ''} ${program?.description ?? ''}`.match(/(\d{1,2})\s*-?\s*weeks?\b/i)
+  const n = m ? parseInt(m[1], 10) : 0
+  return n > 0 && n <= 52 ? n : null
+}
+
+// Where the client is in their active program: week (of weeks, when known), sessions a
+// week, and sessions done since it started out of the sessions in it (total is the
+// program length when known, otherwise the sessions scheduled since the start).
+export function programProgress({ assignment, programWorkouts, scheduledWorkouts, workoutLogs, today = toLocalDateStr() }) {
+  const perWeek = programWorkouts?.length ?? 0
+  const weeks = programWeeks(assignment?.programs)
+  const start = assignment?.start_date || null
+  const ids = new Set((programWorkouts ?? []).map((pw) => pw.id))
+  const since = (d) => !start || d >= start
+  const rawWeek = start ? Math.max(1, Math.floor(daysBetween(start, today) / 7) + 1) : null
+  const done = (workoutLogs ?? []).filter((l) => ids.has(l.program_workout_id) && l.logged_at && since(toLocalDateStr(new Date(l.logged_at)))).length
+  const total = weeks ? weeks * perWeek : (scheduledWorkouts ?? []).filter((sw) => ids.has(sw.program_workout_id) && since(sw.scheduled_date)).length
+  return { perWeek, weeks, week: weeks && rawWeek ? Math.min(rawWeek, weeks) : rawWeek, done: total ? Math.min(done, total) : done, total }
+}
+
+// Muscle groups worked by a list of exercise rows, in order, no repeats.
+export function muscleGroups(exercises) {
+  return [...new Set((exercises ?? []).map((ex) => ex.exercises?.muscle_group || ex.muscle_group).filter(Boolean))]
+}

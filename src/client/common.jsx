@@ -1,9 +1,19 @@
 // Small pieces shared by the client screens. Built from src/ui so they match the app.
-import { ArrowLeft, Check } from 'lucide-react'
-import { Mark, Ring } from '../ui'
+import { ArrowLeft, Check, UserRound } from 'lucide-react'
+import { Mark, Ring, Avatar } from '../ui'
 import { toLocalDateStr, addDays, parseDay } from './dates'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
+
+/* The coach: initials when we know their name, a plain person icon when we don't. */
+export function CoachAvatar({ name, size = 36 }) {
+  if (name) return <Avatar name={name} size={size} />
+  return (
+    <span className="rounded-full bg-accent-soft text-accent inline-flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+      <UserRound size={size * 0.5} />
+    </span>
+  )
+}
 
 export function Loading({ full }) {
   return (

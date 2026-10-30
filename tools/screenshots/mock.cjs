@@ -141,6 +141,15 @@ async function install(page, role) {
     const prefer = req.headers()['prefer'] || ''
     const wantsObject = (req.headers()['accept'] || '').includes('vnd.pgrst.object')
 
+    // NOT_MIGRATED=1: behave like the real database before the on_demand_library
+    // migration: no is_on_demand column (400) and a client can't read their coach's profile.
+    if (process.env.NOT_MIGRATED && req.method() === 'GET') {
+      if (url.searchParams.has('is_on_demand')) return json(400, { code: '42703', message: 'column programs.is_on_demand does not exist', details: null, hint: null })
+      if (table === 'profiles' && role === 'client' && url.searchParams.get('id') !== `eq.${user.id}`) {
+        return wantsObject ? json(406, { code: 'PGRST116', message: 'no rows' }) : json(200, [])
+      }
+    }
+
     if (req.method() === 'GET' || req.method() === 'HEAD') {
       let rows = filterRows()
       const order = url.searchParams.get('order')
