@@ -140,3 +140,26 @@ module.exports = {
     pt_notes: [], meal_plans: [], meals: [], meal_foods: [], meal_templates: [], meal_template_foods: [], foods: [],
   },
 }
+
+// Appended: a meal plan with meals and foods, and one meal idea, for the nutrition screens.
+{
+  const t = module.exports.tables
+  const plan = { id: id(), name: 'Lean bulk', client_id: CLIENT, created_by: COACH, daily_calories: 2400, protein_target_g: 180, carbs_target_g: 260, fats_target_g: 70, is_active: true, is_template: false, created_at: ts(-10) }
+  const plan2 = { id: id(), name: 'Maintenance template', client_id: null, created_by: COACH, daily_calories: null, protein_target_g: null, carbs_target_g: null, fats_target_g: null, is_active: true, is_template: false, created_at: ts(-20) }
+  t.meal_plans.push(plan, plan2)
+  const mealRows = [['Oats and berries', 'Breakfast'], ['Chicken rice bowl', 'Lunch'], ['Afternoon snack', 'Afternoon Snack'], ['Salmon and veg', 'Dinner']]
+    .map(([name, meal_time], i) => ({ id: id(), meal_plan_id: plan.id, name, meal_time, order_index: i, created_at: ts(-10) }))
+  t.meals.push(...mealRows)
+  const mf = [
+    [0, 'Rolled oats', null, 80, 300, 10.5, 50.4, 5.9], [0, 'Blueberries', null, 100, 57, 0.7, 14.5, 0.3], [0, 'Greek yoghurt, natural', 'Chobani', 170, 165, 15.3, 7.6, 7.7],
+    [1, 'Chicken breast, grilled', null, 200, 330, 62, 0, 7.2], [1, 'White rice, cooked', null, 250, 325, 6.8, 70.5, 0.8],
+    [2, 'Banana', null, 120, 107, 1.3, 23.6, 0.4], [2, 'Almonds', null, 30, 174, 6.3, 2.6, 15],
+  ]
+  mf.forEach(([m, food_name, brand, g, kcal, p, c, f]) => t.meal_foods.push({ id: id(), meal_id: mealRows[m].id, food_name, brand, serving_size_g: g, calories: kcal, protein_g: p, carbs_g: c, fats_g: f, open_food_facts_id: null, created_at: ts(-10) }))
+  const tpl = { id: id(), name: 'High protein overnight oats', description: 'Make it the night before, grab it on the way out.', category: 'High protein', meal_time: 'Breakfast', total_calories: 420, total_protein_g: 32, total_carbs_g: 48, total_fats_g: 10, prep_time_minutes: 5, instructions: 'Step 1: Mix oats, protein powder and milk in a jar. Step 2: Stir through yoghurt. Step 3: Top with berries and chill overnight.', created_at: ts(-50) }
+  t.meal_templates.push(tpl)
+  t.meal_template_foods.push(
+    { id: id(), meal_template_id: tpl.id, food_name: 'Rolled oats', serving_size_g: 50, calories: 188, protein_g: 6.6, carbs_g: 31.5, fats_g: 3.7 },
+    { id: id(), meal_template_id: tpl.id, food_name: 'Whey protein', serving_size_g: 30, calories: 120, protein_g: 24, carbs_g: 3, fats_g: 1.5 },
+  )
+}

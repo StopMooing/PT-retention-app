@@ -30,6 +30,7 @@ function project(db, table, row, select) {
   if (!select || select === '*') return { ...row }
   const out = {}
   for (const part of splitTop(select)) {
+    if (part === '*') { Object.assign(out, row); continue }
     const m = part.match(/^(?:(\w+):)?(\w+)(?:!(\w+))?(?:\((.*)\))?$/s)
     if (!m) continue
     const [, alias, name, , inner] = m
@@ -104,6 +105,12 @@ async function install(page, role) {
         let names = []
         try { const b = req.postDataJSON(); names = b.p_names || b.names || Object.values(b)[0] || [] } catch {}
         return json(200, names.map((nm) => { const e = db.exercises.find((x) => x.name.toLowerCase() === String(nm).toLowerCase()); return { input_name: nm, name: nm, exercise_id: e ? e.id : null } }))
+      }
+      // A sample invite for the claim page. The token "expired" shows the invalid state.
+      if (fn === 'get_claim_client') {
+        let tok = ''
+        try { tok = req.postDataJSON().p_token } catch {}
+        return json(200, tok === 'expired' ? [] : [{ full_name: 'Jane Carter', email: 'jane@example.com' }])
       }
       return json(200, [])
     }
