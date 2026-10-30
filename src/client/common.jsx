@@ -1,7 +1,7 @@
 // Small pieces shared by the client screens. Built from src/ui so they match the app.
-import { ArrowLeft, Check, UserRound } from 'lucide-react'
+import { ArrowLeft, Check, ChevronLeft, ChevronRight, UserRound } from 'lucide-react'
 import { Mark, Ring, Avatar } from '../ui'
-import { toLocalDateStr, addDays, parseDay } from './dates'
+import { toLocalDateStr, addDays, parseDay, formatDateLabel } from './dates'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 
@@ -210,6 +210,24 @@ export function DayGrid({ days = 28, past = 7, selected = [], onToggle, busy }) 
           )
         })}
       </div>
+    </div>
+  )
+}
+
+/* One day at a time: left arrow, "Today" or the date, right arrow. Nutrition and
+   Training both use it so they look the same. max ('YYYY-MM-DD') stops it going later. */
+export function DayNav({ date, onChange, max }) {
+  const atMax = !!max && date >= max
+  const btn = 'w-11 h-11 rounded-full flex items-center justify-center text-ink bg-surface border border-line hover:bg-surface-2 disabled:opacity-30'
+  return (
+    <div className="flex items-center gap-2">
+      <button onClick={() => onChange(addDays(date, -1))} aria-label="Previous day" className={btn}>
+        <ChevronLeft size={20} />
+      </button>
+      <p className="flex-1 text-center text-[17px] font-bold text-ink">{formatDateLabel(date)}</p>
+      <button disabled={atMax} onClick={() => { const n = addDays(date, 1); if (!max || n <= max) onChange(n) }} aria-label="Next day" className={btn}>
+        <ChevronRight size={20} />
+      </button>
     </div>
   )
 }

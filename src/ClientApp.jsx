@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Home, Dumbbell, Utensils, TrendingUp } from 'lucide-react'
 import { supabase } from './supabase'
 import { Button } from './ui'
-import { toLocalDateStr, formatDateLabel } from './client/dates'
+import { formatDateLabel } from './client/dates'
 import { completedKeys, workoutName } from './client/metrics'
 import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
@@ -56,8 +56,6 @@ export default function ClientApp() {
   // Navigation
   const [tab, setTab] = useState('home')
   const [trainView, setTrainView] = useState('workouts')
-  const [trainDate, setTrainDate] = useState(() => toLocalDateStr())
-  const [trainDayOpen, setTrainDayOpen] = useState(false)
   const [foodView, setFoodView] = useState('log')
   const [addFoodOpen, setAddFoodOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -321,7 +319,6 @@ export default function ClientApp() {
             onOpenProfile={() => setProfileOpen(true)}
             onBuildWorkout={openWorkoutAI}
             onLogFood={() => { setFoodView('log'); setAddFoodOpen(true); goTab('food') }}
-            onPickDay={(d) => { setTrainDate(d); setTrainDayOpen(true); goTab('train') }}
             onSeeCheckins={() => goTab('progress')}
           />
         )}
@@ -330,10 +327,6 @@ export default function ClientApp() {
             {...shared}
             view={trainView}
             setView={setTrainView}
-            selectedDate={trainDate}
-            setSelectedDate={setTrainDate}
-            dayOpen={trainDayOpen}
-            setDayOpen={setTrainDayOpen}
             assignment={assignment}
             programWorkouts={programWorkouts}
             savedWorkouts={savedWorkouts}

@@ -1,16 +1,16 @@
 // Home: what do I do today. Greeting, the "This week" ring, the one thing to do now,
 // the latest word from the coach, today's food and a recent personal best.
-// Empty sections are hidden.
+// Empty sections are hidden. Tapping a day on the week strip opens a summary of that day.
 import { useState } from 'react'
 import { Flame, Trophy, ChevronRight, Sparkles, Check, Plus } from 'lucide-react'
-import { Card, Button, Chip, Avatar } from '../ui'
-import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate } from './dates'
+import { Card, Button, Chip, Avatar, Sheet } from '../ui'
+import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate, formatDateLabel } from './dates'
 import {
   isDone, workoutName, groupByDate, estMinutes, nextSession, weekStreak, checkinStatus, sessionExercises,
   plural, logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, weekCommitments,
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
-import { NutritionSummary, CoachAvatar } from './common'
+import { NutritionSummary, CoachAvatar, DoneDot } from './common'
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const cx = (...c) => c.filter(Boolean).join(' ')
@@ -120,6 +120,66 @@ function WeekHero({ week, sessionHint, today, byDate, completedIds, onPickDay })
   )
 }
 
+/* One day from the week strip: its sessions and what was eaten. A read-only summary,
+   with Start for today's and upcoming sessions. */
+function DaySheet({ date, onClose, today, byDate, completedIds, workoutExercises, foodLogs, targets, onOpenWorkout }) {
+  const sessions = date ? byDate[date] ?? [] : []
+  const food = date ? logsForDate(foodLogs, date) : []
+  const totals = foodTotals(food)
+  const open = (sw) => { onClose(); onOpenWorkout(sw) }
+  return (
+    <Sheet open={!!date} onClose={onClose} title={date ? formatDateLabel(date) : ''}>
+      <div className="space-y-5">
+        {sessions.length > 0 && (
+          <section>
+            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2">Training</p>
+            <div className="rounded-[16px] border border-line divide-y divide-line">
+              {sessions.map((sw) => {
+                const done = isDone(sw, completedIds)
+                const upcoming = !done && date >= today
+                const exs = sessionExercises(sw, workoutExercises)
+                const mins = estMinutes(exs)
+                const meta = [done ? 'Done' : upcoming ? null : 'Not logged yet', exs.length ? plural(exs.length, 'exercise') : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ')
+                const body = (
+                  <>
+                    <DoneDot done={done} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-bold text-ink truncate">{workoutName(sw)}</p>
+                      {meta && <p className="text-[13px] text-muted truncate">{meta}</p>}
+                    </div>
+                  </>
+                )
+                return (
+                  <div key={sw.id} className="flex items-center gap-3 px-4 py-3 min-h-[64px]">
+                    {done ? (
+                      <button onClick={() => open(sw)} className="flex-1 min-w-0 flex items-center gap-3 text-left">
+                        {body}
+                        <ChevronRight size={18} className="text-faint shrink-0" />
+                      </button>
+                    ) : (
+                      <div className="flex-1 min-w-0 flex items-center gap-3">{body}</div>
+                    )}
+                    {upcoming && <Button size="sm" onClick={() => open(sw)}>Start</Button>}
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        )}
+        {food.length > 0 && (
+          <section>
+            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2">Food</p>
+            <NutritionSummary compact totals={totals} targets={targets} />
+          </section>
+        )}
+        {sessions.length === 0 && food.length === 0 && (
+          <p className="text-[15px] text-muted py-2">Nothing planned for this day.</p>
+        )}
+      </div>
+    </Sheet>
+  )
+}
+
 /* The one thing to do now: today's session, then the check-in, then food. */
 function NextThing({ todo }) {
   return (
@@ -137,9 +197,10 @@ function NextThing({ todo }) {
 
 export default function HomeTab({
   client, checkins, setCheckins, assignment, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
-  foodLogs, nutritionTargets, personalBests, coachName, onOpenWorkout, onOpenProfile, onBuildWorkout, onLogFood, onPickDay, onSeeCheckins,
+  foodLogs, nutritionTargets, personalBests, coachName, onOpenWorkout, onOpenProfile, onBuildWorkout, onLogFood, onSeeCheckins,
 }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
+  const [dayOpen, setDayOpen] = useState(null) // 'YYYY-MM-DD' of the day tapped on the strip
   const today = toLocalDateStr()
   const firstName = client.full_name?.split(' ')[0] || client.full_name || ''
   const hasCoach = !!client.pt_id
@@ -230,7 +291,7 @@ export default function HomeTab({
       </header>
 
       <div className="space-y-3">
-        <WeekHero week={week} sessionHint={sessionHint} today={today} byDate={byDate} completedIds={completedIds} onPickDay={onPickDay} />
+        <WeekHero week={week} sessionHint={sessionHint} today={today} byDate={byDate} completedIds={completedIds} onPickDay={setDayOpen} />
 
         {todo && <NextThing todo={todo} />}
 
@@ -277,6 +338,18 @@ export default function HomeTab({
           </Card>
         )}
       </div>
+
+      <DaySheet
+        date={dayOpen}
+        onClose={() => setDayOpen(null)}
+        today={today}
+        byDate={byDate}
+        completedIds={completedIds}
+        workoutExercises={workoutExercises}
+        foodLogs={foodLogs}
+        targets={targets}
+        onOpenWorkout={onOpenWorkout}
+      />
 
       <CheckinSheet
         open={checkinOpen}

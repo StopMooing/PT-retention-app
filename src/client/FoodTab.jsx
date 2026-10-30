@@ -1,13 +1,13 @@
 // Food: pick a day, see calories and macros against targets, meals grouped by type, add
 // food in a sheet, saved meals from the AI helper, and the calorie calculator tucked away.
 import { useState, useEffect } from 'react'
-import { ChevronLeft, ChevronRight, Plus, X, Sparkles, Calculator } from 'lucide-react'
+import { Plus, X, Sparkles, Calculator } from 'lucide-react'
 import { supabase } from '../supabase'
 import { PageTitle, Card, Button, Segmented, SectionLabel } from '../ui'
-import { toLocalDateStr, addDays, formatDateLabel } from './dates'
+import { toLocalDateStr, formatDateLabel } from './dates'
 import { logsForDate, foodTotals, nutritionTargetsFor } from './metrics'
 import { MEAL_ORDER, capitalise, parseSavedMealContent } from './foods'
-import { NutritionSummary } from './common'
+import { NutritionSummary, DayNav } from './common'
 import AddFoodSheet from './AddFoodSheet'
 import TdeeSheet from './TdeeSheet'
 
@@ -155,15 +155,7 @@ export default function FoodTab({
     <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-5">
       <PageTitle title="Nutrition" action={<Button variant="secondary" size="sm" onClick={onOpenAI}><Sparkles size={16} /> Ideas</Button>} />
 
-      <div className="flex items-center gap-2">
-        <button onClick={() => setDate(addDays(date, -1))} aria-label="Previous day" className="w-11 h-11 rounded-full flex items-center justify-center text-ink bg-surface border border-line hover:bg-surface-2">
-          <ChevronLeft size={20} />
-        </button>
-        <p className="flex-1 text-center text-[17px] font-bold text-ink">{formatDateLabel(date)}</p>
-        <button disabled={date >= today} onClick={() => { const n = addDays(date, 1); if (n <= today) setDate(n) }} aria-label="Next day" className="w-11 h-11 rounded-full flex items-center justify-center text-ink bg-surface border border-line hover:bg-surface-2 disabled:opacity-30">
-          <ChevronRight size={20} />
-        </button>
-      </div>
+      <DayNav date={date} onChange={setDate} max={today} />
 
       {savedMeals.length > 0 && (
         <Segmented value={view} onChange={setView} options={[{ value: 'log', label: 'Food log' }, { value: 'saved', label: 'Saved meals' }]} />

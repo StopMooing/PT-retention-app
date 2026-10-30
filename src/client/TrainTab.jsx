@@ -1,22 +1,21 @@
-// Training: today's session and the week up top, then Workouts (from the coach, on
-// demand, saved) and Programs (yours, on demand). Adding, moving and copying sessions
-// happen in sheets opened from the week strip. Past sessions live in Progress.
+// Training: a day navigator up top (back into the past, forward into what's planned) with
+// that day's sessions, then Workouts (from the coach, on demand, saved) and Programs
+// (yours, on demand). Adding, moving and copying sessions happen in sheets.
 import { useState } from 'react'
 import {
-  ChevronLeft, ChevronRight, MoreHorizontal, Plus, Sparkles, CalendarPlus, Check, Dumbbell, Bookmark, Play,
+  ChevronRight, MoreHorizontal, Plus, Sparkles, CalendarPlus, Check, Dumbbell, Bookmark, Play,
 } from 'lucide-react'
 import { supabase } from '../supabase'
 import { PageTitle, Card, Button, Segmented, Sheet, SectionLabel, Chip } from '../ui'
-import { toLocalDateStr, formatDateLabel, formatShortDate, weekDays, addDays, parseDay, weekdayName } from './dates'
+import { toLocalDateStr, formatShortDate, addDays } from './dates'
 import {
   isDone, workoutName, groupByDate, estMinutes, sessionExercises, plural, nextSession, muscleGroups, programWeeks, programProgress,
 } from './metrics'
 import { parseAiJson } from './foods'
-import { DayGrid, DoneDot, Overlay, BackHeader } from './common'
+import { DayGrid, DayNav, DoneDot, Overlay, BackHeader } from './common'
 import { scheduleOne, scheduleProgramDays, startProgram, stopProgram } from './programs'
 import WorkoutPreview from './WorkoutPreview'
 
-const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const cx = (...c) => c.filter(Boolean).join(' ')
 
 function Row({ onClick, children, className }) {
@@ -74,59 +73,6 @@ function ItemList({ items, onOpen }) {
         </Row>
       ))}
     </Card>
-  )
-}
-
-/* ---------- Calendar ---------- */
-
-function WeekStrip({ selected, onSelect, byDate, completedIds, today }) {
-  return (
-    <div className="grid grid-cols-7 gap-1">
-      {weekDays(selected).map((d, i) => {
-        const sessions = byDate[d] ?? []
-        const done = sessions.some((sw) => isDone(sw, completedIds))
-        const on = d === selected
-        return (
-          <button key={d} onClick={() => onSelect(d)} aria-label={formatShortDate(d)} className={cx('flex flex-col items-center gap-1 py-1.5 rounded-[16px] transition-colors', on ? 'bg-accent text-on-accent' : 'hover:bg-surface-2')}>
-            <span className={cx('text-[11px] font-bold', on ? 'opacity-80' : 'text-faint')}>{DAY_LETTERS[i]}</span>
-            <span className={cx('text-[16px] font-bold tabular-nums', !on && (d === today ? 'text-accent' : 'text-ink'))}>{parseDay(d).getDate()}</span>
-            <span className="h-3 flex items-center">
-              {done ? <Check size={12} strokeWidth={3.5} className={on ? '' : 'text-accent'} /> : sessions.length > 0 ? <span className={cx('w-1.5 h-1.5 rounded-full', on ? 'bg-on-accent' : 'bg-muted')} /> : null}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function MonthGrid({ year, month, selected, onSelect, byDate, completedIds, today }) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const first = new Date(year, month, 1).getDay()
-  const pad = first === 0 ? 6 : first - 1
-  return (
-    <div>
-      <div className="grid grid-cols-7 mb-1">
-        {DAY_LETTERS.map((d, i) => <div key={i} className="text-center text-[11px] font-bold text-faint py-1">{d}</div>)}
-      </div>
-      <div className="grid grid-cols-7 gap-y-1">
-        {Array.from({ length: pad }).map((_, i) => <div key={`p${i}`} />)}
-        {Array.from({ length: daysInMonth }).map((_, i) => {
-          const d = toLocalDateStr(new Date(year, month, i + 1))
-          const sessions = byDate[d] ?? []
-          const done = sessions.some((sw) => isDone(sw, completedIds))
-          const on = d === selected
-          return (
-            <button key={d} onClick={() => onSelect(d)} className="flex flex-col items-center py-0.5">
-              <span className={cx('w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold tabular-nums', on ? 'bg-accent text-on-accent' : d === today ? 'text-accent ring-2 ring-inset ring-accent' : 'text-ink hover:bg-surface-2')}>
-                {i + 1}
-              </span>
-              <span className={cx('w-1.5 h-1.5 rounded-full mt-0.5', done ? 'bg-accent' : sessions.length ? 'bg-muted' : 'bg-transparent')} />
-            </button>
-          )
-        })}
-      </div>
-    </div>
   )
 }
 
@@ -203,16 +149,14 @@ function ProgramDetail({
 
 export default function TrainTab({
   client, scheduledWorkouts, completedIds, workoutLogs, workoutExercises, showToast,
-  view, setView, selectedDate, setSelectedDate, dayOpen, setDayOpen, assignment, programWorkouts,
+  view, setView, assignment, programWorkouts,
   savedWorkouts, onDemand, reloadScheduledWorkouts, reloadAssignment,
   onOpenWorkout, onStartWorkout, onPreviewWorkout, onBuildWorkout,
 }) {
   const today = toLocalDateStr()
+  const [selectedDate, setSelectedDate] = useState(today)
   const byDate = groupByDate(scheduledWorkouts)
   const selectedWorkouts = byDate[selectedDate] ?? []
-
-  const [monthView, setMonthView] = useState(false)
-  const [cal, setCal] = useState(() => ({ y: parseDay(selectedDate).getFullYear(), m: parseDay(selectedDate).getMonth() }))
 
   const [detailSw, setDetailSw] = useState(null) // options for one scheduled session
   const [dateMode, setDateMode] = useState(null) // 'move' | 'duplicate'
@@ -254,28 +198,13 @@ export default function TrainTab({
   const onDemandItems = onDemand.workouts.map((p) => programItem(p.days[0], exMap, { key: `od_${p.id}`, name: p.name, eyebrow: 'On demand', onDemand: true }))
   const savedItems = savedWorkouts.map((w) => savedItem(w))
   const hasPrograms = !!assignment || onDemand.programs.length > 0
-  const tab = hasPrograms && view === 'programs' ? 'programs' : 'workouts'
+  const hasWorkouts = fromCoach.length + myProgramItems.length + onDemandItems.length + savedItems.length > 0
+  const showTabs = hasWorkouts || hasPrograms
+  const tab = showTabs && view === 'programs' ? 'programs' : 'workouts'
   const progress = assignment ? programProgress({ assignment, programWorkouts, scheduledWorkouts, workoutLogs, today }) : null
 
-  /* ----- calendar ----- */
-  function selectDate(d) {
-    setSelectedDate(d)
-    const p = parseDay(d)
-    setCal({ y: p.getFullYear(), m: p.getMonth() })
-  }
-
-  function shift(dir) {
-    if (monthView) {
-      const m = cal.m + dir
-      setCal({ y: cal.y + Math.floor(m / 12), m: ((m % 12) + 12) % 12 })
-    } else {
-      selectDate(addDays(selectedDate, dir * 7))
-    }
-  }
-
-  function openPicker(date) {
-    if (date) selectDate(date)
-    setDayOpen(false)
+  /* ----- the selected day ----- */
+  function openPicker() {
     setSheetError(null)
     setPickerSelected(null)
     setPickerOpen(true)
@@ -431,30 +360,10 @@ export default function TrainTab({
     showToast(`${plural(res.count, 'session')} added from ${formatShortDate(start)}`)
   }
 
-  /* ----- today row ----- */
-  const todays = byDate[today] ?? []
-  const todayLeft = todays.find((sw) => !isDone(sw, completedIds))
-  const todayDoneSw = todays.find((sw) => isDone(sw, completedIds))
-  const next = nextSession(scheduledWorkouts, completedIds, today)
-
-  let todayRow
-  if (todayLeft) {
-    const exs = sessionExercises(todayLeft, exMap)
-    todayRow = { eyebrow: 'Today', title: workoutName(todayLeft), body: [exs.length ? plural(exs.length, 'exercise') : null, estMinutes(exs) ? `about ${estMinutes(exs)} min` : null].filter(Boolean).join(' · '), action: <Button size="sm" onClick={() => onOpenWorkout(todayLeft)}>Start</Button> }
-  } else if (todayDoneSw) {
-    todayRow = { eyebrow: 'Today', title: `${workoutName(todayDoneSw)} done`, body: next ? `Next up: ${workoutName(next)}, ${weekdayName(next.scheduled_date)}` : 'Nice work.', action: <Button variant="soft" size="sm" onClick={() => onOpenWorkout(todayDoneSw)}><Check size={15} strokeWidth={3} /> Done</Button> }
-  } else if (next) {
-    todayRow = { eyebrow: 'Rest day', title: `Next up: ${workoutName(next)}`, body: formatDateLabel(next.scheduled_date), action: <Button variant="secondary" size="sm" onClick={() => onOpenWorkout(next)}>Look</Button> }
-  } else {
-    todayRow = { eyebrow: 'Today', title: 'Nothing on yet', body: 'Pick a workout below or add one.', action: <Button variant="secondary" size="sm" onClick={() => openPicker(today)}><Plus size={15} /> Add</Button> }
-  }
-
-  const monthName = new Date(cal.y, cal.m).toLocaleDateString('en-AU', { month: 'long', year: 'numeric' })
-  const weekLabel = (() => {
-    const days = weekDays(selectedDate)
-    const f = (d) => parseDay(d).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
-    return days.includes(today) ? 'This week' : `${f(days[0])} to ${f(days[6])}`
-  })()
+  /* ----- the selected day ----- */
+  const canAdd = selectedDate >= addDays(today, -7)
+  // On an empty day from today on, point to the next session so there's always a next step.
+  const nextAfter = selectedWorkouts.length === 0 && selectedDate >= today ? nextSession(scheduledWorkouts, completedIds, selectedDate) : null
 
   // Picker groups for adding to a day.
   const pickerGroups = [
@@ -513,38 +422,55 @@ export default function TrainTab({
         }
       />
 
-      {/* Today, then the week */}
+      {/* One day at a time: back into what was done, forward into what's planned */}
       <div className="space-y-3">
-        <Card className="flex items-center gap-3 py-3.5">
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-bold text-muted">{todayRow.eyebrow}</p>
-            <p className="text-[17px] font-bold text-ink truncate">{todayRow.title}</p>
-            {todayRow.body && <p className="text-[13px] text-muted truncate">{todayRow.body}</p>}
-          </div>
-          {todayRow.action}
-        </Card>
-
-        <Card className="space-y-2 px-3 pt-2 pb-1.5">
-          <div className="flex items-center gap-1">
-            <button onClick={() => shift(-1)} aria-label="Previous" className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:bg-surface-2"><ChevronLeft size={20} /></button>
-            <p className="flex-1 text-center text-[15px] font-bold text-ink">{monthView ? monthName : weekLabel}</p>
-            <button onClick={() => shift(1)} aria-label="Next" className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:bg-surface-2"><ChevronRight size={20} /></button>
-          </div>
-          {monthView
-            ? <MonthGrid year={cal.y} month={cal.m} selected={selectedDate} onSelect={(d) => { selectDate(d); setDayOpen(true) }} byDate={byDate} completedIds={completedIds} today={today} />
-            : <WeekStrip selected={selectedDate} onSelect={(d) => { selectDate(d); setDayOpen(true) }} byDate={byDate} completedIds={completedIds} today={today} />}
-          <div className="flex items-center justify-between">
-            <button onClick={() => setMonthView((v) => !v)} className="h-9 px-2 text-[13px] font-bold text-accent">
-              {monthView ? 'Show week' : 'Show month'}
-            </button>
-            <button onClick={() => openPicker(selectedDate < addDays(today, -7) ? today : selectedDate)} className="h-9 px-2 text-[13px] font-bold text-accent inline-flex items-center gap-1">
-              <Plus size={15} /> Add a workout
-            </button>
-          </div>
-        </Card>
+        <DayNav date={selectedDate} onChange={setSelectedDate} />
+        {selectedWorkouts.length > 0 ? (
+          <Card padded={false} className="divide-y divide-line">
+            {selectedWorkouts.map((sw) => {
+              const done = isDone(sw, completedIds)
+              const exs = sessionExercises(sw, exMap)
+              const mins = estMinutes(exs)
+              const upcoming = !done && selectedDate >= today
+              return (
+                <div key={sw.id} className="flex items-center gap-1 pr-2">
+                  <Row onClick={() => onOpenWorkout(sw)} className="flex-1 min-w-0 pr-1">
+                    <DoneDot done={done} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[15px] font-bold text-ink truncate">{workoutName(sw)}</p>
+                      <p className="text-[13px] text-muted truncate">
+                        {[!done && !upcoming ? 'Not logged yet' : null, exs.length ? plural(exs.length, 'exercise') : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are'}
+                      </p>
+                    </div>
+                  </Row>
+                  {done ? (
+                    <Button variant="soft" size="sm" onClick={() => onOpenWorkout(sw)}><Check size={15} strokeWidth={3} /> Done</Button>
+                  ) : upcoming ? (
+                    <Button size="sm" onClick={() => onOpenWorkout(sw)}>Start</Button>
+                  ) : null}
+                  <button onClick={() => setDetailSw(sw)} aria-label="Workout options" className="w-10 h-10 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 shrink-0">
+                    <MoreHorizontal size={20} />
+                  </button>
+                </div>
+              )
+            })}
+          </Card>
+        ) : (
+          <Card className="space-y-1">
+            <p className="text-[15px] font-bold text-ink">Nothing planned for this day.</p>
+            {nextAfter && (
+              <button onClick={() => setSelectedDate(nextAfter.scheduled_date)} className="text-[13px] text-muted text-left">
+                Next up: <span className="font-bold text-accent">{workoutName(nextAfter)}, {formatShortDate(nextAfter.scheduled_date)}</span>
+              </button>
+            )}
+          </Card>
+        )}
+        {canAdd && (
+          <Button variant="secondary" block onClick={openPicker}><Plus size={18} /> Add a workout</Button>
+        )}
       </div>
 
-      {hasPrograms && (
+      {showTabs && (
         <Segmented
           options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
           value={tab}
@@ -578,7 +504,7 @@ export default function TrainTab({
               <ItemList items={savedItems} onOpen={setPreviewItem} />
             </section>
           )}
-          {fromCoach.length + myProgramItems.length + onDemandItems.length + savedItems.length === 0 && (
+          {!hasWorkouts && (
             <Card onClick={onBuildWorkout} as="button" className="flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Sparkles size={20} /></span>
               <div className="flex-1 min-w-0">
@@ -593,6 +519,9 @@ export default function TrainTab({
 
       {tab === 'programs' && (
         <div className="space-y-7">
+          {!hasPrograms && (
+            <p className="text-[15px] text-muted text-center px-4 py-2">No programs yet. Your coach can give you one, or start an on-demand program when they're available.</p>
+          )}
           {assignment && (
             <section>
               <SectionLabel>Your program</SectionLabel>
@@ -670,50 +599,12 @@ export default function TrainTab({
         />
       )}
 
-      {/* One day: its sessions, and adding another */}
-      <Sheet
-        open={dayOpen && !detailSw && !pickerOpen}
-        onClose={() => setDayOpen(false)}
-        title={formatDateLabel(selectedDate)}
-        footer={selectedDate >= addDays(today, -7) && <Button size="lg" block variant="secondary" onClick={() => openPicker()}><Plus size={18} /> Add a workout</Button>}
-      >
-        {selectedWorkouts.length > 0 ? (
-          <div className="rounded-[16px] border border-line divide-y divide-line">
-            {selectedWorkouts.map((sw) => {
-              const done = isDone(sw, completedIds)
-              const exs = sessionExercises(sw, exMap)
-              const mins = estMinutes(exs)
-              return (
-                <div key={sw.id} className="flex items-center">
-                  <Row onClick={() => { setDayOpen(false); onOpenWorkout(sw) }} className="flex-1 min-w-0 pr-1">
-                    <DoneDot done={done} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-bold text-ink truncate">{workoutName(sw)}</p>
-                      <p className="text-[13px] text-muted">
-                        {[done ? 'Done' : null, exs.length ? plural(exs.length, 'exercise') : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are'}
-                      </p>
-                    </div>
-                  </Row>
-                  <button onClick={() => setDetailSw(sw)} aria-label="Workout options" className="w-11 h-11 mr-1 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 shrink-0">
-                    <MoreHorizontal size={20} />
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="text-[15px] text-muted py-2">
-            {selectedDate >= today ? 'Rest day. Want to add something?' : selectedDate >= addDays(today, -7) ? 'Nothing on this day. Add a session you did?' : 'No session this day.'}
-          </p>
-        )}
-      </Sheet>
-
       {/* Options for a scheduled session */}
       <Sheet open={!!detailSw && !dateMode} onClose={() => setDetailSw(null)} title={detailSw ? workoutName(detailSw) : ''}>
         {detailSw && (
           <div className="space-y-2.5">
             <p className="text-[13px] text-muted -mt-1 mb-3">{formatShortDate(detailSw.scheduled_date)}</p>
-            <Button size="lg" block onClick={() => { onPreviewWorkout(detailSw); setDetailSw(null); setDayOpen(false) }}>Open workout</Button>
+            <Button size="lg" block onClick={() => { onPreviewWorkout(detailSw); setDetailSw(null) }}>Open workout</Button>
             <Button variant="secondary" size="lg" block onClick={() => { setSheetError(null); setPickedDate(today); setDateMode('move') }}>Move to another day</Button>
             <Button variant="secondary" size="lg" block onClick={() => { setSheetError(null); setPickedDate(today); setDateMode('duplicate') }}>Copy to another day</Button>
           </div>

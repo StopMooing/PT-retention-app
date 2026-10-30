@@ -245,3 +245,6 @@ if (process.env.SOLO_PROGRAM) {
   const beginner = t.programs.find((p) => p.name === '4-Week Beginner Strength')
   t.program_assignments = [{ id: id(), program_id: beginner.id, client_id: CLIENT, assigned_by: CLIENT_USER, start_date: day(-8), is_active: true, created_at: ts(-8) }]
 }
+
+// NO_PROGRAM=1: Jane has no program at all (with NOT_MIGRATED=1, the Programs side is empty).
+if (process.env.NO_PROGRAM) module.exports.tables.program_assignments = []
