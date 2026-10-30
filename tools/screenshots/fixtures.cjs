@@ -140,3 +140,32 @@ module.exports = {
     pt_notes: [], meal_plans: [], meals: [], meal_foods: [], meal_templates: [], meal_template_foods: [], foods: [],
   },
 }
+
+// ---- Client app extras (appended for the client redesign screenshots) ----
+{
+  const t = module.exports.tables
+  // The app itself writes pb_type '1rm' / 'best_set' / 'volume'.
+  ;[['Barbell Back Squat', 88.5, -3], ['Barbell Bench Press', 63, -8], ['Deadlift', 104, -12], ['Romanian Deadlift', 71, -20]].forEach(([name, value, off]) => {
+    t.personal_bests.push({ id: id(), client_id: CLIENT, exercise_id: ex(name).id, pb_type: '1rm', value, reps_completed: null, weight_kg: null, achieved_at: ts(off), scheduled_workout_id: null })
+  })
+  const svg = (a, b) => 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect width="300" height="400" fill="${a}"/><circle cx="150" cy="150" r="60" fill="${b}"/><rect x="90" y="220" width="120" height="160" rx="40" fill="${b}"/></svg>`)
+  t.progress_photos.push(
+    { id: id(), client_id: CLIENT, photo_url: svg('#C9C3B6', '#8A8478'), note: null, taken_date: day(-2), created_at: ts(-2) },
+    { id: id(), client_id: CLIENT, photo_url: svg('#BFC9C2', '#7E8C83'), note: null, taken_date: day(-30), created_at: ts(-30) },
+  )
+  t.saved_meals.push({
+    id: id(), client_id: CLIENT, name: 'High protein day', calories: 1850, protein_g: 150, carbs_g: 170, fats_g: 55, created_at: ts(-4),
+    content: JSON.stringify({ title: 'High protein day', meals: [
+      { name: 'Oats with whey', meal_type: 'breakfast', description: '', calories: 450, protein_g: 40, carbs_g: 55, fats_g: 8 },
+      { name: 'Chicken burrito bowl', meal_type: 'lunch', description: '', calories: 650, protein_g: 55, carbs_g: 70, fats_g: 15 },
+    ] }),
+  })
+  t.saved_workouts.push({
+    id: id(), client_id: CLIENT, name: 'Hotel dumbbell session', created_at: ts(-9),
+    content: JSON.stringify({ title: 'Hotel dumbbell session', exercises: [
+      { name: 'Incline Dumbbell Press', sets: 3, reps: '10', rest_seconds: 60 }, { name: 'Walking Lunge', sets: 3, reps: '12 each', rest_seconds: 60 },
+      { name: 'Lateral Raise', sets: 3, reps: '15', rest_seconds: 45 },
+    ] }),
+  })
+  t.resources.push({ id: id(), title: 'Protein made simple', description: 'A one page guide to hitting your protein most days.', type: 'pdf', url: 'https://example.com/protein.pdf', file_path: null, is_global: false, created_by: COACH, created_at: ts(-10) })
+}
