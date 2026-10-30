@@ -1,7 +1,8 @@
 // About the client: goal, injuries, private coach notes and progress photos.
 import { useState } from 'react'
 import { Flag, AlertCircle, FileText, Camera, Plus, Pencil } from 'lucide-react'
-import { Button, EmptyState } from '../../ui'
+import { Button, EmptyState, PhotoViewer } from '../../ui'
+import { usePhotoUrls } from '../../lib/photos'
 import { Panel, TextArea } from './parts'
 import { formatDate, relativeDay, firstName } from '../lib'
 
@@ -53,6 +54,8 @@ export default function NotesTab({ client, clientGoal, onSaveGoal, clientLimitat
   const [text, setText] = useState('')
   const [saving, setSaving] = useState(false)
   const name = firstName(client.full_name)
+  const photoUrls = usePhotoUrls(progressPhotos)
+  const [viewing, setViewing] = useState(null)
 
   async function saveNote() {
     setSaving(true)
@@ -100,14 +103,23 @@ export default function NotesTab({ client, clientGoal, onSaveGoal, clientLimitat
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
               {progressPhotos.map((photo) => (
-                <figure key={photo.id}>
-                  <img src={photo.photo_url} alt="" className="w-full aspect-square rounded-[14px] object-cover bg-surface-2" />
-                  <figcaption className="text-xs text-muted mt-1">
+                <button key={photo.id} onClick={() => setViewing(photo)} className="text-left" aria-label={`View photo from ${formatDate(photo.taken_date || photo.created_at)}`}>
+                  {photoUrls[photo.id]
+                    ? <img src={photoUrls[photo.id]} alt="" className="w-full aspect-square rounded-[14px] object-cover bg-surface-2" />
+                    : <span className="block w-full aspect-square rounded-[14px] bg-surface-2" />}
+                  <span className="block text-xs text-muted mt-1">
                     {formatDate(photo.taken_date || photo.created_at, { day: 'numeric', month: 'short' })}
-                  </figcaption>
-                </figure>
+                  </span>
+                </button>
               ))}
             </div>
+          )}
+          {viewing && (
+            <PhotoViewer
+              src={photoUrls[viewing.id]}
+              caption={formatDate(viewing.taken_date || viewing.created_at)}
+              onClose={() => setViewing(null)}
+            />
           )}
         </Panel>
       </div>

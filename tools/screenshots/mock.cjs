@@ -98,7 +98,23 @@ async function install(page, role) {
     if (path.startsWith('/auth/v1/token')) return user ? json(200, sessionFor(user)) : json(400, { error: 'invalid_grant', error_description: 'Invalid login credentials' })
     if (path.startsWith('/auth/v1/logout')) return route.fulfill({ status: 204 })
     if (path.startsWith('/auth/v1')) return json(200, {})
-    if (path.startsWith('/storage/v1')) return json(200, [])
+    if (path.startsWith('/storage/v1')) {
+      // Signed links for the private progress-photos bucket: echo a link per path, then
+      // serve a placeholder picture when the browser loads it.
+      const sign = path.match(/^\/storage\/v1\/object\/sign\/([^/]+)(?:\/(.+))?$/)
+      if (sign && req.method() === 'POST' && !sign[2]) {
+        let paths = []
+        try { paths = req.postDataJSON().paths || [] } catch {}
+        return json(200, paths.map((p) => ({ path: p, signedURL: `/object/sign/${sign[1]}/${p}?token=mock`, error: null })))
+      }
+      if (sign && req.method() === 'GET') {
+        const n = (sign[2] || '').length % 2
+        const [a, b] = n ? ['#BFC9C2', '#7E8C83'] : ['#C9C3B6', '#8A8478']
+        return route.fulfill({ status: 200, contentType: 'image/svg+xml', headers: { 'access-control-allow-origin': '*' }, body: `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect width="300" height="400" fill="${a}"/><circle cx="150" cy="150" r="60" fill="${b}"/><rect x="90" y="220" width="120" height="160" rx="40" fill="${b}"/></svg>` })
+      }
+      if (req.method() === 'POST' || req.method() === 'PUT') return json(200, { Key: path.replace('/storage/v1/object/', ''), Id: 'mock' })
+      return json(200, [])
+    }
     if (path.startsWith('/rest/v1/rpc/')) {
       const fn = path.split('/').pop()
       if (fn === 'resolve_exercise_ids') {

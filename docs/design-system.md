@@ -55,7 +55,7 @@ Use the semantic Tailwind names. They switch automatically in dark mode.
 ## Building blocks (`src/ui`)
 `Mark`, `Logo`, `PageTitle`, `SectionLabel`, `Card`, `Button` (primary / secondary / soft /
 ghost / danger, sm / md / lg), `Chip` (neutral / accent / warn / bad / solid), `Ring`,
-`Segmented`, `Stat`, `Avatar`, `Sheet`, `EmptyState` (coach side only), `ThemeSwitch`,
+`Segmented`, `Stat`, `Avatar`, `Sheet`, `PhotoViewer`, `EmptyState` (coach side only), `ThemeSwitch`,
 `Field`. Icons: `lucide-react`, 20px in rows, 22px in the tab bar, stroke 2.
 
 ## Patterns

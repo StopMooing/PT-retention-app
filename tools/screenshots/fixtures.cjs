@@ -172,9 +172,12 @@ module.exports = {
     t.personal_bests.push({ id: id(), client_id: CLIENT, exercise_id: ex(name).id, pb_type: '1rm', value, reps_completed: null, weight_kg: null, achieved_at: ts(off), scheduled_workout_id: null })
   })
   const svg = (a, b) => 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect width="300" height="400" fill="${a}"/><circle cx="150" cy="150" r="60" fill="${b}"/><rect x="90" y="220" width="120" height="160" rx="40" fill="${b}"/></svg>`)
+  // Progress photos are in a private bucket: new rows hold the bare storage path, older
+  // rows a full public URL. The mock signs both and serves a placeholder picture.
+  void svg
   t.progress_photos.push(
-    { id: id(), client_id: CLIENT, photo_url: svg('#C9C3B6', '#8A8478'), note: null, taken_date: day(-2), created_at: ts(-2) },
-    { id: id(), client_id: CLIENT, photo_url: svg('#BFC9C2', '#7E8C83'), note: null, taken_date: day(-30), created_at: ts(-30) },
+    { id: id(), client_id: CLIENT, photo_url: `${CLIENT_USER}/progress/1761800000000.jpg`, note: null, taken_date: day(-2), created_at: ts(-2) },
+    { id: id(), client_id: CLIENT, photo_url: `https://ksataubrattfspjpftlk.supabase.co/storage/v1/object/public/progress-photos/${CLIENT_USER}/progress/175900000000.jpg`, note: null, taken_date: day(-30), created_at: ts(-30) },
   )
   t.saved_meals.push({
     id: id(), client_id: CLIENT, name: 'High protein day', calories: 1850, protein_g: 150, carbs_g: 170, fats_g: 55, created_at: ts(-4),
@@ -197,4 +200,10 @@ module.exports = {
 if (process.env.NO_TARGETS) {
   const j = module.exports.tables.clients.find((c) => c.id === CLIENT)
   Object.assign(j, { calorie_target: null, protein_target_g: null, carbs_target_g: null, fats_target_g: null })
+}
+
+// CHECKIN_DUE=1: Jane's last check-in was 8 days ago, so a new one is due today.
+if (process.env.CHECKIN_DUE) {
+  const t = module.exports.tables
+  t.checkins = t.checkins.filter((c) => c.client_id !== CLIENT || c.submitted_at < ts(-7, 18))
 }

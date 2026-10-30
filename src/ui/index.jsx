@@ -218,6 +218,35 @@ export function Sheet({ open, onClose, title, children, footer }) {
   )
 }
 
+/* A photo filling the screen, for tapping a thumbnail to see it big. Dark backdrop in
+   both modes (it's a photo viewer). footer: optional actions under the photo. */
+export function PhotoViewer({ src, caption, onClose, footer }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose?.()
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [onClose])
+  return (
+    <div role="dialog" aria-modal="true" aria-label={caption || 'Photo'} className="fixed inset-0 z-[70] flex flex-col" style={{ backgroundColor: 'rgba(0,0,0,0.92)', color: 'rgba(255,255,255,0.95)' }}>
+      <div className="flex items-center justify-between gap-3 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-2">
+        <p className="text-[15px] font-bold truncate">{caption}</p>
+        <button onClick={onClose} aria-label="Close" className="w-10 h-10 -mr-2 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
+          <X size={20} />
+        </button>
+      </div>
+      <div className="flex-1 min-h-0 flex items-center justify-center px-4" onClick={onClose}>
+        {src && <img src={src} alt={caption || ''} className="max-w-full max-h-full object-contain rounded-[12px]" onClick={(e) => e.stopPropagation()} />}
+      </div>
+      {footer && <div className="px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">{footer}</div>}
+    </div>
+  )
+}
+
 /* Coach-side only: a calm placeholder for an empty list. Client screens hide empty
    sections instead (house rule). */
 export function EmptyState({ icon: Icon, title, body, action }) {
