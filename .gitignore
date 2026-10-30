@@ -39,3 +39,6 @@ Google Chrome
 
 # local screenshots
 shots/
+
+# temporary copies used by parallel workers
+.claude/worktrees/
