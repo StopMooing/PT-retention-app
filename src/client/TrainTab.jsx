@@ -407,8 +407,11 @@ export default function TrainTab({
 
   async function handleStopProgram() {
     setBusy(true)
-    const { error } = await stopProgram(assignment, client)
-    await reloadAssignment()
+    const upcoming = scheduledWorkouts
+      .filter((sw) => programDayIds.has(sw.program_workout_id) && sw.scheduled_date >= today && !isDone(sw, completedIds))
+      .map((sw) => sw.id)
+    const { error } = await stopProgram(assignment, client, upcoming)
+    await Promise.all([reloadAssignment(), reloadScheduledWorkouts()])
     setBusy(false)
     setConfirmStop(false)
     if (error) { showToast("Couldn't stop that program. Try again.", { ms: 4000 }); return }
@@ -795,7 +798,7 @@ export default function TrainTab({
           </div>
         }
       >
-        <p className="text-[15px] text-muted">Sessions already on your calendar stay there. You can start this or another program any time.</p>
+        <p className="text-[15px] text-muted">Its upcoming sessions come off your calendar. Sessions you've done stay in your history. You can start this or another program any time.</p>
       </Sheet>
     </div>
   )

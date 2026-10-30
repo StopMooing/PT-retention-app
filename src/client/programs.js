@@ -25,15 +25,24 @@ export async function scheduleProgramDays({ client, days, startDate, scheduledWo
   return { error, count: error ? 0 : rows.length }
 }
 
-// Stop a program the client started themselves. Sessions already on the calendar stay.
-export async function stopProgram(assignment, client) {
+// Stop a program the client started themselves. upcomingIds: that program's sessions from
+// today on that haven't been done; they come off the calendar. Done sessions stay.
+export async function stopProgram(assignment, client, upcomingIds = []) {
   const { error } = await supabase
     .from('program_assignments')
     .update({ is_active: false })
     .eq('id', assignment.id)
     .eq('assigned_by', client.user_id)
-  if (error) console.error('Stop program error:', error)
-  return { error }
+  if (error) {
+    console.error('Stop program error:', error)
+    return { error }
+  }
+  if (upcomingIds.length > 0) {
+    const { error: clearError } = await supabase.from('scheduled_workouts').delete().eq('client_id', client.id).in('id', upcomingIds)
+    // The program is already stopped; leftover sessions are harmless, so only log this.
+    if (clearError) console.error('Clear upcoming sessions error:', clearError)
+  }
+  return { error: null }
 }
 
 // Start an on-demand program: one active assignment at a time, so a program the client
