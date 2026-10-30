@@ -8,7 +8,7 @@ import { toLocalDateStr, formatDateLabel } from './client/dates'
 import { completedKeys, workoutName } from './client/metrics'
 import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
-  fetchStrength, fetchResources, fetchByClient,
+  fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName,
 } from './client/data'
 import { saveAiWorkout, saveAiMeal } from './client/aiSaves'
 import { Loading, Toast } from './client/common'
@@ -50,11 +50,14 @@ export default function ClientApp() {
   const [weightLogs, setWeightLogs] = useState([])
   const [strength, setStrength] = useState({ personalBests: [], heavySets: [] })
   const [nutritionTargets, setNutritionTargets] = useState({ calories: 0, protein: 0, carbs: 0, fats: 0 })
+  const [onDemand, setOnDemand] = useState({ workouts: [], programs: [], exercises: {} })
+  const [coachName, setCoachName] = useState(null)
 
   // Navigation
   const [tab, setTab] = useState('home')
-  const [trainView, setTrainView] = useState('schedule')
+  const [trainView, setTrainView] = useState('workouts')
   const [trainDate, setTrainDate] = useState(() => toLocalDateStr())
+  const [trainDayOpen, setTrainDayOpen] = useState(false)
   const [foodView, setFoodView] = useState('log')
   const [addFoodOpen, setAddFoodOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
@@ -81,21 +84,17 @@ export default function ClientApp() {
       setClient(clientRow)
       const id = clientRow.id
 
-      const { data: asgn } = await supabase.from('program_assignments').select('id, start_date, programs(id, name)').eq('client_id', id).eq('is_active', true).maybeSingle()
-      setAssignment(asgn)
-      if (asgn) {
-        const { data: pwData } = await supabase.from('program_workouts').select('id, name, day_number').eq('program_id', asgn.programs.id).order('day_number', { ascending: true })
-        const fetchedPW = pwData ?? []
-        setProgramWorkouts(fetchedPW)
-        if (fetchedPW.length > 0) setAllProgramExercises(await fetchExercisesFor(fetchedPW.map((pw) => pw.id)))
-      }
+      const asgn = await fetchAssignment(id)
+      setAssignment(asgn.assignment)
+      setProgramWorkouts(asgn.programWorkouts)
+      setAllProgramExercises(asgn.exercises)
 
       const sw = await fetchScheduled(id)
       setScheduledWorkouts(sw)
       const pwIds = [...new Set(sw.map((s) => s.program_workout_id).filter(Boolean))]
       if (pwIds.length > 0) setWorkoutExercises(await fetchExercisesFor(pwIds))
 
-      const [logs, food, res, savedW, savedM, ci, photos, weights, str] = await Promise.all([
+      const [logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach] = await Promise.all([
         fetchWorkoutLogs(id),
         fetchFoodLogs(id),
         fetchResources(clientRow.pt_id),
@@ -105,7 +104,11 @@ export default function ClientApp() {
         fetchByClient('progress_photos', id, 'taken_date'),
         fetchWeightLogs(id),
         fetchStrength(id),
+        fetchOnDemand(),
+        fetchCoachName(clientRow.pt_id),
       ])
+      setOnDemand(library)
+      setCoachName(coach)
       setWorkoutLogs(logs)
       setCompletedIds(completedKeys(logs))
       setFoodLogs(food)
@@ -157,9 +160,21 @@ export default function ClientApp() {
 
   // Exercises for any program day: what was loaded for the schedule, falling back to the
   // whole program, so a day scheduled after the app opened still shows its exercises.
-  const exerciseMap = useMemo(() => ({ ...allProgramExercises, ...workoutExercises }), [allProgramExercises, workoutExercises])
+  const exerciseMap = useMemo(
+    () => ({ ...onDemand.exercises, ...allProgramExercises, ...workoutExercises }),
+    [onDemand.exercises, allProgramExercises, workoutExercises],
+  )
 
   const clientId = client?.id
+  // After the client starts or stops a program.
+  const reloadAssignment = useCallback(async () => {
+    if (!clientId) return
+    const asgn = await fetchAssignment(clientId)
+    setAssignment(asgn.assignment)
+    setProgramWorkouts(asgn.programWorkouts)
+    setAllProgramExercises(asgn.exercises)
+  }, [clientId])
+
   const reloadScheduledWorkouts = useCallback(async () => {
     if (!clientId) return
     const sw = await fetchScheduled(clientId)
@@ -206,7 +221,7 @@ export default function ClientApp() {
     setSavedWorkouts((prev) => [data, ...prev])
     setAiMode(null)
     setTab('train')
-    setTrainView('program')
+    setTrainView('workouts')
     showToast(notice || 'Workout saved', notice ? { ms: 6000 } : undefined)
   }
 
@@ -301,11 +316,12 @@ export default function ClientApp() {
             foodLogs={foodLogs}
             nutritionTargets={nutritionTargets}
             personalBests={strength.personalBests}
+            coachName={coachName}
             onOpenWorkout={openWorkout}
             onOpenProfile={() => setProfileOpen(true)}
             onBuildWorkout={openWorkoutAI}
             onLogFood={() => { setFoodView('log'); setAddFoodOpen(true); goTab('food') }}
-            onPickDay={(d) => { setTrainDate(d); setTrainView('schedule'); goTab('train') }}
+            onPickDay={(d) => { setTrainDate(d); setTrainDayOpen(true); goTab('train') }}
             onSeeCheckins={() => goTab('progress')}
           />
         )}
@@ -316,13 +332,16 @@ export default function ClientApp() {
             setView={setTrainView}
             selectedDate={trainDate}
             setSelectedDate={setTrainDate}
+            dayOpen={trainDayOpen}
+            setDayOpen={setTrainDayOpen}
             assignment={assignment}
             programWorkouts={programWorkouts}
-            allProgramExercises={allProgramExercises}
             savedWorkouts={savedWorkouts}
-            setScheduledWorkouts={setScheduledWorkouts}
+            onDemand={onDemand}
             reloadScheduledWorkouts={reloadScheduledWorkouts}
+            reloadAssignment={reloadAssignment}
             onOpenWorkout={openWorkout}
+            onStartWorkout={(sw) => setLoggingWorkout({ ...sw, _existingLog: null })}
             onPreviewWorkout={(sw) => setPreviewWorkout(sw)}
             onBuildWorkout={openWorkoutAI}
           />
