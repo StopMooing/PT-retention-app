@@ -8,6 +8,7 @@ import { capitalise } from './foods'
 const ICONS = { pdf: FileText, podcast: Headphones, article: Globe, video: Play, other: BookOpen }
 const ACTION = { pdf: 'Open PDF', podcast: 'Listen', video: 'Watch' }
 const cx = (...c) => c.filter(Boolean).join(' ')
+const typeLabel = (t) => (t === 'pdf' ? 'PDF' : capitalise(t))
 
 export default function ResourcesPage({ resources, onBack }) {
   const [filter, setFilter] = useState('all')
@@ -22,7 +23,7 @@ export default function ResourcesPage({ resources, onBack }) {
           <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
             {types.map((t) => (
               <button key={t} onClick={() => setFilter(t)} className={cx('h-9 px-3.5 rounded-full text-sm font-bold whitespace-nowrap', filter === t ? 'bg-accent text-on-accent' : 'bg-surface-2 text-ink')}>
-                {t === 'all' ? 'All' : capitalise(t)}
+                {t === 'all' ? 'All' : typeLabel(t)}
               </button>
             ))}
           </div>
@@ -38,7 +39,7 @@ export default function ResourcesPage({ resources, onBack }) {
                   <p className="text-[15px] font-bold text-ink">{r.title}</p>
                   {r.description && <p className="text-[13px] text-muted mt-0.5 leading-relaxed">{r.description}</p>}
                 </div>
-                <Chip>{capitalise(r.type || 'other')}</Chip>
+                <Chip>{typeLabel(r.type || 'other')}</Chip>
               </div>
               {link && (
                 <a

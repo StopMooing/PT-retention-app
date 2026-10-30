@@ -17,6 +17,12 @@ export function addDays(dateStr, n) {
   return toLocalDateStr(d)
 }
 
+// Whole calendar days from one 'YYYY-MM-DD' to another (b minus a). Rounded, so a
+// daylight saving change in between does not knock it off by one.
+export function daysBetween(a, b) {
+  return Math.round((parseDay(b).getTime() - parseDay(a).getTime()) / 86400000)
+}
+
 // Monday of the week that dateStr falls in, as 'YYYY-MM-DD'.
 export function mondayOf(dateStr) {
   const d = parseDay(dateStr)

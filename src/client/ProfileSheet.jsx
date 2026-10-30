@@ -7,11 +7,14 @@ import { Sheet, Avatar, ThemeSwitch, Button } from '../ui'
 export default function ProfileSheet({ open, onClose, client, setClient, hasResources, onOpenResources }) {
   const fileRef = useRef(null)
   const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState(null)
 
   async function handleUpload(e) {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file || !client) return
     setUploading(true)
+    setError(null)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const ext = file.name.split('.').pop()
@@ -19,10 +22,13 @@ export default function ProfileSheet({ open, onClose, client, setClient, hasReso
       const { error: uploadError } = await supabase.storage.from('profile-photos').upload(path, file, { upsert: true })
       if (uploadError) throw uploadError
       const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path)
-      await supabase.from('clients').update({ profile_photo_url: publicUrl }).eq('id', client.id)
+      const { error: rowError } = await supabase.from('clients').update({ profile_photo_url: publicUrl }).eq('id', client.id)
+      if (rowError) throw rowError
       setClient((prev) => ({ ...prev, profile_photo_url: publicUrl }))
-    } catch (err) { console.error(err) }
-    finally { setUploading(false) }
+    } catch (err) {
+      console.error('Profile photo error:', err)
+      setError("Couldn't change your photo. Try again.")
+    } finally { setUploading(false) }
   }
 
   return (
@@ -42,6 +48,7 @@ export default function ProfileSheet({ open, onClose, client, setClient, hasReso
             <button onClick={() => fileRef.current?.click()} className="text-[13px] font-bold text-accent mt-1">{uploading ? 'Uploading...' : 'Change photo'}</button>
           </div>
         </div>
+        {error && <p role="alert" className="text-[13px] font-semibold text-bad -mt-3">{error}</p>}
 
         <div>
           <p className="text-sm font-semibold text-ink mb-2">Appearance</p>

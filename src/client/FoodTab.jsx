@@ -80,10 +80,29 @@ export default function FoodTab({
   const meals = MEAL_ORDER.map((type) => ({ type, items: dayLogs.filter((f) => (MEAL_ORDER.includes(f.meal_type?.toLowerCase()) ? f.meal_type.toLowerCase() : 'other') === type) })).filter((m) => m.items.length > 0)
   const kcalLeft = targets.kcal - totals.kcal
 
-  async function handleDeleteFood(id) {
-    await supabase.from('food_logs').delete().eq('id', id)
-    setFoodLogs((prev) => prev.filter((f) => f.id !== id))
-    refreshFoodLogs()
+  // One tap removes it; the toast offers Undo for a few seconds, which puts the same
+  // values back as a new row.
+  async function handleDeleteFood(food) {
+    const { error } = await supabase.from('food_logs').delete().eq('id', food.id)
+    if (error) {
+      console.error('Delete food error:', error)
+      showToast("Couldn't remove that. Try again.")
+      return
+    }
+    setFoodLogs((prev) => prev.filter((f) => f.id !== food.id))
+    showToast(`Removed ${food.food_name}`, { action: { label: 'Undo', onClick: () => undoDelete(food) } })
+  }
+
+  async function undoDelete(food) {
+    const row = { ...food }
+    delete row.id
+    const { data, error } = await supabase.from('food_logs').insert(row).select().single()
+    if (error) {
+      console.error('Undo delete food error:', error)
+      showToast("Couldn't put that back. Try adding it again.")
+      return
+    }
+    setFoodLogs((prev) => [data, ...prev])
   }
 
   // Add a saved meal (or one dish from it) to the selected day.
@@ -102,7 +121,7 @@ export default function FoodTab({
       const { data, error } = await supabase.from('food_logs').insert(rows).select()
       if (error) {
         console.error('Add meal error:', error)
-        alert('Could not add to log: ' + error.message)
+        showToast("Couldn't add that to your log. Try again.")
         return
       }
       setFoodLogs((prev) => [...(data ?? []), ...prev])
@@ -111,17 +130,20 @@ export default function FoodTab({
       showToast(`Added to ${date === today ? 'today' : formatDateLabel(date)}`)
     } catch (e) {
       console.error('Add meal exception:', e)
-      alert('Something went wrong: ' + e.message)
+      showToast("Couldn't add that to your log. Try again.")
     }
   }
 
   async function handleDeleteSavedMeal(id) {
-    if (!window.confirm('Delete this saved meal? This cannot be undone.')) return
+    if (!window.confirm("Delete this saved meal? You can't undo this.")) return
     try {
       const { error } = await supabase.from('saved_meals').delete().eq('id', id)
-      if (error) { alert('Could not delete: ' + error.message); return }
+      if (error) throw error
       setSavedMeals((prev) => prev.filter((m) => m.id !== id))
-    } catch (e) { alert('Could not delete: ' + e.message) }
+    } catch (e) {
+      console.error('Delete saved meal error:', e)
+      showToast("Couldn't delete that meal. Try again.")
+    }
   }
 
   function openAdd(meal) {
@@ -156,7 +178,7 @@ export default function FoodTab({
           </Card>
           {targets.kcal > 0 ? (
             <p className="text-[13px] text-muted text-center tabular-nums">
-              {kcalLeft >= 0 ? `${kcalLeft.toLocaleString('en-AU')} kcal to go` : `${(-kcalLeft).toLocaleString('en-AU')} kcal over target`}
+              {kcalLeft >= 0 ? `${kcalLeft.toLocaleString('en-AU')} kcal to go` : `${(-kcalLeft).toLocaleString('en-AU')} kcal above target`}
             </p>
           ) : (
             <p className="text-[13px] text-muted text-center">
@@ -188,7 +210,7 @@ export default function FoodTab({
                         <p className="text-[15px] font-bold text-ink truncate">{f.food_name}</p>
                         <p className="text-[13px] text-muted tabular-nums">{Math.round(f.calories || 0)} kcal · {macroLine(f)}</p>
                       </div>
-                      <button onClick={() => handleDeleteFood(f.id)} aria-label={`Remove ${f.food_name}`} className="w-10 h-10 rounded-full flex items-center justify-center text-faint hover:text-bad hover:bg-surface-2 shrink-0">
+                      <button onClick={() => handleDeleteFood(f)} aria-label={`Remove ${f.food_name}`} className="w-10 h-10 rounded-full flex items-center justify-center text-faint hover:text-bad hover:bg-surface-2 shrink-0">
                         <X size={18} />
                       </button>
                     </div>
@@ -198,11 +220,14 @@ export default function FoodTab({
             )
           })}
 
-          <div className="pt-4 flex justify-center">
-            <Button variant="ghost" size="sm" onClick={() => setTdeeOpen(true)} className="text-muted">
-              <Calculator size={16} /> Work out my calorie target
-            </Button>
-          </div>
+          {/* Only when the coach hasn't set targets: theirs come first. */}
+          {!client.calorie_target && (
+            <div className="pt-4 flex justify-center">
+              <Button variant="ghost" size="sm" onClick={() => setTdeeOpen(true)} className="text-muted">
+                <Calculator size={16} /> Work out my calorie target
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

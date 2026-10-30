@@ -49,7 +49,7 @@ export async function fetchFoodLogs(clientId) {
 }
 
 export async function fetchWeightLogs(clientId) {
-  const { data } = await supabase.from('body_weight_logs').select('id, weight_kg, logged_date').eq('client_id', clientId).order('logged_date', { ascending: false })
+  const { data } = await supabase.from('body_weight_logs').select('id, weight_kg, logged_date, logged_by, created_at').eq('client_id', clientId).order('logged_date', { ascending: false })
   return data ?? []
 }
 

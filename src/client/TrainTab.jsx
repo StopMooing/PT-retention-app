@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, MoreHorizontal, Plus, Sparkles, CalendarPlus
 import { supabase } from '../supabase'
 import { PageTitle, Card, Button, Segmented, Sheet, SectionLabel, Field } from '../ui'
 import { toLocalDateStr, formatDateLabel, formatShortDate, weekDays, addDays, parseDay } from './dates'
-import { isDone, workoutName, groupByDate, estMinutes } from './metrics'
+import { isDone, workoutName, groupByDate, estMinutes, sessionExercises, plural } from './metrics'
 import { DayGrid, DoneDot, Loading } from './common'
 import WorkoutPreview from './WorkoutPreview'
 
@@ -87,7 +87,7 @@ function HistoryList({ client }) {
       try {
         const { data: logs, error } = await supabase
           .from('workout_logs')
-          .select('id, client_id, program_workout_id, logged_at, completed, total_volume_kg')
+          .select('id, client_id, program_workout_id, scheduled_workout_id, logged_at, completed, total_volume_kg')
           .eq('client_id', client.id)
           .eq('completed', true)
           .order('logged_at', { ascending: false })
@@ -99,7 +99,15 @@ function HistoryList({ client }) {
           const { data: pwData } = await supabase.from('program_workouts').select('id, name').in('id', pwIds)
           if (pwData) pwData.forEach((pw) => { nameMap[pw.id] = pw.name })
         }
-        if (!cancelled) setState({ loading: false, logs: (logs ?? []).map((l) => ({ ...l, _workoutName: nameMap[l.program_workout_id] || null })) })
+        // AI and saved workouts have no program day: use the saved workout's name.
+        const swIds = [...new Set((logs ?? []).filter((l) => !l.program_workout_id && l.scheduled_workout_id).map((l) => l.scheduled_workout_id))]
+        const savedNames = {}
+        if (swIds.length > 0) {
+          const { data: swData, error: swErr } = await supabase.from('scheduled_workouts').select('id, saved_workouts(name)').in('id', swIds)
+          if (swErr) console.error('History saved workout names error:', swErr)
+          for (const sw of swData ?? []) if (sw.saved_workouts?.name) savedNames[sw.id] = sw.saved_workouts.name
+        }
+        if (!cancelled) setState({ loading: false, logs: (logs ?? []).map((l) => ({ ...l, _workoutName: nameMap[l.program_workout_id] || savedNames[l.scheduled_workout_id] || null })) })
       } catch (e) {
         console.error('History load error:', e)
         if (!cancelled) setState({ loading: false, logs: [] })
@@ -149,14 +157,14 @@ function HistoryList({ client }) {
             {open && (
               <div className="px-4 pb-4 space-y-3">
                 {sets.length === 0 ? (
-                  <p className="text-[13px] text-muted">No sets were recorded for this session.</p>
+                  <p className="text-[13px] text-muted">This one was logged without sets.</p>
                 ) : Object.values(byEx).map((ex) => (
                   <div key={ex.name}>
                     <p className="text-[13px] font-bold text-ink mb-1.5">{ex.name}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {ex.sets.map((s) => (
                         <span key={s.id} className="h-8 px-3 rounded-full bg-surface-2 text-[13px] font-semibold text-ink inline-flex items-center tabular-nums">
-                          {s.weight_kg > 0 ? `${s.weight_kg} kg x ${s.reps_completed}` : `${s.reps_completed} reps`}
+                          {s.weight_kg > 0 ? `${s.weight_kg} kg x ${s.reps_completed}` : plural(s.reps_completed, 'rep')}
                         </span>
                       ))}
                     </div>
@@ -199,6 +207,8 @@ export default function TrainTab({
   const [savedPreview, setSavedPreview] = useState(null)
   const [savedToSchedule, setSavedToSchedule] = useState(null)
   const [scheduleDate, setScheduleDate] = useState(today)
+  const [sheetError, setSheetError] = useState(null) // friendly message in whichever sheet is open
+  const [busy, setBusy] = useState(false)
 
   function selectDate(d) {
     setSelectedDate(d)
@@ -226,7 +236,7 @@ export default function TrainTab({
       showToast(`Moved to ${formatShortDate(date)}`)
     } catch (e) {
       console.error('Move workout error:', e)
-      alert('Could not move workout: ' + e.message)
+      setSheetError("Couldn't move that session. Try again.")
     }
   }
 
@@ -248,13 +258,16 @@ export default function TrainTab({
       showToast(`Copied to ${formatShortDate(date)}`)
     } catch (e) {
       console.error('Duplicate workout error:', e)
-      alert('Could not duplicate workout: ' + e.message)
+      setSheetError("Couldn't copy that session. Try again.")
     }
   }
 
   async function handleAddToCalConfirm() {
     if (!addToCalDates.length || !programDay) return
+    setBusy(true)
+    setSheetError(null)
     let added = 0
+    const failed = []
     for (const dateStr of addToCalDates) {
       const exists = scheduledWorkouts.some((sw) => sw.program_workout_id === programDay.id && sw.scheduled_date === dateStr)
       if (exists) continue
@@ -265,16 +278,28 @@ export default function TrainTab({
         scheduled_date: dateStr,
         created_by: client.user_id,
       })
-      if (!error) added++
+      if (error) { console.error('Add to calendar error:', error); failed.push(dateStr) }
+      else added++
     }
     await reloadScheduledWorkouts()
+    setBusy(false)
+    if (failed.length > 0) {
+      // Keep the sheet open with only the days that didn't go in, so Add tries them again.
+      setAddToCalDates(failed)
+      setSheetError(added > 0
+        ? `Added to ${plural(added, 'day')}, but ${plural(failed.length, "day didn't", "days didn't")} go in. Try again.`
+        : "Couldn't add that to your calendar. Try again.")
+      return
+    }
     setAddToCalOpen(false)
     setAddToCalDates([])
-    if (added > 0) showToast(`Added to ${added} day${added !== 1 ? 's' : ''}`)
+    if (added > 0) showToast(`Added to ${plural(added, 'day')}`)
   }
 
   async function handleWorkoutPickerConfirm() {
     if (!pickerSelected) return
+    setBusy(true)
+    setSheetError(null)
     const isProgram = pickerSelected.type === 'program'
     const { error } = await supabase.from('scheduled_workouts').insert({
       client_id: client.id,
@@ -283,8 +308,14 @@ export default function TrainTab({
       scheduled_date: selectedDate,
       created_by: client.user_id,
     })
-    if (error) { alert('Could not add workout: ' + error.message); return }
+    if (error) {
+      console.error('Add workout error:', error)
+      setBusy(false)
+      setSheetError("Couldn't add that session. Try again.")
+      return
+    }
     await reloadScheduledWorkouts()
+    setBusy(false)
     setPickerOpen(false)
     setPickerSelected(null)
     showToast(`Added to ${formatShortDate(selectedDate)}`)
@@ -301,7 +332,7 @@ export default function TrainTab({
         .single()
       if (error) {
         console.error('Schedule error:', error)
-        alert('Could not schedule workout: ' + error.message)
+        setSheetError("Couldn't add that to your calendar. Try again.")
         return
       }
       setScheduledWorkouts((prev) => [...prev, { ...data, program_workouts: { name: savedToSchedule.name, day_number: 0 }, _isCustom: true, _customWorkout: savedToSchedule }])
@@ -310,7 +341,7 @@ export default function TrainTab({
       setSavedPreview(null)
     } catch (e) {
       console.error('Schedule exception:', e)
-      alert('Something went wrong: ' + e.message)
+      setSheetError("Couldn't add that to your calendar. Try again.")
     }
   }
 
@@ -333,7 +364,7 @@ export default function TrainTab({
         title="Training"
         action={
           view === 'schedule' && (
-            <Button variant="secondary" size="sm" onClick={() => { setPickerSelected(null); setPickerOpen(true) }}>
+            <Button variant="secondary" size="sm" onClick={() => { setSheetError(null); setPickerSelected(null); setPickerOpen(true) }}>
               <Plus size={16} /> Add
             </Button>
           )
@@ -363,7 +394,7 @@ export default function TrainTab({
               <Card padded={false} className="divide-y divide-line">
                 {selectedWorkouts.map((sw) => {
                   const done = isDone(sw, completedIds)
-                  const exs = workoutExercises[sw.program_workout_id] ?? []
+                  const exs = sessionExercises(sw, workoutExercises)
                   const mins = estMinutes(exs)
                   return (
                     <div key={sw.id} className="flex items-center">
@@ -372,7 +403,7 @@ export default function TrainTab({
                         <div className="flex-1 min-w-0">
                           <p className="text-[15px] font-bold text-ink truncate">{workoutName(sw)}</p>
                           <p className="text-[13px] text-muted">
-                            {[done ? 'Done' : null, exs.length ? `${exs.length} exercises` : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Custom workout'}
+                            {[done ? 'Done' : null, exs.length ? plural(exs.length, 'exercise') : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are'}
                           </p>
                         </div>
                       </Row>
@@ -385,9 +416,11 @@ export default function TrainTab({
               </Card>
             ) : (
               <Card className="flex items-center gap-3">
-                <p className="flex-1 text-[15px] text-muted">{selectedDate < today ? 'No session this day.' : 'Rest day. Want to add something?'}</p>
-                {selectedDate >= today && (
-                  <Button variant="soft" size="sm" onClick={() => { setPickerSelected(null); setPickerOpen(true) }}><Plus size={16} /> Add</Button>
+                <p className="flex-1 text-[15px] text-muted">
+                  {selectedDate >= today ? 'Rest day. Want to add something?' : selectedDate >= addDays(today, -7) ? 'Nothing on this day. Add a session you did?' : 'No session this day.'}
+                </p>
+                {selectedDate >= addDays(today, -7) && (
+                  <Button variant="soft" size="sm" onClick={() => { setSheetError(null); setPickerSelected(null); setPickerOpen(true) }}><Plus size={16} /> Add</Button>
                 )}
               </Card>
             )}
@@ -409,7 +442,7 @@ export default function TrainTab({
                       <span className="w-10 h-10 rounded-full bg-surface-2 text-muted text-[13px] font-bold flex items-center justify-center shrink-0">D{pw.day_number}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-[15px] font-bold text-ink truncate">{pw.name}</p>
-                        <p className="text-[13px] text-muted">{exs.length} exercises{mins > 0 ? ` · about ${mins} min` : ''}</p>
+                        <p className="text-[13px] text-muted">{plural(exs.length, 'exercise')}{mins > 0 ? ` · about ${mins} min` : ''}</p>
                       </div>
                       <ChevronRight size={18} className="text-faint shrink-0" />
                     </Row>
@@ -458,8 +491,8 @@ export default function TrainTab({
           <div className="space-y-2.5">
             <p className="text-[13px] text-muted -mt-1 mb-3">{formatShortDate(detailSw.scheduled_date)}</p>
             <Button size="lg" block onClick={() => { onPreviewWorkout(detailSw); setDetailSw(null) }}>Open workout</Button>
-            <Button variant="secondary" size="lg" block onClick={() => { setPickedDate(today); setDateMode('move') }}>Move to another day</Button>
-            <Button variant="secondary" size="lg" block onClick={() => { setPickedDate(today); setDateMode('duplicate') }}>Copy to another day</Button>
+            <Button variant="secondary" size="lg" block onClick={() => { setSheetError(null); setPickedDate(today); setDateMode('move') }}>Move to another day</Button>
+            <Button variant="secondary" size="lg" block onClick={() => { setSheetError(null); setPickedDate(today); setDateMode('duplicate') }}>Copy to another day</Button>
           </div>
         )}
       </Sheet>
@@ -472,6 +505,7 @@ export default function TrainTab({
         footer={<Button size="lg" block onClick={() => (dateMode === 'move' ? handleMoveWorkout(pickedDate) : handleDuplicateWorkout(pickedDate))}>{dateMode === 'move' ? 'Move' : 'Copy'} to {formatShortDate(pickedDate)}</Button>}
       >
         <DayGrid days={28} selected={[pickedDate]} onToggle={setPickedDate} busy={new Set(Object.keys(byDate))} />
+        {sheetError && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{sheetError}</p>}
       </Sheet>
 
       {/* Add a workout to the selected day */}
@@ -479,11 +513,11 @@ export default function TrainTab({
         open={pickerOpen}
         onClose={() => { setPickerOpen(false); setPickerSelected(null) }}
         title={`Add to ${formatShortDate(selectedDate)}`}
-        footer={<Button size="lg" block disabled={!pickerSelected} onClick={handleWorkoutPickerConfirm}>{pickerSelected ? `Add ${pickerSelected.workout.name}` : 'Pick a workout'}</Button>}
+        footer={<Button size="lg" block disabled={!pickerSelected || busy} onClick={handleWorkoutPickerConfirm}>{busy ? 'Adding...' : pickerSelected ? `Add ${pickerSelected.workout.name}` : 'Pick a workout'}</Button>}
       >
         {programWorkouts.length === 0 && savedWorkouts.length === 0 ? (
           <div className="py-4 space-y-3">
-            <p className="text-muted">No workouts to add yet. Your coach can assign a program, or you can build one.</p>
+            <p className="text-muted">Nothing to add yet. Your coach can set you a program, or you can build a workout now.</p>
             <Button variant="soft" block onClick={() => { setPickerOpen(false); onBuildWorkout() }}><Sparkles size={16} /> Build with AI</Button>
           </div>
         ) : (
@@ -499,7 +533,7 @@ export default function TrainTab({
                       <button key={w.id} onClick={() => setPickerSelected({ type, workout: w })} className={cx('w-full text-left flex items-center gap-3 px-4 py-3 min-h-[56px]', on ? 'bg-accent-soft' : 'hover:bg-surface-2')}>
                         <div className="flex-1 min-w-0">
                           <p className="text-[15px] font-bold text-ink truncate">{w.name}</p>
-                          <p className="text-[13px] text-muted">{type === 'program' ? `Day ${w.day_number} · ${count} exercise${count !== 1 ? 's' : ''}` : 'Saved workout'}</p>
+                          <p className="text-[13px] text-muted">{type === 'program' ? `Day ${w.day_number} · ${plural(count, 'exercise')}` : 'Saved workout'}</p>
                         </div>
                         {on && <Check size={20} strokeWidth={3} className="text-accent shrink-0" />}
                       </button>
@@ -508,6 +542,7 @@ export default function TrainTab({
                 </div>
               </div>
             ))}
+            {sheetError && <p role="alert" className="text-[13px] font-semibold text-bad">{sheetError}</p>}
           </div>
         )}
       </Sheet>
@@ -519,22 +554,23 @@ export default function TrainTab({
           title={programDay.name}
           exercises={allProgramExercises[programDay.id] ?? []}
           onBack={() => setProgramDay(null)}
-          footer={<Button size="lg" block onClick={() => { setAddToCalDates([]); setAddToCalOpen(true) }}><CalendarPlus size={20} /> Add to calendar</Button>}
+          footer={<Button size="lg" block onClick={() => { setSheetError(null); setAddToCalDates([]); setAddToCalOpen(true) }}><CalendarPlus size={20} /> Add to calendar</Button>}
         />
       )}
       <Sheet
         open={addToCalOpen && !!programDay}
         onClose={() => { setAddToCalOpen(false); setAddToCalDates([]) }}
         title="Add to calendar"
-        footer={<Button size="lg" block disabled={addToCalDates.length === 0} onClick={handleAddToCalConfirm}>{addToCalDates.length === 0 ? 'Pick one or more days' : `Add to ${addToCalDates.length} day${addToCalDates.length !== 1 ? 's' : ''}`}</Button>}
+        footer={<Button size="lg" block disabled={addToCalDates.length === 0 || busy} onClick={handleAddToCalConfirm}>{busy ? 'Adding...' : addToCalDates.length === 0 ? 'Pick one or more days' : `Add to ${plural(addToCalDates.length, 'day')}`}</Button>}
       >
-        <p className="text-[13px] text-muted -mt-1 mb-3">{programDay?.name}. Dots show days it is already on.</p>
+        <p className="text-[13px] text-muted -mt-1 mb-3">{programDay?.name}. Dots show days it's already on.</p>
         <DayGrid
           days={42}
           selected={addToCalDates}
           onToggle={(d) => setAddToCalDates((prev) => (prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d]))}
           busy={new Set(scheduledWorkouts.filter((sw) => sw.program_workout_id === programDay?.id).map((sw) => sw.scheduled_date))}
         />
+        {sheetError && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{sheetError}</p>}
       </Sheet>
 
       {/* A saved workout: look at it and schedule it */}
@@ -544,7 +580,7 @@ export default function TrainTab({
           title={savedPreview.name || savedPreview.title}
           customContent={savedPreview.content || ''}
           onBack={() => setSavedPreview(null)}
-          footer={<Button size="lg" block onClick={() => { setScheduleDate(today); setSavedToSchedule(savedPreview) }}><CalendarPlus size={20} /> Add to calendar</Button>}
+          footer={<Button size="lg" block onClick={() => { setSheetError(null); setScheduleDate(today); setSavedToSchedule(savedPreview) }}><CalendarPlus size={20} /> Add to calendar</Button>}
         />
       )}
       <Sheet
@@ -555,6 +591,7 @@ export default function TrainTab({
       >
         <p className="text-[13px] text-muted -mt-1 mb-3 truncate">{savedToSchedule?.name}</p>
         <Field label="Date" type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+        {sheetError && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{sheetError}</p>}
       </Sheet>
     </div>
   )

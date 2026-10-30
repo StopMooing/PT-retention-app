@@ -47,8 +47,9 @@ export default function CheckinSheet({ open, onClose, client, onSaved }) {
     if (err) {
       // The 24h limit is enforced by checkin_rate_ok() inside the RLS policy, so a repeat
       // submission surfaces as a policy violation rather than a friendly message.
-      const isRateLimit = err.message.toLowerCase().includes('row-level security')
-      setError(isRateLimit ? 'You have already checked in today. Try again tomorrow.' : err.message)
+      console.error('Check-in error:', err)
+      const isRateLimit = (err.message || '').toLowerCase().includes('row-level security')
+      setError(isRateLimit ? "You've already checked in today. You can send another tomorrow." : "Couldn't send your check-in. Try again in a moment.")
       return
     }
     onSaved(data)

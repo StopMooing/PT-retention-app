@@ -2,7 +2,7 @@
 // day (with "Add to calendar" instead of "Start").
 import { Chip, Card } from '../ui'
 import { Overlay, BackHeader } from './common'
-import { estMinutes, totalSets } from './metrics'
+import { estMinutes, totalSets, plural } from './metrics'
 import { parseAiJson } from './foods'
 
 function StatsRow({ items }) {
@@ -33,7 +33,7 @@ function ExerciseRow({ idx, name, muscle, detail, notes }) {
 }
 
 const detailFor = (ex) =>
-  [ex.sets > 0 ? `${ex.sets} sets x ${ex.reps}` : ex.reps, ex.rest_seconds > 0 ? `${ex.rest_seconds}s rest` : null].filter(Boolean).join(' · ')
+  [ex.sets > 0 ? `${plural(ex.sets, 'set')} x ${ex.reps}` : ex.reps, ex.rest_seconds > 0 ? `${ex.rest_seconds}s rest` : null].filter(Boolean).join(' · ')
 
 export default function WorkoutPreview({ eyebrow, title, exercises = [], customContent, onBack, footer }) {
   const parsed = customContent ? parseAiJson(customContent) : null

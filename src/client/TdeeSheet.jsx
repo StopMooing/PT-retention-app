@@ -15,6 +15,7 @@ const ACTIVITY = [
 export default function TdeeSheet({ open, onClose, client, onSaved }) {
   const [inputs, setInputs] = useState({ age: '', gender: 'male', heightCm: '', weightKg: '', activity: '1.55' })
   const [result, setResult] = useState(null)
+  const [error, setError] = useState(null)
   const set = (k) => (e) => setInputs((p) => ({ ...p, [k]: e.target.value }))
 
   function calculate() {
@@ -22,13 +23,15 @@ export default function TdeeSheet({ open, onClose, client, onSaved }) {
     const h = parseFloat(inputs.heightCm)
     const w = parseFloat(inputs.weightKg)
     const act = parseFloat(inputs.activity)
-    if (!age || !h || !w) { alert('Please fill in all fields'); return }
+    if (!age || !h || !w) { setError('Fill in your age, height and weight first.'); return }
+    setError(null)
     const bmr = inputs.gender === 'male' ? 10 * w + 6.25 * h - 5 * age + 5 : 10 * w + 6.25 * h - 5 * age - 161
     const maintenance = Math.round(bmr * act)
     setResult({ maintenance, fatLoss: maintenance - 500, aggressiveLoss: maintenance - 750, muscleGain: maintenance + 300 })
   }
 
   async function handleSetGoal(calories) {
+    setError(null)
     try {
       const protein = Math.round((calories * 0.30) / 4)
       const carbs = Math.round((calories * 0.40) / 4)
@@ -43,18 +46,18 @@ export default function TdeeSheet({ open, onClose, client, onSaved }) {
       onClose()
     } catch (e) {
       console.error('Set goal error:', e)
-      alert('Could not set goal: ' + e.message)
+      setError("Couldn't save that target. Try again.")
     }
   }
 
   return (
-    <Sheet open={open} onClose={() => { setResult(null); onClose() }} title="Calorie calculator">
+    <Sheet open={open} onClose={() => { setResult(null); setError(null); onClose() }} title="Calorie calculator">
       <div className="space-y-4">
         <Segmented value={inputs.gender} onChange={(g) => setInputs((p) => ({ ...p, gender: g }))} options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]} />
         <div className="grid grid-cols-3 gap-3">
           <Field label="Age" inputMode="numeric" value={inputs.age} onChange={set('age')} />
-          <Field label="Height cm" inputMode="decimal" value={inputs.heightCm} onChange={set('heightCm')} />
-          <Field label="Weight kg" inputMode="decimal" value={inputs.weightKg} onChange={set('weightKg')} />
+          <Field label="Height (cm)" inputMode="decimal" value={inputs.heightCm} onChange={set('heightCm')} />
+          <Field label="Weight (kg)" inputMode="decimal" value={inputs.weightKg} onChange={set('weightKg')} />
         </div>
         <label className="flex flex-col gap-1.5">
           <span className="text-sm font-semibold text-ink">Activity</span>
@@ -62,6 +65,7 @@ export default function TdeeSheet({ open, onClose, client, onSaved }) {
             {ACTIVITY.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </label>
+        {error && <p role="alert" className="text-[13px] font-semibold text-bad">{error}</p>}
         <Button size="lg" block variant={result ? 'secondary' : 'primary'} onClick={calculate}>Calculate</Button>
 
         {result && (

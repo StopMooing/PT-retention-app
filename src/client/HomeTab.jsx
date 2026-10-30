@@ -3,10 +3,10 @@
 import { useState } from 'react'
 import { Flame, Trophy, ChevronRight, MessageCircle, Sparkles, Check, Plus } from 'lucide-react'
 import { Card, Button, Ring, Chip, Avatar, SectionLabel } from '../ui'
-import { toLocalDateStr, getGreeting, weekDays, weekdayName, addDays, parseDay, formatShortDate } from './dates'
+import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate } from './dates'
 import {
   isDone, workoutName, groupByDate, estMinutes, sessionsThisWeek, nextSession, weekStreak,
-  checkinStatus, logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg,
+  checkinStatus, sessionExercises, plural, logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg,
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
 import { NutritionSummary } from './common'
@@ -14,27 +14,28 @@ import { NutritionSummary } from './common'
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 function CheckinCard({ status, onCheckIn, onSeeAll }) {
-  const { latest, due, daysToNext, daysSince, lastReply } = status
-  const nextDate = latest && !due ? addDays(toLocalDateStr(new Date(latest.submitted_at)), 7) : null
+  const { due, daysToNext, daysSince, nextDate, lastReply } = status
   return (
     <Card padded={false}>
       <div className="flex items-center gap-4 p-4">
-        <Ring value={due ? 1 : (7 - daysToNext) / 7} size={68} stroke={7}>
-          {due ? (
-            <Check size={26} strokeWidth={3} className="text-accent" />
-          ) : (
-            <>
-              <span className="font-display text-[24px] leading-none text-ink tabular-nums">{daysToNext}</span>
-              <span className="text-[10px] font-bold text-muted mt-0.5">{daysToNext === 1 ? 'day' : 'days'}</span>
-            </>
-          )}
-        </Ring>
+        {due ? (
+          // Due: an open accent outline, not a full ring (a full ring with a tick reads as done).
+          <span className="w-[68px] h-[68px] rounded-full border-[3px] border-accent flex flex-col items-center justify-center shrink-0">
+            <span className="font-display text-[20px] leading-none text-accent">Due</span>
+            <span className="text-[10px] font-bold text-muted mt-0.5">today</span>
+          </span>
+        ) : (
+          <Ring value={(7 - daysToNext) / 7} size={68} stroke={7}>
+            <span className="font-display text-[24px] leading-none text-ink tabular-nums">{daysToNext}</span>
+            <span className="text-[10px] font-bold text-muted mt-0.5">{daysToNext === 1 ? 'day' : 'days'}</span>
+          </Ring>
+        )}
         <div className="flex-1 min-w-0">
           <p className="text-[17px] font-bold text-ink">{due ? 'Check-in time' : 'Weekly check-in'}</p>
           <p className="text-[13px] text-muted mt-0.5">
             {due
               ? 'Tell your coach how the week went.'
-              : `Sent ${daysSince === 0 ? 'today' : daysSince === 1 ? 'yesterday' : `${daysSince} days ago`}. Next one ${weekdayName(nextDate)}.`}
+              : `Sent ${daysSince === 0 ? 'today' : daysSince === 1 ? 'yesterday' : `${daysSince} days ago`}. Next one ${daysToNext === 1 ? 'tomorrow' : weekdayName(nextDate)}.`}
           </p>
         </div>
         {due && <Button size="sm" onClick={onCheckIn}>Check in</Button>}
@@ -104,14 +105,14 @@ export default function HomeTab({
             <div className="divide-y divide-line">
               {todays.map((sw) => {
                 const done = isDone(sw, completedIds)
-                const exs = workoutExercises[sw.program_workout_id] ?? []
+                const exs = sessionExercises(sw, workoutExercises)
                 const mins = estMinutes(exs)
                 return (
                   <div key={sw.id} className="flex items-center gap-3 px-4 py-3">
                     <div className="flex-1 min-w-0">
                       <p className="text-[19px] font-bold text-ink truncate">{workoutName(sw)}</p>
                       <p className="text-[13px] text-muted">
-                        {done ? 'Completed. Nice work.' : [exs.length ? `${exs.length} exercises` : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are'}
+                        {done ? 'Completed. Nice work.' : [exs.length ? plural(exs.length, 'exercise') : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are'}
                       </p>
                     </div>
                     {done ? (
@@ -126,9 +127,9 @@ export default function HomeTab({
           ) : (
             <div className="flex items-center gap-3 px-4 py-3">
               <div className="flex-1 min-w-0">
-                <p className="text-[19px] font-bold text-ink">Rest day</p>
+                <p className="text-[19px] font-bold text-ink">{next ? 'Rest day' : 'Nothing scheduled yet'}</p>
                 <p className="text-[13px] text-muted">
-                  {next ? `Next up: ${workoutName(next)}, ${weekdayName(next.scheduled_date)}` : 'Recover well. Feel like moving?'}
+                  {next ? `Next up: ${workoutName(next)}, ${weekdayName(next.scheduled_date)}` : 'Feel like moving? Build a session for today.'}
                 </p>
               </div>
               {!next && (

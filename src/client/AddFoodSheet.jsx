@@ -27,6 +27,7 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
   const [servingSize, setServingSize] = useState(100)
   const [base, setBase] = useState(null)
   const [adding, setAdding] = useState(false)
+  const [error, setError] = useState(null)
   const timer = useRef(null)
 
   useEffect(() => () => clearTimeout(timer.current), [])
@@ -69,6 +70,7 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
   async function handleAdd() {
     if (!foodInput.name.trim()) return
     setAdding(true)
+    setError(null)
     try {
       const { data, error } = await supabase.from('food_logs').insert({
         client_id: client.id,
@@ -83,8 +85,10 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
       if (error) throw error
       onAdded(data)
       onClose()
-    } catch (e) { console.error(e) }
-    finally { setAdding(false) }
+    } catch (e) {
+      console.error('Add food error:', e)
+      setError("Couldn't add that. Check your signal and try again.")
+    } finally { setAdding(false) }
   }
 
   return (
@@ -92,7 +96,14 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
       open
       onClose={onClose}
       title="Log food"
-      footer={<Button size="lg" block onClick={handleAdd} disabled={adding || !foodInput.name.trim()}>{adding ? 'Saving...' : `Add to ${foodInput.meal_type}`}</Button>}
+      footer={
+        <>
+          {error && <p role="alert" className="text-[13px] font-semibold text-bad text-center mb-2.5">{error}</p>}
+          <Button size="lg" block onClick={handleAdd} disabled={adding || !foodInput.name.trim()}>
+            {adding ? 'Saving...' : foodInput.meal_type === 'other' ? 'Add to log' : `Add to ${capitalise(foodInput.meal_type)}`}
+          </Button>
+        </>
+      }
     >
       <div className="space-y-4">
         <div className="flex flex-wrap gap-1.5">

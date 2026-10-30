@@ -1,6 +1,12 @@
 // One source of truth for every number the client sees. If a number appears on more
 // than one screen, it is worked out here so the screens always agree.
-import { toLocalDateStr, mondayOf, addDays, weekDays } from './dates'
+import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween } from './dates'
+import { parseAiJson } from './foods'
+
+// "1 exercise", "3 exercises".
+export function plural(n, one, many = `${one}s`) {
+  return `${n} ${n === 1 ? one : many}`
+}
 
 /* ---------- Workouts ---------- */
 
@@ -25,6 +31,14 @@ export function isDone(sw, completedIds) {
 
 export function workoutName(sw) {
   return sw?.program_workouts?.name || sw?._customWorkout?.name || sw?.saved_workouts?.name || 'Workout'
+}
+
+// The exercises in a scheduled session: the program day's rows, or the exercises in a
+// saved (AI) workout. exMap is { [program_workout_id]: rows }.
+export function sessionExercises(sw, exMap) {
+  if (sw?.program_workout_id) return exMap?.[sw.program_workout_id] ?? []
+  const parsed = parseAiJson(sw?._customWorkout?.content || sw?.saved_workouts?.content || '')
+  return Array.isArray(parsed?.exercises) ? parsed.exercises : []
 }
 
 export function groupByDate(scheduledWorkouts) {
@@ -93,23 +107,44 @@ export function sessionsThisMonth(workoutLogs, today = toLocalDateStr()) {
 
 /* ---------- Check-ins ---------- */
 
-// A check-in is due 7 days after the last one (or straight away if there is none).
-export function checkinStatus(checkins, now = new Date()) {
+// A check-in is due 7 calendar days after the last one (or straight away if there is
+// none). Counted in whole local days, so it ticks over at midnight, not 24 hours later.
+export function checkinStatus(checkins, today = toLocalDateStr()) {
   const latest = checkins?.[0] ?? null
-  const daysSince = latest ? Math.floor((now.getTime() - new Date(latest.submitted_at).getTime()) / 86400000) : null
+  const lastDay = latest ? toLocalDateStr(new Date(latest.submitted_at)) : null
+  const daysSince = lastDay ? daysBetween(lastDay, today) : null
+  const nextDate = lastDay ? addDays(lastDay, 7) : null
   const due = !latest || daysSince >= 7
   const daysToNext = due ? 0 : 7 - daysSince
   const lastReply = (checkins ?? []).find((c) => c.coach_reply) ?? null
-  return { latest, daysSince, due, daysToNext, lastReply }
+  return { latest, daysSince, due, daysToNext, nextDate, lastReply }
 }
 
 /* ---------- Body weight ---------- */
 
 const kg = (w) => parseFloat(w.weight_kg)
+const newer = (a, b) => String(a.created_at ?? '') > String(b.created_at ?? '')
+
+// One weigh-in per day: when a day has more than one row, the latest created_at wins.
+// Oldest day first.
+function dailyWeights(weightLogs) {
+  const byDay = {}
+  for (const w of weightLogs ?? []) {
+    if (isNaN(kg(w)) || !w.logged_date) continue
+    const cur = byDay[w.logged_date]
+    if (!cur || newer(w, cur)) byDay[w.logged_date] = w
+  }
+  return Object.values(byDay).sort((a, b) => (a.logged_date < b.logged_date ? -1 : 1))
+}
+
+// The weigh-in that counts for one day (latest created_at), or null.
+export function weightForDay(weightLogs, dateStr) {
+  return dailyWeights(weightLogs).find((w) => w.logged_date === dateStr) ?? null
+}
 
 // Oldest first, each point with its 7-day rolling average (that day and the six before).
 export function weightSeries(weightLogs) {
-  const asc = [...(weightLogs ?? [])].filter((w) => !isNaN(kg(w))).sort((a, b) => (a.logged_date < b.logged_date ? -1 : 1))
+  const asc = dailyWeights(weightLogs)
   return asc.map((w) => {
     const from = addDays(w.logged_date, -6)
     const window = asc.filter((x) => x.logged_date >= from && x.logged_date <= w.logged_date)
@@ -123,9 +158,12 @@ export function currentWeight(weightLogs) {
   return s.length ? s[s.length - 1].weight : null
 }
 
-export function weightAverage7(weightLogs) {
-  const s = weightSeries(weightLogs)
-  return s.length ? s[s.length - 1].avg : null
+// Average of the weigh-ins in the 7 days ending today, or null when there are none.
+export function weightAverage7(weightLogs, today = toLocalDateStr()) {
+  const from = addDays(today, -6)
+  const recent = dailyWeights(weightLogs).filter((w) => w.logged_date >= from && w.logged_date <= today)
+  if (!recent.length) return null
+  return Math.round((recent.reduce((s, w) => s + kg(w), 0) / recent.length) * 10) / 10
 }
 
 /* ---------- Food ---------- */
