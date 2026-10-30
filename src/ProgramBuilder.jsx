@@ -1,127 +1,91 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Plus, ChevronRight, ChevronUp, ChevronDown, Trash2, ClipboardList, Dumbbell, Check, UserPlus } from 'lucide-react'
 import { supabase } from './supabase'
+import { PageTitle, Card, Button, Chip, Sheet, EmptyState, Field } from './ui'
+import { Loading, Toast, BackLink, Select, TextArea, MiniField, SearchBox, FilterChips, ConfirmRemove } from './tools/kit'
+import { useToast } from './tools/useToast'
+import { toLocalDateStr } from './tools/dates'
 
-// ─── Shared input class ───────────────────────────────────────────────────────
+const EQUIPMENT = [
+  ['barbell', 'Barbell'], ['dumbbell', 'Dumbbell'], ['cable', 'Cable'], ['machine', 'Machine'],
+  ['bodyweight', 'Bodyweight'], ['band', 'Band'], ['kettlebell', 'Kettlebell'], ['trx', 'TRX'],
+  ['sled', 'Sled'], ['landmine', 'Landmine'], ['trap_bar', 'Trap bar'], ['functional', 'Functional'], ['plate', 'Plate'],
+]
 
-const inputCls = 'border border-gray-300 rounded-lg px-3 py-2 text-sm w-full focus:ring-2 focus:ring-gray-900 focus:border-gray-900 focus:outline-none transition-all duration-150 placeholder-gray-400 bg-white'
+const EMPTY_NEW_EXERCISE = { exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' }
 
-// ─── Spinner ──────────────────────────────────────────────────────────────────
-
-function Spinner() {
-  return (
-    <div className="flex items-center justify-center py-12">
-      <div className="w-5 h-5 rounded-full border-2 border-gray-200 border-t-gray-500 animate-spin" />
-    </div>
+// Rough session length: each set is about 45 seconds of work plus its rest.
+function estimateMinutes(exercises) {
+  return Math.round(
+    (exercises || []).reduce((total, ex) => {
+      const sets = parseInt(ex.sets) || 3
+      const rest = parseInt(ex.rest_seconds) || 90
+      return total + sets * (rest + 45)
+    }, 0) / 60,
   )
 }
 
-// ─── Feedback banner (replaces toast) ────────────────────────────────────────
-
-function Banner({ id, message, type = 'success', onDismiss }) {
-  useEffect(() => {
-    const t = setTimeout(onDismiss, 4000)
-    return () => clearTimeout(t)
-  }, [id, onDismiss])
-
-  return (
-    <div className={`flex items-center justify-between px-4 py-3 rounded-lg text-sm font-medium mb-4 transition-all duration-150
-      ${type === 'error' ? 'bg-red-100 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'}`}
-    >
-      <div className="flex items-center gap-2">
-        {type === 'error' ? (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
-          </svg>
-        ) : (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 6L9 17l-5-5"/>
-          </svg>
-        )}
-        {message}
-      </div>
-      <button onClick={onDismiss} className="ml-4 text-base leading-none opacity-50 hover:opacity-100 transition-opacity">
-        &times;
-      </button>
-    </div>
-  )
+function plural(n, word) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`
 }
 
-// ─── Field label wrapper ──────────────────────────────────────────────────────
-
-function Field({ label, children }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{label}</label>
-      {children}
-    </div>
-  )
+function prescription(ex) {
+  const parts = []
+  if (ex.sets != null && ex.reps) parts.push(`${ex.sets} x ${ex.reps}`)
+  else if (ex.sets != null) parts.push(plural(ex.sets, 'set'))
+  else if (ex.reps) parts.push(`${ex.reps} reps`)
+  if (ex.rest_seconds != null) parts.push(`${ex.rest_seconds}s rest`)
+  return parts.join(' · ')
 }
 
-// ─── Italic placeholder for empty panels ─────────────────────────────────────
-
-function Placeholder({ text }) {
-  return (
-    <div className="flex-1 flex items-center justify-center p-8">
-      <p className="text-sm text-gray-400 italic text-center">{text}</p>
-    </div>
-  )
+function formatDate(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ProgramBuilder({ user }) {
-  // ── Programs ──
-  const [programs, setPrograms]               = useState([])
+  // Programs
+  const [programs, setPrograms] = useState([])
   const [loadingPrograms, setLoadingPrograms] = useState(true)
   const [selectedProgram, setSelectedProgram] = useState(null)
-  const [showNewProgram, setShowNewProgram]   = useState(false)
-  const [newProgram, setNewProgram]           = useState({ name: '', description: '' })
-  const [savingProgram, setSavingProgram]     = useState(false)
+  const [newProgram, setNewProgram] = useState({ name: '', description: '' })
+  const [savingProgram, setSavingProgram] = useState(false)
 
-  // ── Workout days ──
-  const [workoutDays, setWorkoutDays]   = useState([])
-  const [loadingDays, setLoadingDays]   = useState(false)
-  const [selectedDay, setSelectedDay]   = useState(null)
-  const [showNewDay, setShowNewDay]     = useState(false)
-  const [newDay, setNewDay]             = useState({ name: '', day_number: '' })
-  const [savingDay, setSavingDay]       = useState(false)
+  // Workout days and their exercises (exercisesByDay: day id -> ordered rows)
+  const [workoutDays, setWorkoutDays] = useState([])
+  const [exercisesByDay, setExercisesByDay] = useState({})
+  const [loadingDays, setLoadingDays] = useState(false)
+  const [newDay, setNewDay] = useState({ name: '', day_number: '' })
+  const [savingDay, setSavingDay] = useState(false)
 
-  // ── Exercises ──
-  const [dayExercises, setDayExercises]         = useState([])
-  const [loadingExercises, setLoadingExercises] = useState(false)
-  const [allExercises, setAllExercises]         = useState([])
-  const [showNewExercise, setShowNewExercise]   = useState(false)
-  const [newExercise, setNewExercise]           = useState({ exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' })
-  const [exerciseSearch, setExerciseSearch]     = useState('')
-  const [equipmentFilter, setEquipmentFilter]   = useState('')
-  const [muscleFilter, setMuscleFilter]         = useState('')
-  const [savingExercise, setSavingExercise]     = useState(false)
-  const [deletingId, setDeletingId]             = useState(null)
-  const [exerciseFormKey, setExerciseFormKey]   = useState(0)
+  // Adding an exercise (sheet), searching the library
+  const [allExercises, setAllExercises] = useState([])
+  const [addToDay, setAddToDay] = useState(null)
+  const [newExercise, setNewExercise] = useState(EMPTY_NEW_EXERCISE)
+  const [exerciseSearch, setExerciseSearch] = useState('')
+  const [equipmentFilter, setEquipmentFilter] = useState('')
+  const [muscleFilter, setMuscleFilter] = useState('')
+  const [savingExercise, setSavingExercise] = useState(false)
+
+  // Inline editing of one exercise row
   const [editingExerciseId, setEditingExerciseId] = useState(null)
-  const [editExercise, setEditExercise]           = useState({ sets: '', reps: '', rest_seconds: '', notes: '' })
-  const [savingEdit, setSavingEdit]               = useState(false)
+  const [editExercise, setEditExercise] = useState({ sets: '', reps: '', rest_seconds: '', notes: '' })
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [reordering, setReordering] = useState(false)
 
-  // ── Assign program ──
-  const [clients, setClients]               = useState([])
+  // Assign to a client
+  const [clients, setClients] = useState([])
   const [assignClientId, setAssignClientId] = useState('')
-  const [assignStartDate, setAssignStartDate] = useState(() => {
-    // Local date, not UTC: toISOString() gives yesterday's date before 9:30am in Adelaide
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-  })
-  const [assignLoading, setAssignLoading]   = useState(false)
-  const [assignBanner, setAssignBanner]     = useState(null)
+  // Local date, not UTC: toISOString() gives yesterday's date before 9:30am in Adelaide
+  const [assignStartDate, setAssignStartDate] = useState(() => toLocalDateStr())
+  const [assignLoading, setAssignLoading] = useState(false)
+  const [assignError, setAssignError] = useState('')
 
-  // ── Assign modal ──
-  const [showAssignModal, setShowAssignModal] = useState(false)
-
-  // ── Feedback ──
-  const [banner, setBanner] = useState(null)
-
-  const showBanner = useCallback((message, type = 'success') => {
-    setBanner({ message, type, id: Date.now() })
-  }, [])
+  // Which sheet is open: 'program' | 'day' | 'exercise' | 'assign' | null
+  const [sheet, setSheet] = useState(null)
+  const [toast, showToast] = useToast()
 
   // ── Fetch programs ──
   const fetchPrograms = useCallback(async () => {
@@ -135,7 +99,7 @@ export default function ProgramBuilder({ user }) {
     setLoadingPrograms(false)
   }, [user.id])
 
-  // ── Fetch all exercises for the search dropdown ──
+  // ── Fetch all exercises for the search ──
   const fetchAllExercises = useCallback(async () => {
     const { data } = await supabase
       .from('exercises')
@@ -150,12 +114,12 @@ export default function ProgramBuilder({ user }) {
     fetchAllExercises()
     supabase.from('clients').select('id, full_name').eq('pt_id', user.id).order('full_name')
       .then(({ data }) => { if (data) setClients(data) })
-  }, [fetchPrograms, fetchAllExercises])
+  }, [fetchPrograms, fetchAllExercises, user.id])
 
   async function handleAssignProgram() {
     if (!assignClientId) return
     setAssignLoading(true)
-    setAssignBanner(null)
+    setAssignError('')
     const { data: { user: authUser } } = await supabase.auth.getUser()
     const { error } = await supabase.from('program_assignments').insert({
       program_id:  selectedProgram.id,
@@ -166,11 +130,23 @@ export default function ProgramBuilder({ user }) {
     })
     setAssignLoading(false)
     if (error) {
-      setAssignBanner({ type: 'error', text: 'Something went wrong. Please try again.' })
+      setAssignError('Something went wrong. Please try again.')
     } else {
-      setAssignBanner({ type: 'success', text: 'Program assigned successfully!' })
-      setTimeout(() => setAssignBanner(null), 3000)
+      const name = clients.find(c => c.id === assignClientId)?.full_name ?? 'client'
+      setSheet(null)
+      setAssignClientId('')
+      showToast(`Assigned to ${name.split(' ')[0]}, starting ${formatDate(assignStartDate)}`)
     }
+  }
+
+  async function fetchDayExercises(workoutId) {
+    const { data, error } = await supabase
+      .from('workout_exercises')
+      .select('*, exercises(id, name, muscle_group)')
+      .eq('program_workout_id', workoutId)
+      .order('order_index')
+      .order('created_at')
+    if (!error && data) setExercisesByDay(prev => ({ ...prev, [workoutId]: data }))
   }
 
   async function fetchWorkoutDays(programId) {
@@ -180,41 +156,25 @@ export default function ProgramBuilder({ user }) {
       .select('*, workout_exercises(*)')
       .eq('program_id', programId)
       .order('day_number')
-    if (!error && data) setWorkoutDays(data)
+    if (!error && data) {
+      setWorkoutDays(data)
+      // Each day's exercises, in order and with names, using the same per-day query as before.
+      await Promise.all(data.map(d => fetchDayExercises(d.id)))
+    }
     setLoadingDays(false)
   }
 
-  async function fetchDayExercises(workoutId) {
-    setLoadingExercises(true)
-    const { data, error } = await supabase
-      .from('workout_exercises')
-      .select('*, exercises(id, name, muscle_group)')
-      .eq('program_workout_id', workoutId)
-      .order('order_index')
-      .order('created_at')
-    if (!error && data) setDayExercises(data)
-    setLoadingExercises(false)
-  }
-
   function openProgram(program) {
-    if (selectedProgram?.id === program.id) return
     setSelectedProgram(program)
-    setSelectedDay(null)
-    setDayExercises([])
-    setShowNewDay(false)
-    setShowNewExercise(false)
+    setWorkoutDays([])
+    setExercisesByDay({})
     setEditingExerciseId(null)
-    setBanner(null)
     fetchWorkoutDays(program.id)
   }
 
-  function openDay(day) {
-    if (selectedDay?.id === day.id) return
-    setSelectedDay(day)
-    setShowNewExercise(false)
+  function closeProgram() {
+    setSelectedProgram(null)
     setEditingExerciseId(null)
-    setBanner(null)
-    fetchDayExercises(day.id)
   }
 
   async function handleSaveProgram(e) {
@@ -227,13 +187,19 @@ export default function ProgramBuilder({ user }) {
       .select()
       .single()
     setSavingProgram(false)
-    if (error) { showBanner('Could not save program.', 'error'); return }
+    if (error) { showToast('Could not save program.', 'bad'); return }
     const withMeta = { ...data, program_workouts: [] }
     setPrograms(prev => [withMeta, ...prev])
     setNewProgram({ name: '', description: '' })
-    setShowNewProgram(false)
-    showBanner('Program created successfully.')
+    setSheet(null)
+    showToast('Program created')
     openProgram(withMeta)
+  }
+
+  function openNewDay() {
+    const next = workoutDays.reduce((max, d) => Math.max(max, d.day_number || 0), 0) + 1
+    setNewDay({ name: '', day_number: String(next) })
+    setSheet('day')
   }
 
   async function handleSaveDay(e) {
@@ -246,29 +212,37 @@ export default function ProgramBuilder({ user }) {
       .select()
       .single()
     setSavingDay(false)
-    if (error) { showBanner('Could not save day.', 'error'); return }
+    if (error) { showToast('Could not save day.', 'bad'); return }
     setWorkoutDays(prev => [...prev, { ...data, workout_exercises: [] }].sort((a, b) => a.day_number - b.day_number))
+    setExercisesByDay(prev => ({ ...prev, [data.id]: [] }))
     setPrograms(prev => prev.map(p =>
       p.id === selectedProgram.id
         ? { ...p, program_workouts: [...(p.program_workouts ?? []), { id: data.id }] }
         : p
     ))
     setNewDay({ name: '', day_number: '' })
-    setShowNewDay(false)
-    showBanner('Workout day added.')
-    openDay(data)
+    setSheet(null)
+    showToast(`${data.name} added`)
+  }
+
+  function openAddExercise(day) {
+    setAddToDay(day)
+    setNewExercise(EMPTY_NEW_EXERCISE)
+    setExerciseSearch('')
+    setSheet('exercise')
   }
 
   async function handleSaveExercise(e) {
     e.preventDefault()
-    if (!newExercise.exercise_id || savingExercise) return
+    if (!newExercise.exercise_id || savingExercise || !addToDay) return
     setSavingExercise(true)
+    const dayExercises = exercisesByDay[addToDay.id] ?? []
     // Next position in this day. Older rows may all be 0; created_at breaks ties when fetching.
     const nextOrderIndex = dayExercises.reduce((max, ex) => Math.max(max, ex.order_index ?? 0), -1) + 1
     const { data, error } = await supabase
       .from('workout_exercises')
       .insert({
-        program_workout_id: selectedDay.id,
+        program_workout_id: addToDay.id,
         exercise_id: newExercise.exercise_id,
         sets: newExercise.sets ? parseInt(newExercise.sets, 10) : null,
         reps: newExercise.reps.trim() || null,
@@ -279,34 +253,22 @@ export default function ProgramBuilder({ user }) {
       .select('*, exercises(id, name, muscle_group)')
       .single()
     setSavingExercise(false)
-    if (error) { showBanner('Could not add exercise.', 'error'); return }
-    setDayExercises(prev => [...prev, data])
-    // Keep the day card count, time estimate and program total in sync without a refresh
-    setWorkoutDays(prev => prev.map(d =>
-      d.id === selectedDay.id
-        ? { ...d, workout_exercises: [...(d.workout_exercises || []), data] }
-        : d
-    ))
-    // Panel stays open so the coach can add the next exercise.
-    // Bumping the key remounts the form so the search box's autoFocus fires again.
-    setNewExercise({ exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' })
+    if (error) { showToast('Could not add exercise.', 'bad'); return }
+    setExercisesByDay(prev => ({ ...prev, [addToDay.id]: [...(prev[addToDay.id] ?? []), data] }))
+    // The sheet stays open so the coach can add the next exercise straight away.
+    setNewExercise(EMPTY_NEW_EXERCISE)
     setExerciseSearch('')
-    setExerciseFormKey(k => k + 1)
-    showBanner('Exercise added.')
+    showToast(`${data.exercises?.name ?? 'Exercise'} added`)
   }
 
-  async function handleDeleteExercise(id) {
+  async function handleDeleteExercise(dayId, id) {
     setDeletingId(id)
     const { error } = await supabase.from('workout_exercises').delete().eq('id', id)
     if (error) {
-      showBanner('Could not delete exercise.', 'error')
+      showToast('Could not delete exercise.', 'bad')
     } else {
-      setDayExercises(prev => prev.filter(e => e.id !== id))
-      // Keep the day card count, time estimate and program total in sync without a refresh
-      setWorkoutDays(prev => prev.map(d => ({
-        ...d,
-        workout_exercises: (d.workout_exercises || []).filter(e => e.id !== id),
-      })))
+      setExercisesByDay(prev => ({ ...prev, [dayId]: (prev[dayId] ?? []).filter(e => e.id !== id) }))
+      setEditingExerciseId(null)
     }
     setDeletingId(null)
   }
@@ -326,7 +288,7 @@ export default function ProgramBuilder({ user }) {
     setEditExercise({ sets: '', reps: '', rest_seconds: '', notes: '' })
   }
 
-  async function handleUpdateExercise(id) {
+  async function handleUpdateExercise(dayId, id) {
     if (savingEdit) return
     setSavingEdit(true)
     const updates = {
@@ -342,16 +304,33 @@ export default function ProgramBuilder({ user }) {
       .select('*, exercises(id, name, muscle_group)')
     setSavingEdit(false)
     // An update blocked by RLS returns no error and no rows. Treat that as a failure, not a success.
-    if (error || !data || data.length === 0) { showBanner('Could not save changes.', 'error'); return }
+    if (error || !data || data.length === 0) { showToast('Could not save changes.', 'bad'); return }
     const updated = data[0]
-    setDayExercises(prev => prev.map(e => e.id === id ? updated : e))
-    // Keep the day card count, time estimate and program total in sync without a refresh
-    setWorkoutDays(prev => prev.map(d => ({
-      ...d,
-      workout_exercises: (d.workout_exercises || []).map(e => e.id === id ? { ...e, ...updates } : e),
-    })))
+    setExercisesByDay(prev => ({ ...prev, [dayId]: (prev[dayId] ?? []).map(e => e.id === id ? updated : e) }))
     cancelEditExercise()
-    showBanner('Exercise updated.')
+    showToast('Saved')
+  }
+
+  // Move one exercise up or down. Rewrites order_index for every row whose position
+  // changed (older rows may all share 0), then re-reads the day if anything fails.
+  async function moveExercise(dayId, index, dir) {
+    const list = [...(exercisesByDay[dayId] ?? [])]
+    const target = index + dir
+    if (reordering || target < 0 || target >= list.length) return
+    ;[list[index], list[target]] = [list[target], list[index]]
+    const changed = list
+      .map((ex, i) => ({ ex, i }))
+      .filter(({ ex, i }) => ex.order_index !== i)
+    setExercisesByDay(prev => ({ ...prev, [dayId]: list.map((ex, i) => ({ ...ex, order_index: i })) }))
+    setReordering(true)
+    const results = await Promise.all(changed.map(({ ex, i }) =>
+      supabase.from('workout_exercises').update({ order_index: i }).eq('id', ex.id).select('id')
+    ))
+    setReordering(false)
+    if (results.some(r => r.error || !r.data || r.data.length === 0)) {
+      showToast('Could not save the new order.', 'bad')
+      fetchDayExercises(dayId)
+    }
   }
 
   function dayCount(program) {
@@ -359,11 +338,7 @@ export default function ProgramBuilder({ user }) {
     return program.program_workouts?.length ?? 0
   }
 
-  function resetExerciseForm() {
-    setShowNewExercise(false)
-    setExerciseSearch('')
-    setNewExercise({ exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' })
-  }
+  const muscleOptions = ['All', ...[...new Set(allExercises.map(e => e.muscle_group).filter(Boolean))].sort()]
 
   const filteredExercises = allExercises.filter(ex => {
     const q = exerciseSearch.toLowerCase()
@@ -374,730 +349,388 @@ export default function ProgramBuilder({ user }) {
     const matchesMuscle = !muscleFilter || ex.muscle_group === muscleFilter
     return matchesSearch && matchesEquipment && matchesMuscle
   })
+  const pickedExercise = allExercises.find(e => e.id === newExercise.exercise_id)
+  const totalExercises = workoutDays.reduce((t, d) => t + (exercisesByDay[d.id]?.length ?? 0), 0)
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ─── Sheets ────────────────────────────────────────────────────────────────
 
-  return (
-    <div className="h-full flex flex-col overflow-hidden bg-gray-50">
+  const newProgramSheet = (
+    <Sheet open={sheet === 'program'} onClose={() => setSheet(null)} title="New program">
+      <form onSubmit={handleSaveProgram} className="flex flex-col gap-4">
+        <Field
+          label="Name" autoFocus required placeholder="e.g. 12 week strength"
+          value={newProgram.name} onChange={e => setNewProgram(p => ({ ...p, name: e.target.value }))}
+        />
+        <TextArea
+          label="What is it for? (optional)" rows={2} placeholder="e.g. Full body build for beginners"
+          value={newProgram.description} onChange={e => setNewProgram(p => ({ ...p, description: e.target.value }))}
+        />
+        <Button type="submit" size="lg" block disabled={savingProgram || !newProgram.name.trim()}>
+          {savingProgram ? 'Creating…' : 'Create program'}
+        </Button>
+      </form>
+    </Sheet>
+  )
 
-      {/* ── 3-panel layout ── */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+  const newDaySheet = (
+    <Sheet open={sheet === 'day'} onClose={() => setSheet(null)} title="Add workout day">
+      <form onSubmit={handleSaveDay} className="flex flex-col gap-4">
+        <div className="grid grid-cols-[96px_1fr] gap-3">
+          <Field
+            label="Day" type="number" inputMode="numeric" min="1" required
+            value={newDay.day_number} onChange={e => setNewDay(d => ({ ...d, day_number: e.target.value }))}
+          />
+          <Field
+            label="Name" autoFocus required placeholder="e.g. Upper A"
+            value={newDay.name} onChange={e => setNewDay(d => ({ ...d, name: e.target.value }))}
+          />
+        </div>
+        <Button type="submit" size="lg" block disabled={savingDay || !newDay.name.trim() || !newDay.day_number}>
+          {savingDay ? 'Adding…' : 'Add day'}
+        </Button>
+      </form>
+    </Sheet>
+  )
 
-        {/* ════════════════════════════════════════════════════
-            PANEL 1 — Programs
-        ════════════════════════════════════════════════════ */}
-        <div className={`${selectedProgram ? 'hidden md:flex' : 'flex'} w-full md:w-[260px] flex-shrink-0 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex-col overflow-hidden`}>
-
-          <div className="px-4 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-            <h2 className="text-lg font-bold text-gray-900 m-0">Programs</h2>
+  const addExerciseSheet = (
+    <Sheet
+      open={sheet === 'exercise'}
+      onClose={() => setSheet(null)}
+      title={addToDay ? `Add to ${addToDay.name}` : 'Add exercise'}
+      footer={pickedExercise ? (
+        <Button type="submit" form="add-exercise-form" size="lg" block disabled={savingExercise}>
+          {savingExercise ? 'Adding…' : 'Add to workout'}
+        </Button>
+      ) : null}
+    >
+      {pickedExercise ? (
+        <form id="add-exercise-form" onSubmit={handleSaveExercise} className="flex flex-col gap-4">
+          <div className="flex items-center gap-3 p-3 rounded-[14px] bg-accent-soft">
+            <span className="w-9 h-9 rounded-full bg-accent text-on-accent flex items-center justify-center shrink-0">
+              <Check size={18} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-bold text-ink truncate">{pickedExercise.name}</p>
+              {pickedExercise.muscle_group && <p className="text-[13px] text-muted">{pickedExercise.muscle_group}</p>}
+            </div>
             <button
-              onClick={() => { setShowNewProgram(v => !v); setNewProgram({ name: '', description: '' }) }}
-              className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+              type="button"
+              onClick={() => setNewExercise(ex => ({ ...ex, exercise_id: '' }))}
+              className="text-sm font-bold text-accent px-2 h-9"
             >
-              + New
+              Change
             </button>
           </div>
-
-          <div className="flex-1 overflow-y-auto">
-
-            {/* New program form */}
-            {showNewProgram && (
-              <div className="m-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                <form onSubmit={handleSaveProgram} className="flex flex-col gap-3">
-                  <input
-                    autoFocus
-                    type="text"
-                    required
-                    placeholder="e.g. 12 Week Strength"
-                    value={newProgram.name}
-                    onChange={e => setNewProgram(p => ({ ...p, name: e.target.value }))}
-                    className={inputCls}
-                  />
-                  <textarea
-                    rows={2}
-                    placeholder="What is this program for?"
-                    value={newProgram.description}
-                    onChange={e => setNewProgram(p => ({ ...p, description: e.target.value }))}
-                    className={`${inputCls} resize-none`}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      disabled={savingProgram}
-                      className="flex-1 py-2 bg-black hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {savingProgram ? 'Saving...' : 'Create Program'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowNewProgram(false)}
-                      className="flex-1 py-2 bg-white text-gray-600 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-all duration-150"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {loadingPrograms ? (
-              <Spinner />
-            ) : programs.length === 0 && !showNewProgram ? (
-              <div className="flex flex-col items-center justify-center py-16 px-5 text-center">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mb-3">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-                  </svg>
-                </div>
-                <p className="text-sm font-medium text-gray-600 m-0">No programs yet</p>
-                <p className="text-xs text-gray-400 mt-1">Click + New to create your first program</p>
-              </div>
-            ) : (
-              <ul className="p-3 flex flex-col gap-2 list-none m-0">
-                {programs.map(program => {
-                  const active = selectedProgram?.id === program.id
-                  const count = dayCount(program)
-                  return (
-                    <li key={program.id}>
-                      <button
-                        onClick={() => openProgram(program)}
-                        className={`w-full text-left p-4 rounded-xl border transition-all
-                          ${active
-                            ? 'border-2 border-black bg-gray-50'
-                            : 'border border-gray-200 hover:border-gray-300 bg-white'}`}
-                      >
-                        <p className="font-semibold text-gray-900 text-sm m-0 truncate leading-snug">
-                          {program.name}
-                        </p>
-                        {program.description && (
-                          <p className="text-xs text-gray-400 m-0 mt-1 truncate">{program.description}</p>
-                        )}
-                        <p className="text-xs text-gray-500 mt-0.5 m-0">{count} {count === 1 ? 'day' : 'days'}</p>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        </div>
-
-        {/* ════════════════════════════════════════════════════
-            PANEL 2 — Workout Days
-        ════════════════════════════════════════════════════ */}
-        <div className={`${!selectedProgram ? 'hidden md:flex' : selectedDay ? 'hidden md:flex' : 'flex'} w-full md:w-[240px] flex-shrink-0 bg-white border-b md:border-b-0 md:border-r border-gray-200 flex-col overflow-hidden`}>
-
-          {!selectedProgram ? (
-            <Placeholder text="Select a program first" />
-          ) : (
-            <>
-              <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center justify-between flex-shrink-0">
-                <div>
-                  <button onClick={() => setSelectedProgram(null)} className="md:hidden flex items-center gap-1 text-sm text-gray-500 mb-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                    Programs
-                  </button>
-                  <h2 className="text-sm font-bold text-gray-900 m-0">Workout Days</h2>
-                </div>
-                <button
-                  onClick={() => { setShowNewDay(v => !v); setNewDay({ name: '', day_number: '' }) }}
-                  className="border border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  + Add Day
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto">
-
-                {/* New day form */}
-                {showNewDay && (
-                  <div className="m-3 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <form onSubmit={handleSaveDay} className="flex flex-col gap-3">
-                      <input
-                        autoFocus
-                        type="number"
-                        required
-                        min="1"
-                        placeholder="Day number (e.g. 1)"
-                        value={newDay.day_number}
-                        onChange={e => setNewDay(d => ({ ...d, day_number: e.target.value }))}
-                        className={inputCls}
-                      />
-                      <input
-                        type="text"
-                        required
-                        placeholder="Day name (e.g. Push Day)"
-                        value={newDay.name}
-                        onChange={e => setNewDay(d => ({ ...d, name: e.target.value }))}
-                        className={inputCls}
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          type="submit"
-                          disabled={savingDay}
-                          className="flex-1 py-2 bg-black hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          {savingDay ? 'Saving...' : 'Add Day'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowNewDay(false)}
-                          className="flex-1 py-2 bg-white text-gray-600 text-sm font-medium rounded-lg border border-gray-200 hover:bg-gray-50 transition-all duration-150"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                )}
-
-                {loadingDays ? (
-                  <Spinner />
-                ) : workoutDays.length === 0 && !showNewDay ? (
-                  <div className="flex flex-col items-center justify-center py-16 px-5 text-center">
-                    <p className="text-sm font-medium text-gray-600 m-0">No days yet</p>
-                    <p className="text-xs text-gray-400 mt-1">Add your first workout day</p>
-                  </div>
-                ) : (
-                  <ul className="p-3 flex flex-col gap-2 list-none m-0">
-                    {workoutDays.map(day => {
-                      const active = selectedDay?.id === day.id
-                      return (
-                        <li key={day.id}>
-                          <button
-                            onClick={() => openDay(day)}
-                            className={`w-full text-left p-3 rounded-lg border transition-all
-                              ${active
-                                ? 'border-2 border-black bg-gray-50'
-                                : 'border border-gray-200 hover:border-gray-300 bg-white'}`}
-                          >
-                            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide m-0">
-                              Day {day.day_number}
-                            </p>
-                            <p className="font-semibold text-gray-900 text-sm mt-0.5 m-0 leading-snug">
-                              {day.name}
-                            </p>
-                            <div className="flex items-center gap-3 mt-1.5">
-                              <span className="text-xs text-gray-400">
-                                {day.workout_exercises?.length || 0} exercises
-                              </span>
-                              {(day.workout_exercises?.length || 0) > 0 && (
-                                <span className="text-xs text-gray-400">
-                                  ~{Math.round(
-                                    (day.workout_exercises || []).reduce((total, ex) => {
-                                      const sets = parseInt(ex.sets) || 3
-                                      const rest = parseInt(ex.rest_seconds) || 90
-                                      return total + (sets * (rest + 45))
-                                    }, 0) / 60
-                                  )} min
-                                </span>
-                              )}
-                            </div>
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* ════════════════════════════════════════════════════
-            PANEL 3 — Exercises
-        ════════════════════════════════════════════════════ */}
-        <div className={`${!selectedDay ? 'hidden md:flex' : 'flex'} flex-1 flex-col overflow-hidden bg-gray-50 min-w-0`}>
-
-          {!selectedProgram ? (
-            <Placeholder text="Select a program to get started" />
-          ) : !selectedDay ? (
-            <div className="flex-1 overflow-y-auto">
-              <div className="px-6 py-4 border-b border-gray-100 bg-white">
-                <h2 className="text-xl font-bold text-gray-900 mb-1">{selectedProgram.name}</h2>
-                {selectedProgram.description && (
-                  <p className="text-sm text-gray-500 mb-3">{selectedProgram.description}</p>
-                )}
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-600">
-                    <span className="font-semibold text-gray-900">{workoutDays.length}</span> {workoutDays.length === 1 ? 'day' : 'days'}
-                  </span>
-                  <span className="text-gray-300">·</span>
-                  <span className="text-sm text-gray-600">
-                    <span className="font-semibold text-gray-900">
-                      {workoutDays.reduce((total, w) => total + (w.workout_exercises?.length || 0), 0)}
-                    </span> total exercises
-                  </span>
-                </div>
-              </div>
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6 mx-6 mt-6 max-w-md">
-                <h3 className="font-semibold text-gray-900 mb-1">Assign to Client</h3>
-                <p className="text-xs text-gray-500 mb-4">Assign this program to one of your clients</p>
-
-                <select
-                  value={assignClientId}
-                  onChange={e => setAssignClientId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 mb-3"
-                >
-                  <option value="">Select a client...</option>
-                  {clients.map(c => (
-                    <option key={c.id} value={c.id}>{c.full_name}</option>
-                  ))}
-                </select>
-
-                <label className="block text-sm text-gray-600 font-medium mb-1">Start Date</label>
-                <input
-                  type="date"
-                  value={assignStartDate}
-                  onChange={e => setAssignStartDate(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 mb-4"
-                />
-
-                <button
-                  onClick={handleAssignProgram}
-                  disabled={assignLoading || !assignClientId}
-                  className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {assignLoading ? 'Assigning...' : 'Assign Program'}
-                </button>
-
-                {assignBanner && (
-                  <div className={`mt-3 p-3 text-sm rounded-lg ${assignBanner.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'}`}>
-                    {assignBanner.text}
-                  </div>
-                )}
-              </div>
-
-              <p className="text-sm text-gray-400 italic text-center mt-8">Select a workout day to see exercises</p>
-            </div>
-          ) : (
-            <>
-              {/* Day header */}
-              <div className="px-6 py-4 bg-white border-b border-gray-200 flex-shrink-0">
-                <button onClick={() => setSelectedDay(null)} className="md:hidden flex items-center gap-1 text-sm text-gray-500 mb-4">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                  Workout Days
-                </button>
-                <div className="flex items-start justify-between mb-6 gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 truncate">{selectedProgram?.name} · Day {selectedDay?.day_number}</p>
-                    <h2 className="text-xl md:text-2xl font-bold text-gray-900 truncate">{selectedDay?.name}</h2>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => setShowAssignModal(true)}
-                      className="border border-gray-300 hover:border-gray-400 text-gray-700 text-sm font-medium px-3 py-2 rounded-lg transition-colors whitespace-nowrap"
-                    >
-                      Assign
-                    </button>
-                    <button
-                      onClick={() => setShowNewExercise(v => !v)}
-                      className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-3 md:px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
-                    >
-                      <span>+</span><span className="hidden sm:inline"> Add Exercise</span><span className="sm:hidden"> Add</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Scrollable body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5">
-
-                {/* Feedback banner */}
-                {banner && (
-                  <Banner
-                    key={banner.id}
-                    id={banner.id}
-                    message={banner.message}
-                    type={banner.type}
-                    onDismiss={() => setBanner(null)}
-                  />
-                )}
-
-                {/* ── Add exercise form ── */}
-                {showNewExercise && (
-                  <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4">
-                    <form key={exerciseFormKey} onSubmit={handleSaveExercise} className="flex flex-col gap-4">
-
-                      <Field label="Exercise">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            autoFocus
-                            placeholder="Search exercises..."
-                            value={exerciseSearch}
-                            onChange={e => {
-                              setExerciseSearch(e.target.value)
-                              if (newExercise.exercise_id) setNewExercise(ex => ({ ...ex, exercise_id: '' }))
-                            }}
-                            className={inputCls}
-                          />
-                          {newExercise.exercise_id && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#111827" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M20 6L9 17l-5-5"/>
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          <select
-                            value={equipmentFilter}
-                            onChange={e => setEquipmentFilter(e.target.value)}
-                            className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-black bg-white"
-                          >
-                            <option value="">All Equipment</option>
-                            <option value="barbell">Barbell</option>
-                            <option value="dumbbell">Dumbbell</option>
-                            <option value="cable">Cable</option>
-                            <option value="machine">Machine</option>
-                            <option value="bodyweight">Bodyweight</option>
-                            <option value="band">Band</option>
-                            <option value="kettlebell">Kettlebell</option>
-                            <option value="trx">TRX</option>
-                            <option value="sled">Sled</option>
-                            <option value="landmine">Landmine</option>
-                            <option value="trap_bar">Trap Bar</option>
-                            <option value="functional">Functional</option>
-                            <option value="plate">Plate</option>
-                          </select>
-                          <select
-                            value={muscleFilter}
-                            onChange={e => setMuscleFilter(e.target.value)}
-                            className="border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-2 focus:ring-black bg-white"
-                          >
-                            <option value="">All Muscles</option>
-                            <option value="Back">Back</option>
-                            <option value="Biceps">Biceps</option>
-                            <option value="Cardio">Cardio</option>
-                            <option value="Chest">Chest</option>
-                            <option value="Core">Core</option>
-                            <option value="Full Body">Full Body</option>
-                            <option value="Glutes">Glutes</option>
-                            <option value="Legs">Legs</option>
-                            <option value="Shoulders">Shoulders</option>
-                            <option value="Triceps">Triceps</option>
-                          </select>
-                          {(equipmentFilter || muscleFilter) && (
-                            <button
-                              onClick={() => { setEquipmentFilter(''); setMuscleFilter('') }}
-                              className="text-xs text-gray-400 hover:text-gray-600 underline"
-                            >
-                              Clear filters
-                            </button>
-                          )}
-                        </div>
-                        {/* Dropdown results */}
-                        {exerciseSearch && !newExercise.exercise_id && (
-                          <ul className="border border-gray-200 rounded-lg overflow-hidden max-h-44 overflow-y-auto bg-white shadow-sm list-none m-0 p-0">
-                            {filteredExercises.length === 0 ? (
-                              <li className="px-4 py-3 text-xs text-gray-400">
-                                No exercises match "{exerciseSearch}"
-                              </li>
-                            ) : filteredExercises.slice(0, 10).map(ex => (
-                              <li key={ex.id}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setNewExercise(e => ({ ...e, exercise_id: ex.id }))
-                                    setExerciseSearch(ex.name)
-                                  }}
-                                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors flex items-center justify-between gap-3"
-                                >
-                                  <span className="font-medium text-gray-700 truncate">{ex.name}</span>
-                                  {ex.muscle_group && (
-                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 bg-gray-100 text-gray-600">
-                                      {ex.muscle_group}
-                                    </span>
-                                  )}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </Field>
-
-                      <div className="grid grid-cols-3 gap-3">
-                        <Field label="Sets">
-                          <input
-                            type="number"
-                            min="1"
-                            placeholder="e.g. 4"
-                            value={newExercise.sets}
-                            onChange={e => setNewExercise(ex => ({ ...ex, sets: e.target.value }))}
-                            className={inputCls}
-                          />
-                        </Field>
-                        <Field label="Reps">
-                          <input
-                            type="text"
-                            placeholder="e.g. 8-12 or AMRAP"
-                            value={newExercise.reps}
-                            onChange={e => setNewExercise(ex => ({ ...ex, reps: e.target.value }))}
-                            className={inputCls}
-                          />
-                        </Field>
-                        <Field label="Rest (seconds)">
-                          <input
-                            type="number"
-                            min="0"
-                            placeholder="e.g. 90"
-                            value={newExercise.rest_seconds}
-                            onChange={e => setNewExercise(ex => ({ ...ex, rest_seconds: e.target.value }))}
-                            className={inputCls}
-                          />
-                        </Field>
-                      </div>
-
-                      <Field label="Notes (optional)">
-                        <textarea
-                          rows={2}
-                          placeholder="e.g. Controlled eccentric, pause at bottom"
-                          value={newExercise.notes}
-                          onChange={e => setNewExercise(ex => ({ ...ex, notes: e.target.value }))}
-                          className={`${inputCls} resize-none`}
-                        />
-                      </Field>
-
-                      <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-100">
-                        <button
-                          type="button"
-                          onClick={resetExerciseForm}
-                          className="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-150"
-                        >
-                          {newExercise.exercise_id || exerciseSearch.trim() || newExercise.sets || newExercise.reps.trim() || newExercise.rest_seconds || newExercise.notes.trim()
-                            ? 'Cancel'
-                            : 'Done'}
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={savingExercise}
-                          className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {savingExercise ? 'Adding...' : 'Add to Workout'}
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                )}
-
-                {/* ── Exercise list ── */}
-                {loadingExercises ? (
-                  <Spinner />
-                ) : dayExercises.length === 0 && !showNewExercise ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl px-10 py-10 text-center max-w-xs">
-                      <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M6 4v16M18 4v16M3 8h4M17 8h4M3 16h4M17 16h4"/>
-                        </svg>
-                      </div>
-                      <p className="text-sm font-medium text-gray-600 m-0">No exercises added yet</p>
-                      <p className="text-xs text-gray-400 mt-1.5">Click + Add Exercise to build this workout</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    {dayExercises.map((exercise, index) => {
-                      const isEditing = editingExerciseId === exercise.id
-                      return (
-                        <div key={exercise.id} className={`bg-white border rounded-xl p-4 transition-all ${isEditing ? 'border-gray-900' : 'border-gray-200 hover:border-gray-300'} ${deletingId === exercise.id ? 'opacity-30 pointer-events-none' : ''}`}>
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-3 flex-1">
-                              <span className="w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold flex items-center justify-center flex-shrink-0 mt-0.5">{index + 1}</span>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-semibold text-gray-900 text-sm">{exercise.exercises?.name || exercise.name}</span>
-                                  {(exercise.exercises?.muscle_group || exercise.muscle_group) && (
-                                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-medium">
-                                      {exercise.exercises?.muscle_group || exercise.muscle_group}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {isEditing ? (
-                                  <form
-                                    onSubmit={e => { e.preventDefault(); handleUpdateExercise(exercise.id) }}
-                                    className="flex flex-col gap-3 mt-3"
-                                  >
-                                    <div className="grid grid-cols-3 gap-3">
-                                      <Field label="Sets">
-                                        <input
-                                          type="number"
-                                          min="1"
-                                          autoFocus
-                                          value={editExercise.sets}
-                                          onChange={e => setEditExercise(x => ({ ...x, sets: e.target.value }))}
-                                          className={inputCls}
-                                        />
-                                      </Field>
-                                      <Field label="Reps">
-                                        <input
-                                          type="text"
-                                          value={editExercise.reps}
-                                          onChange={e => setEditExercise(x => ({ ...x, reps: e.target.value }))}
-                                          className={inputCls}
-                                        />
-                                      </Field>
-                                      <Field label="Rest (seconds)">
-                                        <input
-                                          type="number"
-                                          min="0"
-                                          value={editExercise.rest_seconds}
-                                          onChange={e => setEditExercise(x => ({ ...x, rest_seconds: e.target.value }))}
-                                          className={inputCls}
-                                        />
-                                      </Field>
-                                    </div>
-                                    <Field label="Notes (optional)">
-                                      <textarea
-                                        rows={2}
-                                        value={editExercise.notes}
-                                        onChange={e => setEditExercise(x => ({ ...x, notes: e.target.value }))}
-                                        className={`${inputCls} resize-none`}
-                                      />
-                                    </Field>
-                                    <div className="flex items-center justify-end gap-3">
-                                      <button
-                                        type="button"
-                                        onClick={cancelEditExercise}
-                                        className="text-sm font-medium text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition-all duration-150"
-                                      >
-                                        Cancel
-                                      </button>
-                                      <button
-                                        type="submit"
-                                        disabled={savingEdit}
-                                        className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                      >
-                                        {savingEdit ? 'Saving...' : 'Save'}
-                                      </button>
-                                    </div>
-                                  </form>
-                                ) : (
-                                  <>
-                                    <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                      {exercise.sets != null && (
-                                        <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
-                                          <span className="text-gray-400">Sets</span> {exercise.sets}
-                                        </span>
-                                      )}
-                                      {exercise.reps && (
-                                        <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
-                                          <span className="text-gray-400">Reps</span> {exercise.reps}
-                                        </span>
-                                      )}
-                                      {exercise.rest_seconds != null && (
-                                        <span className="inline-flex items-center gap-1 text-xs bg-gray-50 border border-gray-200 rounded-md px-2 py-1 text-gray-700 font-medium">
-                                          <span className="text-gray-400">Rest</span> {exercise.rest_seconds}s
-                                        </span>
-                                      )}
-                                    </div>
-                                    {exercise.notes && (
-                                      <p className="text-xs text-gray-500 mt-2 italic">{exercise.notes}</p>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                            {!isEditing && (
-                              <div className="flex items-center ml-2 flex-shrink-0">
-                                {editingExerciseId === null && (
-                                  <button
-                                    type="button"
-                                    onClick={() => startEditExercise(exercise)}
-                                    title="Edit exercise"
-                                    className="text-gray-300 hover:text-gray-600 transition-colors p-1"
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                    </svg>
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteExercise(exercise.id)}
-                                  title="Delete exercise"
-                                  className="text-gray-300 hover:text-red-400 transition-colors p-1"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-      </div>
-
-      {/* ── Assign Program Modal ── */}
-      {showAssignModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end md:items-center justify-center p-0 md:p-4"
-          onClick={() => setShowAssignModal(false)}
-        >
-          <div
-            className="bg-white rounded-t-2xl md:rounded-2xl p-6 w-full md:max-w-sm"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Assign to Client</h3>
-              <button
-                onClick={() => setShowAssignModal(false)}
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <p className="text-sm text-gray-500 mb-4">Assign <span className="font-medium text-gray-700">{selectedProgram?.name}</span> to one of your clients</p>
-
-            <select
-              value={assignClientId}
-              onChange={e => setAssignClientId(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 mb-3"
-            >
-              <option value="">Select a client...</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.full_name}</option>
-              ))}
-            </select>
-
-            <label className="block text-sm text-gray-600 font-medium mb-1">Start Date</label>
-            <input
-              type="date"
-              value={assignStartDate}
-              onChange={e => setAssignStartDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900 mb-4"
+          <div className="grid grid-cols-3 gap-3">
+            <MiniField
+              label="Sets" type="number" inputMode="numeric" min="1" placeholder="3" autoFocus
+              value={newExercise.sets} onChange={e => setNewExercise(ex => ({ ...ex, sets: e.target.value }))}
             />
-
-            <button
-              onClick={handleAssignProgram}
-              disabled={assignLoading || !assignClientId}
-              className="bg-black hover:bg-gray-800 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors w-full disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {assignLoading ? 'Assigning...' : 'Assign Program'}
-            </button>
-
-            {assignBanner && (
-              <div className={`mt-3 p-3 text-sm rounded-lg ${assignBanner.type === 'error' ? 'bg-red-100 text-red-800' : 'bg-emerald-50 border border-emerald-200 text-emerald-700'}`}>
-                {assignBanner.text}
-              </div>
-            )}
+            <MiniField
+              label="Reps" type="text" placeholder="8-12"
+              value={newExercise.reps} onChange={e => setNewExercise(ex => ({ ...ex, reps: e.target.value }))}
+            />
+            <MiniField
+              label="Rest (sec)" type="number" inputMode="numeric" min="0" placeholder="90"
+              value={newExercise.rest_seconds} onChange={e => setNewExercise(ex => ({ ...ex, rest_seconds: e.target.value }))}
+            />
           </div>
+          <TextArea
+            label="Coaching note (optional)" rows={2} placeholder="e.g. Pause at the bottom"
+            value={newExercise.notes} onChange={e => setNewExercise(ex => ({ ...ex, notes: e.target.value }))}
+          />
+        </form>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <SearchBox value={exerciseSearch} onChange={setExerciseSearch} placeholder="Search exercises" autoFocus />
+          <FilterChips
+            options={muscleOptions}
+            value={muscleFilter || 'All'}
+            onChange={v => setMuscleFilter(v === 'All' ? '' : v)}
+          />
+          <Select value={equipmentFilter} onChange={e => setEquipmentFilter(e.target.value)} aria-label="Equipment">
+            <option value="">Any equipment</option>
+            {EQUIPMENT.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </Select>
+          {filteredExercises.length === 0 ? (
+            <p className="text-sm text-muted text-center py-6">
+              {exerciseSearch ? `No exercises match "${exerciseSearch}".` : 'No exercises match these filters.'}
+            </p>
+          ) : (
+            <ul className="divide-y divide-line -mx-1">
+              {filteredExercises.slice(0, 50).map(ex => (
+                <li key={ex.id}>
+                  <button
+                    type="button"
+                    onClick={() => setNewExercise(n => ({ ...n, exercise_id: ex.id }))}
+                    className="w-full min-h-[52px] px-1 py-2 flex items-center justify-between gap-3 text-left hover:bg-surface-2 rounded-xl"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-semibold text-ink truncate">{ex.name}</span>
+                      {ex.muscle_group && <span className="block text-[13px] text-muted">{ex.muscle_group}</span>}
+                    </span>
+                    <Plus size={18} className="text-accent shrink-0" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {filteredExercises.length > 50 && (
+            <p className="text-[13px] text-muted text-center">Showing 50 of {filteredExercises.length}. Search to narrow it down.</p>
+          )}
         </div>
       )}
+    </Sheet>
+  )
+
+  const assignSheet = (
+    <Sheet
+      open={sheet === 'assign'}
+      onClose={() => setSheet(null)}
+      title="Assign to a client"
+      footer={
+        <Button size="lg" block onClick={handleAssignProgram} disabled={assignLoading || !assignClientId}>
+          {assignLoading ? 'Assigning…' : 'Assign program'}
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <p className="text-[15px] text-muted">
+          <span className="font-bold text-ink">{selectedProgram?.name}</span> will show in your client's app from the start date.
+        </p>
+        {clients.length === 0 ? (
+          <p className="text-sm text-muted bg-surface-2 rounded-[14px] px-4 py-3">Add a client from the dashboard first.</p>
+        ) : (
+          <Select label="Client" value={assignClientId} onChange={e => setAssignClientId(e.target.value)}>
+            <option value="">Choose a client</option>
+            {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+          </Select>
+        )}
+        <Field label="Start date" type="date" value={assignStartDate} onChange={e => setAssignStartDate(e.target.value)} />
+        {assignError && <p className="m-0 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{assignError}</p>}
+      </div>
+    </Sheet>
+  )
+
+  // ─── Program list ──────────────────────────────────────────────────────────
+
+  if (!selectedProgram) {
+    return (
+      <div className="flex flex-col gap-6">
+        <PageTitle
+          title="Programs"
+          action={
+            <Button onClick={() => { setNewProgram({ name: '', description: '' }); setSheet('program') }}>
+              <Plus size={18} /> New program
+            </Button>
+          }
+        />
+        {loadingPrograms ? (
+          <Loading />
+        ) : programs.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={ClipboardList}
+              title="No programs yet"
+              body="Build a program once, then assign it to as many clients as you like."
+              action={<Button onClick={() => setSheet('program')}><Plus size={18} /> New program</Button>}
+            />
+          </Card>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {programs.map(program => {
+              const count = dayCount(program)
+              return (
+                <Card key={program.id} as="button" onClick={() => openProgram(program)} className="flex items-center gap-3 min-h-[88px]">
+                  <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+                    <Dumbbell size={20} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[17px] font-bold text-ink truncate">{program.name}</span>
+                    {program.description && <span className="block text-[13px] text-muted truncate">{program.description}</span>}
+                    <span className="block text-[13px] text-muted mt-0.5">{plural(count, 'day')}</span>
+                  </span>
+                  <ChevronRight size={20} className="text-faint shrink-0" />
+                </Card>
+              )
+            })}
+          </div>
+        )}
+        {newProgramSheet}
+        <Toast toast={toast} />
+      </div>
+    )
+  }
+
+  // ─── One program ───────────────────────────────────────────────────────────
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <BackLink onClick={closeProgram}>Programs</BackLink>
+        <PageTitle
+          className="mt-1 items-start [&_h1]:whitespace-normal [&_h1]:break-words"
+          title={selectedProgram.name}
+          action={
+            <Button onClick={() => { setAssignError(''); setSheet('assign') }}>
+              <UserPlus size={18} /> Assign
+            </Button>
+          }
+        />
+        {selectedProgram.description && <p className="text-[15px] text-muted mt-1.5">{selectedProgram.description}</p>}
+        {!loadingDays && workoutDays.length > 0 && (
+          <div className="flex gap-2 mt-3">
+            <Chip>{plural(workoutDays.length, 'day')}</Chip>
+            <Chip>{plural(totalExercises, 'exercise')}</Chip>
+          </div>
+        )}
+      </div>
+
+      {loadingDays ? (
+        <Loading />
+      ) : workoutDays.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={Dumbbell}
+            title="No workout days yet"
+            body="Add the first day, then fill it with exercises."
+            action={<Button onClick={openNewDay}><Plus size={18} /> Add workout day</Button>}
+          />
+        </Card>
+      ) : (
+        <>
+          <div className="grid gap-3 lg:grid-cols-2 items-start">
+            {workoutDays.map(day => {
+              const list = exercisesByDay[day.id] ?? []
+              return (
+                <Card key={day.id} padded={false} className="overflow-hidden">
+                  <div className="px-4 pt-4 pb-3 flex items-end justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-accent">Day {day.day_number}</p>
+                      <h2 className="text-[17px] font-bold text-ink truncate">{day.name}</h2>
+                    </div>
+                    {list.length > 0 && (
+                      <p className="text-[13px] text-muted shrink-0">
+                        {plural(list.length, 'exercise')} · about {estimateMinutes(list)} min
+                      </p>
+                    )}
+                  </div>
+
+                  {list.length > 0 && (
+                    <ul className="divide-y divide-line border-t border-line">
+                      {list.map((ex, index) => {
+                        const isEditing = editingExerciseId === ex.id
+                        const name = ex.exercises?.name || ex.name
+                        const muscle = ex.exercises?.muscle_group || ex.muscle_group
+                        if (!isEditing) {
+                          return (
+                            <li key={ex.id}>
+                              <button
+                                type="button"
+                                onClick={() => startEditExercise(ex)}
+                                className={`w-full min-h-[60px] px-4 py-2.5 flex items-center gap-3 text-left hover:bg-surface-2 transition-colors ${deletingId === ex.id ? 'opacity-40 pointer-events-none' : ''}`}
+                              >
+                                <span className="w-7 h-7 rounded-full bg-surface-2 text-muted text-xs font-bold flex items-center justify-center shrink-0 tabular-nums">
+                                  {index + 1}
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block text-[15px] font-semibold text-ink truncate">{name}</span>
+                                  <span className="block text-[13px] text-muted truncate">
+                                    {[muscle, prescription(ex)].filter(Boolean).join(' · ') || 'Tap to set sets and reps'}
+                                  </span>
+                                  {ex.notes && <span className="block text-[13px] text-faint truncate">{ex.notes}</span>}
+                                </span>
+                                <ChevronRight size={18} className="text-faint shrink-0" />
+                              </button>
+                            </li>
+                          )
+                        }
+                        return (
+                          <li key={ex.id} className="bg-accent-soft/40">
+                            <form
+                              onSubmit={e => { e.preventDefault(); handleUpdateExercise(day.id, ex.id) }}
+                              className="px-4 py-3 flex flex-col gap-3"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="w-7 h-7 rounded-full bg-accent text-on-accent text-xs font-bold flex items-center justify-center shrink-0 tabular-nums">
+                                  {index + 1}
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                  <span className="block text-[15px] font-bold text-ink truncate">{name}</span>
+                                  {muscle && <span className="block text-[13px] text-muted">{muscle}</span>}
+                                </span>
+                                <button
+                                  type="button" aria-label="Move up" disabled={index === 0 || reordering}
+                                  onClick={() => moveExercise(day.id, index, -1)}
+                                  className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 disabled:opacity-30"
+                                >
+                                  <ChevronUp size={20} />
+                                </button>
+                                <button
+                                  type="button" aria-label="Move down" disabled={index === list.length - 1 || reordering}
+                                  onClick={() => moveExercise(day.id, index, 1)}
+                                  className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 disabled:opacity-30"
+                                >
+                                  <ChevronDown size={20} />
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-3 gap-2.5">
+                                <MiniField
+                                  label="Sets" type="number" inputMode="numeric" min="1" autoFocus
+                                  value={editExercise.sets} onChange={e => setEditExercise(x => ({ ...x, sets: e.target.value }))}
+                                />
+                                <MiniField
+                                  label="Reps" type="text"
+                                  value={editExercise.reps} onChange={e => setEditExercise(x => ({ ...x, reps: e.target.value }))}
+                                />
+                                <MiniField
+                                  label="Rest (sec)" type="number" inputMode="numeric" min="0"
+                                  value={editExercise.rest_seconds} onChange={e => setEditExercise(x => ({ ...x, rest_seconds: e.target.value }))}
+                                />
+                              </div>
+                              <TextArea
+                                rows={2} placeholder="Coaching note (optional)" aria-label="Coaching note"
+                                value={editExercise.notes} onChange={e => setEditExercise(x => ({ ...x, notes: e.target.value }))}
+                              />
+                              <div className="flex items-center gap-2">
+                                <ConfirmRemove
+                                  icon={Trash2} label="Remove exercise" disabled={deletingId === ex.id}
+                                  onConfirm={() => handleDeleteExercise(day.id, ex.id)}
+                                />
+                                <span className="flex-1" />
+                                <Button type="button" variant="ghost" size="sm" onClick={cancelEditExercise}>Cancel</Button>
+                                <Button type="submit" size="sm" disabled={savingEdit}>{savingEdit ? 'Saving…' : 'Save'}</Button>
+                              </div>
+                            </form>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+
+                  <div className={list.length > 0 ? 'border-t border-line' : ''}>
+                    <button
+                      type="button"
+                      onClick={() => openAddExercise(day)}
+                      className="w-full h-12 px-4 flex items-center gap-2 text-[15px] font-bold text-accent hover:bg-surface-2"
+                    >
+                      <Plus size={18} /> Add exercise
+                    </button>
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+          <Button variant="secondary" block onClick={openNewDay} className="sm:w-auto sm:self-start">
+            <Plus size={18} /> Add workout day
+          </Button>
+        </>
+      )}
+
+      {newDaySheet}
+      {addExerciseSheet}
+      {assignSheet}
+      <Toast toast={toast} />
     </div>
   )
 }
