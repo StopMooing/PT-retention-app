@@ -156,7 +156,7 @@ export default function ClientProfile() {
 
         const { data: photoData } = await supabase
           .from('progress_photos')
-          .select('id, photo_url, note, taken_at, created_at')
+          .select('id, photo_url, note, taken_date, created_at')
           .eq('client_id', clientId)
           .order('created_at', { ascending: false })
           .limit(12)

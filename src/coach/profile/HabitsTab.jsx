@@ -3,28 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { Heart, Flame, Check, ChevronRight } from 'lucide-react'
 import { Button, Card, Chip, EmptyState, Ring } from '../../ui'
 import { toLocalDateStr, addDays, formatDate, firstName } from '../lib'
+import { habitStreak, habitBestStreak } from '../../tools/dates'
 
 function done(logs, habitId, day) {
   return logs.some((l) => l.habit_id === habitId && l.completed_date === day && l.completed)
 }
 
-function streak(logs, habitId) {
-  let n = 0
-  let day = toLocalDateStr()
-  while (done(logs, habitId, day)) { n++; day = addDays(day, -1) }
-  return n
-}
-
-function bestStreak(logs, habitId) {
-  const dates = [...new Set(logs.filter((l) => l.habit_id === habitId && l.completed).map((l) => l.completed_date))].sort()
-  let best = 0, cur = 0, prev = null
-  for (const d of dates) {
-    cur = prev && addDays(prev, 1) === d ? cur + 1 : 1
-    best = Math.max(best, cur)
-    prev = d
-  }
-  return best
-}
+// Streaks come from the same functions the Habits page uses, so both screens agree.
+const streak = (logs, habitId) => habitStreak(logs, habitId)
+const bestStreak = habitBestStreak
 
 export default function HabitsTab({ client, habits, habitLogs }) {
   const navigate = useNavigate()

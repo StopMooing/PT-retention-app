@@ -103,7 +103,7 @@ export default function NotesTab({ client, clientGoal, onSaveGoal, clientLimitat
                 <figure key={photo.id}>
                   <img src={photo.photo_url} alt="" className="w-full aspect-square rounded-[14px] object-cover bg-surface-2" />
                   <figcaption className="text-xs text-muted mt-1">
-                    {formatDate(photo.taken_at || photo.created_at, { day: 'numeric', month: 'short' })}
+                    {formatDate(photo.taken_date || photo.created_at, { day: 'numeric', month: 'short' })}
                   </figcaption>
                 </figure>
               ))}
