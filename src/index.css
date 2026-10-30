@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+/* iPhones zoom the page in when a text box under 16px is tapped, and stay zoomed.
+   Kept outside Tailwind's layers on purpose so it wins over text-sm / text-xs.
+   Touch screens only, so desktop sizes are unchanged. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
