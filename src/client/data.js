@@ -37,7 +37,7 @@ export async function fetchExercisesFor(programWorkoutIds) {
 export async function fetchWorkoutLogs(clientId) {
   const { data } = await supabase
     .from('workout_logs')
-    .select('id, completed, program_workout_id, scheduled_workout_id, logged_at')
+    .select('id, completed, program_workout_id, scheduled_workout_id, logged_at, completed_at')
     .eq('client_id', clientId)
     .eq('completed', true)
   return data ?? []

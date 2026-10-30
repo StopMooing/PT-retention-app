@@ -181,8 +181,9 @@ export function Avatar({ name = '', src, size = 40, className }) {
   )
 }
 
-/* Bottom sheet on phones, centred dialog on wider screens. */
-export function Sheet({ open, onClose, title, children, footer }) {
+/* Bottom sheet on phones, centred dialog on wider screens. actions: optional buttons in
+   the header, before the close button. */
+export function Sheet({ open, onClose, title, children, footer, actions }) {
   useEffect(() => {
     if (!open) return
     const onKey = (e) => e.key === 'Escape' && onClose?.()
@@ -206,7 +207,8 @@ export function Sheet({ open, onClose, title, children, footer }) {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-2">
-          <h3 className="text-lg font-bold text-ink truncate">{title}</h3>
+          <h3 className="flex-1 min-w-0 text-lg font-bold text-ink truncate">{title}</h3>
+          {actions}
           <button onClick={onClose} aria-label="Close" className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-muted hover:bg-surface-2">
             <X size={20} />
           </button>

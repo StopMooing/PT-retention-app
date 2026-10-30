@@ -316,8 +316,8 @@ export default function ClientApp() {
             personalBests={strength.personalBests}
             coachName={coachName}
             onOpenWorkout={openWorkout}
+            onStartWorkout={(sw) => setLoggingWorkout({ ...sw, _existingLog: null })}
             onOpenProfile={() => setProfileOpen(true)}
-            onBuildWorkout={openWorkoutAI}
             onLogFood={() => { setFoodView('log'); setAddFoodOpen(true); goTab('food') }}
             onSeeCheckins={() => goTab('progress')}
           />

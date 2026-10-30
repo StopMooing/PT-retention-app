@@ -248,3 +248,10 @@ if (process.env.SOLO_PROGRAM) {
 
 // NO_PROGRAM=1: Jane has no program at all (with NOT_MIGRATED=1, the Programs side is empty).
 if (process.env.NO_PROGRAM) module.exports.tables.program_assignments = []
+
+// TODAY_DONE=1: today's scheduled session is logged (48 minutes, from logged_at to completed_at).
+if (process.env.TODAY_DONE) {
+  const t = module.exports.tables
+  const s = t.scheduled_workouts.find((sw) => sw.client_id === CLIENT && sw.scheduled_date === day(0))
+  if (s) t.workout_logs.push({ id: id(), client_id: CLIENT, program_workout_id: s.program_workout_id, scheduled_workout_id: s.id, logged_at: `${day(0)}T06:10:00+10:30`, completed_at: `${day(0)}T06:58:00+10:30`, completed: true, notes: null, total_volume_kg: 0 })
+}

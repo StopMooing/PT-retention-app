@@ -214,21 +214,35 @@ export function DayGrid({ days = 28, past = 7, selected = [], onToggle, busy }) 
   )
 }
 
-/* One day at a time: left arrow, "Today" or the date, right arrow. Nutrition and
-   Training both use it so they look the same. max ('YYYY-MM-DD') stops it going later. */
-export function DayNav({ date, onChange, max }) {
-  const atMax = !!max && date >= max
+/* Left arrow, a label, right arrow. DayNav (Nutrition) and the Training week navigator
+   both use it so they look the same. */
+export function StepNav({ label, onPrev, onNext, prevLabel, nextLabel, nextDisabled }) {
   const btn = 'w-11 h-11 rounded-full flex items-center justify-center text-ink bg-surface border border-line hover:bg-surface-2 disabled:opacity-30'
   return (
     <div className="flex items-center gap-2">
-      <button onClick={() => onChange(addDays(date, -1))} aria-label="Previous day" className={btn}>
+      <button onClick={onPrev} aria-label={prevLabel} className={btn}>
         <ChevronLeft size={20} />
       </button>
-      <p className="flex-1 text-center text-[17px] font-bold text-ink">{formatDateLabel(date)}</p>
-      <button disabled={atMax} onClick={() => { const n = addDays(date, 1); if (!max || n <= max) onChange(n) }} aria-label="Next day" className={btn}>
+      <p className="flex-1 text-center text-[17px] font-bold text-ink">{label}</p>
+      <button disabled={nextDisabled} onClick={onNext} aria-label={nextLabel} className={btn}>
         <ChevronRight size={20} />
       </button>
     </div>
+  )
+}
+
+/* One day at a time: "Today" or the date. max ('YYYY-MM-DD') stops it going later. */
+export function DayNav({ date, onChange, max }) {
+  const atMax = !!max && date >= max
+  return (
+    <StepNav
+      label={formatDateLabel(date)}
+      onPrev={() => onChange(addDays(date, -1))}
+      onNext={() => { const n = addDays(date, 1); if (!max || n <= max) onChange(n) }}
+      prevLabel="Previous day"
+      nextLabel="Next day"
+      nextDisabled={atMax}
+    />
   )
 }
 

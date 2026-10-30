@@ -56,6 +56,29 @@ export function formatShortDate(dateStr) {
   return parseDay(dateStr).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
+// "26 Oct".
+export function dayMonth(dateStr) {
+  return parseDay(dateStr).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })
+}
+
+// "Yesterday", "Today", "Tomorrow", else "Monday 2 Nov".
+export function shortDayLabel(dateStr, today = toLocalDateStr()) {
+  if (dateStr === today) return 'Today'
+  if (dateStr === addDays(today, 1)) return 'Tomorrow'
+  if (dateStr === addDays(today, -1)) return 'Yesterday'
+  return `${weekdayName(dateStr)} ${dayMonth(dateStr)}`
+}
+
+// A Monday-to-Sunday week by its Monday: "This week", "Last week", "Next week", else
+// "26 Oct to 1 Nov".
+export function weekLabel(monday, today = toLocalDateStr()) {
+  const diff = daysBetween(mondayOf(today), monday) / 7
+  if (diff === 0) return 'This week'
+  if (diff === -1) return 'Last week'
+  if (diff === 1) return 'Next week'
+  return `${dayMonth(monday)} to ${dayMonth(addDays(monday, 6))}`
+}
+
 export function weekdayName(dateStr) {
   return parseDay(dateStr).toLocaleDateString('en-AU', { weekday: 'long' })
 }

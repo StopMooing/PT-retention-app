@@ -1,18 +1,20 @@
-// Training: a day navigator up top (back into the past, forward into what's planned) with
-// that day's sessions, then Workouts (from the coach, on demand, saved) and Programs
-// (yours, on demand). Adding, moving and copying sessions happen in sheets.
+// Training: Workouts | Programs at the top. Workouts is the week's sessions (a week at a
+// time, back and forward), then on-demand and saved workouts. Programs is the active
+// program with its workouts, then on-demand programs. Adding, moving and copying sessions
+// happen in sheets.
 import { useState } from 'react'
 import {
   ChevronRight, MoreHorizontal, Plus, Sparkles, CalendarPlus, Check, Dumbbell, Bookmark, Play,
 } from 'lucide-react'
 import { supabase } from '../supabase'
 import { PageTitle, Card, Button, Segmented, Sheet, SectionLabel, Chip } from '../ui'
-import { toLocalDateStr, formatShortDate, addDays } from './dates'
+import { toLocalDateStr, formatShortDate, addDays, mondayOf, weekDays, weekLabel, shortDayLabel, dayMonth, parseDay } from './dates'
 import {
-  isDone, workoutName, groupByDate, estMinutes, sessionExercises, plural, nextSession, muscleGroups, programWeeks, programProgress,
+  isDone, workoutName, groupByDate, estMinutes, plural, muscleGroups, programWeeks, programProgress,
+  sessionsInWeek, sessionStatusLine,
 } from './metrics'
 import { parseAiJson } from './foods'
-import { DayGrid, DayNav, DoneDot, Overlay, BackHeader } from './common'
+import { DayGrid, StepNav, Overlay, BackHeader } from './common'
 import { scheduleOne, scheduleProgramDays, startProgram, stopProgram } from './programs'
 import WorkoutPreview from './WorkoutPreview'
 
@@ -48,6 +50,7 @@ function savedItem(w, extra = {}) {
 }
 
 const itemMeta = (it, short) => [it.count ? plural(it.count, 'exercise') : null, it.mins ? `${short ? '' : 'about '}${it.mins} min` : null].filter(Boolean).join(' · ')
+const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 function ItemBadge({ item }) {
   const Icon = item.type === 'saved' ? Bookmark : item.onDemand ? Play : Dumbbell
@@ -58,7 +61,7 @@ function ItemBadge({ item }) {
   )
 }
 
-function ItemList({ items, onOpen }) {
+function ItemList({ items, onOpen, short }) {
   return (
     <Card padded={false} className="divide-y divide-line">
       {items.map((it) => (
@@ -66,8 +69,8 @@ function ItemList({ items, onOpen }) {
           <ItemBadge item={it} />
           <div className="flex-1 min-w-0">
             <p className="text-[15px] font-bold text-ink truncate">{it.name}</p>
-            {itemMeta(it) && <p className="text-[13px] text-muted">{itemMeta(it)}</p>}
-            {it.muscles.length > 0 && <p className="text-[12px] text-faint truncate mt-0.5">{it.muscles.join(' · ')}</p>}
+            {itemMeta(it, short) && <p className="text-[13px] text-muted">{itemMeta(it, short)}</p>}
+            {!short && it.muscles.length > 0 && <p className="text-[12px] text-faint truncate mt-0.5">{it.muscles.join(' · ')}</p>}
           </div>
           <ChevronRight size={18} className="text-faint shrink-0" />
         </Row>
@@ -145,6 +148,52 @@ function ProgramDetail({
   )
 }
 
+/* ---------- Active program ---------- */
+
+// Name, who set it, week and dates, progress, description (two lines, then More) and,
+// for a program the client started, schedule another week and stop.
+function ProgramHeader({ assignment, progress, coachProgram, busy, onNextWeek, onStop }) {
+  const [more, setMore] = useState(false)
+  const program = assignment.programs ?? {}
+  const desc = program.description || ''
+  const long = desc.length > 90
+  const meta = [
+    progress.weeks ? `Week ${progress.week} of ${progress.weeks}` : progress.week ? `Week ${progress.week}` : null,
+    progress.start && progress.end ? `${dayMonth(progress.start)} to ${dayMonth(progress.end)}` : null,
+  ].filter(Boolean).join(' · ')
+  return (
+    <Card className="space-y-3">
+      <div>
+        <p className="text-[13px] font-bold text-muted">{coachProgram ? 'From your coach' : 'Started by you'}</p>
+        <p className="font-display text-[26px] leading-tight text-ink">{program.name}</p>
+        {meta && <p className="text-[13px] text-muted mt-0.5 tabular-nums">{meta}</p>}
+      </div>
+      {progress.total > 0 && (
+        <div>
+          <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+            <div className="h-full rounded-full bg-accent" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
+          </div>
+          <p className="text-[13px] text-muted mt-1.5 tabular-nums">{progress.done} of {plural(progress.total, 'session')} done</p>
+        </div>
+      )}
+      {desc && (
+        <div>
+          <p className={cx('text-[15px] text-ink leading-relaxed', !more && 'line-clamp-2')}>{desc}</p>
+          {long && (
+            <button onClick={() => setMore((m) => !m)} className="text-[13px] font-bold text-accent mt-0.5">{more ? 'Less' : 'More'}</button>
+          )}
+        </div>
+      )}
+      {!coachProgram && (
+        <div className="flex gap-2 pt-1">
+          <Button variant="secondary" size="sm" className="flex-1" disabled={busy} onClick={onNextWeek}><CalendarPlus size={16} /> Add a week</Button>
+          <Button variant="ghost" size="sm" className="flex-1" disabled={busy} onClick={onStop}>Stop program</Button>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 /* ---------- Tab ---------- */
 
 export default function TrainTab({
@@ -154,20 +203,22 @@ export default function TrainTab({
   onOpenWorkout, onStartWorkout, onPreviewWorkout, onBuildWorkout,
 }) {
   const today = toLocalDateStr()
-  const [selectedDate, setSelectedDate] = useState(today)
+  const earliestAdd = addDays(today, -7)
+  const [weekStart, setWeekStart] = useState(() => mondayOf(today))
   const byDate = groupByDate(scheduledWorkouts)
-  const selectedWorkouts = byDate[selectedDate] ?? []
+  const weekSessions = sessionsInWeek(scheduledWorkouts, weekStart)
 
   const [detailSw, setDetailSw] = useState(null) // options for one scheduled session
   const [dateMode, setDateMode] = useState(null) // 'move' | 'duplicate'
   const [pickedDate, setPickedDate] = useState(today)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerSelected, setPickerSelected] = useState(null)
+  const [addDate, setAddDate] = useState(today)
 
   const [previewItem, setPreviewItem] = useState(null)
   const [calItem, setCalItem] = useState(null) // add to calendar
   const [calDates, setCalDates] = useState([])
-  const [openProgram, setOpenProgram] = useState(null) // { mine: true } or an on-demand program
+  const [openProgram, setOpenProgram] = useState(null) // an on-demand program
   const [confirmStop, setConfirmStop] = useState(false)
   const [sheetError, setSheetError] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -182,7 +233,8 @@ export default function TrainTab({
   const programName = assignment?.programs?.name || 'your program'
   const myProgramItems = programWorkouts.map((pw) => programItem(pw, exMap, { eyebrow: `Day ${pw.day_number} of ${programName}` }))
 
-  // Sessions the coach put on the calendar that aren't days of the program, one each.
+  // Sessions the coach put on the calendar that aren't days of the program, one each
+  // (offered in the add sheet).
   const coachExtras = []
   const seen = new Set()
   for (const sw of scheduledWorkouts) {
@@ -194,19 +246,21 @@ export default function TrainTab({
     if (sw.program_workout_id) coachExtras.push(programItem({ id: sw.program_workout_id, name: workoutName(sw) }, exMap, { eyebrow: 'From your coach' }))
     else if (sw._customWorkout) coachExtras.push(savedItem(sw._customWorkout, { eyebrow: 'From your coach' }))
   }
-  const fromCoach = [...(coachProgram ? myProgramItems : []), ...coachExtras]
   const onDemandItems = onDemand.workouts.map((p) => programItem(p.days[0], exMap, { key: `od_${p.id}`, name: p.name, eyebrow: 'On demand', onDemand: true }))
   const savedItems = savedWorkouts.map((w) => savedItem(w))
   const hasPrograms = !!assignment || onDemand.programs.length > 0
-  const hasWorkouts = fromCoach.length + myProgramItems.length + onDemandItems.length + savedItems.length > 0
-  const showTabs = hasWorkouts || hasPrograms
-  const tab = showTabs && view === 'programs' ? 'programs' : 'workouts'
+  const tab = view === 'programs' ? 'programs' : 'workouts'
   const progress = assignment ? programProgress({ assignment, programWorkouts, scheduledWorkouts, workoutLogs, today }) : null
 
-  /* ----- the selected day ----- */
+  /* ----- the shown week ----- */
+  const days = weekDays(weekStart)
+  const canAdd = days[6] >= earliestAdd // keep the 7-days-back limit
+
   function openPicker() {
     setSheetError(null)
     setPickerSelected(null)
+    const first = days.includes(today) ? today : days[0]
+    setAddDate(first < earliestAdd ? earliestAdd : first)
     setPickerOpen(true)
   }
 
@@ -251,7 +305,7 @@ export default function TrainTab({
     if (!pickerSelected) return
     setBusy(true)
     setSheetError(null)
-    const { error } = await scheduleOne({ client, item: pickerSelected, date: selectedDate })
+    const { error } = await scheduleOne({ client, item: pickerSelected, date: addDate })
     if (error) {
       setBusy(false)
       setSheetError("Couldn't add that session. Try again.")
@@ -261,7 +315,7 @@ export default function TrainTab({
     setBusy(false)
     setPickerOpen(false)
     setPickerSelected(null)
-    showToast(`Added to ${formatShortDate(selectedDate)}`)
+    showToast(`Added to ${formatShortDate(addDate)}`)
   }
 
   /* ----- start now / add to calendar ----- */
@@ -360,11 +414,6 @@ export default function TrainTab({
     showToast(`${plural(res.count, 'session')} added from ${formatShortDate(start)}`)
   }
 
-  /* ----- the selected day ----- */
-  const canAdd = selectedDate >= addDays(today, -7)
-  // On an empty day from today on, point to the next session so there's always a next step.
-  const nextAfter = selectedWorkouts.length === 0 && selectedDate >= today ? nextSession(scheduledWorkouts, completedIds, selectedDate) : null
-
   // Picker groups for adding to a day.
   const pickerGroups = [
     ['Your program', myProgramItems],
@@ -375,8 +424,8 @@ export default function TrainTab({
 
   /* ----- program detail ----- */
   let programPage = null
-  if (openProgram && (assignment || !openProgram.mine)) {
-    const mine = !!assignment && (openProgram.mine || assignment.programs?.id === openProgram.id)
+  if (openProgram) {
+    const mine = !!assignment && assignment.programs?.id === openProgram.id
     const program = mine ? { ...assignment.programs, days: programWorkouts } : openProgram
     let note = null
     let footer = null
@@ -422,76 +471,60 @@ export default function TrainTab({
         }
       />
 
-      {/* One day at a time: back into what was done, forward into what's planned */}
-      <div className="space-y-3">
-        <DayNav date={selectedDate} onChange={setSelectedDate} />
-        {selectedWorkouts.length > 0 ? (
-          <Card padded={false} className="divide-y divide-line">
-            {selectedWorkouts.map((sw) => {
-              const done = isDone(sw, completedIds)
-              const exs = sessionExercises(sw, exMap)
-              const mins = estMinutes(exs)
-              const upcoming = !done && selectedDate >= today
-              return (
-                <div key={sw.id} className="flex items-center gap-1 pr-2">
-                  <Row onClick={() => onOpenWorkout(sw)} className="flex-1 min-w-0 pr-1">
-                    <DoneDot done={done} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-bold text-ink truncate">{workoutName(sw)}</p>
-                      <p className="text-[13px] text-muted truncate">
-                        {[!done && !upcoming ? 'Not logged yet' : null, exs.length ? plural(exs.length, 'exercise') : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are'}
-                      </p>
-                    </div>
-                  </Row>
-                  {done ? (
-                    <Button variant="soft" size="sm" onClick={() => onOpenWorkout(sw)}><Check size={15} strokeWidth={3} /> Done</Button>
-                  ) : upcoming ? (
-                    <Button size="sm" onClick={() => onOpenWorkout(sw)}>Start</Button>
-                  ) : null}
-                  <button onClick={() => setDetailSw(sw)} aria-label="Workout options" className="w-10 h-10 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 shrink-0">
-                    <MoreHorizontal size={20} />
-                  </button>
-                </div>
-              )
-            })}
-          </Card>
-        ) : (
-          <Card className="space-y-1">
-            <p className="text-[15px] font-bold text-ink">Nothing planned for this day.</p>
-            {nextAfter && (
-              <button onClick={() => setSelectedDate(nextAfter.scheduled_date)} className="text-[13px] text-muted text-left">
-                Next up: <span className="font-bold text-accent">{workoutName(nextAfter)}, {formatShortDate(nextAfter.scheduled_date)}</span>
-              </button>
-            )}
-          </Card>
-        )}
-        {canAdd && (
-          <Button variant="secondary" block onClick={openPicker}><Plus size={18} /> Add a workout</Button>
-        )}
-      </div>
-
-      {showTabs && (
-        <Segmented
-          options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
-          value={tab}
-          onChange={setView}
-        />
-      )}
+      <Segmented
+        options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
+        value={tab}
+        onChange={setView}
+      />
 
       {tab === 'workouts' && (
         <div className="space-y-7">
-          {fromCoach.length > 0 && (
-            <section>
-              <SectionLabel>From your coach</SectionLabel>
-              <ItemList items={fromCoach} onOpen={setPreviewItem} />
-            </section>
-          )}
-          {ownProgram && myProgramItems.length > 0 && (
-            <section>
-              <SectionLabel>{programName}</SectionLabel>
-              <ItemList items={myProgramItems} onOpen={setPreviewItem} />
-            </section>
-          )}
+          {/* A week at a time: back into what was done, forward into what's planned */}
+          <div className="space-y-3">
+            <StepNav
+              label={weekLabel(weekStart, today)}
+              onPrev={() => setWeekStart(addDays(weekStart, -7))}
+              onNext={() => setWeekStart(addDays(weekStart, 7))}
+              prevLabel="Previous week"
+              nextLabel="Next week"
+            />
+            {weekSessions.length > 0 ? (
+              <Card padded={false} className="divide-y divide-line overflow-hidden">
+                {weekSessions.map((sw) => {
+                  const done = isDone(sw, completedIds)
+                  const isToday = sw.scheduled_date === today
+                  const line = sessionStatusLine(sw, { completedIds, workoutLogs, exMap, today })
+                  return (
+                    <div key={sw.id} className={cx('flex items-center gap-1 pr-2', isToday && 'bg-accent-soft')}>
+                      <Row onClick={() => onOpenWorkout(sw)} className="flex-1 min-w-0 pr-1">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[15px] font-bold text-ink truncate">
+                            <span className={isToday ? 'text-accent' : 'text-muted'}>{shortDayLabel(sw.scheduled_date, today)}</span> · {workoutName(sw)}
+                          </p>
+                          {line && <p className="text-[13px] text-muted truncate">{line}</p>}
+                        </div>
+                        {done ? (
+                          <Check size={20} strokeWidth={3} className="text-accent shrink-0" aria-label="Done" />
+                        ) : sw.scheduled_date > today ? (
+                          <ChevronRight size={18} className="text-faint shrink-0" />
+                        ) : null}
+                      </Row>
+                      {!done && isToday && <Button size="sm" onClick={() => onOpenWorkout(sw)}>Start</Button>}
+                      <button onClick={() => setDetailSw(sw)} aria-label="Workout options" className="w-10 h-10 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 shrink-0">
+                        <MoreHorizontal size={20} />
+                      </button>
+                    </div>
+                  )
+                })}
+              </Card>
+            ) : (
+              <p className="text-[15px] text-muted px-1">Nothing planned this week.</p>
+            )}
+            {canAdd && (
+              <Button variant="secondary" block onClick={openPicker}><Plus size={18} /> Add a workout</Button>
+            )}
+          </div>
+
           {onDemandItems.length > 0 && (
             <section>
               <SectionLabel>On demand</SectionLabel>
@@ -504,7 +537,7 @@ export default function TrainTab({
               <ItemList items={savedItems} onOpen={setPreviewItem} />
             </section>
           )}
-          {!hasWorkouts && (
+          {onDemandItems.length + savedItems.length === 0 && (
             <Card onClick={onBuildWorkout} as="button" className="flex items-center gap-3">
               <span className="w-10 h-10 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Sparkles size={20} /></span>
               <div className="flex-1 min-w-0">
@@ -523,33 +556,21 @@ export default function TrainTab({
             <p className="text-[15px] text-muted text-center px-4 py-2">No programs yet. Your coach can give you one, or start an on-demand program when they're available.</p>
           )}
           {assignment && (
-            <section>
-              <SectionLabel>Your program</SectionLabel>
-              <Card as="button" onClick={() => setOpenProgram({ mine: true })} className="block space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-bold text-muted">{coachProgram ? 'From your coach' : 'Started by you'}</p>
-                    <p className="font-display text-[24px] leading-tight text-ink">{assignment.programs?.name}</p>
-                    <p className="text-[13px] text-muted mt-0.5">
-                      {[progress.weeks ? `Week ${progress.week} of ${progress.weeks}` : null, progress.perWeek ? `${plural(progress.perWeek, 'session')} a week` : null].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                  <ChevronRight size={18} className="text-faint shrink-0 mt-1" />
-                </div>
-                {progress.total > 0 && (
-                  <div>
-                    <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
-                      <div className="h-full rounded-full bg-accent" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
-                    </div>
-                    <p className="text-[13px] text-muted mt-1.5 tabular-nums">{progress.done} of {plural(progress.total, 'session')} done</p>
-                  </div>
-                )}
-              </Card>
+            <section className="space-y-3">
+              <ProgramHeader
+                assignment={assignment}
+                progress={progress}
+                coachProgram={coachProgram}
+                busy={busy}
+                onNextWeek={handleNextWeek}
+                onStop={() => setConfirmStop(true)}
+              />
+              {myProgramItems.length > 0 && <ItemList items={myProgramItems} onOpen={setPreviewItem} short />}
             </section>
           )}
           {onDemand.programs.length > 0 && (
             <section>
-              <SectionLabel>On demand</SectionLabel>
+              <SectionLabel>On demand programs</SectionLabel>
               <div className="space-y-3">
                 {onDemand.programs.map((p) => {
                   const weeks = programWeeks(p)
@@ -622,11 +643,11 @@ export default function TrainTab({
         {sheetError && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{sheetError}</p>}
       </Sheet>
 
-      {/* Add a workout to the selected day */}
+      {/* Add a workout to a day of the shown week */}
       <Sheet
         open={pickerOpen}
         onClose={() => { setPickerOpen(false); setPickerSelected(null) }}
-        title={`Add to ${formatShortDate(selectedDate)}`}
+        title={`Add to ${formatShortDate(addDate)}`}
         footer={pickerGroups.length > 0 && <Button size="lg" block disabled={!pickerSelected || busy} onClick={handlePickerConfirm}>{busy ? 'Adding...' : pickerSelected ? `Add ${pickerSelected.name}` : 'Pick a workout'}</Button>}
       >
         {pickerGroups.length === 0 ? (
@@ -636,6 +657,27 @@ export default function TrainTab({
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="grid grid-cols-7 gap-1" role="group" aria-label="Day">
+              {days.map((d, i) => {
+                const on = d === addDate
+                return (
+                  <button
+                    key={d}
+                    disabled={d < earliestAdd}
+                    onClick={() => setAddDate(d)}
+                    aria-pressed={on}
+                    aria-label={formatShortDate(d)}
+                    className={cx(
+                      'h-14 rounded-[14px] flex flex-col items-center justify-center gap-0.5 transition-colors disabled:opacity-30',
+                      on ? 'bg-accent text-on-accent' : d === today ? 'ring-2 ring-inset ring-accent text-ink' : 'text-ink hover:bg-surface-2',
+                    )}
+                  >
+                    <span className={cx('text-[11px] font-bold', on ? '' : 'text-faint')}>{DAY_LETTERS[i]}</span>
+                    <span className="text-sm font-bold tabular-nums">{parseDay(d).getDate()}</span>
+                  </button>
+                )
+              })}
+            </div>
             {pickerGroups.map(([label, list]) => (
               <div key={label}>
                 <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2">{label}</p>

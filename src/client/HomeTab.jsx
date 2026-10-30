@@ -1,13 +1,14 @@
-// Home: what do I do today. Greeting, the "This week" ring, the one thing to do now,
-// the latest word from the coach, today's food and a recent personal best.
-// Empty sections are hidden. Tapping a day on the week strip opens a summary of that day.
+// Home: what do I do today. Greeting, the "This week" ring, today's workout, the
+// check-in when it's due, the latest word from the coach, today's food and a recent
+// personal best. Empty sections are hidden. Tapping a day on the week strip opens a
+// summary of that day, with arrows to step through the days.
 import { useState } from 'react'
-import { Flame, Trophy, ChevronRight, Sparkles, Check, Plus } from 'lucide-react'
+import { Flame, Trophy, ChevronRight, ChevronLeft, Check, Plus } from 'lucide-react'
 import { Card, Button, Chip, Avatar, Sheet } from '../ui'
-import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate, formatDateLabel } from './dates'
+import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate, formatDateLabel, addDays, daysBetween } from './dates'
 import {
-  isDone, workoutName, groupByDate, estMinutes, nextSession, weekStreak, checkinStatus, sessionExercises,
-  plural, logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, weekCommitments,
+  isDone, workoutName, groupByDate, nextSession, weekStreak, checkinStatus, sessionExercises,
+  logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, weekCommitments, plannedLine, sessionStatusLine,
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
 import { NutritionSummary, CoachAvatar, DoneDot } from './common'
@@ -120,15 +121,28 @@ function WeekHero({ week, sessionHint, today, byDate, completedIds, onPickDay })
   )
 }
 
-/* One day from the week strip: its sessions and what was eaten. A read-only summary,
-   with Start for today's and upcoming sessions. */
-function DaySheet({ date, onClose, today, byDate, completedIds, workoutExercises, foodLogs, targets, onOpenWorkout }) {
+/* One day: its sessions and, up to today, what was eaten. Arrows step a day either way
+   without closing the sheet. Start for today's and upcoming sessions. */
+function DaySheet({ date, setDate, today, byDate, completedIds, workoutLogs, workoutExercises, foodLogs, targets, onOpenWorkout }) {
   const sessions = date ? byDate[date] ?? [] : []
   const food = date ? logsForDate(foodLogs, date) : []
   const totals = foodTotals(food)
+  const showFood = food.length > 0 || (sessions.length > 0 && !!date && date <= today)
+  const onClose = () => setDate(null)
   const open = (sw) => { onClose(); onOpenWorkout(sw) }
+  const arrow = 'w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface-2 shrink-0'
   return (
-    <Sheet open={!!date} onClose={onClose} title={date ? formatDateLabel(date) : ''}>
+    <Sheet
+      open={!!date}
+      onClose={onClose}
+      title={date ? formatDateLabel(date) : ''}
+      actions={
+        <div className="flex items-center gap-1">
+          <button onClick={() => setDate(addDays(date, -1))} aria-label="Previous day" className={arrow}><ChevronLeft size={20} /></button>
+          <button onClick={() => setDate(addDays(date, 1))} aria-label="Next day" className={arrow}><ChevronRight size={20} /></button>
+        </div>
+      }
+    >
       <div className="space-y-5">
         {sessions.length > 0 && (
           <section>
@@ -137,9 +151,7 @@ function DaySheet({ date, onClose, today, byDate, completedIds, workoutExercises
               {sessions.map((sw) => {
                 const done = isDone(sw, completedIds)
                 const upcoming = !done && date >= today
-                const exs = sessionExercises(sw, workoutExercises)
-                const mins = estMinutes(exs)
-                const meta = [done ? 'Done' : upcoming ? null : 'Not logged yet', exs.length ? plural(exs.length, 'exercise') : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ')
+                const meta = sessionStatusLine(sw, { completedIds, workoutLogs, exMap: workoutExercises, today }) || plannedLine(sessionExercises(sw, workoutExercises))
                 const body = (
                   <>
                     <DoneDot done={done} />
@@ -166,38 +178,41 @@ function DaySheet({ date, onClose, today, byDate, completedIds, workoutExercises
             </div>
           </section>
         )}
-        {food.length > 0 && (
+        {showFood && (
           <section>
             <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2">Food</p>
             <NutritionSummary compact totals={totals} targets={targets} />
           </section>
         )}
         {sessions.length === 0 && food.length === 0 && (
-          <p className="text-[15px] text-muted py-2">Nothing planned for this day.</p>
+          <p className="text-[15px] text-muted py-2">Nothing logged or planned.</p>
         )}
       </div>
     </Sheet>
   )
 }
 
-/* The one thing to do now: today's session, then the check-in, then food. */
+/* A card with an eyebrow, a title, a line under it and an action on the right. */
 function NextThing({ todo }) {
-  return (
-    <Card className="flex items-center gap-3">
+  const inner = (
+    <>
       {todo.avatar}
       <div className="flex-1 min-w-0">
         {todo.eyebrow && <p className="text-[13px] font-bold text-muted truncate">{todo.eyebrow}</p>}
         <p className="text-[19px] font-bold text-ink leading-snug truncate">{todo.title}</p>
-        {todo.body && <p className="text-[13px] text-muted mt-0.5">{todo.body}</p>}
+        {todo.body && <div className="text-[13px] text-muted mt-0.5">{todo.body}</div>}
       </div>
       {todo.action}
-    </Card>
+    </>
   )
+  return todo.onClick
+    ? <Card as="button" onClick={todo.onClick} className="flex items-center gap-3">{inner}</Card>
+    : <Card className="flex items-center gap-3">{inner}</Card>
 }
 
 export default function HomeTab({
   client, checkins, setCheckins, assignment, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
-  foodLogs, nutritionTargets, personalBests, coachName, onOpenWorkout, onOpenProfile, onBuildWorkout, onLogFood, onSeeCheckins,
+  foodLogs, nutritionTargets, personalBests, coachName, onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onSeeCheckins,
 }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [dayOpen, setDayOpen] = useState(null) // 'YYYY-MM-DD' of the day tapped on the strip
@@ -208,12 +223,11 @@ export default function HomeTab({
   const streak = weekStreak(workoutLogs, today)
   const status = checkinStatus(checkins, today)
   const byDate = groupByDate(scheduledWorkouts)
-  const todayLeft = (byDate[today] ?? []).filter((sw) => !isDone(sw, completedIds))
-  const todayDone = (byDate[today] ?? []).some((sw) => isDone(sw, completedIds))
+  const todays = byDate[today] ?? []
+  const todayLeft = todays.filter((sw) => !isDone(sw, completedIds))
   const next = nextSession(scheduledWorkouts, completedIds, today)
   const week = weekCommitments({ scheduledWorkouts, completedIds, checkins, foodLogs, today })
-  const todaysFood = logsForDate(foodLogs, today)
-  const totals = foodTotals(todaysFood)
+  const totals = foodTotals(logsForDate(foodLogs, today))
   const targets = nutritionTargetsFor(client, nutritionTargets)
   const pb = latestPB(personalBests, 14, today)
   const sundayOfWeek = weekDays(today)[6]
@@ -223,51 +237,43 @@ export default function HomeTab({
     ? `Next: ${workoutName(todayLeft[0])}, today`
     : next && next.scheduled_date <= sundayOfWeek ? `Next: ${workoutName(next)}, ${weekdayName(next.scheduled_date)}` : null
 
-  let todo = null
+  // Today's workout, always: still to do, done, or a rest day pointing to the next one.
+  let todayCard
   if (todayLeft.length > 0) {
     const sw = todayLeft[0]
-    const exs = sessionExercises(sw, workoutExercises)
-    const mins = estMinutes(exs)
-    todo = {
+    todayCard = {
       eyebrow: 'Today',
       title: workoutName(sw),
-      body: [exs.length ? plural(exs.length, 'exercise') : null, mins ? `about ${mins} min` : null].filter(Boolean).join(' · ') || 'Ready when you are',
-      action: <Button onClick={() => onOpenWorkout(sw)}>Start</Button>,
+      body: plannedLine(sessionExercises(sw, workoutExercises)) || 'Ready when you are',
+      action: <Button onClick={() => onStartWorkout(sw)}>Start</Button>,
     }
-  } else if (status.due) {
-    todo = {
-      avatar: hasCoach ? <CoachAvatar name={coachName} size={44} /> : null,
-      eyebrow: hasCoach ? coachLabel(coachName) : null,
-      title: 'Time to check in',
-      body: hasCoach ? `Tell ${coachName || 'your coach'} how the week went.` : 'A quick look back at your week.',
-      action: <Button onClick={() => setCheckinOpen(true)}>Check in</Button>,
-    }
-  } else if (todaysFood.length === 0) {
-    todo = {
+  } else if (todays.length > 0) {
+    const sw = todays[0]
+    todayCard = {
       eyebrow: 'Today',
-      title: "Log today's food",
-      body: "Whatever you've had so far.",
-      action: <Button onClick={onLogFood}>Log food</Button>,
+      title: workoutName(sw),
+      body: <span className="inline-flex items-center gap-1 font-bold text-accent"><Check size={15} strokeWidth={3} /> Completed</span>,
+      action: <ChevronRight size={20} className="text-faint shrink-0" />,
+      onClick: () => onOpenWorkout(sw),
     }
-  } else if (next) {
-    todo = {
-      eyebrow: todayDone ? 'Done for today. Nice work.' : 'Rest day',
-      title: `Next up: ${workoutName(next)}`,
-      body: weekdayName(next.scheduled_date),
-      action: (
-        <button onClick={() => onOpenWorkout(next)} aria-label={`Look at ${workoutName(next)}`} className="w-11 h-11 -mr-2 rounded-full flex items-center justify-center text-faint hover:bg-surface-2 shrink-0">
-          <ChevronRight size={20} />
-        </button>
-      ),
-    }
-  } else if (!todayDone) {
-    todo = {
+  } else {
+    const when = next && (daysBetween(today, next.scheduled_date) < 7 ? weekdayName(next.scheduled_date) : formatShortDate(next.scheduled_date))
+    todayCard = {
       eyebrow: 'Today',
-      title: 'Feel like moving?',
-      body: 'Build a session for today.',
-      action: <Button variant="secondary" size="sm" onClick={onBuildWorkout}><Sparkles size={15} /> Build one</Button>,
+      title: 'Rest day',
+      body: next ? `Next up: ${workoutName(next)}, ${when}` : 'Nothing scheduled yet',
+      action: next ? <ChevronRight size={20} className="text-faint shrink-0" /> : null,
+      onClick: next ? () => onOpenWorkout(next) : undefined,
     }
   }
+
+  const checkinCard = status.due ? {
+    avatar: hasCoach ? <CoachAvatar name={coachName} size={44} /> : null,
+    eyebrow: hasCoach ? coachLabel(coachName) : null,
+    title: 'Time to check in',
+    body: hasCoach ? `Tell ${coachName || 'your coach'} how the week went.` : 'A quick look back at your week.',
+    action: <Button onClick={() => setCheckinOpen(true)}>Check in</Button>,
+  } : null
 
   const reply = hasCoach ? status.lastReply : null
 
@@ -293,7 +299,8 @@ export default function HomeTab({
       <div className="space-y-3">
         <WeekHero week={week} sessionHint={sessionHint} today={today} byDate={byDate} completedIds={completedIds} onPickDay={setDayOpen} />
 
-        {todo && <NextThing todo={todo} />}
+        <NextThing todo={todayCard} />
+        {checkinCard && <NextThing todo={checkinCard} />}
 
         {/* Latest word from the coach */}
         {reply && (
@@ -341,10 +348,11 @@ export default function HomeTab({
 
       <DaySheet
         date={dayOpen}
-        onClose={() => setDayOpen(null)}
+        setDate={setDayOpen}
         today={today}
         byDate={byDate}
         completedIds={completedIds}
+        workoutLogs={workoutLogs}
         workoutExercises={workoutExercises}
         foodLogs={foodLogs}
         targets={targets}

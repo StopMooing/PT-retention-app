@@ -57,10 +57,47 @@ export function totalSets(exercises) {
   return (exercises ?? []).reduce((sum, ex) => sum + (ex.sets || 0), 0)
 }
 
+// Sessions in the week starting on monday ('YYYY-MM-DD'), Monday to Sunday, in date order.
+export function sessionsInWeek(scheduledWorkouts, monday) {
+  const sunday = addDays(monday, 6)
+  return (scheduledWorkouts ?? [])
+    .filter((sw) => sw.scheduled_date >= monday && sw.scheduled_date <= sunday)
+    .sort((a, b) => (a.scheduled_date < b.scheduled_date ? -1 : a.scheduled_date > b.scheduled_date ? 1 : 0))
+}
+
+// The completed log for a scheduled session, or null.
+export function sessionLog(sw, workoutLogs) {
+  return (workoutLogs ?? []).find((l) => l.scheduled_workout_id === sw.id && l.completed !== false) ?? null
+}
+
+// How long a logged session took, in minutes: logged_at to completed_at. null unless both
+// are there and the result is sensible (1 to 240 minutes).
+export function sessionMinutes(log) {
+  if (!log?.logged_at || !log?.completed_at) return null
+  const m = Math.round((new Date(log.completed_at).getTime() - new Date(log.logged_at).getTime()) / 60000)
+  return m >= 1 && m <= 240 ? m : null
+}
+
+// The planned size of a session: "6 exercises · about 45 min" (short: "6 exercises · 45 min").
+export function plannedLine(exercises, short) {
+  const mins = estMinutes(exercises)
+  return [exercises?.length ? plural(exercises.length, 'exercise') : null, mins ? `${short ? '' : 'about '}${mins} min` : null].filter(Boolean).join(' · ')
+}
+
+// The status line under a scheduled session: "Completed · 6 exercises · 48 min" when done
+// (minutes only when the log has a sensible length), "Not logged yet" for a past day, else null.
+export function sessionStatusLine(sw, { completedIds, workoutLogs, exMap, today = toLocalDateStr() }) {
+  if (isDone(sw, completedIds)) {
+    const count = sessionExercises(sw, exMap).length
+    const mins = sessionMinutes(sessionLog(sw, workoutLogs))
+    return ['Completed', count ? plural(count, 'exercise') : null, mins ? `${mins} min` : null].filter(Boolean).join(' · ')
+  }
+  return sw.scheduled_date < today ? 'Not logged yet' : null
+}
+
 // This week (Monday to Sunday): sessions scheduled and sessions done.
 export function sessionsThisWeek(scheduledWorkouts, completedIds, today = toLocalDateStr()) {
-  const days = new Set(weekDays(today))
-  const inWeek = (scheduledWorkouts ?? []).filter((sw) => days.has(sw.scheduled_date))
+  const inWeek = sessionsInWeek(scheduledWorkouts, mondayOf(today))
   return { scheduled: inWeek.length, done: inWeek.filter((sw) => isDone(sw, completedIds)).length }
 }
 
@@ -265,7 +302,8 @@ export function programWeeks(program) {
 
 // Where the client is in their active program: week (of weeks, when known), sessions a
 // week, and sessions done since it started out of the sessions in it (total is the
-// program length when known, otherwise the sessions scheduled since the start).
+// program length when known, otherwise the sessions scheduled since the start), plus its
+// start and end days (end only when the length is known).
 export function programProgress({ assignment, programWorkouts, scheduledWorkouts, workoutLogs, today = toLocalDateStr() }) {
   const perWeek = programWorkouts?.length ?? 0
   const weeks = programWeeks(assignment?.programs)
@@ -275,7 +313,8 @@ export function programProgress({ assignment, programWorkouts, scheduledWorkouts
   const rawWeek = start ? Math.max(1, Math.floor(daysBetween(start, today) / 7) + 1) : null
   const done = (workoutLogs ?? []).filter((l) => ids.has(l.program_workout_id) && l.logged_at && since(toLocalDateStr(new Date(l.logged_at)))).length
   const total = weeks ? weeks * perWeek : (scheduledWorkouts ?? []).filter((sw) => ids.has(sw.program_workout_id) && since(sw.scheduled_date)).length
-  return { perWeek, weeks, week: weeks && rawWeek ? Math.min(rawWeek, weeks) : rawWeek, done: total ? Math.min(done, total) : done, total }
+  const end = start && weeks ? addDays(start, weeks * 7 - 1) : null
+  return { perWeek, weeks, week: weeks && rawWeek ? Math.min(rawWeek, weeks) : rawWeek, done: total ? Math.min(done, total) : done, total, start, end }
 }
 
 // Muscle groups worked by a list of exercise rows, in order, no repeats.
