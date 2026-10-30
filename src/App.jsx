@@ -396,11 +396,9 @@ function ProtectedLayout({ user, userRole }) {
       >
         {/* Logo */}
         <div className="flex items-center h-16 border-b border-white/10 px-4 shrink-0 overflow-hidden">
-          <div className="w-8 h-8 rounded-lg bg-green-600 flex items-center justify-center shrink-0">
-            <span className="text-white font-black text-sm">S</span>
-          </div>
+          <img src="/favicon.svg" alt="" className="w-8 h-8 shrink-0" />
           <span className={`ml-3 text-white font-bold text-base whitespace-nowrap transition-all duration-300 ${isExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}>
-            StopMooing
+            UNFNSHD
           </span>
         </div>
 
@@ -507,7 +505,7 @@ function ProtectedLayout({ user, userRole }) {
             >
               {mobileSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <h1 className="text-gray-900 font-semibold text-base">{pageNames[location.pathname] || pageNames[location.pathname.split('/').slice(0, 2).join('/')] || 'StopMooing'}</h1>
+            <h1 className="text-gray-900 font-semibold text-base">{pageNames[location.pathname] || pageNames[location.pathname.split('/').slice(0, 2).join('/')] || 'UNFNSHD'}</h1>
           </div>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">

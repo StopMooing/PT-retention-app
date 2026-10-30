@@ -128,7 +128,7 @@ export default function ClaimPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-6 py-4">
-          <span className="text-black font-bold text-lg tracking-tight">StopMooing</span>
+          <span className="text-black font-bold text-lg tracking-tight">UNFNSHD</span>
         </div>
       </header>
 
