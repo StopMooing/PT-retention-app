@@ -232,7 +232,7 @@ export function PhotoViewer({ src, caption, onClose, footer }) {
     }
   }, [onClose])
   return (
-    <div role="dialog" aria-modal="true" aria-label={caption || 'Photo'} className="fixed inset-0 z-[70] flex flex-col" style={{ backgroundColor: 'rgba(0,0,0,0.92)', color: 'rgba(255,255,255,0.95)' }}>
+    <div role="dialog" aria-modal="true" aria-label={caption || 'Photo'} className="fixed inset-0 z-[70] flex flex-col" style={{ backgroundColor: '#000', color: 'rgba(255,255,255,0.95)' }}>
       <div className="flex items-center justify-between gap-3 px-4 pt-[max(env(safe-area-inset-top),16px)] pb-2">
         <p className="text-[15px] font-bold truncate">{caption}</p>
         <button onClick={onClose} aria-label="Close" className="w-10 h-10 -mr-2 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
