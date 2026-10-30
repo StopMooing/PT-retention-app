@@ -36,3 +36,6 @@ Google Chrome
 *.njsproj
 *.sln
 *.sw?
+
+# local screenshots
+shots/
