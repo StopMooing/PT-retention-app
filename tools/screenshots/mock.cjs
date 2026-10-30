@@ -134,6 +134,10 @@ async function install(page, role) {
     if (!db[table]) db[table] = []
     const params = [...url.searchParams.entries()]
     const filterRows = () => db[table].filter((r) => params.every(([k, v]) => ['select', 'order', 'limit', 'offset', 'or', 'on_conflict', 'columns'].includes(k) || matches(r, k, v)))
+    // NO_ON_DEMAND=1: behave like a database without the on-demand columns (migration not applied).
+    if (process.env.NO_ON_DEMAND && table === 'programs' && /is_on_demand|"kind"/.test(url.search + (req.postData() || ''))) {
+      return json(400, { code: '42703', message: 'column programs.is_on_demand does not exist' })
+    }
     const prefer = req.headers()['prefer'] || ''
     const wantsObject = (req.headers()['accept'] || '').includes('vnd.pgrst.object')
 

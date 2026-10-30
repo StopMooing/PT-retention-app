@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, ChevronRight, ChevronUp, ChevronDown, Trash2, ClipboardList, Dumbbell, Check, UserPlus } from 'lucide-react'
+import { Plus, ChevronRight, ChevronUp, ChevronDown, Trash2, ClipboardList, Dumbbell, Check, UserPlus, PlayCircle } from 'lucide-react'
 import { supabase } from './supabase'
-import { PageTitle, Card, Button, Chip, Sheet, EmptyState, Field } from './ui'
-import { Loading, Toast, BackLink, Select, TextArea, MiniField, SearchBox, FilterChips, ConfirmRemove } from './tools/kit'
+import { PageTitle, Card, Button, Chip, Sheet, EmptyState, Field, Segmented, SectionLabel } from './ui'
+import { Loading, Toast, BackLink, Select, TextArea, MiniField, SearchBox, FilterChips, ConfirmRemove, Toggle } from './tools/kit'
 import { useToast } from './tools/useToast'
 import { toLocalDateStr } from './tools/dates'
 
@@ -11,6 +11,15 @@ const EQUIPMENT = [
   ['bodyweight', 'Bodyweight'], ['band', 'Band'], ['kettlebell', 'Kettlebell'], ['trx', 'TRX'],
   ['sled', 'Sled'], ['landmine', 'Landmine'], ['trap_bar', 'Trap bar'], ['functional', 'Functional'], ['plate', 'Plate'],
 ]
+
+// What the "New program" sheet can build. On-demand ones only show once the database
+// has the on-demand columns (see onDemandOK below).
+const NEW_TYPES = [
+  { value: 'coaching', label: 'Coaching program', hint: 'Built for you to assign to clients.' },
+  { value: 'program', label: 'On-demand program', hint: 'A multi-day plan every member can start.' },
+  { value: 'workout', label: 'On-demand workout', hint: 'A single session every member can start.' },
+]
+const EMPTY_NEW_PROGRAM = { name: '', description: '', type: 'coaching' }
 
 const EMPTY_NEW_EXERCISE = { exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' }
 
@@ -49,8 +58,15 @@ export default function ProgramBuilder({ user }) {
   const [programs, setPrograms] = useState([])
   const [loadingPrograms, setLoadingPrograms] = useState(true)
   const [selectedProgram, setSelectedProgram] = useState(null)
-  const [newProgram, setNewProgram] = useState({ name: '', description: '' })
+  const [newProgram, setNewProgram] = useState(EMPTY_NEW_PROGRAM)
   const [savingProgram, setSavingProgram] = useState(false)
+
+  // On-demand library. onDemandOK stays false until the database has programs.is_on_demand
+  // (migration pending_on_demand_library). Until then every on-demand control is hidden and
+  // is_on_demand / kind are never sent.
+  const [onDemandOK, setOnDemandOK] = useState(false)
+  const [listView, setListView] = useState('coaching')
+  const [savingOnDemand, setSavingOnDemand] = useState(false)
 
   // Workout days and their exercises (exercisesByDay: day id -> ordered rows)
   const [workoutDays, setWorkoutDays] = useState([])
@@ -108,6 +124,16 @@ export default function ProgramBuilder({ user }) {
       .order('name')
     if (data) setAllExercises(data)
   }, [user.id])
+
+  useEffect(() => {
+    let cancelled = false
+    supabase.from('programs').select('is_on_demand').limit(1).then(({ error }) => {
+      if (cancelled) return
+      if (error) console.warn('On-demand library hidden: programs.is_on_demand is not available yet.', error.message)
+      else setOnDemandOK(true)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     fetchPrograms()
@@ -173,27 +199,86 @@ export default function ProgramBuilder({ user }) {
   }
 
   function closeProgram() {
+    // Land on the list the program now belongs to, so a just-toggled one is easy to find.
+    setListView(isOnDemand(selectedProgram) ? 'ondemand' : 'coaching')
     setSelectedProgram(null)
     setEditingExerciseId(null)
+  }
+
+  function openNewProgram() {
+    setNewProgram({ ...EMPTY_NEW_PROGRAM, type: onDemandOK && listView === 'ondemand' ? 'workout' : 'coaching' })
+    setSheet('program')
+  }
+
+  // A single on-demand workout is a program with exactly one day, named after the workout.
+  async function createWorkoutDay(program) {
+    const { data, error } = await supabase
+      .from('program_workouts')
+      .insert({ program_id: program.id, name: program.name, day_number: 1 })
+      .select()
+      .single()
+    return error ? null : data
   }
 
   async function handleSaveProgram(e) {
     e.preventDefault()
     if (!newProgram.name.trim()) return
+    const type = onDemandOK ? newProgram.type : 'coaching'
+    const row = { name: newProgram.name.trim(), description: newProgram.description.trim() || null, created_by: user.id }
+    if (onDemandOK) {
+      row.is_on_demand = type !== 'coaching'
+      row.kind = type === 'workout' ? 'workout' : 'program'
+    }
     setSavingProgram(true)
+    const { data, error } = await supabase.from('programs').insert(row).select().single()
+    let day = null
+    if (!error && type === 'workout') day = await createWorkoutDay(data)
+    setSavingProgram(false)
+    if (error) { showToast(type === 'workout' ? 'Could not save workout.' : 'Could not save program.', 'bad'); return }
+    const withMeta = { ...data, program_workouts: day ? [{ id: day.id }] : [] }
+    setPrograms(prev => [withMeta, ...prev])
+    setNewProgram(EMPTY_NEW_PROGRAM)
+    setSheet(null)
+    setListView(type === 'coaching' ? 'coaching' : 'ondemand')
+    showToast(type === 'workout' ? 'Workout created' : 'Program created')
+    openProgram(withMeta)
+  }
+
+  // Workout editor with no day yet (its day failed to save on create): make it, then add.
+  async function addToSingleWorkout() {
+    let day = workoutDays[0]
+    if (!day) {
+      day = await createWorkoutDay(selectedProgram)
+      if (!day) { showToast('Could not set up this workout. Try again.', 'bad'); return }
+      setWorkoutDays([{ ...day, workout_exercises: [] }])
+      setExercisesByDay(prev => ({ ...prev, [day.id]: [] }))
+      setPrograms(prev => prev.map(p => p.id === selectedProgram.id ? { ...p, program_workouts: [{ id: day.id }] } : p))
+    }
+    openAddExercise(day)
+  }
+
+  async function handleToggleOnDemand(next) {
+    if (!onDemandOK || savingOnDemand) return
+    setSavingOnDemand(true)
     const { data, error } = await supabase
       .from('programs')
-      .insert({ name: newProgram.name.trim(), description: newProgram.description.trim() || null, created_by: user.id })
-      .select()
-      .single()
-    setSavingProgram(false)
-    if (error) { showToast('Could not save program.', 'bad'); return }
-    const withMeta = { ...data, program_workouts: [] }
-    setPrograms(prev => [withMeta, ...prev])
-    setNewProgram({ name: '', description: '' })
-    setSheet(null)
-    showToast('Program created')
-    openProgram(withMeta)
+      .update({ is_on_demand: next })
+      .eq('id', selectedProgram.id)
+      .select('id')
+    setSavingOnDemand(false)
+    // A blocked update returns no error and no rows, so check both.
+    if (error || !data || data.length === 0) { showToast('Could not change that. Try again.', 'bad'); return }
+    setSelectedProgram(p => ({ ...p, is_on_demand: next }))
+    setPrograms(prev => prev.map(p => p.id === selectedProgram.id ? { ...p, is_on_demand: next } : p))
+    showToast(next ? 'Added to the on-demand library' : 'Taken out of the on-demand library')
+  }
+
+  function isOnDemand(program) {
+    return onDemandOK && !!program?.is_on_demand
+  }
+
+  function isSingleWorkout(program) {
+    return onDemandOK && program?.kind === 'workout'
   }
 
   function openNewDay() {
@@ -354,19 +439,46 @@ export default function ProgramBuilder({ user }) {
 
   // ─── Sheets ────────────────────────────────────────────────────────────────
 
+  const newIsWorkout = onDemandOK && newProgram.type === 'workout'
   const newProgramSheet = (
-    <Sheet open={sheet === 'program'} onClose={() => setSheet(null)} title="New program">
+    <Sheet open={sheet === 'program'} onClose={() => setSheet(null)} title={onDemandOK ? 'Create new' : 'New program'}>
       <form onSubmit={handleSaveProgram} className="flex flex-col gap-4">
+        {onDemandOK && (
+          <div role="radiogroup" aria-label="What are you building?" className="flex flex-col gap-1.5">
+            <span className="text-sm font-semibold text-ink mb-0.5">What are you building?</span>
+            {NEW_TYPES.map(t => {
+              const on = newProgram.type === t.value
+              return (
+                <button
+                  key={t.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => setNewProgram(p => ({ ...p, type: t.value }))}
+                  className={`w-full flex items-center gap-3 px-3 min-h-[56px] py-2 rounded-[14px] border text-left transition-colors ${on ? 'bg-accent-soft border-accent' : 'border-line hover:bg-surface-2'}`}
+                >
+                  <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${on ? 'border-accent bg-accent text-on-accent' : 'border-line-strong'}`}>
+                    {on && <Check size={12} strokeWidth={3} />}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-bold text-ink">{t.label}</span>
+                    <span className="block text-[13px] text-muted">{t.hint}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
         <Field
-          label="Name" autoFocus required placeholder="e.g. 12 week strength"
+          label="Name" autoFocus required placeholder={newIsWorkout ? 'e.g. 30 minute dumbbell session' : 'e.g. 12 week strength'}
           value={newProgram.name} onChange={e => setNewProgram(p => ({ ...p, name: e.target.value }))}
         />
         <TextArea
-          label="What is it for? (optional)" rows={2} placeholder="e.g. Full body build for beginners"
+          label="What is it for? (optional)" rows={2} placeholder={newIsWorkout ? 'e.g. Quick full body, dumbbells only' : 'e.g. Full body build for beginners'}
           value={newProgram.description} onChange={e => setNewProgram(p => ({ ...p, description: e.target.value }))}
         />
         <Button type="submit" size="lg" block disabled={savingProgram || !newProgram.name.trim()}>
-          {savingProgram ? 'Creating…' : 'Create program'}
+          {savingProgram ? 'Creating…' : newIsWorkout ? 'Create workout' : 'Create program'}
         </Button>
       </form>
     </Sheet>
@@ -515,46 +627,70 @@ export default function ProgramBuilder({ user }) {
   // ─── Program list ──────────────────────────────────────────────────────────
 
   if (!selectedProgram) {
+    const programCard = (program) => {
+      const single = isSingleWorkout(program)
+      const Icon = single ? PlayCircle : Dumbbell
+      return (
+        <Card key={program.id} as="button" onClick={() => openProgram(program)} className="flex items-center gap-3 min-h-[88px]">
+          <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+            <Icon size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[17px] font-bold text-ink truncate">{program.name}</span>
+            {program.description && <span className="block text-[13px] text-muted truncate">{program.description}</span>}
+            <span className="block text-[13px] text-muted mt-0.5">{single ? 'Single workout' : plural(dayCount(program), 'day')}</span>
+          </span>
+          <ChevronRight size={20} className="text-faint shrink-0" />
+        </Card>
+      )
+    }
+    const grid = (list) => <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{list.map(programCard)}</div>
+    const showOnDemand = onDemandOK && listView === 'ondemand'
+    const coaching = programs.filter(p => !isOnDemand(p))
+    const odWorkouts = programs.filter(p => isOnDemand(p) && p.kind === 'workout')
+    const odPrograms = programs.filter(p => isOnDemand(p) && p.kind !== 'workout')
+    const newButton = label => <Button onClick={openNewProgram}><Plus size={18} /> {label}</Button>
+
     return (
       <div className="flex flex-col gap-6">
-        <PageTitle
-          title="Programs"
-          action={
-            <Button onClick={() => { setNewProgram({ name: '', description: '' }); setSheet('program') }}>
-              <Plus size={18} /> New program
-            </Button>
-          }
-        />
+        <PageTitle title="Programs" action={newButton(showOnDemand ? 'New' : 'New program')} />
+        {onDemandOK && (
+          <Segmented
+            className="max-w-[320px] -mt-2"
+            value={listView}
+            onChange={setListView}
+            options={[{ value: 'coaching', label: 'Coaching' }, { value: 'ondemand', label: 'On demand' }]}
+          />
+        )}
         {loadingPrograms ? (
           <Loading />
-        ) : programs.length === 0 ? (
+        ) : showOnDemand ? (
+          odWorkouts.length === 0 && odPrograms.length === 0 ? (
+            <Card>
+              <EmptyState
+                icon={PlayCircle}
+                title="Nothing on demand yet"
+                body="Build a workout or program that every member can see and start on their own."
+                action={newButton('New on-demand workout')}
+              />
+            </Card>
+          ) : (
+            <>
+              {odWorkouts.length > 0 && <section><SectionLabel>Workouts</SectionLabel>{grid(odWorkouts)}</section>}
+              {odPrograms.length > 0 && <section><SectionLabel>Programs</SectionLabel>{grid(odPrograms)}</section>}
+            </>
+          )
+        ) : coaching.length === 0 ? (
           <Card>
             <EmptyState
               icon={ClipboardList}
               title="No programs yet"
               body="Build a program once, then assign it to as many clients as you like."
-              action={<Button onClick={() => setSheet('program')}><Plus size={18} /> New program</Button>}
+              action={newButton('New program')}
             />
           </Card>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {programs.map(program => {
-              const count = dayCount(program)
-              return (
-                <Card key={program.id} as="button" onClick={() => openProgram(program)} className="flex items-center gap-3 min-h-[88px]">
-                  <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
-                    <Dumbbell size={20} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-[17px] font-bold text-ink truncate">{program.name}</span>
-                    {program.description && <span className="block text-[13px] text-muted truncate">{program.description}</span>}
-                    <span className="block text-[13px] text-muted mt-0.5">{plural(count, 'day')}</span>
-                  </span>
-                  <ChevronRight size={20} className="text-faint shrink-0" />
-                </Card>
-              )
-            })}
-          </div>
+          grid(coaching)
         )}
         {newProgramSheet}
         <Toast toast={toast} />
@@ -563,6 +699,11 @@ export default function ProgramBuilder({ user }) {
   }
 
   // ─── One program ───────────────────────────────────────────────────────────
+
+  // A single on-demand workout hides day management: one list of exercises, no "Day 1".
+  const single = isSingleWorkout(selectedProgram)
+  const shownDays = single ? workoutDays.slice(0, 1) : workoutDays
+  const singleList = single && shownDays[0] ? (exercisesByDay[shownDays[0].id] ?? []) : []
 
   return (
     <div className="flex flex-col gap-5">
@@ -578,7 +719,14 @@ export default function ProgramBuilder({ user }) {
           }
         />
         {selectedProgram.description && <p className="text-[15px] text-muted mt-1.5">{selectedProgram.description}</p>}
-        {!loadingDays && workoutDays.length > 0 && (
+        {!loadingDays && single && singleList.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Chip>Single workout</Chip>
+            <Chip>{plural(singleList.length, 'exercise')}</Chip>
+            <Chip>About {estimateMinutes(singleList)} min</Chip>
+          </div>
+        )}
+        {!loadingDays && !single && workoutDays.length > 0 && (
           <div className="flex gap-2 mt-3">
             <Chip>{plural(workoutDays.length, 'day')}</Chip>
             <Chip>{plural(totalExercises, 'exercise')}</Chip>
@@ -586,8 +734,35 @@ export default function ProgramBuilder({ user }) {
         )}
       </div>
 
+      {onDemandOK && (
+        <Card className="flex items-center gap-3">
+          <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+            <PlayCircle size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-bold text-ink">On demand</span>
+            <span className="block text-[13px] text-muted">Every member can see and start this.</span>
+          </span>
+          <Toggle
+            checked={!!selectedProgram.is_on_demand}
+            onChange={handleToggleOnDemand}
+            disabled={savingOnDemand}
+            label="On demand: every member can see and start this"
+          />
+        </Card>
+      )}
+
       {loadingDays ? (
         <Loading />
+      ) : single && workoutDays.length === 0 ? (
+        <Card>
+          <EmptyState
+            icon={Dumbbell}
+            title="No exercises yet"
+            body="Add the exercises for this workout, in the order they're done."
+            action={<Button onClick={addToSingleWorkout}><Plus size={18} /> Add exercise</Button>}
+          />
+        </Card>
       ) : workoutDays.length === 0 ? (
         <Card>
           <EmptyState
@@ -599,17 +774,17 @@ export default function ProgramBuilder({ user }) {
         </Card>
       ) : (
         <>
-          <div className="grid gap-3 lg:grid-cols-2 items-start">
-            {workoutDays.map(day => {
+          <div className={`grid gap-3 items-start ${single ? 'max-w-[720px]' : 'lg:grid-cols-2'}`}>
+            {shownDays.map(day => {
               const list = exercisesByDay[day.id] ?? []
               return (
                 <Card key={day.id} padded={false} className="overflow-hidden">
                   <div className="px-4 pt-4 pb-3 flex items-end justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-accent">Day {day.day_number}</p>
-                      <h2 className="text-[17px] font-bold text-ink truncate">{day.name}</h2>
+                      {!single && <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-accent">Day {day.day_number}</p>}
+                      <h2 className="text-[17px] font-bold text-ink truncate">{single ? 'Exercises' : day.name}</h2>
                     </div>
-                    {list.length > 0 && (
+                    {!single && list.length > 0 && (
                       <p className="text-[13px] text-muted shrink-0">
                         {plural(list.length, 'exercise')} · about {estimateMinutes(list)} min
                       </p>
@@ -721,9 +896,11 @@ export default function ProgramBuilder({ user }) {
               )
             })}
           </div>
-          <Button variant="secondary" block onClick={openNewDay} className="sm:w-auto sm:self-start">
-            <Plus size={18} /> Add workout day
-          </Button>
+          {!single && (
+            <Button variant="secondary" block onClick={openNewDay} className="sm:w-auto sm:self-start">
+              <Plus size={18} /> Add workout day
+            </Button>
+          )}
         </>
       )}
 

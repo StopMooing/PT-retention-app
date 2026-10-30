@@ -135,6 +135,32 @@ export function FilterChips({ options, value, onChange, className }) {
   )
 }
 
+/* On/off switch. Track is accent when on, surface-2 when off; the knob is the surface colour. */
+export function Toggle({ checked, onChange, disabled, label, className }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={!!checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={cx(
+        'relative inline-flex items-center shrink-0 w-[52px] h-8 rounded-full border transition-colors disabled:opacity-50',
+        checked ? 'bg-accent border-accent' : 'bg-surface-2 border-line-strong',
+        className,
+      )}
+    >
+      <span
+        className={cx(
+          'absolute top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-surface shadow-sm transition-all',
+          checked ? 'left-[23px]' : 'left-[3px]',
+        )}
+      />
+    </button>
+  )
+}
+
 /* A remove button that asks once before acting. First tap arms it, second tap confirms. */
 export function ConfirmRemove({ onConfirm, label = 'Remove', confirmLabel = 'Tap again to remove', icon: Icon, disabled, className }) {
   const [armed, setArmed] = useState(false)
