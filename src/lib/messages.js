@@ -255,8 +255,10 @@ export function useConversation({ clientId, userId, viewer, active = true }) {
 /* ---------- Client: unread check-in replies ---------- */
 
 // When the client last opened Messages, per client, in this browser. A coach reply to a
-// check-in newer than this counts as unread. Missing (new phone, cleared data): unread.
+// check-in newer than this counts as unread. Missing (new phone, cleared data): only replies
+// from the last 7 days count, so a first open never shows a pile of old replies.
 const openedKey = (clientId) => `unfnshd-messages-opened-${clientId}`
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
 export function markConversationOpened(clientId) {
   try { localStorage.setItem(openedKey(clientId), new Date().toISOString()) } catch { /* storage blocked */ }
@@ -265,6 +267,6 @@ export function markConversationOpened(clientId) {
 export function unseenReplyCount(checkins, clientId) {
   let opened = null
   try { opened = localStorage.getItem(openedKey(clientId)) } catch { /* storage blocked */ }
-  const since = opened ? new Date(opened).getTime() : 0
+  const since = opened ? new Date(opened).getTime() : Date.now() - WEEK_MS
   return (checkins ?? []).filter((c) => c.coach_reply?.trim() && new Date(c.replied_at || c.submitted_at || 0).getTime() > since).length
 }
