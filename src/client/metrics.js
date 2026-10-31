@@ -1,6 +1,6 @@
 // One source of truth for every number the client sees. If a number appears on more
 // than one screen, it is worked out here so the screens always agree.
-import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween } from './dates'
+import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween, weekdayName } from './dates'
 import { parseAiJson } from './foods'
 import { programWeeks, planWeeks, planSessionCount, planEndDate } from '../lib/schedule.js'
 
@@ -280,11 +280,15 @@ export function dailyCheckinFor(dailyCheckins, dateStr = toLocalDateStr()) {
   return (dailyCheckins ?? []).find((d) => d.checkin_date === dateStr) ?? null
 }
 
-// This week's three rings (Monday to Sunday, local days), each value 0..1:
-//   train:   counted sessions this week that are done (left out when none are scheduled)
+// This week's three rings (Monday to Sunday, local days), each value 0..1. All three
+// lanes always show:
+//   train:   counted sessions this week that are done. With none scheduled the lane is
+//            empty: "Starts Monday" when the next session is later this week or next
+//            week, else "No sessions this week". An empty lane doesn't count against
+//            the week being complete.
 //   fuel:    days this week with any food logged, out of FOOD_DAYS_GOAL
 //   recover: daily check-ins this week, out of the days so far (Monday = 1, up to 7)
-// Returns { parts: [{ key, name, value, done, label }], complete, started }.
+// Returns { parts: [{ key, name, value, done, label, empty? }], complete, started }.
 export function weekRings({ scheduledWorkouts, completedIds, foodLogs, dailyCheckins, today = toLocalDateStr() }) {
   const days = weekDays(today).filter((d) => d <= today)
   const parts = []
@@ -293,6 +297,10 @@ export function weekRings({ scheduledWorkouts, completedIds, foodLogs, dailyChec
   if (s.scheduled > 0) {
     const done = Math.min(s.done, s.scheduled)
     parts.push({ key: 'train', name: 'Train', value: done / s.scheduled, done: done >= s.scheduled, label: `${done} of ${plural(s.scheduled, 'session')}` })
+  } else {
+    const next = nextSession(scheduledWorkouts, completedIds, today)
+    const soon = next && next.scheduled_date <= addDays(mondayOf(today), 13)
+    parts.push({ key: 'train', name: 'Train', value: 0, done: false, empty: true, label: soon ? `Starts ${weekdayName(next.scheduled_date)}` : 'No sessions this week' })
   }
 
   const foodDays = Math.min(days.filter((d) => logsForDate(foodLogs, d).length > 0).length, FOOD_DAYS_GOAL)
@@ -301,9 +309,10 @@ export function weekRings({ scheduledWorkouts, completedIds, foodLogs, dailyChec
   const elapsed = Math.min(days.length, 7)
   const dates = new Set((dailyCheckins ?? []).map((d) => d.checkin_date))
   const recovered = days.filter((d) => dates.has(d)).length
-  parts.push({ key: 'recover', name: 'Recover', value: recovered / elapsed, done: recovered >= elapsed, label: `${recovered} of ${plural(elapsed, 'day')}` })
+  parts.push({ key: 'recover', name: 'Recover', value: recovered / elapsed, done: recovered >= elapsed, label: `Daily check-ins, ${recovered} of ${plural(elapsed, 'day')}` })
 
-  return { parts, complete: parts.every((p) => p.done), started: parts.some((p) => p.value > 0) }
+  const counted = parts.filter((p) => !p.empty)
+  return { parts, complete: counted.every((p) => p.done), started: parts.some((p) => p.value > 0) }
 }
 
 /* ---------- Programs ---------- */

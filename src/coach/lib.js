@@ -80,12 +80,8 @@ export function checkinsThisWeek(checkins) {
   return (checkins ?? []).filter((c) => dayOf(c.submitted_at) >= start).length
 }
 
-// The client's words from a check-in. The app writes `blocker`; older rows used `notes`.
-const EMPTY_NOTE = ['none', 'n/a', 'na', 'nil', 'no', '-', 'nothing']
-export function checkinNote(ci) {
-  const text = (ci?.blocker || ci?.notes || '').trim()
-  return text && !EMPTY_NOTE.includes(text.toLowerCase()) ? text : ''
-}
+// The client's words from a check-in (shared with the chat, so both agree).
+export { checkinNote } from '../lib/messages'
 
 // True when the client started this program themselves from the on-demand library,
 // rather than the coach assigning it. Used by the profile header and the Training tab.

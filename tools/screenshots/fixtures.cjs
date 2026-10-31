@@ -281,3 +281,22 @@ if (process.env.TODAY_DONE) {
     id: id(), client_id: CLIENT, sender_id, body, created_at: new Date(ts(off, h).replace(":15:", `:${String(10 + i * 3)}:`)).toISOString(), read_at: off === 0 && sender_id === COACH ? null : ts(off, h + 1),
   }))
 }
+
+// ---- Check-ins in the chat ----
+// Two of Jane's daily check-ins have a note, so they show in Messages. Her weekly
+// check-ins already include ones with a coach reply and the latest one without.
+{
+  const t = module.exports.tables
+  const notes = { [day(-1)]: "Slept badly, the neighbour's dog. Still keen for Monday.", [day(-4)]: 'Hamstrings tight after the RDLs.' }
+  for (const d of t.daily_checkins) if (notes[d.checkin_date]) d.note = notes[d.checkin_date]
+}
+
+// PROGRAM_NEXT_WEEK=1: Jane's program starts next Monday, so nothing is scheduled this week.
+if (process.env.PROGRAM_NEXT_WEEK) {
+  const t = module.exports.tables
+  const dow = (new Date().getDay() + 6) % 7
+  const nextMonday = day(7 - dow)
+  t.scheduled_workouts = t.scheduled_workouts.filter((sw) => sw.client_id !== CLIENT || sw.scheduled_date >= nextMonday)
+  t.workout_logs = t.workout_logs.filter((l) => l.client_id !== CLIENT || t.scheduled_workouts.some((sw) => sw.id === l.scheduled_workout_id))
+  t.program_assignments.forEach((a) => { if (a.client_id === CLIENT) a.start_date = nextMonday })
+}

@@ -1,7 +1,8 @@
 // Home: what do I do today. Greeting, the "This week" rings (Train, Fuel, Recover),
-// today's workout, the weekly check-in when it's due, the daily check-in, the latest word
-// from the coach, today's food and a recent personal best. Empty sections are hidden. Tapping a day on the week strip opens a
-// summary of that day, with arrows to step through the days.
+// today's workout, the weekly check-in when it's due, the daily check-in, today's food and
+// a recent personal best. Coach messages and check-in replies live in Messages. Empty
+// sections are hidden. Tapping a day on the week strip opens a summary of that day, with
+// arrows to step through the days.
 import { useState } from 'react'
 import { Flame, Trophy, ChevronRight, ChevronLeft, Check, Plus, Pencil } from 'lucide-react'
 import { Card, Button, Chip, Avatar, Sheet } from '../ui'
@@ -12,11 +13,10 @@ import {
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
 import DailyCheckinSheet from './DailyCheckinSheet'
-import { NutritionSummary, CoachAvatar, DoneDot } from './common'
+import { NutritionSummary, DoneDot } from './common'
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const cx = (...c) => c.filter(Boolean).join(' ')
-const coachLabel = (name) => (name ? `Your coach, ${name}` : 'Your coach')
 
 // One shade of the accent per ring, so the rings and their labels match. Tracks are a
 // faint wash of the same shade.
@@ -87,7 +87,7 @@ function WeekHero({ week, today, byDate, completedIds, onPickDay }) {
                   {p.name}
                   {p.done && <Check size={15} strokeWidth={3} className="text-accent shrink-0" />}
                 </p>
-                <p className="text-[13px] text-muted leading-snug truncate">{p.label}</p>
+                <p className="text-[13px] text-muted leading-snug">{p.label}</p>
               </div>
             </li>
           ))}
@@ -241,8 +241,8 @@ function DailyCard({ todays, onOpen }) {
 
 export default function HomeTab({
   client, checkins, setCheckins, dailyCheckins, setDailyCheckins, assignment, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
-  foodLogs, nutritionTargets, personalBests, coachName, latestCoachMessage, unreadMessages = 0,
-  onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onSeeCheckins, onOpenMessages, showToast,
+  foodLogs, nutritionTargets, personalBests, coachName,
+  onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, showToast,
 }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [dailyOpen, setDailyOpen] = useState(false)
@@ -301,15 +301,6 @@ export default function HomeTab({
     action: <Button onClick={() => setCheckinOpen(true)}>Check in</Button>,
   } : null
 
-  // Latest word from the coach: a message (opens Messages) or a check-in reply (opens
-  // Progress), whichever is newer.
-  const reply = hasCoach ? status.lastReply : null
-  const replyAt = reply ? reply.replied_at || reply.submitted_at : null
-  const msg = hasCoach && latestCoachMessage && (!replyAt || new Date(latestCoachMessage.created_at) > new Date(replyAt)) ? latestCoachMessage : null
-  const coachWord = msg
-    ? { body: msg.body, at: msg.created_at, onClick: onOpenMessages, isNew: unreadMessages > 0 }
-    : reply ? { body: reply.coach_reply, at: replyAt, onClick: onSeeCheckins, isNew: false } : null
-
   return (
     <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-7">
       {/* Greeting */}
@@ -335,22 +326,6 @@ export default function HomeTab({
         <NextThing todo={todayCard} />
         {checkinCard && <NextThing todo={checkinCard} />}
         <DailyCard todays={todaysDaily} onOpen={() => setDailyOpen(true)} />
-
-        {/* Latest word from the coach */}
-        {coachWord && (
-          <Card onClick={coachWord.onClick} as="button" className="block">
-            <div className="flex items-center gap-3">
-              <CoachAvatar name={coachName} size={36} />
-              <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-bold text-ink truncate">{coachLabel(coachName)}</p>
-                <p className="text-[13px] text-muted">{formatShortDate(toLocalDateStr(new Date(coachWord.at)))}</p>
-              </div>
-              {coachWord.isNew && <Chip tone="solid">New</Chip>}
-              <ChevronRight size={18} className="text-faint shrink-0" />
-            </div>
-            <p className="text-[15px] text-ink leading-relaxed mt-3 line-clamp-3 whitespace-pre-wrap">{coachWord.body}</p>
-          </Card>
-        )}
 
         {/* Today's food */}
         <Card padded={false}>
@@ -398,7 +373,15 @@ export default function HomeTab({
         open={checkinOpen}
         onClose={() => setCheckinOpen(false)}
         client={client}
-        onSaved={(row) => { setCheckins((prev) => [row, ...prev]); setCheckinOpen(false) }}
+        onSaved={(row) => {
+          setCheckins((prev) => [row, ...prev])
+          setCheckinOpen(false)
+          // The reply comes back in Messages (it shows there with the check-in).
+          showToast?.(
+            hasCoach ? (coachName ? `Sent to ${coachName}. You'll see his reply in Messages.` : "Sent to your coach. You'll see their reply in Messages.") : 'Check-in saved.',
+            { ms: 4500 },
+          )
+        }}
       />
 
       <DailyCheckinSheet

@@ -1,7 +1,7 @@
 // Coach inbox: one row per client with messages, newest first. Desktop shows the list and
 // the open thread side by side; on a phone the thread opens full screen with a back button.
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, MessageSquare, Search, UserRound } from 'lucide-react'
 import { supabase } from '../../supabase'
 import { fetchLatestPerThread, fetchUnreadCounts } from '../../lib/messages'
@@ -64,6 +64,8 @@ function ThreadHeader({ client, onBack }) {
 export default function MessagesPage({ user }) {
   const { clientId } = useParams()
   const navigate = useNavigate()
+  // "Reply" on a check-in in Needs you opens the thread in reply mode for that check-in.
+  const replyCheckinId = useLocation().state?.replyCheckin ?? null
   const desktop = useIsDesktop()
   const [clients, setClients] = useState([])
   const [latest, setLatest] = useState({})
@@ -173,7 +175,7 @@ export default function MessagesPage({ user }) {
         {open && (
           <div className="fixed inset-0 z-40 flex flex-col bg-bg pt-[env(safe-area-inset-top)]">
             <ThreadHeader client={open} onBack={() => navigate('/messages')} />
-            <Thread key={open.id} clientId={open.id} userId={user.id} clientName={open.full_name} onChange={onThreadChange} className="flex-1" />
+            <Thread key={open.id} clientId={open.id} userId={user.id} clientName={open.full_name} onChange={onThreadChange} className="flex-1" replyCheckinId={replyCheckinId} />
           </div>
         )}
       </div>
@@ -189,7 +191,7 @@ export default function MessagesPage({ user }) {
           {open ? (
             <>
               <ThreadHeader client={open} />
-              <Thread key={open.id} clientId={open.id} userId={user.id} clientName={open.full_name} onChange={onThreadChange} className="flex-1" autoFocus />
+              <Thread key={open.id} clientId={open.id} userId={user.id} clientName={open.full_name} onChange={onThreadChange} className="flex-1" autoFocus replyCheckinId={replyCheckinId} />
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center">

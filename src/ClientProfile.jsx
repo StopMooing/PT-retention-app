@@ -13,7 +13,7 @@ import NutritionTab from './coach/profile/NutritionTab'
 import HabitsTab from './coach/profile/HabitsTab'
 import NotesTab from './coach/profile/NotesTab'
 import MessagesTab from './coach/profile/MessagesTab'
-import { fetchUnreadCounts } from './lib/messages'
+import { fetchUnreadCounts, saveCheckinReply } from './lib/messages'
 import { useMessageEvent, READ } from './coach/messages/events'
 import WorkoutSheet from './coach/profile/WorkoutSheet'
 import { programPlan, planWeeks } from './lib/schedule.js'
@@ -286,14 +286,8 @@ export default function ClientProfile({ user }) {
     if (!text) return
     setSavingReplyId(checkinId)
     setReplyError(null)
-    // The column GRANT means only coach_reply and replied_at can be written here. An
-    // attempt to touch the client's own scores or notes would be rejected by Postgres.
-    const { data, error } = await supabase
-      .from('checkins')
-      .update({ coach_reply: text, replied_at: new Date().toISOString() })
-      .eq('id', checkinId)
-      .select()
-      .single()
+    // Shared with the chat: writes only coach_reply and replied_at (the column GRANT).
+    const { data, error } = await saveCheckinReply({ checkinId, text })
     setSavingReplyId(null)
     if (error) {
       setReplyError({ id: checkinId, message: error.message })

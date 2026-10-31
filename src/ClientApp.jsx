@@ -11,7 +11,7 @@ import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
   fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName, fetchDailyCheckins,
 } from './client/data'
-import { fetchThread, fetchUnreadCounts } from './lib/messages'
+import { fetchUnreadCounts, unseenReplyCount, markConversationOpened } from './lib/messages'
 import { saveAiWorkout, saveAiMeal } from './client/aiSaves'
 import { Loading, Toast } from './client/common'
 import AIChat from './client/AIChat'
@@ -58,8 +58,9 @@ export default function ClientApp() {
   const [coachName, setCoachName] = useState(null)
   const [userId, setUserId] = useState(null)
   const [dailyCheckins, setDailyCheckins] = useState([])
-  const [latestCoachMessage, setLatestCoachMessage] = useState(null)
+  // Messages tab badge: unread coach messages plus check-in replies since Messages was last opened.
   const [unreadMessages, setUnreadMessages] = useState(0)
+  const [unseenReplies, setUnseenReplies] = useState(0)
 
   // Navigation
   const [tab, setTab] = useState('home')
@@ -101,7 +102,7 @@ export default function ClientApp() {
       const pwIds = [...new Set(sw.map((s) => s.program_workout_id).filter(Boolean))]
       if (pwIds.length > 0) setWorkoutExercises(await fetchExercisesFor(pwIds))
 
-      const [logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, thread, unread] = await Promise.all([
+      const [logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, unread] = await Promise.all([
         fetchWorkoutLogs(id),
         fetchFoodLogs(id),
         fetchResources(clientRow.pt_id),
@@ -114,12 +115,11 @@ export default function ClientApp() {
         fetchOnDemand(),
         fetchCoachName(clientRow.pt_id),
         fetchDailyCheckins(id),
-        clientRow.pt_id ? fetchThread(id, 30) : { data: [] },
         clientRow.pt_id ? fetchUnreadCounts({ readerId: user.id, clientId: id }) : {},
       ])
       setDailyCheckins(daily)
-      setLatestCoachMessage([...thread.data].reverse().find((m) => m.sender_id !== user.id) ?? null)
       setUnreadMessages(unread[id] || 0)
+      setUnseenReplies(clientRow.pt_id ? unseenReplyCount(ci, id) : 0)
       setOnDemand(library)
       setCoachName(coach)
       setWorkoutLogs(logs)
@@ -250,8 +250,13 @@ export default function ClientApp() {
 
   function goTab(id) {
     setTab(id)
-    // Opening Messages marks the thread read (useThread), so the badge clears.
-    if (id === 'messages') setUnreadMessages(0)
+    // Opening Messages marks the thread read (useThread) and the check-in replies seen, so
+    // the badge clears.
+    if (id === 'messages') {
+      setUnreadMessages(0)
+      setUnseenReplies(0)
+      if (client?.id) markConversationOpened(client.id)
+    }
     window.scrollTo(0, 0)
   }
 
@@ -331,9 +336,6 @@ export default function ClientApp() {
             checkins={checkins}
             dailyCheckins={dailyCheckins}
             setDailyCheckins={setDailyCheckins}
-            latestCoachMessage={latestCoachMessage}
-            unreadMessages={unreadMessages}
-            onOpenMessages={() => goTab('messages')}
             assignment={assignment}
             foodLogs={foodLogs}
             nutritionTargets={nutritionTargets}
@@ -343,7 +345,6 @@ export default function ClientApp() {
             onStartWorkout={(sw) => setLoggingWorkout({ ...sw, _existingLog: null })}
             onOpenProfile={() => setProfileOpen(true)}
             onLogFood={() => { setFoodView('log'); setAddFoodOpen(true); goTab('food') }}
-            onSeeCheckins={() => goTab('progress')}
           />
         )}
         {tab === 'train' && (
@@ -395,7 +396,7 @@ export default function ClientApp() {
           />
         )}
         {tab === 'messages' && client.pt_id && (
-          <MessagesTab clientId={client.id} userId={userId} coachName={coachName} onLatestCoachMessage={setLatestCoachMessage} />
+          <MessagesTab clientId={client.id} userId={userId} coachName={coachName} />
         )}
       </main>
 
@@ -403,7 +404,7 @@ export default function ClientApp() {
         <div className="max-w-[480px] mx-auto flex px-2">
           {TABS.filter((t) => !t.coachOnly || client.pt_id).map(({ id, label, icon: Icon }) => {
             const active = tab === id
-            const badge = id === 'messages' && !active ? unreadMessages : 0
+            const badge = id === 'messages' && !active ? unreadMessages + unseenReplies : 0
             return (
               <button
                 key={id}

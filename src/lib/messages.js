@@ -2,7 +2,11 @@
 // (coach_messages.client_id). Used by both the client app and the coach side so they
 // behave the same. Row level security limits every read and write to the client and
 // their coach; only read_at can be changed after sending.
-import { useCallback, useEffect, useRef, useState } from 'react'
+//
+// The chat also shows the client's check-ins: useConversation merges messages, weekly
+// check-ins (with the coach's reply) and daily check-ins that have a note into one
+// timeline (mergeTimeline), so the client and the coach see the same conversation.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabase'
 
 const COLS = 'id, client_id, sender_id, body, created_at, read_at'
@@ -119,4 +123,148 @@ export function useThread({ clientId, userId, active = true }) {
   }, [clientId, userId, add])
 
   return { messages, loading, error, send }
+}
+
+/* ---------- Check-ins in the chat ---------- */
+
+const CHECKIN_COLS = 'id, client_id, submitted_at, training_score, energy_score, mood_score, notes, blocker, coach_reply, replied_at'
+const DAILY_COLS = 'id, client_id, checkin_date, energy, sleep, soreness, note, created_at'
+const EMPTY_NOTE = ['none', 'n/a', 'na', 'nil', 'no', '-', 'nothing']
+
+// What the client wrote on a weekly check-in (blocker, else notes), or '' when they
+// wrote nothing real ("none", "n/a"...). Shared by the coach screens and the chat.
+export function checkinNote(ci) {
+  const text = (ci?.blocker || ci?.notes || '').trim()
+  return text && !EMPTY_NOTE.includes(text.toLowerCase()) ? text : ''
+}
+
+// The weekly check-in's scores, in the order they're shown. Mood only on older rows.
+export const CHECKIN_SCORES = [
+  { key: 'training_score', label: 'Training' },
+  { key: 'energy_score', label: 'Energy' },
+  { key: 'mood_score', label: 'Mood' },
+]
+
+// The daily check-in's scores as one line: "Energy 4 · Sleep 2 · Soreness 3".
+export function dailyLine(d) {
+  return [['energy', 'Energy'], ['sleep', 'Sleep'], ['soreness', 'Soreness']]
+    .filter(([k]) => d?.[k] != null)
+    .map(([k, label]) => `${label} ${d[k]}`)
+    .join(' · ')
+}
+
+export async function fetchThreadCheckins(clientId) {
+  const { data, error } = await supabase
+    .from('checkins')
+    .select(CHECKIN_COLS)
+    .eq('client_id', clientId)
+    .order('submitted_at', { ascending: false })
+    .limit(100)
+  if (error) console.error('Load check-ins for chat error:', error)
+  return data ?? []
+}
+
+// Daily check-ins with a note (the ones without one stay out of the chat).
+export async function fetchThreadDailyNotes(clientId) {
+  const { data, error } = await supabase
+    .from('daily_checkins')
+    .select(DAILY_COLS)
+    .eq('client_id', clientId)
+    .not('note', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (error) console.error('Load daily check-ins for chat error:', error)
+  return (data ?? []).filter((d) => d.note?.trim())
+}
+
+// The coach's reply to a weekly check-in. Coaches may only write coach_reply and
+// replied_at on checkins (column GRANT); anything else is rejected by Postgres.
+// Used by the client profile and the chat.
+export async function saveCheckinReply({ checkinId, text }) {
+  const body = (text ?? '').trim()
+  if (!body) return { data: null, error: new Error('empty') }
+  const { data, error } = await supabase
+    .from('checkins')
+    .update({ coach_reply: body, replied_at: new Date().toISOString() })
+    .eq('id', checkinId)
+    .select(CHECKIN_COLS)
+    .single()
+  if (error) console.error('Check-in reply error:', error)
+  return { data, error }
+}
+
+// One timeline, oldest first. viewer is 'client' or 'coach'; mine is true for what the
+// viewer sent. Items:
+//   { kind: 'message', m }            a coach_messages row
+//   { kind: 'checkin', ci }           a weekly check-in, from the client at submitted_at
+//   { kind: 'reply', ci }             the coach's reply to it, at replied_at
+//   { kind: 'daily', d }              a daily check-in with a note, at created_at
+export function mergeTimeline({ messages = [], checkins = [], dailyCheckins = [], userId, viewer }) {
+  const fromClient = viewer === 'client'
+  const items = []
+  for (const m of messages) items.push({ kind: 'message', key: m.id, at: m.created_at, mine: m.sender_id === userId, m })
+  for (const ci of checkins) {
+    if (!ci.submitted_at) continue
+    items.push({ kind: 'checkin', key: `c${ci.id}`, at: ci.submitted_at, mine: fromClient, ci })
+    if (ci.coach_reply?.trim()) {
+      // Older replies have no replied_at: show them just after the check-in.
+      const at = ci.replied_at || new Date(new Date(ci.submitted_at).getTime() + 1000).toISOString()
+      items.push({ kind: 'reply', key: `r${ci.id}`, at, mine: !fromClient, ci })
+    }
+  }
+  for (const d of dailyCheckins) {
+    if (d.note?.trim() && d.created_at) items.push({ kind: 'daily', key: `d${d.id}`, at: d.created_at, mine: fromClient, d })
+  }
+  return items.sort((a, b) => new Date(a.at) - new Date(b.at))
+}
+
+// The whole conversation for one client: live messages (useThread) plus check-ins,
+// loaded once when it opens. replyToCheckin is for the coach. Returns
+// { items, messages, checkins, loading, error, send, replyToCheckin }.
+export function useConversation({ clientId, userId, viewer, active = true }) {
+  const thread = useThread({ clientId, userId, active })
+  const [checkins, setCheckins] = useState([])
+  const [dailies, setDailies] = useState([])
+  const [extrasFor, setExtrasFor] = useState(null) // clientId the check-ins were loaded for
+
+  useEffect(() => {
+    if (!clientId || !userId || !active) return
+    let cancelled = false
+    Promise.all([fetchThreadCheckins(clientId), fetchThreadDailyNotes(clientId)]).then(([c, d]) => {
+      if (cancelled) return
+      setCheckins(c)
+      setDailies(d)
+      setExtrasFor(clientId)
+    })
+    return () => { cancelled = true }
+  }, [clientId, userId, active])
+
+  const replyToCheckin = useCallback(async (checkinId, text) => {
+    const { data, error } = await saveCheckinReply({ checkinId, text })
+    if (data) setCheckins((prev) => prev.map((c) => (c.id === checkinId ? { ...c, ...data } : c)))
+    return { ok: !error && !!data, error }
+  }, [])
+
+  const items = useMemo(
+    () => mergeTimeline({ messages: thread.messages, checkins, dailyCheckins: dailies, userId, viewer }),
+    [thread.messages, checkins, dailies, userId, viewer],
+  )
+  return { ...thread, items, checkins, loading: thread.loading || extrasFor !== clientId, replyToCheckin }
+}
+
+/* ---------- Client: unread check-in replies ---------- */
+
+// When the client last opened Messages, per client, in this browser. A coach reply to a
+// check-in newer than this counts as unread. Missing (new phone, cleared data): unread.
+const openedKey = (clientId) => `unfnshd-messages-opened-${clientId}`
+
+export function markConversationOpened(clientId) {
+  try { localStorage.setItem(openedKey(clientId), new Date().toISOString()) } catch { /* storage blocked */ }
+}
+
+export function unseenReplyCount(checkins, clientId) {
+  let opened = null
+  try { opened = localStorage.getItem(openedKey(clientId)) } catch { /* storage blocked */ }
+  const since = opened ? new Date(opened).getTime() : 0
+  return (checkins ?? []).filter((c) => c.coach_reply?.trim() && new Date(c.replied_at || c.submitted_at || 0).getTime() > since).length
 }

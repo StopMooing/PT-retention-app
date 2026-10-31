@@ -1,27 +1,31 @@
-// Messages: the private thread between the client and their coach. Uses the shared
-// useThread (src/lib/messages.js), which loads it, keeps it live and marks the coach's
-// messages read while this screen is open. Only shown to clients with a coach.
+// Messages: the private thread between the client and their coach, with the client's
+// check-ins in it (weekly check-ins, the coach's replies, daily check-ins with a note).
+// Uses the shared useConversation (src/lib/messages.js), the same timeline the coach
+// sees. It loads the thread, keeps messages live and marks the coach's messages read
+// while this screen is open. Only shown to clients with a coach.
 import { useEffect, useRef, useState } from 'react'
 import { ArrowUp } from 'lucide-react'
-import { useThread } from '../lib/messages'
+import { useConversation, markConversationOpened } from '../lib/messages'
+import { CheckinChatCard, DailyChatCard, ReplyLabel } from '../lib/CheckinChatCards'
 import { CoachAvatar, Loading } from './common'
 import { toLocalDateStr, chatDayLabel, clockTime } from './dates'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
+const isCard = (it) => it?.kind === 'checkin' || it?.kind === 'daily'
 
-// Messages grouped by local day, oldest first: [{ day, items }].
-function byDay(messages) {
+// Timeline items grouped by local day, oldest first: [{ day, items }].
+function byDay(items) {
   const out = []
-  for (const m of messages) {
-    const day = toLocalDateStr(new Date(m.created_at))
+  for (const it of items) {
+    const day = toLocalDateStr(new Date(it.at))
     if (out[out.length - 1]?.day !== day) out.push({ day, items: [] })
-    out[out.length - 1].items.push(m)
+    out[out.length - 1].items.push(it)
   }
   return out
 }
 
-export default function MessagesTab({ clientId, userId, coachName, onLatestCoachMessage }) {
-  const { messages, loading, error, send } = useThread({ clientId, userId })
+export default function MessagesTab({ clientId, userId, coachName }) {
+  const { items, loading, error, send } = useConversation({ clientId, userId, viewer: 'client' })
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState(null)
@@ -31,13 +35,12 @@ export default function MessagesTab({ clientId, userId, coachName, onLatestCoach
   // Newest at the bottom, in view.
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' })
-  }, [messages.length, loading])
+  }, [items.length, loading])
 
-  // Keep Home's "Your coach" card up to date with what arrives here.
+  // Check-in replies count as read once Messages has been opened.
   useEffect(() => {
-    const latest = [...messages].reverse().find((m) => m.sender_id !== userId)
-    if (latest) onLatestCoachMessage?.(latest)
-  }, [messages, userId, onLatestCoachMessage])
+    markConversationOpened(clientId)
+  }, [clientId])
 
   async function submit() {
     const body = draft.trim()
@@ -73,9 +76,9 @@ export default function MessagesTab({ clientId, userId, coachName, onLatestCoach
       <div className="flex-1 px-4 pt-4 pb-6">
         {loading ? (
           <Loading />
-        ) : error && messages.length === 0 ? (
+        ) : error && items.length === 0 ? (
           <p className="text-[15px] text-muted text-center py-16">{error} Try again in a moment.</p>
-        ) : messages.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="text-center py-16 px-6">
             <span className="inline-flex mb-3"><CoachAvatar name={coachName} size={56} /></span>
             <p className="text-[17px] font-bold text-ink">Say hi to {name}.</p>
@@ -83,23 +86,30 @@ export default function MessagesTab({ clientId, userId, coachName, onLatestCoach
           </div>
         ) : (
           <div className="space-y-5">
-            {byDay(messages).map((g) => (
+            {byDay(items).map((g) => (
               <section key={g.day} className="space-y-1.5">
                 <p className="text-center text-[12px] font-bold text-faint py-1">{chatDayLabel(g.day, today)}</p>
-                {g.items.map((m, i) => {
-                  const mine = m.sender_id === userId
-                  const nextSame = g.items[i + 1]?.sender_id === m.sender_id
+                {g.items.map((it, i) => {
+                  const next = g.items[i + 1]
+                  const showTime = !next || next.mine !== it.mine || isCard(it) || isCard(next)
                   return (
-                    <div key={m.id} className={cx('flex flex-col', mine ? 'items-end' : 'items-start')}>
-                      <p
-                        className={cx(
-                          'max-w-[80%] px-3.5 py-2.5 text-[15px] leading-snug whitespace-pre-wrap break-words rounded-[20px]',
-                          mine ? 'bg-accent text-on-accent rounded-br-[6px]' : 'bg-surface text-ink border border-line rounded-bl-[6px]',
-                        )}
-                      >
-                        {m.body}
-                      </p>
-                      {!nextSame && <span className="text-[11px] text-faint mt-1 px-1">{clockTime(m.created_at)}</span>}
+                    <div key={it.key} className={cx('flex flex-col', it.mine ? 'items-end' : 'items-start', isCard(it) && 'py-1')}>
+                      {it.kind === 'checkin' ? (
+                        <CheckinChatCard ci={it.ci} mine={it.mine} />
+                      ) : it.kind === 'daily' ? (
+                        <DailyChatCard d={it.d} mine={it.mine} />
+                      ) : (
+                        <p
+                          className={cx(
+                            'max-w-[80%] px-3.5 py-2.5 text-[15px] leading-snug whitespace-pre-wrap break-words rounded-[20px]',
+                            it.mine ? 'bg-accent text-on-accent rounded-br-[6px]' : 'bg-surface text-ink border border-line rounded-bl-[6px]',
+                          )}
+                        >
+                          {it.kind === 'reply' && <ReplyLabel />}
+                          {it.kind === 'reply' ? it.ci.coach_reply : it.m.body}
+                        </p>
+                      )}
+                      {showTime && <span className="text-[11px] text-faint mt-1 px-1">{clockTime(it.at)}</span>}
                     </div>
                   )
                 })}

@@ -302,7 +302,7 @@ export default function Dashboard({ user }) {
                     </span>
                     {note && <p className="text-[13px] text-ink truncate mt-0.5">"{note}"</p>}
                   </button>
-                  <Button variant="soft" size="sm" onClick={() => navigate(`/clients/${c.id}`, { state: { reply: ci.id } })}>
+                  <Button variant="soft" size="sm" onClick={() => navigate(`/messages/${c.id}`, { state: { replyCheckin: ci.id } })}>
                     <MessageSquare size={16} /> Reply
                   </Button>
                 </div>
