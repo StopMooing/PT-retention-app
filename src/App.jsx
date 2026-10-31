@@ -11,6 +11,7 @@ import ClientProfile from './ClientProfile'
 import ClientApp from './ClientApp'
 import CoachShell from './coach/CoachShell'
 import Dashboard from './coach/Dashboard'
+import MessagesPage from './coach/messages/MessagesPage'
 import { Mark } from './ui'
 
 export default function App() {
@@ -92,7 +93,10 @@ export default function App() {
             userRole === 'pt' ? <HabitTracker /> : <Navigate to="/my-workout" replace />
           } />
           <Route path="/clients/:clientId" element={
-            userRole === 'pt' ? <ClientProfile /> : <Navigate to="/my-workout" replace />
+            userRole === 'pt' ? <ClientProfile user={session.user} /> : <Navigate to="/my-workout" replace />
+          } />
+          <Route path="/messages/:clientId?" element={
+            userRole === 'pt' ? <MessagesPage user={session.user} /> : <Navigate to="/my-workout" replace />
           } />
         </Route>
       )}

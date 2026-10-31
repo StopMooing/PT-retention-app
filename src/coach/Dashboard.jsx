@@ -1,10 +1,12 @@
 // Coach home: who needs me today, then the full client list.
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, ChevronRight, Plus, Link2, Check, MessageSquare, Users } from 'lucide-react'
+import { Search, ChevronRight, Plus, Link2, Check, MessageSquare, MessageCircle, Users } from 'lucide-react'
 import { supabase } from '../supabase'
+import { fetchUnreadCounts, fetchLatestPerThread } from '../lib/messages'
 import { PageTitle, SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, EmptyState, Mark } from '../ui'
-import { clientStatus, STATUS, relativeDay, sessionsThisMonth, checkinsThisWeek, checkinNote, firstName } from './lib'
+import { clientStatus, STATUS, relativeDay, sessionsThisMonth, checkinsThisWeek, checkinNote, firstName, messageTime } from './lib'
+import { useMessageEvent, READ, INCOMING } from './messages/events'
 
 function greeting() {
   const h = new Date().getHours()
@@ -86,6 +88,8 @@ export default function Dashboard({ user }) {
   const [clients, setClients] = useState([])
   const [checkins, setCheckins] = useState([])
   const [workoutLogs, setWorkoutLogs] = useState([])
+  const [unread, setUnread] = useState({})
+  const [latestMsg, setLatestMsg] = useState({})
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [search, setSearch] = useState('')
@@ -107,7 +111,7 @@ export default function Dashboard({ user }) {
     startOfMonth.setDate(1)
     startOfMonth.setHours(0, 0, 0, 0)
 
-    const [{ data: checkinRows }, { data: logRows }] = await Promise.all([
+    const [{ data: checkinRows }, { data: logRows }, unreadCounts, latest] = await Promise.all([
       supabase
         .from('checkins')
         .select('id, client_id, submitted_at, training_score, energy_score, blocker, notes, coach_reply')
@@ -119,11 +123,25 @@ export default function Dashboard({ user }) {
         .in('client_id', clientIds)
         .eq('completed', true)
         .gte('logged_at', startOfMonth.toISOString()),
+      fetchUnreadCounts({ readerId: user.id }),
+      fetchLatestPerThread(clientIds),
     ])
     setCheckins(checkinRows ?? [])
     setWorkoutLogs(logRows ?? [])
+    setUnread(unreadCounts)
+    setLatestMsg(latest)
     setLoading(false)
   }
+
+  // Keep message rows current while the dashboard is open.
+  const refreshMessages = useCallback(async () => {
+    const ids = clients.map((c) => c.id)
+    const [u, l] = await Promise.all([fetchUnreadCounts({ readerId: user.id }), fetchLatestPerThread(ids)])
+    setUnread(u)
+    setLatestMsg(l)
+  }, [clients, user.id])
+  useMessageEvent(INCOMING, refreshMessages)
+  useMessageEvent(READ, refreshMessages)
 
   useEffect(() => {
     fetchData()
@@ -157,6 +175,7 @@ export default function Dashboard({ user }) {
       ...c,
       lastCheckIn,
       awaitingReply: own.filter((ci) => !ci.coach_reply).length,
+      unreadMessages: unread[c.id] || 0,
       sessions: sessionsThisMonth(workoutLogs.filter((w) => w.client_id === c.id)),
       status: clientStatus(lastCheckIn),
     }
@@ -164,7 +183,19 @@ export default function Dashboard({ user }) {
 
   // Newest first. Counted across all time: an unanswered one from three weeks ago is still owed a reply.
   const awaiting = checkins.filter((ci) => !ci.coach_reply && byId[ci.client_id])
-  const awaitingIds = new Set(awaiting.map((ci) => ci.client_id))
+  // Unread messages: one row per client, showing their newest message.
+  const messageItems = clients
+    .filter((c) => unread[c.id] > 0)
+    .map((c) => {
+      const m = latestMsg[c.id]
+      return { kind: 'message', id: `m${c.id}`, client: c, count: unread[c.id], preview: m && m.sender_id !== user.id ? m.body : '', at: m?.created_at ?? '' }
+    })
+  // Check-ins awaiting a reply and unread messages together, newest first.
+  const replyItems = [
+    ...awaiting.map((ci) => ({ kind: 'checkin', id: ci.id, ci, at: ci.submitted_at })),
+    ...messageItems,
+  ].sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
+  const awaitingIds = new Set([...awaiting.map((ci) => ci.client_id), ...messageItems.map((m) => m.client.id)])
   const slipping = enriched
     .filter((c) => (c.status === 'Drifting' || c.status === 'At Risk') && !awaitingIds.has(c.id))
     .sort((a, b) => new Date(a.lastCheckIn) - new Date(b.lastCheckIn))
@@ -176,7 +207,7 @@ export default function Dashboard({ user }) {
     .filter((c) => !q || c.full_name?.toLowerCase().includes(q) || c.goal?.toLowerCase().includes(q))
 
   const coachFirst = firstName(user?.user_metadata?.full_name ?? '')
-  const needsCount = awaiting.length + slipping.length + notStarted.length
+  const needsCount = replyItems.length + slipping.length + notStarted.length
 
   if (loading) {
     return (
@@ -225,13 +256,35 @@ export default function Dashboard({ user }) {
               <span className="w-10 h-10 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Check size={20} /></span>
               <div>
                 <p className="font-bold text-ink">All caught up</p>
-                <p className="text-[13px] text-muted">Every check-in has a reply and everyone checked in this week.</p>
+                <p className="text-[13px] text-muted">Every check-in and message has a reply, and everyone checked in this week.</p>
               </div>
             </div>
           </Card>
         ) : (
           <Card padded={false} className="divide-y divide-line overflow-hidden">
-            {awaiting.map((ci) => {
+            {replyItems.map((item) => {
+              if (item.kind === 'message') {
+                const c = item.client
+                return (
+                  <div key={item.id} className="flex items-center gap-3 px-4 py-3.5">
+                    <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
+                    <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/messages/${c.id}`)}>
+                      <p className="flex items-center gap-2 min-w-0">
+                        <span className="font-bold text-ink truncate">{c.full_name}</span>
+                        {item.at && <span className="text-[13px] text-muted whitespace-nowrap">{messageTime(item.at)}</span>}
+                      </p>
+                      <span className="flex items-center gap-1.5 text-[13px] text-accent font-bold">
+                        <MessageCircle size={14} /> {item.count === 1 ? 'New message' : `${item.count} new messages`}
+                      </span>
+                      {item.preview && <p className="text-[13px] text-ink truncate mt-0.5">"{item.preview}"</p>}
+                    </button>
+                    <Button variant="soft" size="sm" onClick={() => navigate(`/messages/${c.id}`)}>
+                      <MessageSquare size={16} /> Reply
+                    </Button>
+                  </div>
+                )
+              }
+              const ci = item.ci
               const c = byId[ci.client_id]
               const note = checkinNote(ci)
               const st = clientStatus(checkins.find((x) => x.client_id === c.id)?.submitted_at)
@@ -337,6 +390,15 @@ export default function Dashboard({ user }) {
                           <span className="flex items-center gap-2">
                             <span className="font-bold text-ink truncate">{c.full_name}</span>
                             {c.awaitingReply > 0 && <span className="w-2 h-2 rounded-full bg-warn shrink-0" title={`${c.awaitingReply} awaiting reply`} />}
+                            {c.unreadMessages > 0 && (
+                              <span
+                                className="inline-flex items-center gap-0.5 h-5 px-1.5 rounded-full bg-accent-soft text-accent text-[11px] font-bold shrink-0 tabular-nums"
+                                title={`${c.unreadMessages} unread ${c.unreadMessages === 1 ? 'message' : 'messages'}`}
+                                aria-label={`${c.unreadMessages} unread ${c.unreadMessages === 1 ? 'message' : 'messages'}`}
+                              >
+                                <MessageCircle size={12} strokeWidth={2.5} />{c.unreadMessages}
+                              </span>
+                            )}
                             <Chip tone={STATUS[c.status].tone} className="md:hidden">{STATUS[c.status].label}</Chip>
                           </span>
                           <span className="block text-[13px] text-muted truncate">{c.goal || 'No goal set'}</span>

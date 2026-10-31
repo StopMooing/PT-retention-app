@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Clock, Dumbbell, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../supabase'
 import { Sheet, Button, Chip, SectionLabel } from '../../ui'
+import { sessionFelt } from '../lib'
 
 const numCls = 'w-20 h-10 px-2 rounded-[12px] border border-line-strong bg-surface text-ink text-center font-semibold tabular-nums outline-none focus:border-accent'
 
@@ -351,11 +352,15 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
       <p className="text-[13px] text-muted -mt-1">{dateLabel}</p>
       <div className="flex flex-wrap items-center gap-2 mt-2.5">
         {completedLog && <Chip tone="accent"><CheckCircle2 size={13} /> Completed</Chip>}
+        {completedLog?.session_rating ? <Chip>{sessionFelt(completedLog.session_rating)}</Chip> : null}
         {loggingMode && <Chip tone="solid">Logging live</Chip>}
         {estMinutes > 0 && <Chip><Clock size={13} /> About {estMinutes} min</Chip>}
         {exercises.length > 0 && <Chip><Dumbbell size={13} /> {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}</Chip>}
       </div>
 
+      {completedLog?.notes?.trim() && (
+        <p className="mt-3 text-[15px] text-ink leading-relaxed bg-surface-2 rounded-[14px] px-4 py-3 whitespace-pre-wrap">{completedLog.notes}</p>
+      )}
       <div className="mt-5">
         {completedLog ? (
           <>

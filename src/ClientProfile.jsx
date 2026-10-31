@@ -1,8 +1,8 @@
 // Coach view of one client. This file loads the data and owns every save; the tabs in
 // src/coach/profile/ only draw it. Reply to a check-in is the first thing on Overview.
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { ChevronLeft, Link2, Check, Mail, MessageCircle, ClipboardList } from 'lucide-react'
+import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList } from 'lucide-react'
 import { supabase } from './supabase'
 import { Avatar, Chip, Button, Mark, Card, EmptyState } from './ui'
 import { toLocalDateStr, clientStatus, STATUS, relativeDay, sessionsThisMonth, formatDate, startedByClient, firstName } from './coach/lib'
@@ -12,12 +12,16 @@ import TrainingTab from './coach/profile/TrainingTab'
 import NutritionTab from './coach/profile/NutritionTab'
 import HabitsTab from './coach/profile/HabitsTab'
 import NotesTab from './coach/profile/NotesTab'
+import MessagesTab from './coach/profile/MessagesTab'
+import { fetchUnreadCounts } from './lib/messages'
+import { useMessageEvent, READ } from './coach/messages/events'
 import WorkoutSheet from './coach/profile/WorkoutSheet'
 import { programPlan, planWeeks } from './lib/schedule.js'
 import { insertPlannedSessions, clearUpcoming } from './lib/planWrites'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
+  { id: 'messages', label: 'Messages' },
   { id: 'checkins', label: 'Check-ins' },
   { id: 'training', label: 'Training' },
   { id: 'nutrition', label: 'Nutrition' },
@@ -28,7 +32,7 @@ const TABS = [
 const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
 const enrichSW = (sw) => ({ ...sw, _displayName: sw.program_workouts?.name || sw.saved_workouts?.name || 'Workout', _isCustom: !!sw.custom_workout_id })
 
-export default function ClientProfile() {
+export default function ClientProfile({ user }) {
   const { clientId } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -37,8 +41,12 @@ export default function ClientProfile() {
 
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  // Check-ins tab view: 'weekly' or 'daily'. The Overview feeling card opens 'daily'.
+  const [checkinsView, setCheckinsView] = useState('weekly')
   const [client, setClient] = useState(null)
   const [checkins, setCheckins] = useState([])
+  const [dailyCheckins, setDailyCheckins] = useState([])
+  const [unreadMessages, setUnreadMessages] = useState(0)
   const [programAssignment, setProgramAssignment] = useState(null)
   const [habits, setHabits] = useState([])
   const [habitLogs, setHabitLogs] = useState([])
@@ -84,7 +92,7 @@ export default function ClientProfile() {
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [clientRes, checkinsRes, programRes, habitsRes, mealPlanRes, workoutRes, weightRes] = await Promise.all([
+        const [clientRes, checkinsRes, programRes, habitsRes, mealPlanRes, workoutRes, weightRes, dailyRes, unreadRes] = await Promise.all([
           supabase.from('clients').select('*').eq('id', clientId).single(),
           supabase.from('checkins').select('*').eq('client_id', clientId).order('submitted_at', { ascending: false }),
           supabase.from('program_assignments').select('*, programs(*)').eq('client_id', clientId).eq('is_active', true).order('created_at', { ascending: false }).limit(1),
@@ -92,6 +100,9 @@ export default function ClientProfile() {
           supabase.from('meal_plans').select('*').eq('client_id', clientId).eq('is_active', true).limit(1),
           supabase.from('workout_logs').select('*').eq('client_id', clientId).order('logged_at', { ascending: false }).limit(200),
           supabase.from('body_weight_logs').select('*').eq('client_id', clientId).order('logged_date', { ascending: true }),
+          // Coaches can only read daily check-ins (no writes). Newest 60 days is plenty here.
+          supabase.from('daily_checkins').select('id, checkin_date, energy, sleep, soreness, note, created_at').eq('client_id', clientId).order('checkin_date', { ascending: false }).limit(60),
+          user?.id ? fetchUnreadCounts({ readerId: user.id, clientId }) : Promise.resolve({}),
         ])
         setClient(clientRes.data)
         setCheckins(checkinsRes.data ?? [])
@@ -101,6 +112,8 @@ export default function ClientProfile() {
         setMealPlan(mealPlanRes.data?.[0] ?? null)
         setWorkoutLogs(workoutRes.data ?? [])
         setWeightLogs(weightRes.data ?? [])
+        setDailyCheckins(dailyRes.data ?? [])
+        setUnreadMessages(unreadRes[clientId] || 0)
 
         const { data: ptNotesData } = await supabase.from('pt_notes').select('*').eq('client_id', clientId).order('created_at', { ascending: false })
         setSavedNotes(ptNotesData ?? [])
@@ -237,7 +250,11 @@ export default function ClientProfile() {
       }
     }
     fetchAll()
+    // user.id is stable for the session; reloading on it is not wanted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId])
+
+  useMessageEvent(READ, useCallback(({ clientId: id }) => { if (id === clientId) setUnreadMessages(0) }, [clientId]))
 
   if (loading) {
     return (
@@ -601,7 +618,8 @@ export default function ClientProfile() {
     carbs: parseInt(carbsTarget) || 0, fats: parseInt(fatsTarget) || 0, water: waterTarget,
   }
   const shared = {
-    client, checkins, reply, focusReplyId, onOpenTab: setActiveTab, weightLogs, onLogWeight: handleLogWeight,
+    client, checkins, dailyCheckins, reply, focusReplyId, onOpenTab: setActiveTab,
+    onOpenDaily: () => { setCheckinsView('daily'); setActiveTab('checkins') }, weightLogs, onLogWeight: handleLogWeight,
     scheduledWorkouts, workoutLogs, onOpenWorkout: openWorkout, foodLogs, waterLogs, targets, limitations: clientLimitations,
   }
 
@@ -630,7 +648,12 @@ export default function ClientProfile() {
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 md:justify-end md:max-w-[420px]">
+        <div className="flex flex-wrap gap-2 md:justify-end md:max-w-[460px]">
+          {client.user_id && (
+            <Button size="sm" onClick={() => setActiveTab('messages')}>
+              <MessageSquare size={16} /> Message
+            </Button>
+          )}
           {client.user_id ? null : !client.email ? (
             <span title="Add an email to this client before you can invite them" className="inline-flex items-center h-9 px-3.5 rounded-full text-sm font-semibold text-muted border border-dashed border-line-strong">Add an email to invite</span>
           ) : (
@@ -668,6 +691,9 @@ export default function ClientProfile() {
                 className={`relative h-11 px-3 text-[15px] font-bold whitespace-nowrap transition-colors ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
               >
                 {t.label}
+                {t.id === 'messages' && unreadMessages > 0 && (
+                  <span className="ml-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent text-on-accent text-xs tabular-nums">{unreadMessages}</span>
+                )}
                 {t.id === 'checkins' && awaiting > 0 && (
                   <span className="ml-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-warn-soft text-warn text-xs tabular-nums">{awaiting}</span>
                 )}
@@ -680,7 +706,8 @@ export default function ClientProfile() {
 
       <div className="mt-4 md:mt-5">
         {activeTab === 'overview' && <OverviewTab {...shared} />}
-        {activeTab === 'checkins' && <CheckinsTab client={client} checkins={checkins} reply={reply} />}
+        {activeTab === 'messages' && <MessagesTab client={client} userId={user?.id} />}
+        {activeTab === 'checkins' && <CheckinsTab client={client} checkins={checkins} dailyCheckins={dailyCheckins} reply={reply} view={checkinsView} onViewChange={setCheckinsView} />}
         {activeTab === 'training' && (
           <TrainingTab
             client={client}

@@ -5,7 +5,7 @@ import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensor
 import { ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Plus, X, CalendarPlus, Trophy, Search, Check, Dumbbell, AlertCircle } from 'lucide-react'
 import { Button, Card, Chip, Segmented, Sheet, EmptyState, Field } from '../../ui'
 import { Panel } from './parts'
-import { toLocalDateStr, dayOf, formatDate, relativeDay, firstName, startedByClient } from '../lib'
+import { toLocalDateStr, dayOf, formatDate, relativeDay, firstName, startedByClient, sessionFelt } from '../lib'
 import StartPlanFields from '../../lib/StartPlanFields'
 import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, planSessionCount, PAST_START_NOTE } from '../../lib/schedule.js'
 
@@ -275,7 +275,7 @@ function AutoScheduleSheet({ open, onClose, programAssignment, programWorkouts, 
 const PB_LABEL = { '1rm': 'Est. 1RM', best_set: 'Best set', volume: 'Volume', max_weight: 'Heaviest', estimated_1rm: 'Est. 1RM' }
 const PB_UNIT = { best_set: 'pts' }
 
-function History({ workoutLogs, scheduledWorkouts, workoutNames, personalBests, sessionSetLogs, loadSessionSets, onOpenWorkout }) {
+function History({ clientName = '', workoutLogs, scheduledWorkouts, workoutNames, personalBests, sessionSetLogs, loadSessionSets, onOpenWorkout }) {
   const [openId, setOpenId] = useState(null)
   const [openEx, setOpenEx] = useState(null)
   if (workoutLogs.length === 0) return <Card><EmptyState icon={Dumbbell} title="No sessions logged yet" body="Sessions show here once they are logged in the app or from the schedule." /></Card>
@@ -285,6 +285,7 @@ function History({ workoutLogs, scheduledWorkouts, workoutNames, personalBests, 
         const day = dayOf(log.logged_at)
         const sched = scheduledWorkouts.find((sw) => sw.id === log.scheduled_workout_id) ?? null
         const isOpen = openId === log.id
+        const note = log.notes?.trim() || ''
         const sets = sessionSetLogs[log.id] || []
         const byEx = sets.reduce((acc, s) => { const k = s.exercise_id || 'unknown'; (acc[k] ||= { name: s.exercises?.name || 'Exercise', sets: [] }).sets.push(s); return acc }, {})
         const pbs = personalBests.reduce((acc, pb) => {
@@ -295,7 +296,7 @@ function History({ workoutLogs, scheduledWorkouts, workoutNames, personalBests, 
           <div key={log.id}>
             <button
               onClick={() => { if (isOpen) setOpenId(null); else { setOpenId(log.id); setOpenEx(null); loadSessionSets(log) } }}
-              className="w-full flex items-center gap-3 px-4 min-h-[60px] text-left hover:bg-surface-2 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2.5 min-h-[60px] text-left hover:bg-surface-2 transition-colors"
             >
               <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${log.completed ? 'bg-accent-soft text-accent' : 'bg-surface-2 text-muted'}`}>
                 {log.completed ? <Check size={18} /> : <Dumbbell size={16} />}
@@ -303,11 +304,23 @@ function History({ workoutLogs, scheduledWorkouts, workoutNames, personalBests, 
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold text-ink truncate">{sched?._displayName ?? workoutNames?.[log.program_workout_id] ?? 'Workout'}</span>
                 <span className="block text-[13px] text-muted">{formatDate(log.logged_at, { weekday: 'short', day: 'numeric', month: 'short' })} · {relativeDay(log.logged_at)}{log.completed ? '' : ' · Not finished'}</span>
+                {(log.session_rating || note) && (
+                  <span className="flex items-center gap-2 mt-1 min-w-0">
+                    {log.session_rating ? <Chip>{sessionFelt(log.session_rating)}</Chip> : null}
+                    {note && !isOpen && <span className="text-[13px] text-ink truncate">"{note}"</span>}
+                  </span>
+                )}
               </span>
               <ChevronDown size={18} className={`text-faint shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             {isOpen && (
               <div className="px-4 pb-4 bg-bg/60">
+                {note && (
+                  <div className="pt-3">
+                    <p className="text-xs font-bold text-muted mb-1">{firstName(clientName)}'s note</p>
+                    <p className="text-[15px] text-ink leading-relaxed bg-surface rounded-[14px] border border-line px-4 py-3 whitespace-pre-wrap">{note}</p>
+                  </div>
+                )}
                 {sched && (
                   <Button variant="secondary" size="sm" className="mt-3" onClick={() => onOpenWorkout(sched, log)}>Edit session</Button>
                 )}
@@ -547,7 +560,7 @@ export default function TrainingTab(props) {
         </Panel>
       )}
 
-      {section === 'history' && <History {...props} onOpenWorkout={onOpenWorkout} />}
+      {section === 'history' && <History {...props} clientName={client.full_name} onOpenWorkout={onOpenWorkout} />}
       {section === 'pbs' && <PersonalBests personalBests={props.personalBests} />}
 
       <FindWorkoutSheet
