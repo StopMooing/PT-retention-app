@@ -4,7 +4,7 @@
 // their coach; only read_at can be changed after sending.
 //
 // The chat also shows the client's check-ins: useConversation merges messages, weekly
-// check-ins (with the coach's reply) and daily check-ins that have a note into one
+// check-ins (with the coach's reply) and every daily check-in into one
 // timeline (mergeTimeline), so the client and the coach see the same conversation.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../supabase'
@@ -78,8 +78,7 @@ export async function fetchLatestPerThread(clientIds) {
 }
 
 // Latest thing that happened in each conversation, for the coach's inbox preview: a
-// message, a weekly check-in (or the coach's reply to one), or a daily check-in with a
-// note. Same shape as a message: { client_id, body, created_at, sender_id }.
+// message, a weekly check-in (or the coach's reply to one), or a daily check-in. Same shape as a message: { client_id, body, created_at, sender_id }.
 // sender_id is the coach's id for things the coach sent, otherwise null.
 export async function fetchLatestActivity(clientIds, coachId) {
   if (!clientIds?.length) return {}
@@ -87,8 +86,8 @@ export async function fetchLatestActivity(clientIds, coachId) {
     fetchLatestPerThread(clientIds),
     supabase.from('checkins').select('client_id, submitted_at, notes, training_score, energy_score, coach_reply, replied_at')
       .in('client_id', clientIds).order('submitted_at', { ascending: false }).limit(300),
-    supabase.from('daily_checkins').select('client_id, created_at, note')
-      .in('client_id', clientIds).not('note', 'is', null).order('created_at', { ascending: false }).limit(300),
+    supabase.from('daily_checkins').select('client_id, created_at, note, energy, sleep, soreness')
+      .in('client_id', clientIds).order('created_at', { ascending: false }).limit(300),
   ])
   if (weekly.error) console.error('Inbox check-ins error:', weekly.error)
   if (daily.error) console.error('Inbox daily check-ins error:', daily.error)
@@ -105,7 +104,7 @@ export async function fetchLatestActivity(clientIds, coachId) {
     if (c.coach_reply?.trim() && c.replied_at) consider({ client_id: c.client_id, created_at: c.replied_at, sender_id: coachId, body: c.coach_reply.trim() })
   }
   for (const d of daily.data ?? []) {
-    if (d.note?.trim()) consider({ client_id: d.client_id, created_at: d.created_at, sender_id: null, body: `Daily check-in: ${d.note.trim()}` })
+    consider({ client_id: d.client_id, created_at: d.created_at, sender_id: null, body: `Daily check-in: ${d.note?.trim() || dailyLine(d) || 'sent'}` })
   }
   return latest
 }
@@ -197,17 +196,16 @@ export async function fetchThreadCheckins(clientId) {
   return data ?? []
 }
 
-// Daily check-ins with a note (the ones without one stay out of the chat).
+// Every daily check-in, with or without a note.
 export async function fetchThreadDailyNotes(clientId) {
   const { data, error } = await supabase
     .from('daily_checkins')
     .select(DAILY_COLS)
     .eq('client_id', clientId)
-    .not('note', 'is', null)
     .order('created_at', { ascending: false })
     .limit(100)
   if (error) console.error('Load daily check-ins for chat error:', error)
-  return (data ?? []).filter((d) => d.note?.trim())
+  return data ?? []
 }
 
 // The coach's reply to a weekly check-in. Coaches may only write coach_reply and
@@ -231,7 +229,7 @@ export async function saveCheckinReply({ checkinId, text }) {
 //   { kind: 'message', m }            a coach_messages row
 //   { kind: 'checkin', ci }           a weekly check-in, from the client at submitted_at
 //   { kind: 'reply', ci }             the coach's reply to it, at replied_at
-//   { kind: 'daily', d }              a daily check-in with a note, at created_at
+//   { kind: 'daily', d }              a daily check-in, at created_at
 export function mergeTimeline({ messages = [], checkins = [], dailyCheckins = [], userId, viewer }) {
   const fromClient = viewer === 'client'
   const items = []
@@ -246,7 +244,7 @@ export function mergeTimeline({ messages = [], checkins = [], dailyCheckins = []
     }
   }
   for (const d of dailyCheckins) {
-    if (d.note?.trim() && d.created_at) items.push({ kind: 'daily', key: `d${d.id}`, at: d.created_at, mine: fromClient, d })
+    if (d.created_at) items.push({ kind: 'daily', key: `d${d.id}`, at: d.created_at, mine: fromClient, d })
   }
   return items.sort((a, b) => new Date(a.at) - new Date(b.at))
 }

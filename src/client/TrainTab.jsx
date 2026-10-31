@@ -271,8 +271,9 @@ export default function TrainTab({
   async function handleMoveWorkout(date) {
     if (!detailSw || !date) return
     try {
-      const { error } = await supabase.from('scheduled_workouts').update({ scheduled_date: date }).eq('id', detailSw.id)
+      const { data, error } = await supabase.from('scheduled_workouts').update({ scheduled_date: date }).eq('id', detailSw.id).select('id')
       if (error) throw error
+      if (!data?.length) throw new Error('No row changed')
       await reloadScheduledWorkouts()
       setDateMode(null)
       setDetailSw(null)
@@ -325,10 +326,25 @@ export default function TrainTab({
   /* ----- start now / add to calendar ----- */
   const sameWorkout = (sw, item) => (item.type === 'program' ? sw.program_workout_id === item.id : sw.custom_workout_id === item.id)
 
-  // Puts the workout on today (unless it's already there and not done) and opens logging.
+  // Starts a workout today without ever doubling it up:
+  //   1. it's already on today and not done: use that session
+  //   2. it was missed in the last week: move that session to today and use it
+  //   3. otherwise put a new one on today (created: true, so leaving untouched removes it)
   async function startNow(item) {
     setBusy(true)
-    let sw = (byDate[today] ?? []).find((s) => sameWorkout(s, item) && !isDone(s, completedIds))
+    const todays = (byDate[today] ?? []).find((s) => sameWorkout(s, item) && !isDone(s, completedIds))
+    const missed = todays ? null : scheduledWorkouts
+      .filter((s) => sameWorkout(s, item) && !isDone(s, completedIds) && s.scheduled_date < today && s.scheduled_date >= addDays(today, -6))
+      .sort((x, y) => (x.scheduled_date < y.scheduled_date ? 1 : -1))[0]
+    let sw = todays
+    if (!sw && missed) {
+      const { data, error } = await supabase.from('scheduled_workouts').update({ scheduled_date: today }).eq('id', missed.id).select('id')
+      if (error || !data?.length) console.error('Move missed workout error:', error ?? 'no row changed')
+      else {
+        sw = { ...missed, scheduled_date: today }
+        await reloadScheduledWorkouts()
+      }
+    }
     if (!sw) {
       const { data, error } = await scheduleOne({ client, item, date: today })
       if (error || !data) {
@@ -339,6 +355,7 @@ export default function TrainTab({
       sw = item.type === 'program'
         ? { ...data, program_workouts: { id: item.id, name: item.name, day_number: item.dayNumber ?? 0 }, _isCustom: false, _customWorkout: null }
         : { ...data, program_workouts: { name: item.name, day_number: 0 }, saved_workouts: item.saved, _isCustom: true, _customWorkout: item.saved }
+      sw._createdNow = true
       await reloadScheduledWorkouts()
     }
     setBusy(false)

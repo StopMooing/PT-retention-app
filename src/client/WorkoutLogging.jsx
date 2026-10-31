@@ -431,7 +431,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
   // Leaving with ticked sets asks first. The sets stay in the draft either way.
   function handleBack() {
     if (!isEditing && doneSetsCount > 0) setConfirmLeave(true)
-    else onBack()
+    else onBack({ keptDraft: false })
   }
 
   async function insertWorkoutLog(totalVolume, at) {
@@ -724,7 +724,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
         title="Leave this session?"
         footer={
           <div className="flex gap-2.5">
-            <Button variant="secondary" size="lg" className="flex-1" onClick={() => { setConfirmLeave(false); onBack() }}>Leave</Button>
+            <Button variant="secondary" size="lg" className="flex-1" onClick={() => { setConfirmLeave(false); onBack({ keptDraft: true }) }}>Leave</Button>
             <Button size="lg" className="flex-1" onClick={() => setConfirmLeave(false)}>Keep going</Button>
           </div>
         }

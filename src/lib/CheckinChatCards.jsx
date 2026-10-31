@@ -46,7 +46,7 @@ export function CheckinChatCard({ ci, mine, footer }) {
   )
 }
 
-/* A daily check-in with a note: the three scores in one line, then the note. */
+/* A daily check-in: the three scores in one line, then the note if there is one. */
 export function DailyChatCard({ d, mine }) {
   return (
     <div
@@ -56,9 +56,10 @@ export function DailyChatCard({ d, mine }) {
       )}
     >
       <p className="flex items-center gap-1.5 text-[12px] font-bold text-muted tabular-nums">
-        <Sun size={13} strokeWidth={2.4} className="shrink-0" /> Today: {dailyLine(d)}
+        <Sun size={13} strokeWidth={2.4} className="shrink-0" /> Daily check-in
       </p>
-      <p className="mt-1 text-[15px] text-ink leading-snug whitespace-pre-wrap break-words">{d.note}</p>
+      <p className="mt-1 text-[15px] font-semibold text-ink tabular-nums">{dailyLine(d)}</p>
+      {d.note?.trim() && <p className="mt-1 text-[15px] text-ink leading-snug whitespace-pre-wrap break-words">{d.note}</p>}
     </div>
   )
 }

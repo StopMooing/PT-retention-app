@@ -215,6 +215,16 @@ export default function ClientApp() {
     setAiMode('workout')
   }
 
+  // Leaving a session that "Start now" put on today just for this, with nothing ticked,
+  // takes it off the calendar again so browsing a program never leaves extra sessions.
+  async function leaveWorkout(sw, opts) {
+    setLoggingWorkout(null)
+    if (!sw?._createdNow || sw._existingLog || opts?.keptDraft !== false) return
+    const { error } = await supabase.from('scheduled_workouts').delete().eq('id', sw.id)
+    if (error) console.error('Remove unstarted workout error:', error)
+    reloadScheduledWorkouts()
+  }
+
   // Called only after the session is confirmed saved.
   async function handleWorkoutDone(key, stats) {
     setCompletedIds((prev) => new Set([...prev, key]))
@@ -307,7 +317,7 @@ export default function ClientApp() {
         existingLog={loggingWorkout._existingLog ?? null}
         exercises={exerciseMap[loggingWorkout.program_workout_id] ?? EMPTY}
         client={client}
-        onBack={() => setLoggingWorkout(null)}
+        onBack={(opts) => leaveWorkout(loggingWorkout, opts)}
         onComplete={handleWorkoutDone}
       />
     )
