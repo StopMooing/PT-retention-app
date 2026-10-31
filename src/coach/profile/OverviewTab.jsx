@@ -1,9 +1,9 @@
 // Overview: the latest check-in and reply first, then this week, weight and food.
-import { useState } from 'react'
-import { MessageSquare, CalendarDays, Scale, Utensils, Plus, ChevronRight, Check, AlertCircle } from 'lucide-react'
+import { Fragment, useState } from 'react'
+import { MessageSquare, CalendarDays, Scale, Utensils, Plus, ChevronRight, Check, AlertCircle, Activity } from 'lucide-react'
 import { Button, Ring, EmptyState, Segmented, Card } from '../../ui'
 import { Panel, CheckinCard, LineChart, UnitInput, Bar } from './parts'
-import { startOfWeekStr, addDays, toLocalDateStr, formatDate, dayNutrition, weightAverages, formatMl, sessionsThisMonth, dayOf, firstName } from '../lib'
+import { startOfWeekStr, addDays, toLocalDateStr, formatDate, dayNutrition, weightAverages, formatMl, sessionsThisMonth, dayOf, firstName, relativeDay, lastDays, feelingFlag, scoreTone, DAILY_SCORES } from '../lib'
 
 const PERIODS = [
   { value: '14', label: '2 wks' },
@@ -198,6 +198,82 @@ function FoodToday({ foodLogs, waterLogs, targets, onOpenTab }) {
   )
 }
 
+// Last 7 days of daily check-ins: energy, sleep and soreness, plus the latest note.
+function Feeling({ dailyCheckins = [], client, onOpenDaily }) {
+  const today = toLocalDateStr()
+  const days = lastDays(7, today)
+  const byDay = Object.fromEntries(dailyCheckins.map((d) => [d.checkin_date, d]))
+  const inWeek = days.filter((d) => byDay[d]).length
+  const latestNote = dailyCheckins.find((d) => d.note?.trim())
+  const flag = feelingFlag(dailyCheckins, today)
+  const first = firstName(client.full_name)
+
+  return (
+    <Panel
+      title="How they've been feeling"
+      icon={Activity}
+      action={dailyCheckins.length > 0 && <Button variant="ghost" size="sm" onClick={onOpenDaily}>All</Button>}
+    >
+      {dailyCheckins.length === 0 ? (
+        <EmptyState
+          title="No daily check-ins yet"
+          body={client.user_id ? `${first} can log energy, sleep and soreness each day in the app.` : `${first} can check in daily once they set up their account.`}
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-[64px_repeat(7,minmax(0,1fr))] gap-y-1.5 items-center" role="table" aria-label="Daily check-ins, last 7 days">
+            <span role="columnheader" />
+            {days.map((d) => (
+              <span key={d} role="columnheader" className={`text-center text-[11px] font-bold ${d === today ? 'text-accent' : 'text-muted'}`}>
+                {d === today ? 'Today' : formatDate(d, { weekday: 'short' }).slice(0, 2)}
+              </span>
+            ))}
+            {DAILY_SCORES.map((s) => (
+              <Fragment key={s.key}>
+                <span role="rowheader" className="text-[13px] text-muted">{s.label}</span>
+                {days.map((d) => {
+                  const v = byDay[d]?.[s.key]
+                  return (
+                    <span key={d} role="cell" className="flex justify-center">
+                      {v != null ? (
+                        <span className={`w-8 h-8 rounded-full inline-flex items-center justify-center text-[13px] font-bold tabular-nums ${scoreTone(v, s.invert)}`} title={`${s.label} ${v}/5, ${formatDate(d, { weekday: 'long' })}`}>
+                          {v}
+                        </span>
+                      ) : (
+                        <span className="w-8 h-8 inline-flex items-center justify-center" aria-label="No check-in">
+                          <span className="w-1.5 h-1.5 rounded-full bg-line-strong" />
+                        </span>
+                      )}
+                    </span>
+                  )
+                })}
+              </Fragment>
+            ))}
+          </div>
+          <p className="text-[13px] text-muted mt-2.5">
+            {inWeek > 0 ? `Checked in ${inWeek} of the last 7 days` : `Last daily check-in ${relativeDay(dailyCheckins[0].checkin_date).toLowerCase()}`} · 1 low, 5 high
+          </p>
+          {flag && (
+            <div className="mt-3 flex gap-2.5 rounded-[14px] bg-warn-soft px-3.5 py-3">
+              <AlertCircle size={18} className="text-warn shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-[15px] font-bold text-warn">{flag}</p>
+                <p className="text-[13px] text-ink">2 or lower on 3 of the last 4 days. Worth asking {first} how things are going.</p>
+              </div>
+            </div>
+          )}
+          {latestNote && (
+            <div className="mt-3">
+              <p className="text-xs font-bold text-muted mb-1">Latest note · {relativeDay(latestNote.checkin_date)}</p>
+              <p className="text-[15px] text-ink leading-relaxed bg-surface-2 rounded-[14px] px-4 py-3 whitespace-pre-wrap">{latestNote.note}</p>
+            </div>
+          )}
+        </>
+      )}
+    </Panel>
+  )
+}
+
 export default function OverviewTab(props) {
   const { limitations } = props
   return (
@@ -216,6 +292,7 @@ export default function OverviewTab(props) {
             </div>
           </div>
         )}
+        <Feeling {...props} />
         <Weight {...props} />
         <FoodToday {...props} />
       </div>
