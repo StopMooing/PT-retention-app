@@ -97,8 +97,16 @@ export function sessionStatusLine(sw, { completedIds, workoutLogs, exMap, today 
 }
 
 // This week (Monday to Sunday): sessions scheduled and sessions done.
+// A session put on the calendar for a day that had already passed (a backdated program
+// start) only counts once it's done, so backdating never shows up as "missed".
+function countsTowardWeek(sw, completedIds) {
+  if (isDone(sw, completedIds)) return true
+  if (!sw.created_at) return true
+  return toLocalDateStr(new Date(sw.created_at)) <= sw.scheduled_date
+}
+
 export function sessionsThisWeek(scheduledWorkouts, completedIds, today = toLocalDateStr()) {
-  const inWeek = sessionsInWeek(scheduledWorkouts, mondayOf(today))
+  const inWeek = sessionsInWeek(scheduledWorkouts, mondayOf(today)).filter((sw) => countsTowardWeek(sw, completedIds))
   return { scheduled: inWeek.length, done: inWeek.filter((sw) => isDone(sw, completedIds)).length }
 }
 

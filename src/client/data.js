@@ -3,7 +3,7 @@
 import { supabase } from '../supabase'
 import { toLocalDateStr, addDays } from './dates'
 
-const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, created_by, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
+const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, created_by, created_at, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
 const EX_SELECT = 'id, sets, reps, rest_seconds, notes, order_index, exercises(id, name, muscle_group)'
 
 // Scheduled sessions from 4 weeks back to 13 weeks ahead (an 8-week program started next
