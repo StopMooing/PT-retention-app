@@ -195,7 +195,7 @@ export function feelingFlag(daily, today = toLocalDateStr()) {
 }
 
 /* ---------- Session rating (workout_logs.session_rating, 1 to 5) ---------- */
-const RATING_LABEL = { 1: 'Very easy', 2: 'Easy', 3: 'Moderate', 4: 'Hard', 5: 'Very hard' }
+const RATING_LABEL = { 1: 'Easy', 2: 'Steady', 3: 'Solid', 4: 'Hard', 5: 'All out' } // same words as the client's completion screen
 export function sessionFelt(rating) {
   return rating ? `Felt: ${RATING_LABEL[rating] ?? ''} ${rating}/5` : ''
 }
