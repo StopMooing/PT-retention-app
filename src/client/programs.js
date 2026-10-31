@@ -3,11 +3,12 @@
 // custom_workout_id, created_by = the client's own user id).
 import { supabase } from '../supabase'
 import { programPlan, planWeeks } from '../lib/schedule.js'
-import { insertPlannedSessions } from '../lib/planWrites'
+import { insertPlannedSessions, clearUpcoming } from '../lib/planWrites'
 
-// Stop a program the client started themselves. upcomingIds: that program's sessions from
-// today on that haven't been done; they come off the calendar. Done sessions stay.
-export async function stopProgram(assignment, client, upcomingIds = []) {
+// Stop a program the client started themselves. Its sessions from today on that haven't
+// been done come off the calendar (clearUpcoming, same as the coach side). Done sessions
+// stay. clear: false leaves the calendar alone (startProgram clears once the new one is on).
+export async function stopProgram(assignment, client, { clear = true } = {}) {
   const { error } = await supabase
     .from('program_assignments')
     .update({ is_active: false })
@@ -17,11 +18,9 @@ export async function stopProgram(assignment, client, upcomingIds = []) {
     console.error('Stop program error:', error)
     return { error }
   }
-  if (upcomingIds.length > 0) {
-    const { error: clearError } = await supabase.from('scheduled_workouts').delete().eq('client_id', client.id).in('id', upcomingIds)
-    // The program is already stopped; leftover sessions are harmless, so only log this.
-    if (clearError) console.error('Clear upcoming sessions error:', clearError)
-  }
+  // The program is already stopped; leftover sessions are harmless, so a failed clear is
+  // only logged (inside clearUpcoming).
+  if (clear) await clearUpcoming({ clientId: client.id, programId: assignment.programs?.id ?? assignment.program_id })
   return { error: null }
 }
 
@@ -30,12 +29,12 @@ export async function stopProgram(assignment, client, upcomingIds = []) {
 // first, then every planned session goes on the calendar in one insert (sessions already
 // there are skipped). If any step fails, the new assignment is switched off and the old
 // one switched back on. Only once it all worked do the old program's upcoming sessions
-// (currentUpcomingIds) come off the calendar. assigned_by is the client's own user id:
+// come off the calendar. assigned_by is the client's own user id:
 // that is how the coach side labels it. Returns { error, count }.
-export async function startProgram({ client, program, current, currentUpcomingIds = [], startDate, trainingDays }) {
+export async function startProgram({ client, program, current, startDate, trainingDays }) {
   const restore = () => current && supabase.from('program_assignments').update({ is_active: true }).eq('id', current.id).eq('assigned_by', client.user_id)
   if (current) {
-    const { error } = await stopProgram(current, client)
+    const { error } = await stopProgram(current, client, { clear: false })
     if (error) return { error }
   }
   const { data: created, error } = await supabase
@@ -55,11 +54,8 @@ export async function startProgram({ client, program, current, currentUpcomingId
     await restore()
     return { error: res.error }
   }
-  if (current && currentUpcomingIds.length > 0) {
-    const { error: clearError } = await supabase.from('scheduled_workouts').delete().eq('client_id', client.id).in('id', currentUpcomingIds)
-    // The new program is on; leftover old sessions are harmless, so only log this.
-    if (clearError) console.error('Clear old program sessions error:', clearError)
-  }
+  // The new program is on; leftover old sessions are harmless, so a failed clear is only logged.
+  if (current) await clearUpcoming({ clientId: client.id, programId: current.programs?.id ?? current.program_id, keep: plan })
   return { error: null, count: res.count }
 }
 

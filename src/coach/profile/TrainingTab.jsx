@@ -7,7 +7,7 @@ import { Button, Card, Chip, Segmented, Sheet, EmptyState, Field } from '../../u
 import { Panel } from './parts'
 import { toLocalDateStr, dayOf, formatDate, relativeDay, firstName, startedByClient } from '../lib'
 import StartPlanFields from '../../lib/StartPlanFields'
-import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, planSessionCount } from '../../lib/schedule.js'
+import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, planSessionCount, PAST_START_NOTE } from '../../lib/schedule.js'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -161,7 +161,7 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
   const list = allPrograms.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()))
   const dayCount = (p) => allProgramWorkouts.filter((pw) => pw.program_id === p.id).length
   const n = selected ? dayCount(selected) : 0
-  const ready = !!selected && (n === 0 ? startDate >= today : planReady({ dayCount: n, startDate, trainingDays, today }))
+  const ready = !!selected && (n === 0 ? !!startDate : planReady({ dayCount: n, startDate, trainingDays, minDate: null }))
   function pick(p) {
     if (selected?.id === p.id) { setSelected(null); return }
     setSelected(p)
@@ -217,12 +217,17 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
       {selected && (
         <div className="mt-4 pt-4 border-t border-line">
           {n > 0 ? (
-            <StartPlanFields dayCount={n} weeks={planWeeks(selected)} startDate={startDate} onStartDate={setStartDate} trainingDays={trainingDays} onTrainingDays={setTrainingDays} today={today} />
+            <StartPlanFields dayCount={n} weeks={planWeeks(selected)} startDate={startDate} onStartDate={setStartDate} trainingDays={trainingDays} onTrainingDays={setTrainingDays} today={today} minDate={null} pastNote={PAST_START_NOTE} />
           ) : (
             <>
               <p className="text-[13px] text-muted mb-3">This program has no workouts yet, so nothing goes on the schedule.</p>
-              <Field label="Start date" type="date" min={today} value={startDate} onChange={(e) => e.target.value && setStartDate(e.target.value)} />
+              <Field label="Start date" type="date" value={startDate} onChange={(e) => e.target.value && setStartDate(e.target.value)} />
             </>
+          )}
+          {programAssignment && (
+            <p className="text-[13px] text-muted bg-surface-2 rounded-[14px] px-4 py-3 mt-4">
+              This replaces <span className="font-bold text-ink">{programAssignment.programs?.name}</span>. Its upcoming sessions come off {clientName}'s calendar. Completed ones stay.
+            </p>
           )}
         </div>
       )}
@@ -239,7 +244,7 @@ function AutoScheduleSheet({ open, onClose, programAssignment, programWorkouts, 
   const [trainingDays, setTrainingDays] = useState(() => defaultTrainingDays(n))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
-  const ready = planReady({ dayCount: n, startDate: start, trainingDays, today })
+  const ready = planReady({ dayCount: n, startDate: start, trainingDays, minDate: null })
   const total = planSessionCount(n, weeks)
   async function save() {
     setSaving(true)
@@ -260,7 +265,7 @@ function AutoScheduleSheet({ open, onClose, programAssignment, programWorkouts, 
       }
     >
       <p className="text-[13px] text-muted -mt-1 mb-4">Puts every week of {programAssignment?.programs?.name} on the schedule, in order. Sessions already there aren't doubled up.</p>
-      <StartPlanFields dayCount={n} weeks={weeks} startDate={start} onStartDate={setStart} trainingDays={trainingDays} onTrainingDays={setTrainingDays} today={today} />
+      <StartPlanFields dayCount={n} weeks={weeks} startDate={start} onStartDate={setStart} trainingDays={trainingDays} onTrainingDays={setTrainingDays} today={today} minDate={null} pastNote={PAST_START_NOTE} />
       {error && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{error}</p>}
     </Sheet>
   )
@@ -605,7 +610,7 @@ export default function TrainingTab(props) {
         <div className="flex gap-3">
           <AlertCircle size={20} className="text-bad shrink-0 mt-0.5" />
           <p className="text-[15px] text-ink leading-relaxed">
-            This takes <span className="font-bold">{programAssignment?.programs?.name}</span> off {client.full_name}'s profile. Sessions already on the schedule are not deleted.
+            This takes <span className="font-bold">{programAssignment?.programs?.name}</span> off {client.full_name}'s profile. Its upcoming sessions come off the calendar. Completed ones stay.
           </p>
         </div>
       </Sheet>

@@ -2,7 +2,7 @@
 // program) and the coach side (assign, change program, fill schedule) so both lay out a
 // program the same way. Weekdays are numbered Monday = 1 to Sunday = 7. Day logic only
 // through the local-day helpers in client/dates.js (never toISOString).
-import { toLocalDateStr, addDays, parseDay, dayMonth } from '../client/dates.js'
+import { toLocalDateStr, addDays, parseDay, dayMonth, mondayOf } from '../client/dates.js'
 
 // Weeks to plan when a program's name and description don't say how long it is.
 export const DEFAULT_WEEKS = 4
@@ -35,6 +35,16 @@ export function defaultStartDate(today = toLocalDateStr()) {
   const wd = isoWeekday(today)
   return wd === 1 ? today : addDays(today, 8 - wd)
 }
+
+// Earliest start a client can pick: the Monday of this week, so a program started midweek
+// can still begin on Monday. Days already gone show as not logged yet. The coach side has
+// no earliest date.
+export function clientEarliestStart(today = toLocalDateStr()) {
+  return mondayOf(today)
+}
+
+// Coach side, under the start date when it is before today.
+export const PAST_START_NOTE = "Sessions before today go on the calendar as not done. They won't count against anyone."
 
 // Program length in weeks, read from its name or description ("4-Week Beginner
 // Strength", "12 week full body build"). null when neither says.
@@ -78,9 +88,10 @@ export function programPlan({ days, weeks, startDate, trainingDays }) {
   return out
 }
 
-// Ready to start: a start date from today on and exactly the training days needed.
-export function planReady({ dayCount, startDate, trainingDays, today = toLocalDateStr() }) {
-  return !!startDate && startDate >= today && requiredDays(dayCount) > 0 && (trainingDays?.length ?? 0) === requiredDays(dayCount)
+// Ready to start: a start date (from minDate on, when given) and exactly the training days
+// needed. minDate null: any date, past ones included (coach side).
+export function planReady({ dayCount, startDate, trainingDays, minDate = toLocalDateStr() }) {
+  return !!startDate && (!minDate || startDate >= minDate) && requiredDays(dayCount) > 0 && (trainingDays?.length ?? 0) === requiredDays(dayCount)
 }
 
 // "6 weeks, 24 sessions, 2 Nov to 13 Dec".

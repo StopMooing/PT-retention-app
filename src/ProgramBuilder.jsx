@@ -6,8 +6,8 @@ import { Loading, Toast, BackLink, Select, TextArea, MiniField, SearchBox, Filte
 import { useToast } from './tools/useToast'
 import { toLocalDateStr } from './tools/dates'
 import StartPlanFields from './lib/StartPlanFields'
-import { programPlan, planWeeks, defaultStartDate, defaultTrainingDays, planReady } from './lib/schedule.js'
-import { insertPlannedSessions } from './lib/planWrites'
+import { programPlan, planWeeks, defaultStartDate, defaultTrainingDays, planReady, PAST_START_NOTE } from './lib/schedule.js'
+import { insertPlannedSessions, clearUpcoming } from './lib/planWrites'
 
 const EQUIPMENT = [
   ['barbell', 'Barbell'], ['dumbbell', 'Dumbbell'], ['cable', 'Cable'], ['machine', 'Machine'],
@@ -97,6 +97,8 @@ export default function ProgramBuilder({ user }) {
   // Assign to a client
   const [clients, setClients] = useState([])
   const [assignClientId, setAssignClientId] = useState('')
+  // The chosen client's current program ({ name }), so the sheet can say it gets replaced
+  const [assignCurrent, setAssignCurrent] = useState(null)
   // Local date, not UTC: toISOString() gives yesterday's date before 9:30am in Adelaide
   const [assignStartDate, setAssignStartDate] = useState(() => defaultStartDate(toLocalDateStr()))
   const [assignDays, setAssignDays] = useState([])
@@ -148,20 +150,31 @@ export default function ProgramBuilder({ user }) {
 
   function openAssign() {
     setAssignError('')
+    setAssignClientId('')
+    setAssignCurrent(null)
     setAssignStartDate(defaultStartDate(toLocalDateStr()))
     setAssignDays(defaultTrainingDays(workoutDays.length))
     setSheet('assign')
   }
 
+  async function pickAssignClient(id) {
+    setAssignClientId(id)
+    setAssignCurrent(null)
+    if (!id) return
+    const { data } = await supabase.from('program_assignments').select('programs(name)').eq('client_id', id).eq('is_active', true).limit(1)
+    setAssignCurrent(data?.[0]?.programs ?? null)
+  }
+
   // Assigns the program from the start date (the client's current program is switched
   // off first, as on the client profile) and puts every week of it on their schedule on
-  // the chosen weekdays. Sessions already there are skipped.
+  // the chosen weekdays. Sessions already there are skipped. Then the old program's
+  // upcoming sessions that aren't done come off the calendar (done ones stay).
   async function handleAssignProgram() {
     if (!assignClientId) return
     setAssignLoading(true)
     setAssignError('')
     const { data: { user: authUser } } = await supabase.auth.getUser()
-    const { data: previous } = await supabase.from('program_assignments').select('id').eq('client_id', assignClientId).eq('is_active', true)
+    const { data: previous } = await supabase.from('program_assignments').select('id, program_id').eq('client_id', assignClientId).eq('is_active', true)
     const previousIds = (previous ?? []).map(a => a.id)
     if (previousIds.length > 0) {
       const { error: offError } = await supabase.from('program_assignments').update({ is_active: false }).in('id', previousIds)
@@ -186,6 +199,10 @@ export default function ProgramBuilder({ user }) {
     }
     const plan = programPlan({ days: workoutDays, weeks: planWeeks(selectedProgram), startDate: assignStartDate, trainingDays: assignDays })
     const { error: planError } = await insertPlannedSessions({ clientId: assignClientId, createdBy: authUser.id, plan })
+    // A failed clear is only logged (inside clearUpcoming); the new program is already on.
+    for (const programId of new Set((previous ?? []).map(a => a.program_id))) {
+      await clearUpcoming({ clientId: assignClientId, programId, keep: plan })
+    }
     setAssignLoading(false)
     const name = clients.find(c => c.id === assignClientId)?.full_name ?? 'client'
     setSheet(null)
@@ -626,8 +643,8 @@ export default function ProgramBuilder({ user }) {
   )
 
   const assignReady = workoutDays.length > 0
-    ? planReady({ dayCount: workoutDays.length, startDate: assignStartDate, trainingDays: assignDays })
-    : assignStartDate >= toLocalDateStr()
+    ? planReady({ dayCount: workoutDays.length, startDate: assignStartDate, trainingDays: assignDays, minDate: null })
+    : !!assignStartDate
   const assignSheet = (
     <Sheet
       open={sheet === 'assign'}
@@ -646,7 +663,7 @@ export default function ProgramBuilder({ user }) {
         {clients.length === 0 ? (
           <p className="text-sm text-muted bg-surface-2 rounded-[14px] px-4 py-3">Add a client from the dashboard first.</p>
         ) : (
-          <Select label="Client" value={assignClientId} onChange={e => setAssignClientId(e.target.value)}>
+          <Select label="Client" value={assignClientId} onChange={e => pickAssignClient(e.target.value)}>
             <option value="">Choose a client</option>
             {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
           </Select>
@@ -659,9 +676,16 @@ export default function ProgramBuilder({ user }) {
             onStartDate={setAssignStartDate}
             trainingDays={assignDays}
             onTrainingDays={setAssignDays}
+            minDate={null}
+            pastNote={PAST_START_NOTE}
           />
         ) : (
-          <Field label="Start date" type="date" min={toLocalDateStr()} value={assignStartDate} onChange={e => e.target.value && setAssignStartDate(e.target.value)} />
+          <Field label="Start date" type="date" value={assignStartDate} onChange={e => e.target.value && setAssignStartDate(e.target.value)} />
+        )}
+        {assignCurrent && (
+          <p className="m-0 text-[13px] text-muted bg-surface-2 rounded-[14px] px-4 py-3">
+            This replaces <span className="font-bold text-ink">{assignCurrent.name}</span>. Its upcoming sessions come off {clients.find(c => c.id === assignClientId)?.full_name?.split(' ')[0] ?? 'the client'}'s calendar. Completed ones stay.
+          </p>
         )}
         {assignError && <p className="m-0 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{assignError}</p>}
       </div>

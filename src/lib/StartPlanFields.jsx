@@ -1,21 +1,25 @@
 // Start date and training days for putting a program on the calendar. Used by the client's
 // Start program sheet and the coach's assign, change program and fill schedule sheets.
-// Controlled: the parent keeps startDate and trainingDays and checks planReady().
+// Controlled: the parent keeps startDate and trainingDays and checks planReady() with the
+// same minDate. minDate: earliest start allowed (the client passes this week's Monday, the
+// coach null for any date). pastNote: line shown when the start date is before today.
 import { Field } from '../ui'
-import { toLocalDateStr, addDays } from '../client/dates.js'
+import { toLocalDateStr, addDays, mondayOf, dayMonth } from '../client/dates.js'
 import { isoWeekday, defaultStartDate, requiredDays, planSummary, planReady } from './schedule.js'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 const WEEKDAYS = [[1, 'Mon', 'Monday'], [2, 'Tue', 'Tuesday'], [3, 'Wed', 'Wednesday'], [4, 'Thu', 'Thursday'], [5, 'Fri', 'Friday'], [6, 'Sat', 'Saturday'], [7, 'Sun', 'Sunday']]
 const pill = (on) => cx('h-9 px-3.5 rounded-full text-sm font-bold transition-colors', on ? 'bg-accent text-on-accent' : 'bg-surface-2 text-ink hover:brightness-95')
 
-export default function StartPlanFields({ dayCount, weeks, startDate, onStartDate, trainingDays, onTrainingDays, today = toLocalDateStr() }) {
+export default function StartPlanFields({ dayCount, weeks, startDate, onStartDate, trainingDays, onTrainingDays, today = toLocalDateStr(), minDate = today, pastNote = null }) {
   const need = requiredDays(dayCount)
   const nextMonday = isoWeekday(today) === 1 ? addDays(today, 7) : defaultStartDate(today)
-  const quick = [['Today', today], ['Tomorrow', addDays(today, 1)], ['Next Monday', nextMonday]]
-    .filter(([, d], i, all) => all.findIndex(([, x]) => x === d) === i)
+  const thisMonday = isoWeekday(today) === 1 ? [] : [['This Monday', mondayOf(today)]]
+  const quick = [...thisMonday, ['Today', today], ['Tomorrow', addDays(today, 1)], ['Next Monday', nextMonday]]
+    .filter(([, d], i, all) => (!minDate || d >= minDate) && all.findIndex(([, x]) => x === d) === i)
   const picked = trainingDays.length
-  const ready = planReady({ dayCount, startDate, trainingDays, today })
+  const ready = planReady({ dayCount, startDate, trainingDays, minDate })
+  const tooEarly = !!startDate && !!minDate && startDate < minDate
 
   function toggle(n) {
     onTrainingDays(trainingDays.includes(n) ? trainingDays.filter((d) => d !== n) : [...trainingDays, n].sort((a, b) => a - b))
@@ -30,8 +34,9 @@ export default function StartPlanFields({ dayCount, weeks, startDate, onStartDat
             <button key={label} type="button" aria-pressed={startDate === d} onClick={() => onStartDate(d)} className={pill(startDate === d)}>{label}</button>
           ))}
         </div>
-        <Field type="date" aria-label="Start date" min={today} value={startDate} onChange={(e) => e.target.value && onStartDate(e.target.value)} />
-        {startDate && startDate < today && <p className="text-[13px] text-warn mt-1.5">Pick today or a later day.</p>}
+        <Field type="date" aria-label="Start date" min={minDate || undefined} value={startDate} onChange={(e) => e.target.value && onStartDate(e.target.value)} />
+        {tooEarly && <p className="text-[13px] text-warn mt-1.5">{minDate === today ? 'Pick today or a later day.' : `Pick ${dayMonth(minDate)} or a later day.`}</p>}
+        {!tooEarly && pastNote && startDate && startDate < today && <p className="text-[13px] text-muted mt-1.5">{pastNote}</p>}
       </div>
 
       <div>

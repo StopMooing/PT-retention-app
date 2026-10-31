@@ -1,6 +1,6 @@
 // Self-check for the calendar plan. Run: node src/lib/schedule.test.mjs
 import assert from 'node:assert/strict'
-import { programPlan, defaultTrainingDays, defaultStartDate, planSummary, planSessionCount } from './schedule.js'
+import { programPlan, defaultTrainingDays, defaultStartDate, planSummary, planSessionCount, clientEarliestStart, planReady } from './schedule.js'
 
 const days = [{ id: 'd1' }, { id: 'd2' }, { id: 'd3' }, { id: 'd4' }]
 
@@ -35,5 +35,20 @@ assert.deepEqual(defaultTrainingDays(7), [1, 2, 3, 4, 5, 6, 7])
 assert.equal(defaultStartDate('2026-10-31'), '2026-11-02')
 assert.equal(defaultStartDate('2026-11-02'), '2026-11-02')
 assert.equal(defaultStartDate('2026-11-01'), '2026-11-02')
+
+// Backdating: a client can start as early as this week's Monday; the coach any day.
+assert.equal(clientEarliestStart('2026-10-31'), '2026-10-26')
+assert.equal(clientEarliestStart('2026-11-01'), '2026-10-26')
+assert.equal(clientEarliestStart('2026-11-02'), '2026-11-02')
+const ready = (startDate, minDate) => planReady({ dayCount: 3, startDate, trainingDays: [1, 3, 5], minDate })
+assert.equal(ready('2026-10-26', clientEarliestStart('2026-10-31')), true)
+assert.equal(ready('2026-10-25', clientEarliestStart('2026-10-31')), false)
+assert.equal(ready('2026-01-05', null), true)
+assert.equal(ready('2026-11-02', '2026-11-02'), true)
+assert.equal(planReady({ dayCount: 3, startDate: '2026-10-26', trainingDays: [1, 3], minDate: null }), false)
+
+// A backdated plan puts the days already gone this week on the calendar too.
+const back = programPlan({ days, weeks: 1, startDate: '2026-10-26', trainingDays: [1, 2, 4, 5] })
+assert.deepEqual(back.map((p) => p.scheduled_date), ['2026-10-26', '2026-10-27', '2026-10-29', '2026-10-30'])
 
 console.log('schedule.test.mjs: all checks passed')

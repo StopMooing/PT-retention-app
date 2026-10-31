@@ -14,7 +14,7 @@ import HabitsTab from './coach/profile/HabitsTab'
 import NotesTab from './coach/profile/NotesTab'
 import WorkoutSheet from './coach/profile/WorkoutSheet'
 import { programPlan, planWeeks } from './lib/schedule.js'
-import { insertPlannedSessions } from './lib/planWrites'
+import { insertPlannedSessions, clearUpcoming } from './lib/planWrites'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -466,10 +466,19 @@ export default function ClientProfile() {
     return { error, count }
   }
 
+  // Takes a program's upcoming, not done sessions off this client's calendar and out of
+  // state (clearUpcoming, shared with the client app). A failed clear is only logged.
+  async function clearOldSessions(programId, keep) {
+    const { ids } = await clearUpcoming({ clientId, programId, keep })
+    if (ids.length > 0) setScheduledWorkouts((prev) => prev.filter((sw) => !ids.includes(sw.id)))
+  }
+
   // Assigns the program from startDate and puts every week of it on the schedule on the
-  // chosen weekdays (Mon = 1 .. Sun = 7). Returns { ok, scheduleFailed }.
+  // chosen weekdays (Mon = 1 .. Sun = 7). The old program's upcoming sessions that aren't
+  // done then come off the calendar. Returns { ok, scheduleFailed }.
   async function handleAssignProgram(program, { startDate, trainingDays }) {
     if (!program || !startDate) return { ok: false }
+    const oldProgramId = programAssignment?.programs?.id ?? programAssignment?.program_id ?? null
     try {
       if (programAssignment) {
         await supabase.from('program_assignments').update({ is_active: false }).eq('id', programAssignment.id)
@@ -508,6 +517,7 @@ export default function ClientProfile() {
 
       const plan = programPlan({ days: fetchedPW, weeks: planWeeks(newAssignment.programs ?? program), startDate, trainingDays })
       const { error: planError } = await schedulePlan(plan, user.id)
+      if (oldProgramId) await clearOldSessions(oldProgramId, plan)
       return { ok: true, scheduleFailed: !!planError }
     } catch (e) {
       console.error(e)
@@ -520,9 +530,9 @@ export default function ClientProfile() {
     try {
       const { error } = await supabase.from('program_assignments').update({ is_active: false }).eq('id', programAssignment.id)
       if (error) throw error
+      await clearOldSessions(programAssignment.programs?.id ?? programAssignment.program_id)
       setProgramAssignment(null)
       setProgramWorkouts([])
-      setScheduledWorkouts([])
       return true
     } catch (e) {
       console.error(e)

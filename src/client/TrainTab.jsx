@@ -17,7 +17,7 @@ import { parseAiJson } from './foods'
 import { DayGrid, StepNav, Overlay, BackHeader } from './common'
 import { scheduleOne, startProgram, stopProgram } from './programs'
 import StartPlanFields from '../lib/StartPlanFields'
-import { defaultStartDate, defaultTrainingDays, planReady, planWeeks } from '../lib/schedule.js'
+import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, clientEarliestStart } from '../lib/schedule.js'
 import WorkoutPreview from './WorkoutPreview'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
@@ -381,11 +381,6 @@ export default function TrainTab({
   }
 
   /* ----- programs ----- */
-  // This program's sessions from today on that haven't been done.
-  const upcomingProgramIds = () => scheduledWorkouts
-    .filter((sw) => programDayIds.has(sw.program_workout_id) && sw.scheduled_date >= today && !isDone(sw, completedIds))
-    .map((sw) => sw.id)
-
   function openStartSheet(program) {
     setStartDate(defaultStartDate(today))
     setTrainingDays(defaultTrainingDays(program.days?.length ?? 0))
@@ -398,7 +393,7 @@ export default function TrainTab({
     setBusy(true)
     const current = ownProgram ? assignment : null
     const res = await startProgram({
-      client, program, current, currentUpcomingIds: current ? upcomingProgramIds() : [], startDate, trainingDays,
+      client, program, current, startDate, trainingDays,
     })
     await Promise.all([reloadAssignment(), reloadScheduledWorkouts()])
     setBusy(false)
@@ -411,7 +406,7 @@ export default function TrainTab({
 
   async function handleStopProgram() {
     setBusy(true)
-    const { error } = await stopProgram(assignment, client, upcomingProgramIds())
+    const { error } = await stopProgram(assignment, client)
     await Promise.all([reloadAssignment(), reloadScheduledWorkouts()])
     setBusy(false)
     setConfirmStop(false)
@@ -728,7 +723,7 @@ export default function TrainTab({
           <Button
             size="lg"
             block
-            disabled={busy || !startFor || !planReady({ dayCount: startFor.days?.length ?? 0, startDate, trainingDays, today })}
+            disabled={busy || !startFor || !planReady({ dayCount: startFor.days?.length ?? 0, startDate, trainingDays, minDate: clientEarliestStart(today) })}
             onClick={handleStartProgram}
           >
             {busy ? 'Starting...' : 'Start program'}
@@ -746,6 +741,7 @@ export default function TrainTab({
               trainingDays={trainingDays}
               onTrainingDays={setTrainingDays}
               today={today}
+              minDate={clientEarliestStart(today)}
             />
           </>
         )}
