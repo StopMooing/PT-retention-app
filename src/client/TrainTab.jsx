@@ -15,7 +15,9 @@ import {
 } from './metrics'
 import { parseAiJson } from './foods'
 import { DayGrid, StepNav, Overlay, BackHeader } from './common'
-import { scheduleOne, scheduleProgramDays, startProgram, stopProgram } from './programs'
+import { scheduleOne, startProgram, stopProgram } from './programs'
+import StartPlanFields from '../lib/StartPlanFields'
+import { defaultStartDate, defaultTrainingDays, planReady, planWeeks } from '../lib/schedule.js'
 import WorkoutPreview from './WorkoutPreview'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
@@ -111,7 +113,7 @@ function ProgramDetail({
         {progress && progress.total > 0 && (
           <div>
             <div className="flex items-baseline justify-between text-[13px]">
-              <span className="font-bold text-ink">{progress.weeks ? `Week ${progress.week} of ${progress.weeks}` : 'Sessions'}</span>
+              <span className="font-bold text-ink">{progress.upcoming ? `Starts ${shortDayLabel(progress.start)}` : `Week ${progress.week} of ${progress.weeks}`}</span>
               <span className="text-muted tabular-nums">{progress.done} of {plural(progress.total, 'session')} done</span>
             </div>
             <div className="h-2 rounded-full bg-surface-2 overflow-hidden mt-1.5">
@@ -151,14 +153,14 @@ function ProgramDetail({
 /* ---------- Active program ---------- */
 
 // Name, who set it, week and dates, progress, description (two lines, then More) and,
-// for a program the client started, schedule another week and stop.
-function ProgramHeader({ assignment, progress, coachProgram, busy, onNextWeek, onStop }) {
+// for a program the client started, stop.
+function ProgramHeader({ assignment, progress, coachProgram, busy, onStop }) {
   const [more, setMore] = useState(false)
   const program = assignment.programs ?? {}
   const desc = program.description || ''
   const long = desc.length > 90
   const meta = [
-    progress.weeks ? `Week ${progress.week} of ${progress.weeks}` : progress.week ? `Week ${progress.week}` : null,
+    progress.upcoming ? `Starts ${shortDayLabel(progress.start)}` : progress.week ? `Week ${progress.week} of ${progress.weeks}` : null,
     progress.start && progress.end ? `${dayMonth(progress.start)} to ${dayMonth(progress.end)}` : null,
   ].filter(Boolean).join(' · ')
   return (
@@ -185,9 +187,8 @@ function ProgramHeader({ assignment, progress, coachProgram, busy, onNextWeek, o
         </div>
       )}
       {!coachProgram && (
-        <div className="flex gap-2 pt-1">
-          <Button variant="secondary" size="sm" className="flex-1" disabled={busy} onClick={onNextWeek}><CalendarPlus size={16} /> Add a week</Button>
-          <Button variant="ghost" size="sm" className="flex-1" disabled={busy} onClick={onStop}>Stop program</Button>
+        <div className="pt-1">
+          <Button variant="secondary" size="sm" block disabled={busy} onClick={onStop}>Stop program</Button>
         </div>
       )}
     </Card>
@@ -220,6 +221,9 @@ export default function TrainTab({
   const [calDates, setCalDates] = useState([])
   const [openProgram, setOpenProgram] = useState(null) // an on-demand program
   const [confirmStop, setConfirmStop] = useState(false)
+  const [startFor, setStartFor] = useState(null) // the program in the Start sheet
+  const [startDate, setStartDate] = useState(today)
+  const [trainingDays, setTrainingDays] = useState([])
   const [sheetError, setSheetError] = useState(null)
   const [busy, setBusy] = useState(false)
 
@@ -250,7 +254,7 @@ export default function TrainTab({
   const savedItems = savedWorkouts.map((w) => savedItem(w))
   const hasPrograms = !!assignment || onDemand.programs.length > 0
   const tab = view === 'programs' ? 'programs' : 'workouts'
-  const progress = assignment ? programProgress({ assignment, programWorkouts, scheduledWorkouts, workoutLogs, today }) : null
+  const progress = assignment ? programProgress({ assignment, programWorkouts, workoutLogs, today }) : null
 
   /* ----- the shown week ----- */
   const days = weekDays(weekStart)
@@ -377,12 +381,29 @@ export default function TrainTab({
   }
 
   /* ----- programs ----- */
-  async function handleStartProgram(program) {
+  // This program's sessions from today on that haven't been done.
+  const upcomingProgramIds = () => scheduledWorkouts
+    .filter((sw) => programDayIds.has(sw.program_workout_id) && sw.scheduled_date >= today && !isDone(sw, completedIds))
+    .map((sw) => sw.id)
+
+  function openStartSheet(program) {
+    setStartDate(defaultStartDate(today))
+    setTrainingDays(defaultTrainingDays(program.days?.length ?? 0))
+    setStartFor(program)
+  }
+
+  async function handleStartProgram() {
+    const program = startFor
+    if (!program) return
     setBusy(true)
-    const res = await startProgram({ client, program, current: ownProgram ? assignment : null, scheduledWorkouts })
+    const current = ownProgram ? assignment : null
+    const res = await startProgram({
+      client, program, current, currentUpcomingIds: current ? upcomingProgramIds() : [], startDate, trainingDays,
+    })
     await Promise.all([reloadAssignment(), reloadScheduledWorkouts()])
     setBusy(false)
     if (res.error) { showToast("Couldn't start that program. Try again.", { ms: 4000 }); return }
+    setStartFor(null)
     setOpenProgram(null)
     setView('programs')
     showToast(res.count > 0 ? `Program started. ${plural(res.count, 'session')} on your calendar.` : 'Program started')
@@ -390,28 +411,13 @@ export default function TrainTab({
 
   async function handleStopProgram() {
     setBusy(true)
-    const upcoming = scheduledWorkouts
-      .filter((sw) => programDayIds.has(sw.program_workout_id) && sw.scheduled_date >= today && !isDone(sw, completedIds))
-      .map((sw) => sw.id)
-    const { error } = await stopProgram(assignment, client, upcoming)
+    const { error } = await stopProgram(assignment, client, upcomingProgramIds())
     await Promise.all([reloadAssignment(), reloadScheduledWorkouts()])
     setBusy(false)
     setConfirmStop(false)
     if (error) { showToast("Couldn't stop that program. Try again.", { ms: 4000 }); return }
     setOpenProgram(null)
     showToast('Program stopped')
-  }
-
-  // Lays out the program's days once more, from the day after its last session (or today).
-  async function handleNextWeek() {
-    const last = scheduledWorkouts.filter((sw) => programDayIds.has(sw.program_workout_id)).map((sw) => sw.scheduled_date).sort().pop()
-    const start = last && last >= today ? addDays(last, 1) : today
-    setBusy(true)
-    const res = await scheduleProgramDays({ client, days: programWorkouts, startDate: start, scheduledWorkouts })
-    await reloadScheduledWorkouts()
-    setBusy(false)
-    if (res.error) { showToast("Couldn't add those sessions. Try again.", { ms: 4000 }); return }
-    showToast(`${plural(res.count, 'session')} added from ${formatShortDate(start)}`)
   }
 
   // Picker groups for adding to a day.
@@ -430,17 +436,12 @@ export default function TrainTab({
     let note = null
     let footer = null
     if (mine && ownProgram) {
-      footer = (
-        <>
-          <Button size="lg" block variant="secondary" disabled={busy} onClick={handleNextWeek}><CalendarPlus size={19} /> Schedule another week</Button>
-          <Button size="lg" block variant="ghost" disabled={busy} onClick={() => setConfirmStop(true)}>Stop program</Button>
-        </>
-      )
+      footer = <Button size="lg" block variant="secondary" disabled={busy} onClick={() => setConfirmStop(true)}>Stop program</Button>
     } else if (!mine && coachProgram) {
       note = "You're on your coach's program. Add any of these workouts to your calendar."
     } else if (!mine) {
-      if (ownProgram) note = `Starting this one stops ${assignment.programs?.name}. Sessions already on your calendar stay there.`
-      footer = <Button size="lg" block disabled={busy} onClick={() => handleStartProgram(program)}>{busy ? 'Starting...' : 'Start program'}</Button>
+      if (ownProgram) note = `Starting this one stops ${assignment.programs?.name} and takes its upcoming sessions off your calendar. Sessions you've done stay in your history.`
+      footer = <Button size="lg" block disabled={busy} onClick={() => openStartSheet(program)}>Start program</Button>
     }
     programPage = (
       <ProgramDetail
@@ -562,7 +563,6 @@ export default function TrainTab({
                 progress={progress}
                 coachProgram={coachProgram}
                 busy={busy}
-                onNextWeek={handleNextWeek}
                 onStop={() => setConfirmStop(true)}
               />
               {myProgramItems.length > 0 && <ItemList items={myProgramItems} onOpen={setPreviewItem} short />}
@@ -717,6 +717,38 @@ export default function TrainTab({
           busy={new Set(calItem ? scheduledWorkouts.filter((sw) => sameWorkout(sw, calItem)).map((sw) => sw.scheduled_date) : [])}
         />
         {sheetError && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{sheetError}</p>}
+      </Sheet>
+
+      {/* Start an on-demand program: when, and which days */}
+      <Sheet
+        open={!!startFor}
+        onClose={() => setStartFor(null)}
+        title={startFor ? `Start ${startFor.name}` : ''}
+        footer={
+          <Button
+            size="lg"
+            block
+            disabled={busy || !startFor || !planReady({ dayCount: startFor.days?.length ?? 0, startDate, trainingDays, today })}
+            onClick={handleStartProgram}
+          >
+            {busy ? 'Starting...' : 'Start program'}
+          </Button>
+        }
+      >
+        {startFor && (
+          <>
+            <p className="text-[13px] text-muted -mt-1 mb-4">Every week of the program goes on your calendar. You can move any session later.</p>
+            <StartPlanFields
+              dayCount={startFor.days?.length ?? 0}
+              weeks={planWeeks(startFor)}
+              startDate={startDate}
+              onStartDate={setStartDate}
+              trainingDays={trainingDays}
+              onTrainingDays={setTrainingDays}
+              today={today}
+            />
+          </>
+        )}
       </Sheet>
 
       {/* Stop a program the client started */}

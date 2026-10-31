@@ -6,7 +6,8 @@ import { toLocalDateStr, addDays } from './dates'
 const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, created_by, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
 const EX_SELECT = 'id, sets, reps, rest_seconds, notes, order_index, exercises(id, name, muscle_group)'
 
-// Scheduled sessions from 4 weeks back to 8 weeks ahead.
+// Scheduled sessions from 4 weeks back to 13 weeks ahead (an 8-week program started next
+// Monday fits).
 export async function fetchScheduled(clientId) {
   const today = toLocalDateStr()
   const { data } = await supabase
@@ -14,7 +15,7 @@ export async function fetchScheduled(clientId) {
     .select(SW_SELECT)
     .eq('client_id', clientId)
     .gte('scheduled_date', addDays(today, -28))
-    .lte('scheduled_date', addDays(today, 56))
+    .lte('scheduled_date', addDays(today, 91))
     .order('scheduled_date', { ascending: true })
   return (data ?? []).map((sw) => ({
     ...sw,

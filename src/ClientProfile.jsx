@@ -13,6 +13,8 @@ import NutritionTab from './coach/profile/NutritionTab'
 import HabitsTab from './coach/profile/HabitsTab'
 import NotesTab from './coach/profile/NotesTab'
 import WorkoutSheet from './coach/profile/WorkoutSheet'
+import { programPlan, planWeeks } from './lib/schedule.js'
+import { insertPlannedSessions } from './lib/planWrites'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -457,8 +459,17 @@ export default function ClientProfile() {
     }
   }
 
-  async function handleAssignProgram(program) {
-    if (!program) return false
+  // Puts a plan on the schedule and into state. Returns { error, count }.
+  async function schedulePlan(plan, userId) {
+    const { data, error, count } = await insertPlannedSessions({ clientId, createdBy: userId, plan, select: SW_SELECT })
+    if (data.length > 0) setScheduledWorkouts((prev) => [...prev, ...data.map(enrichSW)])
+    return { error, count }
+  }
+
+  // Assigns the program from startDate and puts every week of it on the schedule on the
+  // chosen weekdays (Mon = 1 .. Sun = 7). Returns { ok, scheduleFailed }.
+  async function handleAssignProgram(program, { startDate, trainingDays }) {
+    if (!program || !startDate) return { ok: false }
     try {
       if (programAssignment) {
         await supabase.from('program_assignments').update({ is_active: false }).eq('id', programAssignment.id)
@@ -466,8 +477,8 @@ export default function ClientProfile() {
       const { data: { user } } = await supabase.auth.getUser()
       const { data: newAssignment, error } = await supabase
         .from('program_assignments')
-        .insert({ client_id: clientId, program_id: program.id, assigned_by: user.id, start_date: toLocalDateStr(), is_active: true })
-        .select('id, start_date, assigned_by, programs(id, name)')
+        .insert({ client_id: clientId, program_id: program.id, assigned_by: user.id, start_date: startDate, is_active: true })
+        .select('id, start_date, assigned_by, programs(id, name, description)')
         .single()
       if (error) throw error
       setProgramAssignment(newAssignment)
@@ -494,10 +505,13 @@ export default function ClientProfile() {
         }),
       )
       setWorkoutExercises(exerciseMap)
-      return true
+
+      const plan = programPlan({ days: fetchedPW, weeks: planWeeks(newAssignment.programs ?? program), startDate, trainingDays })
+      const { error: planError } = await schedulePlan(plan, user.id)
+      return { ok: true, scheduleFailed: !!planError }
     } catch (e) {
       console.error(e)
-      return false
+      return { ok: false }
     }
   }
 
@@ -516,23 +530,19 @@ export default function ClientProfile() {
     }
   }
 
-  // Returns the first scheduled date so the calendar can jump to it.
-  async function handleAutoSchedule(startDate, restDays) {
-    if (!startDate || programWorkouts.length === 0) return null
+  // Puts every week of the current program on the schedule from startDate on the chosen
+  // weekdays. Sessions already there are skipped. Returns { ok, count }.
+  async function handleAutoSchedule(startDate, trainingDays) {
+    if (!startDate || programWorkouts.length === 0) return { ok: false }
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const toInsert = programWorkouts.map((pw, i) => {
-        const d = new Date(startDate + 'T00:00:00')
-        d.setDate(d.getDate() + i * (1 + restDays))
-        return { client_id: clientId, program_workout_id: pw.id, scheduled_date: toLocalDateStr(d), created_by: user.id }
-      })
-      const { data, error } = await supabase.from('scheduled_workouts').insert(toInsert).select(SW_SELECT)
+      const plan = programPlan({ days: programWorkouts, weeks: planWeeks(programAssignment?.programs), startDate, trainingDays })
+      const { error, count } = await schedulePlan(plan, user.id)
       if (error) throw error
-      setScheduledWorkouts((prev) => [...prev, ...(data ?? []).map(enrichSW)])
-      return new Date(startDate + 'T00:00:00')
+      return { ok: true, count }
     } catch (e) {
       console.error(e)
-      return null
+      return { ok: false }
     }
   }
 

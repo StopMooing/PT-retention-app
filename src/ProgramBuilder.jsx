@@ -5,6 +5,9 @@ import { PageTitle, Card, Button, Chip, Sheet, EmptyState, Field, Segmented, Sec
 import { Loading, Toast, BackLink, Select, TextArea, MiniField, SearchBox, FilterChips, ConfirmRemove, Toggle } from './tools/kit'
 import { useToast } from './tools/useToast'
 import { toLocalDateStr } from './tools/dates'
+import StartPlanFields from './lib/StartPlanFields'
+import { programPlan, planWeeks, defaultStartDate, defaultTrainingDays, planReady } from './lib/schedule.js'
+import { insertPlannedSessions } from './lib/planWrites'
 
 const EQUIPMENT = [
   ['barbell', 'Barbell'], ['dumbbell', 'Dumbbell'], ['cable', 'Cable'], ['machine', 'Machine'],
@@ -95,7 +98,8 @@ export default function ProgramBuilder({ user }) {
   const [clients, setClients] = useState([])
   const [assignClientId, setAssignClientId] = useState('')
   // Local date, not UTC: toISOString() gives yesterday's date before 9:30am in Adelaide
-  const [assignStartDate, setAssignStartDate] = useState(() => toLocalDateStr())
+  const [assignStartDate, setAssignStartDate] = useState(() => defaultStartDate(toLocalDateStr()))
+  const [assignDays, setAssignDays] = useState([])
   const [assignLoading, setAssignLoading] = useState(false)
   const [assignError, setAssignError] = useState('')
 
@@ -142,11 +146,31 @@ export default function ProgramBuilder({ user }) {
       .then(({ data }) => { if (data) setClients(data) })
   }, [fetchPrograms, fetchAllExercises, user.id])
 
+  function openAssign() {
+    setAssignError('')
+    setAssignStartDate(defaultStartDate(toLocalDateStr()))
+    setAssignDays(defaultTrainingDays(workoutDays.length))
+    setSheet('assign')
+  }
+
+  // Assigns the program from the start date (the client's current program is switched
+  // off first, as on the client profile) and puts every week of it on their schedule on
+  // the chosen weekdays. Sessions already there are skipped.
   async function handleAssignProgram() {
     if (!assignClientId) return
     setAssignLoading(true)
     setAssignError('')
     const { data: { user: authUser } } = await supabase.auth.getUser()
+    const { data: previous } = await supabase.from('program_assignments').select('id').eq('client_id', assignClientId).eq('is_active', true)
+    const previousIds = (previous ?? []).map(a => a.id)
+    if (previousIds.length > 0) {
+      const { error: offError } = await supabase.from('program_assignments').update({ is_active: false }).in('id', previousIds)
+      if (offError) {
+        setAssignLoading(false)
+        setAssignError('Something went wrong. Please try again.')
+        return
+      }
+    }
     const { error } = await supabase.from('program_assignments').insert({
       program_id:  selectedProgram.id,
       client_id:   assignClientId,
@@ -154,15 +178,21 @@ export default function ProgramBuilder({ user }) {
       start_date:  assignStartDate,
       is_active:   true,
     })
-    setAssignLoading(false)
     if (error) {
+      if (previousIds.length > 0) await supabase.from('program_assignments').update({ is_active: true }).in('id', previousIds)
+      setAssignLoading(false)
       setAssignError('Something went wrong. Please try again.')
-    } else {
-      const name = clients.find(c => c.id === assignClientId)?.full_name ?? 'client'
-      setSheet(null)
-      setAssignClientId('')
-      showToast(`Assigned to ${name.split(' ')[0]}, starting ${formatDate(assignStartDate)}`)
+      return
     }
+    const plan = programPlan({ days: workoutDays, weeks: planWeeks(selectedProgram), startDate: assignStartDate, trainingDays: assignDays })
+    const { error: planError } = await insertPlannedSessions({ clientId: assignClientId, createdBy: authUser.id, plan })
+    setAssignLoading(false)
+    const name = clients.find(c => c.id === assignClientId)?.full_name ?? 'client'
+    setSheet(null)
+    setAssignClientId('')
+    showToast(planError
+      ? `Assigned to ${name.split(' ')[0]}, but the sessions didn't go on the schedule. Use Fill schedule on their profile.`
+      : `Assigned to ${name.split(' ')[0]}, starting ${formatDate(assignStartDate)}`)
   }
 
   async function fetchDayExercises(workoutId) {
@@ -595,20 +625,23 @@ export default function ProgramBuilder({ user }) {
     </Sheet>
   )
 
+  const assignReady = workoutDays.length > 0
+    ? planReady({ dayCount: workoutDays.length, startDate: assignStartDate, trainingDays: assignDays })
+    : assignStartDate >= toLocalDateStr()
   const assignSheet = (
     <Sheet
       open={sheet === 'assign'}
       onClose={() => setSheet(null)}
       title="Assign to a client"
       footer={
-        <Button size="lg" block onClick={handleAssignProgram} disabled={assignLoading || !assignClientId}>
+        <Button size="lg" block onClick={handleAssignProgram} disabled={assignLoading || !assignClientId || !assignReady}>
           {assignLoading ? 'Assigning…' : 'Assign program'}
         </Button>
       }
     >
       <div className="flex flex-col gap-4">
         <p className="text-[15px] text-muted">
-          <span className="font-bold text-ink">{selectedProgram?.name}</span> will show in your client's app from the start date.
+          <span className="font-bold text-ink">{selectedProgram?.name}</span> goes in your client's app, with every week on their schedule from the start date.
         </p>
         {clients.length === 0 ? (
           <p className="text-sm text-muted bg-surface-2 rounded-[14px] px-4 py-3">Add a client from the dashboard first.</p>
@@ -618,7 +651,18 @@ export default function ProgramBuilder({ user }) {
             {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
           </Select>
         )}
-        <Field label="Start date" type="date" value={assignStartDate} onChange={e => setAssignStartDate(e.target.value)} />
+        {workoutDays.length > 0 ? (
+          <StartPlanFields
+            dayCount={workoutDays.length}
+            weeks={planWeeks(selectedProgram)}
+            startDate={assignStartDate}
+            onStartDate={setAssignStartDate}
+            trainingDays={assignDays}
+            onTrainingDays={setAssignDays}
+          />
+        ) : (
+          <Field label="Start date" type="date" min={toLocalDateStr()} value={assignStartDate} onChange={e => e.target.value && setAssignStartDate(e.target.value)} />
+        )}
         {assignError && <p className="m-0 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{assignError}</p>}
       </div>
     </Sheet>
@@ -713,7 +757,7 @@ export default function ProgramBuilder({ user }) {
           className="mt-1 items-start [&_h1]:whitespace-normal [&_h1]:break-words"
           title={selectedProgram.name}
           action={
-            <Button onClick={() => { setAssignError(''); setSheet('assign') }}>
+            <Button onClick={openAssign} disabled={loadingDays}>
               <UserPlus size={18} /> Assign
             </Button>
           }

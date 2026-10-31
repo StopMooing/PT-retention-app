@@ -2,6 +2,7 @@
 // than one screen, it is worked out here so the screens always agree.
 import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween, weekdayName } from './dates'
 import { parseAiJson } from './foods'
+import { programWeeks, planWeeks, planSessionCount, planEndDate } from '../lib/schedule.js'
 
 // "1 exercise", "3 exercises".
 export function plural(n, one, many = `${one}s`) {
@@ -292,29 +293,26 @@ export function weekCommitments({ scheduledWorkouts, completedIds, checkins, foo
 
 /* ---------- Programs ---------- */
 
-// Program length in weeks, read from its name or description ("4-Week Beginner
-// Strength", "12 week full body build"). null when neither says.
-export function programWeeks(program) {
-  const m = `${program?.name ?? ''} ${program?.description ?? ''}`.match(/(\d{1,2})\s*-?\s*weeks?\b/i)
-  const n = m ? parseInt(m[1], 10) : 0
-  return n > 0 && n <= 52 ? n : null
-}
+// Program length in weeks lives with the calendar plan (src/lib/schedule.js), so the plan
+// and these numbers always agree.
+export { programWeeks }
 
-// Where the client is in their active program: week (of weeks, when known), sessions a
-// week, and sessions done since it started out of the sessions in it (total is the
-// program length when known, otherwise the sessions scheduled since the start), plus its
-// start and end days (end only when the length is known).
-export function programProgress({ assignment, programWorkouts, scheduledWorkouts, workoutLogs, today = toLocalDateStr() }) {
+// Where the client is in their active program: week (of weeks), sessions a week, and
+// sessions done since it started out of the planned total (planSessionCount: days a week
+// times weeks, the same plan Start program puts on the calendar), plus its start and end
+// days. upcoming: the start date is still ahead (week is null until then).
+export function programProgress({ assignment, programWorkouts, workoutLogs, today = toLocalDateStr() }) {
   const perWeek = programWorkouts?.length ?? 0
-  const weeks = programWeeks(assignment?.programs)
+  const weeks = planWeeks(assignment?.programs)
   const start = assignment?.start_date || null
+  const upcoming = !!start && start > today
   const ids = new Set((programWorkouts ?? []).map((pw) => pw.id))
   const since = (d) => !start || d >= start
-  const rawWeek = start ? Math.max(1, Math.floor(daysBetween(start, today) / 7) + 1) : null
+  const rawWeek = start && !upcoming ? Math.floor(daysBetween(start, today) / 7) + 1 : null
   const done = (workoutLogs ?? []).filter((l) => ids.has(l.program_workout_id) && l.logged_at && since(toLocalDateStr(new Date(l.logged_at)))).length
-  const total = weeks ? weeks * perWeek : (scheduledWorkouts ?? []).filter((sw) => ids.has(sw.program_workout_id) && since(sw.scheduled_date)).length
-  const end = start && weeks ? addDays(start, weeks * 7 - 1) : null
-  return { perWeek, weeks, week: weeks && rawWeek ? Math.min(rawWeek, weeks) : rawWeek, done: total ? Math.min(done, total) : done, total, start, end }
+  const total = planSessionCount(perWeek, weeks)
+  const end = start ? planEndDate(start, weeks) : null
+  return { perWeek, weeks, week: rawWeek ? Math.min(rawWeek, weeks) : null, upcoming, done: total ? Math.min(done, total) : done, total, start, end }
 }
 
 // Muscle groups worked by a list of exercise rows, in order, no repeats.

@@ -3,9 +3,11 @@
 import { useState } from 'react'
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core'
 import { ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Plus, X, CalendarPlus, Trophy, Search, Check, Dumbbell, AlertCircle } from 'lucide-react'
-import { Button, Card, Chip, Segmented, Sheet, EmptyState, SectionLabel } from '../../ui'
+import { Button, Card, Chip, Segmented, Sheet, EmptyState, Field } from '../../ui'
 import { Panel } from './parts'
-import { toLocalDateStr, dayOf, formatDate, relativeDay, addDays, firstName, startedByClient } from '../lib'
+import { toLocalDateStr, dayOf, formatDate, relativeDay, firstName, startedByClient } from '../lib'
+import StartPlanFields from '../../lib/StartPlanFields'
+import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, planSessionCount } from '../../lib/schedule.js'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -148,23 +150,43 @@ function FindWorkoutSheet({ open, date, onClose, allPrograms, allProgramWorkouts
 }
 
 function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgramWorkouts, programAssignment, onAssign }) {
+  const today = toLocalDateStr()
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
   const [saving, setSaving] = useState(false)
-  function close() { setSearch(''); setSelected(null); onClose() }
+  const [error, setError] = useState(null)
+  const [startDate, setStartDate] = useState(() => defaultStartDate(today))
+  const [trainingDays, setTrainingDays] = useState([])
+  function close() { setSearch(''); setSelected(null); setError(null); setStartDate(defaultStartDate(today)); onClose() }
   const list = allPrograms.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()))
+  const dayCount = (p) => allProgramWorkouts.filter((pw) => pw.program_id === p.id).length
+  const n = selected ? dayCount(selected) : 0
+  const ready = !!selected && (n === 0 ? startDate >= today : planReady({ dayCount: n, startDate, trainingDays, today }))
+  function pick(p) {
+    if (selected?.id === p.id) { setSelected(null); return }
+    setSelected(p)
+    setTrainingDays(defaultTrainingDays(dayCount(p)))
+  }
+  async function assign() {
+    setSaving(true)
+    setError(null)
+    const res = await onAssign(selected, { startDate, trainingDays })
+    setSaving(false)
+    if (res?.ok) close()
+    else setError("Couldn't assign that program. Try again.")
+  }
   return (
     <Sheet
       open={open}
       onClose={close}
       title={programAssignment ? 'Change program' : 'Assign a program'}
       footer={
-        <Button block size="lg" disabled={!selected || saving} onClick={async () => { setSaving(true); const ok = await onAssign(selected); setSaving(false); if (ok) close() }}>
+        <Button block size="lg" disabled={!ready || saving} onClick={assign}>
           {saving ? 'Assigning' : selected ? `Assign ${selected.name}` : 'Choose a program'}
         </Button>
       }
     >
-      <p className="text-[13px] text-muted -mt-1 mb-3">Pick the program {clientName} follows from today.</p>
+      <p className="text-[13px] text-muted -mt-1 mb-3">Pick a program, when {clientName} starts and the days they train. Every week goes on the schedule.</p>
       <label className="relative block mb-2">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-faint" />
         <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search programs" className="w-full h-11 pl-11 pr-4 rounded-full border border-line-strong bg-surface text-ink placeholder:text-faint outline-none focus:border-accent" />
@@ -175,61 +197,71 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
         list.map((p) => {
           const current = programAssignment?.programs?.id === p.id
           const isSel = selected?.id === p.id
-          const n = allProgramWorkouts.filter((pw) => pw.program_id === p.id).length
+          const count = dayCount(p)
           return (
             <button
               key={p.id}
               disabled={current}
-              onClick={() => setSelected(isSel ? null : p)}
+              onClick={() => pick(p)}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-[14px] text-left transition-colors disabled:opacity-50 ${isSel ? 'bg-accent-soft' : 'hover:bg-surface-2'}`}
             >
               <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${isSel ? 'border-accent bg-accent text-on-accent' : 'border-line-strong'}`}>{isSel && <Check size={12} strokeWidth={3} />}</span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2"><span className="font-bold text-ink truncate">{p.name}</span>{current && <Chip>Current</Chip>}</span>
-                <span className="block text-[13px] text-muted truncate">{n} {n === 1 ? 'workout' : 'workouts'}{p.description ? ` · ${p.description}` : ''}</span>
+                <span className="block text-[13px] text-muted truncate">{count} {count === 1 ? 'workout' : 'workouts'}{p.description ? ` · ${p.description}` : ''}</span>
               </span>
             </button>
           )
         })
       )}
+      {selected && (
+        <div className="mt-4 pt-4 border-t border-line">
+          {n > 0 ? (
+            <StartPlanFields dayCount={n} weeks={planWeeks(selected)} startDate={startDate} onStartDate={setStartDate} trainingDays={trainingDays} onTrainingDays={setTrainingDays} today={today} />
+          ) : (
+            <>
+              <p className="text-[13px] text-muted mb-3">This program has no workouts yet, so nothing goes on the schedule.</p>
+              <Field label="Start date" type="date" min={today} value={startDate} onChange={(e) => e.target.value && setStartDate(e.target.value)} />
+            </>
+          )}
+        </div>
+      )}
+      {error && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{error}</p>}
     </Sheet>
   )
 }
 
 function AutoScheduleSheet({ open, onClose, programAssignment, programWorkouts, onAutoSchedule }) {
-  const [start, setStart] = useState(() => toLocalDateStr())
-  const [rest, setRest] = useState(1)
+  const today = toLocalDateStr()
+  const n = programWorkouts.length
+  const weeks = planWeeks(programAssignment?.programs)
+  const [start, setStart] = useState(() => (programAssignment?.start_date > today ? programAssignment.start_date : defaultStartDate(today)))
+  const [trainingDays, setTrainingDays] = useState(() => defaultTrainingDays(n))
   const [saving, setSaving] = useState(false)
-  const dateFor = (i) => addDays(start, i * (1 + rest))
+  const [error, setError] = useState(null)
+  const ready = planReady({ dayCount: n, startDate: start, trainingDays, today })
+  const total = planSessionCount(n, weeks)
+  async function save() {
+    setSaving(true)
+    setError(null)
+    const ok = await onAutoSchedule(start, trainingDays)
+    setSaving(false)
+    if (!ok) setError("Couldn't fill the schedule. Try again.")
+  }
   return (
     <Sheet
       open={open}
       onClose={onClose}
       title="Fill the schedule"
       footer={
-        <Button block size="lg" disabled={!start || programWorkouts.length === 0 || saving} onClick={async () => { setSaving(true); await onAutoSchedule(start, rest); setSaving(false) }}>
-          {saving ? 'Scheduling' : `Schedule ${programWorkouts.length} ${programWorkouts.length === 1 ? 'session' : 'sessions'}`}
+        <Button block size="lg" disabled={!ready || saving} onClick={save}>
+          {saving ? 'Scheduling' : `Schedule ${total} ${total === 1 ? 'session' : 'sessions'}`}
         </Button>
       }
     >
-      <p className="text-[13px] text-muted -mt-1 mb-4">Lays out each workout in {programAssignment?.programs?.name} once, in order.</p>
-      <p className="text-sm font-semibold text-ink mb-1.5">Start date</p>
-      <input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="w-full h-12 px-4 rounded-[14px] border border-line-strong bg-surface text-ink outline-none focus:border-accent" />
-      <p className="text-sm font-semibold text-ink mt-4 mb-1.5">Rest days between sessions</p>
-      <Segmented value={rest} onChange={setRest} options={[{ value: 0, label: 'None' }, { value: 1, label: '1 day' }, { value: 2, label: '2 days' }]} />
-      {start && programWorkouts.length > 0 && (
-        <>
-          <SectionLabel className="!px-0 mt-5">Preview</SectionLabel>
-          <ul className="divide-y divide-line rounded-[14px] border border-line">
-            {programWorkouts.map((pw, i) => (
-              <li key={pw.id} className="flex items-center justify-between px-3 h-11 text-[15px]">
-                <span className="font-semibold text-ink truncate">{pw.name || `Day ${pw.day_number}`}</span>
-                <span className="text-[13px] text-muted shrink-0">{formatDate(dateFor(i), { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      <p className="text-[13px] text-muted -mt-1 mb-4">Puts every week of {programAssignment?.programs?.name} on the schedule, in order. Sessions already there aren't doubled up.</p>
+      <StartPlanFields dayCount={n} weeks={weeks} startDate={start} onStartDate={setStart} trainingDays={trainingDays} onTrainingDays={setTrainingDays} today={today} />
+      {error && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{error}</p>}
     </Sheet>
   )
 }
@@ -366,6 +398,7 @@ export default function TrainingTab(props) {
   const [removeOpen, setRemoveOpen] = useState(false)
   const [removing, setRemoving] = useState(false)
   const [dragging, setDragging] = useState(null)
+  const [notice, setNotice] = useState(null)
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
@@ -397,7 +430,7 @@ export default function TrainingTab(props) {
               <>
                 <p className="font-bold text-ink truncate">{programAssignment.programs?.name}</p>
                 <p className="text-[13px] text-muted">
-                  {startedByClient(programAssignment, client) ? `Started by ${firstName(client.full_name)} (on demand), ` : 'Started '}
+                  {startedByClient(programAssignment, client) ? `Started by ${firstName(client.full_name)} (on demand), ` : programAssignment.start_date > today ? 'Starts ' : 'Started '}
                   {formatDate(programAssignment.start_date)} · {programWorkouts.length} {programWorkouts.length === 1 ? 'workout' : 'workouts'}
                 </p>
               </>
@@ -415,6 +448,7 @@ export default function TrainingTab(props) {
           {programAssignment && <Button variant="danger" size="sm" onClick={() => setRemoveOpen(true)}>Remove</Button>}
         </div>
       </Card>
+      {notice && <p role="status" className="text-[13px] font-semibold text-warn bg-warn-soft rounded-[14px] px-4 py-3">{notice}</p>}
 
       <Segmented
         className="max-w-[440px]"
@@ -528,7 +562,15 @@ export default function TrainingTab(props) {
         allPrograms={allPrograms}
         allProgramWorkouts={allProgramWorkouts}
         programAssignment={programAssignment}
-        onAssign={onAssignProgram}
+        onAssign={async (program, plan) => {
+          const res = await onAssignProgram(program, plan)
+          if (res?.ok) {
+            setNotice(res.scheduleFailed ? "The program is assigned, but its sessions didn't go on the schedule. Use Fill schedule to try again." : null)
+            setStart(mondayOf(new Date(plan.startDate + 'T00:00:00')))
+            setSection('schedule')
+          }
+          return res
+        }}
       />
       {autoOpen && (
         <AutoScheduleSheet
@@ -536,7 +578,15 @@ export default function TrainingTab(props) {
           onClose={() => setAutoOpen(false)}
           programAssignment={programAssignment}
           programWorkouts={programWorkouts}
-          onAutoSchedule={async (s, r) => { const first = await onAutoSchedule(s, r); if (first) { setStart(mondayOf(first)); setAutoOpen(false); setSection('schedule') } }}
+          onAutoSchedule={async (s, days) => {
+            const res = await onAutoSchedule(s, days)
+            if (!res?.ok) return false
+            setNotice(null)
+            setStart(mondayOf(new Date(s + 'T00:00:00')))
+            setAutoOpen(false)
+            setSection('schedule')
+            return true
+          }}
         />
       )}
       <Sheet
