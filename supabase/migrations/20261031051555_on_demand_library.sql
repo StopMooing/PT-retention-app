@@ -1,5 +1,6 @@
--- NOT YET APPLIED. Apply with apply_migration (name: on_demand_library) after the app
--- code that tolerates it is live, then rename this file with the version Supabase gives.
+-- Applied 31 Oct 2026 as migration on_demand_library.
+-- Note: its "Clients can start an on-demand program" policy caused a recursion error and
+-- was replaced minutes later by 20261031051739_on_demand_assignment_check_fix.sql.
 -- The app works before and after: until this runs, on-demand sections stay hidden and
 -- Home says "your coach" instead of the coach's name.
 --

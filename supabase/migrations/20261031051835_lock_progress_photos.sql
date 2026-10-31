@@ -1,6 +1,4 @@
--- NOT YET APPLIED. Apply with apply_migration (name: lock_progress_photos) once the app
--- code that shows photos through signed links is live, then rename this file with the
--- version Supabase assigns.
+-- Applied 31 Oct 2026 as migration lock_progress_photos (bucket verified private; anon and other clients see 0, owner and coach see their photos).
 --
 -- Why: the progress-photos bucket was public. Anyone holding the anon key (it ships in
 -- the app) could list and download every client's progress photos, and any signed-in
