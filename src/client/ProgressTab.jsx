@@ -1,4 +1,4 @@
-// Progress: body weight trend, consistency, past sessions, strength, photos and check-ins.
+// Progress: body weight trend, consistency, past sessions, strength, photos and weekly check-ins.
 // Everything comes from data the app already saves. Empty sections are hidden.
 import { useState, useRef } from 'react'
 import { ChevronDown, X, Camera, MessageCircle, Trash2 } from 'lucide-react'
@@ -266,7 +266,7 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
           <SectionLabel>Showing up</SectionLabel>
           <Card className="grid grid-cols-3 gap-3">
             <Stat label="This month" value={month} hint={month === 1 ? 'session' : 'sessions'} />
-            <Stat label="Check-ins" value={checkins.length} hint="sent" />
+            <Stat label="Check-ins" value={checkins.length} hint="weekly, sent" />
             <Stat label="Best streak" value={best} hint={`${best === 1 ? 'week' : 'weeks'}${streak > 0 ? ` (now on ${streak})` : ''}`} />
           </Card>
         </section>
@@ -301,7 +301,7 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
 
       {checkins.length > 0 && (
         <section>
-          <SectionLabel>Check-ins</SectionLabel>
+          <SectionLabel>Weekly check-ins</SectionLabel>
           <div className="space-y-3">
             {shownCheckins.map((c) => (
               <Card key={c.id} className="space-y-2.5">
@@ -324,7 +324,7 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
           </div>
           {checkins.length > 4 && (
             <button onClick={() => setShowAllCheckins((v) => !v)} className="w-full text-center text-[13px] font-bold text-accent pt-2.5">
-              {showAllCheckins ? 'Show fewer' : `Show all ${plural(checkins.length, 'check-in')}`}
+              {showAllCheckins ? 'Show fewer' : `Show all ${plural(checkins.length, 'weekly check-in')}`}
             </button>
           )}
         </section>

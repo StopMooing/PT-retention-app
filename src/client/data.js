@@ -131,6 +131,18 @@ export async function fetchCoachName(ptId) {
   }
 }
 
+// Daily check-ins ("How are you today?") for the last five weeks, newest first.
+export async function fetchDailyCheckins(clientId) {
+  const { data, error } = await supabase
+    .from('daily_checkins')
+    .select('id, checkin_date, energy, sleep, soreness, note, created_at')
+    .eq('client_id', clientId)
+    .gte('checkin_date', addDays(toLocalDateStr(), -35))
+    .order('checkin_date', { ascending: false })
+  if (error) console.error('Daily check-ins load error:', error)
+  return data ?? []
+}
+
 export async function fetchByClient(table, clientId, orderCol) {
   const { data } = await supabase.from(table).select('*').eq('client_id', clientId).order(orderCol, { ascending: false })
   return data ?? []

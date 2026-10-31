@@ -55,8 +55,76 @@ const PB_LABELS = {
   volume: { label: 'Session volume', desc: 'Total kg moved this session' },
 }
 
-export function WorkoutComplete({ workoutName, stats, onDone }) {
-  const { newPBs = [], totalVolume = 0, setsCompleted = 0, exerciseCount = 0 } = stats || {}
+const FEEL = ['Easy', 'Steady', 'Solid', 'Hard', 'All out']
+
+/* "How did that feel?" Saves a 1 to 5 rating and an optional note onto the session that
+   was just saved. Skip-able: leaving without it changes nothing. */
+function SessionFeel({ logId, coachName, hasCoach }) {
+  const [rating, setRating] = useState(0)
+  const [note, setNote] = useState('')
+  const [state, setState] = useState('idle') // idle | saving | saved | error
+  if (!logId) return null
+  const who = coachName || 'your coach'
+
+  async function save() {
+    setState('saving')
+    const { error } = await supabase
+      .from('workout_logs')
+      .update({ session_rating: rating || null, notes: note.trim().slice(0, 1000) || null })
+      .eq('id', logId)
+    if (error) console.error('Session rating error:', error)
+    setState(error ? 'error' : 'saved')
+  }
+
+  if (state === 'saved') {
+    return (
+      <Card className="flex items-center gap-3">
+        <span className="w-9 h-9 rounded-full bg-accent text-on-accent flex items-center justify-center shrink-0"><Check size={18} strokeWidth={3} /></span>
+        <p className="text-[15px] font-bold text-ink">{hasCoach ? `Thanks, ${who} will see this.` : 'Thanks, saved with this session.'}</p>
+      </Card>
+    )
+  }
+  return (
+    <Card>
+      <p className="text-[17px] font-bold text-ink">How did that feel?</p>
+      <div className="grid grid-cols-5 gap-1.5 mt-3" role="radiogroup" aria-label="How did that feel?">
+        {FEEL.map((label, i) => {
+          const n = i + 1
+          const on = rating === n
+          return (
+            <button
+              key={label}
+              role="radio"
+              aria-checked={on}
+              onClick={() => setRating(on ? 0 : n)}
+              className={cx('h-14 rounded-[14px] flex flex-col items-center justify-center transition-colors', on ? 'bg-accent text-on-accent' : 'bg-surface-2 text-ink hover:bg-line')}
+            >
+              <span className="text-[17px] font-bold leading-none tabular-nums">{n}</span>
+              <span className={cx('text-[11px] font-bold mt-1 whitespace-nowrap', on ? 'text-on-accent' : 'text-muted')}>{label}</span>
+            </button>
+          )
+        })}
+      </div>
+      <textarea
+        rows={2}
+        maxLength={1000}
+        placeholder={hasCoach ? `Anything for ${who}? Optional.` : 'Any notes? Optional.'}
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        className="mt-3 w-full rounded-[14px] border border-line-strong bg-surface text-ink placeholder:text-faint px-4 py-3 outline-none focus:border-accent resize-none"
+      />
+      {state === 'error' && <p role="alert" className="text-[13px] font-semibold text-bad mt-2">Couldn't save that. Your session is still saved.</p>}
+      {(rating > 0 || note.trim()) && (
+        <Button variant="soft" block className="mt-3" onClick={save} disabled={state === 'saving'}>
+          {state === 'saving' ? 'Saving...' : 'Save'}
+        </Button>
+      )}
+    </Card>
+  )
+}
+
+export function WorkoutComplete({ workoutName, stats, onDone, coachName, hasCoach }) {
+  const { newPBs = [], totalVolume = 0, setsCompleted = 0, exerciseCount = 0, logId = null } = stats || {}
   const tiles = [
     { label: setsCompleted === 1 ? 'Set' : 'Sets', value: setsCompleted },
     { label: exerciseCount === 1 ? 'Exercise' : 'Exercises', value: exerciseCount },
@@ -108,6 +176,8 @@ export function WorkoutComplete({ workoutName, stats, onDone }) {
             </Card>
           </div>
         )}
+
+        <SessionFeel logId={logId} coachName={coachName} hasCoach={hasCoach} />
       </div>
       <div className="shrink-0 border-t border-line px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
         <Button size="lg" block onClick={onDone}>Back to home</Button>
@@ -431,6 +501,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     }
     const setRows = byExercise.flatMap((e) => e.rows)
     const base = { client_id: client.id, scheduled_workout_id: scheduledWorkout.id }
+    let logId = existingLog?.id ?? null
 
     try {
       if (isEditing) {
@@ -464,6 +535,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
         // The workout log first, then its sets. If the sets fail, the log is removed again
         // so the session is not marked done without them.
         const log = await insertWorkoutLog(totalVolume, now)
+        logId = log.id
         if (setRows.length > 0) {
           const { error: setsErr } = await supabase.from('workout_set_logs').insert(setRows.map((row) => ({ ...base, ...row, logged_at: now, workout_log_id: log.id })))
           if (setsErr) {
@@ -490,15 +562,16 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     }
     clearDraft(scheduledWorkout.id)
     setCompleting(false)
-    onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: trackedExercises.length, workoutName, edited: isEditing })
+    onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: trackedExercises.length, workoutName, edited: isEditing, logId })
   }
 
   // AI workout whose plan could not be read: log it as done without sets.
   async function handleCompleteCustom() {
     setCompleting(true)
     setSaveError(null)
+    let log
     try {
-      await insertWorkoutLog(0, new Date().toISOString())
+      log = await insertWorkoutLog(0, new Date().toISOString())
     } catch (e) {
       console.error('Save session error:', e)
       setSaveError(SAVE_FAILED)
@@ -507,7 +580,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     }
     clearDraft(scheduledWorkout.id)
     setCompleting(false)
-    onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName })
+    onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName, logId: log.id })
   }
 
   const inputCls = (done) => cx(

@@ -79,6 +79,18 @@ export function weekLabel(monday, today = toLocalDateStr()) {
   return `${dayMonth(monday)} to ${dayMonth(addDays(monday, 6))}`
 }
 
+// "Today", "Yesterday", else "Mon 26 Oct". Day separators in the message thread.
+export function chatDayLabel(dateStr, today = toLocalDateStr()) {
+  if (dateStr === today) return 'Today'
+  if (dateStr === addDays(today, -1)) return 'Yesterday'
+  return `${parseDay(dateStr).toLocaleDateString('en-AU', { weekday: 'short' })} ${dayMonth(dateStr)}`
+}
+
+// "9:15 am".
+export function clockTime(date) {
+  return new Date(date).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit' })
+}
+
 export function weekdayName(dateStr) {
   return parseDay(dateStr).toLocaleDateString('en-AU', { weekday: 'long' })
 }

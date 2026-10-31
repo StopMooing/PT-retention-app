@@ -255,3 +255,29 @@ if (process.env.TODAY_DONE) {
   const s = t.scheduled_workouts.find((sw) => sw.client_id === CLIENT && sw.scheduled_date === day(0))
   if (s) t.workout_logs.push({ id: id(), client_id: CLIENT, program_workout_id: s.program_workout_id, scheduled_workout_id: s.id, logged_at: `${day(0)}T06:10:00+10:30`, completed_at: `${day(0)}T06:58:00+10:30`, completed: true, notes: null, total_volume_kg: 0 })
 }
+
+// ---- Daily check-ins and coach messages (daily_checkins_and_messages migration) ----
+// Jane checked in on the days before today this week (and a few last week); today is
+// still to do. DAILY_DONE=1 adds today's. NO_MESSAGES=1 empties the thread.
+{
+  const t = module.exports.tables
+  const dow = (new Date().getDay() + 6) % 7 // Monday = 0
+  t.daily_checkins = []
+  for (let off = -(dow + 4); off < 0; off++) {
+    if (off === -2) continue // a day off, so the Recover ring is not full
+    t.daily_checkins.push({ id: id(), client_id: CLIENT, checkin_date: day(off), energy: 3 + (off % 2 ? 1 : 0), sleep: 3 + ((off + 1) % 2), soreness: 2 + (off % 3 ? 0 : 1), note: null, created_at: ts(off, 7) })
+  }
+  if (process.env.DAILY_DONE) t.daily_checkins.push({ id: id(), client_id: CLIENT, checkin_date: day(0), energy: 4, sleep: 3, soreness: 2, note: null, created_at: ts(0, 7) })
+
+  const thread = [
+    [-3, 8, COACH, 'Morning Jane. Saw your check-in, nice work getting all three sessions in last week.'],
+    [-3, 12, CLIENT_USER, 'Thanks! Legs are still a bit sore from Friday though.'],
+    [-3, 12, COACH, "That's normal with the extra squat set. Keep the walks going on rest days and it'll ease off."],
+    [-1, 18, CLIENT_USER, 'Is it ok to swap Wednesday for Thursday this week? Work thing.'],
+    [0, 7, COACH, 'Yep, no problem. I moved it for you.'],
+    [0, 7, COACH, 'Go a little lighter on the RDLs if your hamstrings are still tight.'],
+  ]
+  t.coach_messages = process.env.NO_MESSAGES ? [] : thread.map(([off, h, sender_id, body], i) => ({
+    id: id(), client_id: CLIENT, sender_id, body, created_at: new Date(ts(off, h).replace(":15:", `:${String(10 + i * 3)}:`)).toISOString(), read_at: off === 0 && sender_id === COACH ? null : ts(off, h + 1),
+  }))
+}

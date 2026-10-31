@@ -1,32 +1,33 @@
-// Home: what do I do today. Greeting, the "This week" ring, today's workout, the
-// check-in when it's due, the latest word from the coach, today's food and a recent
-// personal best. Empty sections are hidden. Tapping a day on the week strip opens a
+// Home: what do I do today. Greeting, the "This week" rings (Train, Fuel, Recover),
+// today's workout, the weekly check-in when it's due, the daily check-in, the latest word
+// from the coach, today's food and a recent personal best. Empty sections are hidden. Tapping a day on the week strip opens a
 // summary of that day, with arrows to step through the days.
 import { useState } from 'react'
-import { Flame, Trophy, ChevronRight, ChevronLeft, Check, Plus } from 'lucide-react'
+import { Flame, Trophy, ChevronRight, ChevronLeft, Check, Plus, Pencil } from 'lucide-react'
 import { Card, Button, Chip, Avatar, Sheet } from '../ui'
 import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate, formatDateLabel, addDays, daysBetween } from './dates'
 import {
   isDone, workoutName, groupByDate, nextSession, weekStreak, checkinStatus, sessionExercises,
-  logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, weekCommitments, plannedLine, sessionStatusLine,
+  logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, weekRings, plannedLine, sessionStatusLine, dailyCheckinFor, DAILY_SCALES,
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
+import DailyCheckinSheet from './DailyCheckinSheet'
 import { NutritionSummary, CoachAvatar, DoneDot } from './common'
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const cx = (...c) => c.filter(Boolean).join(' ')
 const coachLabel = (name) => (name ? `Your coach, ${name}` : 'Your coach')
 
-// One shade of the accent per commitment, so the ring and its labels match. Tracks are a
+// One shade of the accent per ring, so the rings and their labels match. Tracks are a
 // faint wash of the same shade.
 const SHADES = {
-  sessions: 'var(--accent)',
-  checkin: 'color-mix(in srgb, var(--accent) 66%, var(--bg))',
-  food: 'color-mix(in srgb, var(--accent) 42%, var(--bg))',
+  train: 'var(--accent)',
+  fuel: 'color-mix(in srgb, var(--accent) 66%, var(--bg))',
+  recover: 'color-mix(in srgb, var(--accent) 42%, var(--bg))',
 }
 const trackOf = (c) => `color-mix(in srgb, ${c} 16%, var(--surface-2))`
 
-/* The week ring: the logo's open ring, one lane per commitment, round ends, a gap at
+/* The week rings: the logo's open ring, one lane each for Train, Fuel and Recover, round ends, a gap at
    the top right with the accent dot in it. Never closes: we aren't done. */
 const GAP = 50 // degrees left open
 const GAP_AT = -60 // centre of the gap, degrees from 3 o'clock (clockwise)
@@ -67,7 +68,7 @@ function WeekRing({ parts, complete, size = 152, stroke = 12, pitch = 16 }) {
   )
 }
 
-function WeekHero({ week, sessionHint, today, byDate, completedIds, onPickDay }) {
+function WeekHero({ week, today, byDate, completedIds, onPickDay }) {
   const headline = week.complete ? 'Week done. Keep moving.' : week.started ? "You're on your way." : "Fresh week. Let's get moving."
   return (
     <Card padded={false}>
@@ -78,21 +79,18 @@ function WeekHero({ week, sessionHint, today, byDate, completedIds, onPickDay })
       <div className="flex items-center gap-4 px-4 pt-3 pb-4">
         <WeekRing parts={week.parts} complete={week.complete} />
         <ul className="flex-1 min-w-0 space-y-3">
-          {week.parts.map((p) => {
-            const hint = p.key === 'sessions' && !p.done ? sessionHint : p.hint
-            return (
-              <li key={p.key} className="flex items-start gap-2.5">
-                <span className="w-3 h-3 rounded-full shrink-0 mt-[5px]" style={{ backgroundColor: SHADES[p.key] }} />
-                <div className="min-w-0">
-                  <p className="text-[15px] font-bold text-ink leading-snug flex items-center gap-1">
-                    {p.label}
-                    {p.done && <Check size={15} strokeWidth={3} className="text-accent shrink-0" />}
-                  </p>
-                  {hint && <p className="text-[13px] text-muted leading-snug truncate">{hint}</p>}
-                </div>
-              </li>
-            )
-          })}
+          {week.parts.map((p) => (
+            <li key={p.key} className="flex items-start gap-2.5">
+              <span className="w-3 h-3 rounded-full shrink-0 mt-[5px]" style={{ backgroundColor: SHADES[p.key] }} />
+              <div className="min-w-0">
+                <p className="text-[15px] font-bold text-ink leading-snug flex items-center gap-1">
+                  {p.name}
+                  {p.done && <Check size={15} strokeWidth={3} className="text-accent shrink-0" />}
+                </p>
+                <p className="text-[13px] text-muted leading-snug truncate">{p.label}</p>
+              </div>
+            </li>
+          ))}
         </ul>
       </div>
       {/* Day by day: tick for a finished session, dot for one still to come. */}
@@ -210,11 +208,44 @@ function NextThing({ todo }) {
     : <Card className="flex items-center gap-3">{inner}</Card>
 }
 
+/* Today's daily check-in: a prompt until it's done, then the three scores as chips.
+   Tap either to fill in or change today's. */
+function DailyCard({ todays, onOpen }) {
+  if (!todays) {
+    return (
+      <Card className="flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-[17px] font-bold text-ink leading-snug">How are you today?</p>
+          <p className="text-[13px] text-muted mt-0.5">Energy, sleep, soreness. Three taps.</p>
+        </div>
+        <Button variant="soft" onClick={onOpen}>Check in</Button>
+      </Card>
+    )
+  }
+  return (
+    <Card as="button" onClick={onOpen} aria-label="Change today's check-in" className="flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-bold text-muted inline-flex items-center gap-1">
+          <Check size={14} strokeWidth={3} className="text-accent" /> Checked in today
+        </p>
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          {DAILY_SCALES.map((s) => (
+            <Chip key={s.key} tone="accent">{s.label} {todays[s.key]}</Chip>
+          ))}
+        </div>
+      </div>
+      <Pencil size={17} className="text-faint shrink-0" />
+    </Card>
+  )
+}
+
 export default function HomeTab({
-  client, checkins, setCheckins, assignment, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
-  foodLogs, nutritionTargets, personalBests, coachName, onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onSeeCheckins,
+  client, checkins, setCheckins, dailyCheckins, setDailyCheckins, assignment, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
+  foodLogs, nutritionTargets, personalBests, coachName, latestCoachMessage, unreadMessages = 0,
+  onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onSeeCheckins, onOpenMessages, showToast,
 }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
+  const [dailyOpen, setDailyOpen] = useState(false)
   const [dayOpen, setDayOpen] = useState(null) // 'YYYY-MM-DD' of the day tapped on the strip
   const today = toLocalDateStr()
   const firstName = client.full_name?.split(' ')[0] || client.full_name || ''
@@ -226,16 +257,11 @@ export default function HomeTab({
   const todays = byDate[today] ?? []
   const todayLeft = todays.filter((sw) => !isDone(sw, completedIds))
   const next = nextSession(scheduledWorkouts, completedIds, today)
-  const week = weekCommitments({ scheduledWorkouts, completedIds, checkins, foodLogs, today })
+  const week = weekRings({ scheduledWorkouts, completedIds, foodLogs, dailyCheckins, today })
+  const todaysDaily = dailyCheckinFor(dailyCheckins, today)
   const totals = foodTotals(logsForDate(foodLogs, today))
   const targets = nutritionTargetsFor(client, nutritionTargets)
   const pb = latestPB(personalBests, 14, today)
-  const sundayOfWeek = weekDays(today)[6]
-
-  // Next step for the sessions lane: today's session, or the next one this week.
-  const sessionHint = todayLeft.length > 0
-    ? `Next: ${workoutName(todayLeft[0])}, today`
-    : next && next.scheduled_date <= sundayOfWeek ? `Next: ${workoutName(next)}, ${weekdayName(next.scheduled_date)}` : null
 
   // Today's workout, always: still to do, done, or a rest day pointing to the next one.
   let todayCard
@@ -267,15 +293,22 @@ export default function HomeTab({
     }
   }
 
+  // The weekly check-in, once it's due (7 calendar days after the last one).
   const checkinCard = status.due ? {
-    avatar: hasCoach ? <CoachAvatar name={coachName} size={44} /> : null,
-    eyebrow: hasCoach ? coachLabel(coachName) : null,
-    title: 'Time to check in',
-    body: hasCoach ? `Tell ${coachName || 'your coach'} how the week went.` : 'A quick look back at your week.',
+    eyebrow: 'Weekly check-in',
+    title: 'Your week in review',
+    body: <span><span className="font-bold text-accent">Due today.</span> {hasCoach ? `Tell ${coachName || 'your coach'} how it went.` : 'A quick look back.'}</span>,
     action: <Button onClick={() => setCheckinOpen(true)}>Check in</Button>,
   } : null
 
+  // Latest word from the coach: a message (opens Messages) or a check-in reply (opens
+  // Progress), whichever is newer.
   const reply = hasCoach ? status.lastReply : null
+  const replyAt = reply ? reply.replied_at || reply.submitted_at : null
+  const msg = hasCoach && latestCoachMessage && (!replyAt || new Date(latestCoachMessage.created_at) > new Date(replyAt)) ? latestCoachMessage : null
+  const coachWord = msg
+    ? { body: msg.body, at: msg.created_at, onClick: onOpenMessages, isNew: unreadMessages > 0 }
+    : reply ? { body: reply.coach_reply, at: replyAt, onClick: onSeeCheckins, isNew: false } : null
 
   return (
     <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-7">
@@ -297,23 +330,25 @@ export default function HomeTab({
       </header>
 
       <div className="space-y-3">
-        <WeekHero week={week} sessionHint={sessionHint} today={today} byDate={byDate} completedIds={completedIds} onPickDay={setDayOpen} />
+        <WeekHero week={week} today={today} byDate={byDate} completedIds={completedIds} onPickDay={setDayOpen} />
 
         <NextThing todo={todayCard} />
         {checkinCard && <NextThing todo={checkinCard} />}
+        <DailyCard todays={todaysDaily} onOpen={() => setDailyOpen(true)} />
 
         {/* Latest word from the coach */}
-        {reply && (
-          <Card onClick={onSeeCheckins} as="button" className="block">
+        {coachWord && (
+          <Card onClick={coachWord.onClick} as="button" className="block">
             <div className="flex items-center gap-3">
               <CoachAvatar name={coachName} size={36} />
               <div className="flex-1 min-w-0">
                 <p className="text-[15px] font-bold text-ink truncate">{coachLabel(coachName)}</p>
-                <p className="text-[13px] text-muted">{formatShortDate(toLocalDateStr(new Date(reply.replied_at || reply.submitted_at)))}</p>
+                <p className="text-[13px] text-muted">{formatShortDate(toLocalDateStr(new Date(coachWord.at)))}</p>
               </div>
+              {coachWord.isNew && <Chip tone="solid">New</Chip>}
               <ChevronRight size={18} className="text-faint shrink-0" />
             </div>
-            <p className="text-[15px] text-ink leading-relaxed mt-3 line-clamp-3">{reply.coach_reply}</p>
+            <p className="text-[15px] text-ink leading-relaxed mt-3 line-clamp-3 whitespace-pre-wrap">{coachWord.body}</p>
           </Card>
         )}
 
@@ -364,6 +399,18 @@ export default function HomeTab({
         onClose={() => setCheckinOpen(false)}
         client={client}
         onSaved={(row) => { setCheckins((prev) => [row, ...prev]); setCheckinOpen(false) }}
+      />
+
+      <DailyCheckinSheet
+        open={dailyOpen}
+        onClose={() => setDailyOpen(false)}
+        client={client}
+        existing={todaysDaily}
+        onSaved={(row) => {
+          setDailyCheckins((prev) => [row, ...prev.filter((d) => d.checkin_date !== row.checkin_date)])
+          setDailyOpen(false)
+          showToast?.(todaysDaily ? 'Updated for today' : 'Nice one. Logged for today.')
+        }}
       />
     </div>
   )

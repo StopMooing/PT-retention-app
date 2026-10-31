@@ -1,15 +1,17 @@
 // The client app (PWA). This file loads the client's data, holds it in one place and
-// shows the four tabs: Home, Train, Food, Progress. Each tab lives in src/client/.
+// shows the tabs: Home, Training, Nutrition, Progress and (with a coach) Messages. Each
+// tab lives in src/client/.
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Home, Dumbbell, Utensils, TrendingUp } from 'lucide-react'
+import { Home, Dumbbell, Utensils, TrendingUp, MessageCircle } from 'lucide-react'
 import { supabase } from './supabase'
 import { Button } from './ui'
 import { formatDateLabel } from './client/dates'
 import { completedKeys, workoutName } from './client/metrics'
 import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
-  fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName,
+  fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName, fetchDailyCheckins,
 } from './client/data'
+import { fetchThread, fetchUnreadCounts } from './lib/messages'
 import { saveAiWorkout, saveAiMeal } from './client/aiSaves'
 import { Loading, Toast } from './client/common'
 import AIChat from './client/AIChat'
@@ -19,6 +21,7 @@ import HomeTab from './client/HomeTab'
 import TrainTab from './client/TrainTab'
 import FoodTab from './client/FoodTab'
 import ProgressTab from './client/ProgressTab'
+import MessagesTab from './client/MessagesTab'
 import ProfileSheet from './client/ProfileSheet'
 import ResourcesPage from './client/ResourcesPage'
 
@@ -29,6 +32,7 @@ const TABS = [
   { id: 'train', label: 'Training', icon: Dumbbell },
   { id: 'food', label: 'Nutrition', icon: Utensils },
   { id: 'progress', label: 'Progress', icon: TrendingUp },
+  { id: 'messages', label: 'Messages', icon: MessageCircle, coachOnly: true },
 ]
 
 export default function ClientApp() {
@@ -52,6 +56,10 @@ export default function ClientApp() {
   const [nutritionTargets, setNutritionTargets] = useState({ calories: 0, protein: 0, carbs: 0, fats: 0 })
   const [onDemand, setOnDemand] = useState({ workouts: [], programs: [], exercises: {} })
   const [coachName, setCoachName] = useState(null)
+  const [userId, setUserId] = useState(null)
+  const [dailyCheckins, setDailyCheckins] = useState([])
+  const [latestCoachMessage, setLatestCoachMessage] = useState(null)
+  const [unreadMessages, setUnreadMessages] = useState(0)
 
   // Navigation
   const [tab, setTab] = useState('home')
@@ -80,6 +88,7 @@ export default function ClientApp() {
       const { data: clientRow } = await supabase.from('clients').select('*').eq('user_id', user.id).maybeSingle()
       if (!clientRow) { setLoading(false); return }
       setClient(clientRow)
+      setUserId(user.id)
       const id = clientRow.id
 
       const asgn = await fetchAssignment(id)
@@ -92,7 +101,7 @@ export default function ClientApp() {
       const pwIds = [...new Set(sw.map((s) => s.program_workout_id).filter(Boolean))]
       if (pwIds.length > 0) setWorkoutExercises(await fetchExercisesFor(pwIds))
 
-      const [logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach] = await Promise.all([
+      const [logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, thread, unread] = await Promise.all([
         fetchWorkoutLogs(id),
         fetchFoodLogs(id),
         fetchResources(clientRow.pt_id),
@@ -104,7 +113,13 @@ export default function ClientApp() {
         fetchStrength(id),
         fetchOnDemand(),
         fetchCoachName(clientRow.pt_id),
+        fetchDailyCheckins(id),
+        clientRow.pt_id ? fetchThread(id, 30) : { data: [] },
+        clientRow.pt_id ? fetchUnreadCounts({ readerId: user.id, clientId: id }) : {},
       ])
+      setDailyCheckins(daily)
+      setLatestCoachMessage([...thread.data].reverse().find((m) => m.sender_id !== user.id) ?? null)
+      setUnreadMessages(unread[id] || 0)
       setOnDemand(library)
       setCoachName(coach)
       setWorkoutLogs(logs)
@@ -235,6 +250,8 @@ export default function ClientApp() {
 
   function goTab(id) {
     setTab(id)
+    // Opening Messages marks the thread read (useThread), so the badge clears.
+    if (id === 'messages') setUnreadMessages(0)
     window.scrollTo(0, 0)
   }
 
@@ -273,6 +290,8 @@ export default function ClientApp() {
       <WorkoutComplete
         workoutName={workoutCompleteData.workoutName}
         stats={workoutCompleteData}
+        coachName={coachName}
+        hasCoach={!!client.pt_id}
         onDone={() => { setWorkoutCompleteData(null); setLoggingWorkout(null); goTab('home') }}
       />
     )
@@ -310,6 +329,11 @@ export default function ClientApp() {
             {...shared}
             setCheckins={setCheckins}
             checkins={checkins}
+            dailyCheckins={dailyCheckins}
+            setDailyCheckins={setDailyCheckins}
+            latestCoachMessage={latestCoachMessage}
+            unreadMessages={unreadMessages}
+            onOpenMessages={() => goTab('messages')}
             assignment={assignment}
             foodLogs={foodLogs}
             nutritionTargets={nutritionTargets}
@@ -370,20 +394,32 @@ export default function ClientApp() {
             setProgressPhotos={setProgressPhotos}
           />
         )}
+        {tab === 'messages' && client.pt_id && (
+          <MessagesTab clientId={client.id} userId={userId} coachName={coachName} onLatestCoachMessage={setLatestCoachMessage} />
+        )}
       </main>
 
       <nav className="fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-line shadow-[0_-8px_24px_rgba(0,0,0,0.06)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="max-w-[480px] mx-auto flex px-2">
-          {TABS.map(({ id, label, icon: Icon }) => {
+          {TABS.filter((t) => !t.coachOnly || client.pt_id).map(({ id, label, icon: Icon }) => {
             const active = tab === id
+            const badge = id === 'messages' && !active ? unreadMessages : 0
             return (
               <button
                 key={id}
                 onClick={() => goTab(id)}
                 aria-current={active ? 'page' : undefined}
+                aria-label={badge > 0 ? `${label}, ${badge} unread` : undefined}
                 className={`flex-1 flex flex-col items-center gap-1 pt-2.5 pb-2 min-h-[56px] transition-colors ${active ? 'text-accent' : 'text-muted hover:text-ink'}`}
               >
-                <Icon size={22} strokeWidth={active ? 2.4 : 2} />
+                <span className="relative">
+                  <Icon size={22} strokeWidth={active ? 2.4 : 2} />
+                  {badge > 0 && (
+                    <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-on-accent text-[11px] font-bold leading-[18px] text-center tabular-nums">
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
+                </span>
                 <span className="text-[11px] font-bold">{label}</span>
               </button>
             )

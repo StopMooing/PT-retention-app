@@ -172,8 +172,16 @@ async function install(page, role) {
     }
     if (req.method() === 'POST') {
       let body = req.postDataJSON(); const arr = Array.isArray(body) ? body : [body]
-      const inserted = arr.map((r) => ({ id: `20000000-0000-4000-8000-${String(Math.floor(Math.random() * 1e12)).padStart(12, '0')}`, created_at: new Date().toISOString(), ...r }))
-      db[table].push(...inserted)
+      // Upsert (on_conflict + merge-duplicates): update the row with the same key instead.
+      const conflict = prefer.includes('merge-duplicates') && url.searchParams.get('on_conflict')
+      const keyCols = conflict ? conflict.split(',') : []
+      const inserted = arr.map((r) => {
+        const hit = keyCols.length && db[table].find((x) => keyCols.every((c) => String(x[c]) === String(r[c])))
+        if (hit) return Object.assign(hit, r)
+        const row = { id: `20000000-0000-4000-8000-${String(Math.floor(Math.random() * 1e12)).padStart(12, '0')}`, created_at: new Date().toISOString(), ...r }
+        db[table].push(row)
+        return row
+      })
       const out = inserted.map((r) => project(db, table, r, url.searchParams.get('select')))
       if (!prefer.includes('return=representation')) return route.fulfill({ status: 201, headers: { 'access-control-allow-origin': '*' } })
       return json(201, wantsObject ? out[0] : out)

@@ -1,6 +1,6 @@
 // One source of truth for every number the client sees. If a number appears on more
 // than one screen, it is worked out here so the screens always agree.
-import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween, weekdayName } from './dates'
+import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween } from './dates'
 import { parseAiJson } from './foods'
 import { programWeeks, planWeeks, planSessionCount, planEndDate } from '../lib/schedule.js'
 
@@ -262,39 +262,46 @@ export function latestPB(personalBests, days = 14, today = toLocalDateStr()) {
 
 export const fmtKg = (n) => (n == null ? '' : `${Math.round(n * 10) / 10}`)
 
-/* ---------- This week (the Home ring) ---------- */
+/* ---------- This week (the Home rings) ---------- */
 
 // Days with food logged that make a full week: 5, so the ring can close without
 // logging every single day.
 export const FOOD_DAYS_GOAL = 5
 
-// This week's three commitments (Monday to Sunday, local days), each 0..1:
-//   sessions: scheduled sessions this week that are done (left out when none are scheduled)
-//   checkin:  a check-in sent this week (Monday onwards)
-//   food:     days this week with any food logged, up to FOOD_DAYS_GOAL
-// Returns { parts: [{ key, value, done, label, hint }], complete, started }.
-export function weekCommitments({ scheduledWorkouts, completedIds, checkins, foodLogs, today = toLocalDateStr() }) {
-  const days = weekDays(today)
+// The daily check-in's three 1 to 5 scales (daily_checkins columns), with their end labels.
+export const DAILY_SCALES = [
+  { key: 'energy', label: 'Energy', low: 'Flat', high: 'Buzzing' },
+  { key: 'sleep', label: 'Sleep', low: 'Rough', high: 'Great' },
+  { key: 'soreness', label: 'Soreness', low: 'None', high: 'Very sore' },
+]
+
+// Today's daily check-in ("How are you today?"), or null.
+export function dailyCheckinFor(dailyCheckins, dateStr = toLocalDateStr()) {
+  return (dailyCheckins ?? []).find((d) => d.checkin_date === dateStr) ?? null
+}
+
+// This week's three rings (Monday to Sunday, local days), each value 0..1:
+//   train:   counted sessions this week that are done (left out when none are scheduled)
+//   fuel:    days this week with any food logged, out of FOOD_DAYS_GOAL
+//   recover: daily check-ins this week, out of the days so far (Monday = 1, up to 7)
+// Returns { parts: [{ key, name, value, done, label }], complete, started }.
+export function weekRings({ scheduledWorkouts, completedIds, foodLogs, dailyCheckins, today = toLocalDateStr() }) {
+  const days = weekDays(today).filter((d) => d <= today)
   const parts = []
 
   const s = sessionsThisWeek(scheduledWorkouts, completedIds, today)
   if (s.scheduled > 0) {
     const done = Math.min(s.done, s.scheduled)
-    parts.push({ key: 'sessions', value: done / s.scheduled, done: done >= s.scheduled, label: `${done} of ${plural(s.scheduled, 'session')}` })
+    parts.push({ key: 'train', name: 'Train', value: done / s.scheduled, done: done >= s.scheduled, label: `${done} of ${plural(s.scheduled, 'session')}` })
   }
 
-  const ci = checkinStatus(checkins, today)
-  const sent = !!ci.latest && toLocalDateStr(new Date(ci.latest.submitted_at)) >= days[0]
-  parts.push({
-    key: 'checkin',
-    value: sent ? 1 : 0,
-    done: sent,
-    label: sent ? 'Check-in sent' : 'Check-in',
-    hint: sent ? null : ci.due || !ci.nextDate || ci.nextDate <= today ? 'Due today' : `Due ${weekdayName(ci.nextDate)}`,
-  })
+  const foodDays = Math.min(days.filter((d) => logsForDate(foodLogs, d).length > 0).length, FOOD_DAYS_GOAL)
+  parts.push({ key: 'fuel', name: 'Fuel', value: foodDays / FOOD_DAYS_GOAL, done: foodDays >= FOOD_DAYS_GOAL, label: `${foodDays} of ${FOOD_DAYS_GOAL} days logged` })
 
-  const foodDays = Math.min(days.filter((d) => d <= today && logsForDate(foodLogs, d).length > 0).length, FOOD_DAYS_GOAL)
-  parts.push({ key: 'food', value: foodDays / FOOD_DAYS_GOAL, done: foodDays >= FOOD_DAYS_GOAL, label: `${foodDays} of ${FOOD_DAYS_GOAL} days logged` })
+  const elapsed = Math.min(days.length, 7)
+  const dates = new Set((dailyCheckins ?? []).map((d) => d.checkin_date))
+  const recovered = days.filter((d) => dates.has(d)).length
+  parts.push({ key: 'recover', name: 'Recover', value: recovered / elapsed, done: recovered >= elapsed, label: `${recovered} of ${plural(elapsed, 'day')}` })
 
   return { parts, complete: parts.every((p) => p.done), started: parts.some((p) => p.value > 0) }
 }

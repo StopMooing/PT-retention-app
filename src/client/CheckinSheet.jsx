@@ -1,9 +1,10 @@
-// The weekly check-in form, in a sheet. Saves to checkins exactly as before.
+// The weekly check-in ("Your week in review"), in a sheet. Saves to checkins exactly as
+// before. Scale is shared with the daily check-in.
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import { Sheet, Button } from '../ui'
 
-function Scale({ label, low, high, value, onChange }) {
+export function Scale({ label, low, high, value, onChange }) {
   return (
     <div>
       <p className="text-[15px] font-bold text-ink mb-2">{label}</p>
@@ -13,6 +14,7 @@ function Scale({ label, low, high, value, onChange }) {
             key={n}
             onClick={() => onChange(n)}
             aria-pressed={value === n}
+            aria-label={`${label} ${n} of 5`}
             className={`flex-1 h-12 rounded-full text-[17px] font-bold tabular-nums transition-colors ${value === n ? 'bg-accent text-on-accent' : 'bg-surface-2 text-ink hover:bg-line'}`}
           >
             {n}
@@ -62,7 +64,7 @@ export default function CheckinSheet({ open, onClose, client, onSaved }) {
     <Sheet
       open={open}
       onClose={() => { setError(null); onClose() }}
-      title="Weekly check-in"
+      title="Your week in review"
       footer={
         <Button size="lg" block onClick={submit} disabled={saving || training === 0 || energy === 0}>
           {saving ? 'Sending...' : 'Send to your coach'}
