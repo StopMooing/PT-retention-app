@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, MessageSquare, Search, UserRound } from 'lucide-react'
 import { supabase } from '../../supabase'
-import { fetchLatestPerThread, fetchUnreadCounts } from '../../lib/messages'
+import { fetchLatestActivity, fetchUnreadCounts } from '../../lib/messages'
 import { PageTitle, Card, Avatar, EmptyState, Mark, SectionLabel } from '../../ui'
 import { messageTime, firstName } from '../lib'
 import Thread from './Thread'
@@ -82,7 +82,7 @@ export default function MessagesPage({ user }) {
         .eq('pt_id', user.id)
         .order('full_name', { ascending: true })
       const list = data ?? []
-      const [l, u] = await Promise.all([fetchLatestPerThread(list.map((c) => c.id)), fetchUnreadCounts({ readerId: user.id })])
+      const [l, u] = await Promise.all([fetchLatestActivity(list.map((c) => c.id), user.id), fetchUnreadCounts({ readerId: user.id })])
       if (cancelled) return
       setClients(list)
       setLatest(l)

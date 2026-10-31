@@ -77,6 +77,39 @@ export async function fetchLatestPerThread(clientIds) {
   return latest
 }
 
+// Latest thing that happened in each conversation, for the coach's inbox preview: a
+// message, a weekly check-in (or the coach's reply to one), or a daily check-in with a
+// note. Same shape as a message: { client_id, body, created_at, sender_id }.
+// sender_id is the coach's id for things the coach sent, otherwise null.
+export async function fetchLatestActivity(clientIds, coachId) {
+  if (!clientIds?.length) return {}
+  const [latestMsgs, weekly, daily] = await Promise.all([
+    fetchLatestPerThread(clientIds),
+    supabase.from('checkins').select('client_id, submitted_at, notes, training_score, energy_score, coach_reply, replied_at')
+      .in('client_id', clientIds).order('submitted_at', { ascending: false }).limit(300),
+    supabase.from('daily_checkins').select('client_id, created_at, note')
+      .in('client_id', clientIds).not('note', 'is', null).order('created_at', { ascending: false }).limit(300),
+  ])
+  if (weekly.error) console.error('Inbox check-ins error:', weekly.error)
+  if (daily.error) console.error('Inbox daily check-ins error:', daily.error)
+
+  const latest = { ...latestMsgs }
+  const consider = (item) => {
+    if (!item.created_at) return
+    const cur = latest[item.client_id]
+    if (!cur || new Date(item.created_at) > new Date(cur.created_at)) latest[item.client_id] = item
+  }
+  for (const c of weekly.data ?? []) {
+    const scores = [c.training_score && `Training ${c.training_score}/5`, c.energy_score && `Energy ${c.energy_score}/5`].filter(Boolean).join(' · ')
+    consider({ client_id: c.client_id, created_at: c.submitted_at, sender_id: null, body: `Weekly check-in: ${c.notes?.trim() || scores || 'sent'}` })
+    if (c.coach_reply?.trim() && c.replied_at) consider({ client_id: c.client_id, created_at: c.replied_at, sender_id: coachId, body: c.coach_reply.trim() })
+  }
+  for (const d of daily.data ?? []) {
+    if (d.note?.trim()) consider({ client_id: d.client_id, created_at: d.created_at, sender_id: null, body: `Daily check-in: ${d.note.trim()}` })
+  }
+  return latest
+}
+
 // Live thread for one client: loads it, keeps it updated in real time, and marks the
 // other person's messages read while it's open. Returns { messages, loading, send, error }.
 export function useThread({ clientId, userId, active = true }) {
