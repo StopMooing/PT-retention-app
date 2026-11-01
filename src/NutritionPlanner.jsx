@@ -758,7 +758,7 @@ export default function NutritionPlanner() {
             />
           </Card>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {mealPlans.map(plan => {
               const clientName = getClientName(plan.client_id);
               return (
@@ -813,7 +813,7 @@ export default function NutritionPlanner() {
               />
             </Card>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {filteredTemplates.map(t => (
                 <Card key={t.id} as="button" onClick={() => { setSelectedMeal(t); setShowMealModal(true); }} className="flex flex-col gap-3">
                   <span className="flex items-center gap-2 flex-wrap">

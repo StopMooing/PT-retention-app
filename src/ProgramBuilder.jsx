@@ -712,7 +712,7 @@ export default function ProgramBuilder({ user }) {
         </Card>
       )
     }
-    const grid = (list) => <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{list.map(programCard)}</div>
+    const grid = (list) => <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{list.map(programCard)}</div>
     const showOnDemand = onDemandOK && listView === 'ondemand'
     const coaching = programs.filter(p => !isOnDemand(p))
     const odWorkouts = programs.filter(p => isOnDemand(p) && p.kind === 'workout')
