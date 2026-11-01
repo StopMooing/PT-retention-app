@@ -1,17 +1,18 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabase'
-import AuthPage from './AuthPage'
-import ClaimPage from './ClaimPage'
-import ExerciseLibrary from './ExerciseLibrary'
-import ProgramBuilder from './ProgramBuilder'
-import NutritionPlanner from './NutritionPlanner'
-import HabitTracker from './HabitTracker'
-import ClientProfile from './ClientProfile'
-import ClientApp from './ClientApp'
-import CoachShell from './coach/CoachShell'
-import Dashboard from './coach/Dashboard'
-import MessagesPage from './coach/messages/MessagesPage'
+// Each side loads only its own code: a client never downloads the coach screens.
+const AuthPage = lazy(() => import('./AuthPage'))
+const ClaimPage = lazy(() => import('./ClaimPage'))
+const ExerciseLibrary = lazy(() => import('./ExerciseLibrary'))
+const ProgramBuilder = lazy(() => import('./ProgramBuilder'))
+const NutritionPlanner = lazy(() => import('./NutritionPlanner'))
+const HabitTracker = lazy(() => import('./HabitTracker'))
+const ClientProfile = lazy(() => import('./ClientProfile'))
+const ClientApp = lazy(() => import('./ClientApp'))
+const CoachShell = lazy(() => import('./coach/CoachShell'))
+const Dashboard = lazy(() => import('./coach/Dashboard'))
+const MessagesPage = lazy(() => import('./coach/messages/MessagesPage'))
 import { Mark } from './ui'
 
 export default function App() {
@@ -34,9 +35,12 @@ export default function App() {
     // the client app. `cancelled` guards against an older fetch resolving last.
     let cancelled = false
     setRoleLoading(true)
+    // Most people signing in are clients: fetch their screens while the role loads.
+    if (session) import('./ClientApp')
     async function fetchRole() {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        // The session already holds the user, so this skips a network round trip.
+        const user = session?.user
         if (user) {
           const { data } = await supabase
             .from('profiles')
@@ -56,19 +60,19 @@ export default function App() {
     return () => { cancelled = true }
   }, [session])
 
-  if (session === undefined || roleLoading) {
-    return (
-      <div className="min-h-dvh flex items-center justify-center bg-bg text-ink" role="status" aria-label="Loading">
-        <Mark size={44} className="animate-pulse" />
-      </div>
-    )
-  }
+  const splash = (
+    <div className="min-h-dvh flex items-center justify-center bg-bg text-ink" role="status" aria-label="Loading">
+      <Mark size={44} className="animate-pulse" />
+    </div>
+  )
+  if (session === undefined || roleLoading) return splash
 
   const loggedInRedirect = userRole === 'pt'
     ? <Navigate to="/dashboard" replace />
     : <Navigate to="/my-workout" replace />
 
   return (
+    <Suspense fallback={splash}>
     <Routes>
       <Route path="/claim/:token" element={<ClaimPage />} />
       <Route path="/" element={session ? loggedInRedirect : <AuthPage defaultMode="login" />} />
@@ -107,5 +111,6 @@ export default function App() {
       )}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
   )
 }

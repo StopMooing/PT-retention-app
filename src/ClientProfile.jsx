@@ -5,7 +5,7 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList } from 'lucide-react'
 import { supabase } from './supabase'
 import { Avatar, Chip, Button, Mark, Card, EmptyState } from './ui'
-import { toLocalDateStr, clientStatus, STATUS, relativeDay, sessionsThisMonth, formatDate, startedByClient, firstName } from './coach/lib'
+import { toLocalDateStr, clientStatus, STATUS, relativeDay, sessionsLast7, formatDate, startedByClient, firstName } from './coach/lib'
 import OverviewTab from './coach/profile/OverviewTab'
 import CheckinsTab from './coach/profile/CheckinsTab'
 import TrainingTab from './coach/profile/TrainingTab'
@@ -598,7 +598,7 @@ export default function ClientProfile({ user }) {
 
   const status = clientStatus({ lastCheckIn: checkins[0]?.submitted_at, workoutLogs, scheduledWorkouts })
   const awaiting = checkins.filter((c) => !c.coach_reply).length
-  const month = sessionsThisMonth(workoutLogs)
+  const week = sessionsLast7(workoutLogs)
   const reply = {
     drafts: replyDrafts, setDrafts: setReplyDrafts, savingId: savingReplyId,
     editingId: editingReplyId, setEditingId: setEditingReplyId, error: replyError, onSave: handleSaveReply,
@@ -635,7 +635,7 @@ export default function ClientProfile({ user }) {
             {clientGoal && <p className="text-[15px] text-ink mt-1">{clientGoal}</p>}
             <p className="text-[13px] text-muted mt-0.5">
               {checkins.length ? `Checked in ${relativeDay(checkins[0].submitted_at).toLowerCase()}` : 'No check-ins yet'}
-              {' · '}{month} {month === 1 ? 'session' : 'sessions'} this month
+              {' · '}{week} {week === 1 ? 'session' : 'sessions'} in 7 days
               {programAssignment?.programs?.name ? ` · ${programAssignment.programs.name}` : ''}
               {programAssignment?.programs?.name && startedByClient(programAssignment, client) ? `, started by ${firstName(client.full_name)} (on demand)` : ''}
               {' · '}Joined {formatDate(client.created_at, { month: 'short', year: 'numeric' })}

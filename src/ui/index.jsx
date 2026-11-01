@@ -338,3 +338,9 @@ export function TabBar({ items, className }) {
     </nav>
   )
 }
+
+/* Newer iPhones draw the page under the clock and battery. This strip, the height of
+   that area, keeps scrolled content from showing through behind them. Both apps. */
+export function StatusBarCover() {
+  return <div aria-hidden="true" className="fixed top-0 inset-x-0 z-40 bg-bg pointer-events-none" style={{ height: 'env(safe-area-inset-top)' }} />
+}

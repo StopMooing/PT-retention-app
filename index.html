@@ -7,12 +7,12 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#F3F1EC" />
     <meta name="apple-mobile-web-app-title" content="UNFNSHD" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <script>
       // iPhone/iPad only: stop Safari zooming in when a text box is tapped. iOS still
       // allows pinch zoom with this set; Android would block it, so it is not applied there.
       if (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
-        document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0')
+        document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover')
       }
     </script>
     <script>

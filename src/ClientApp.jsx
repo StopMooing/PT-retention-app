@@ -27,6 +27,28 @@ import ResourcesPage from './client/ResourcesPage'
 
 const EMPTY = []
 
+// Phones often reload a web app that was in the background. These keep the client where
+// they were: the workout they had open (12 hours max) and the tab they were on.
+// Storage can be blocked, so every call is guarded and the app works without it.
+const ACTIVE_KEY = 'unfnshd-active-workout'
+const TAB_KEY = 'unfnshd-tab'
+function saveActiveWorkout(clientId, sw) {
+  try {
+    if (sw) localStorage.setItem(ACTIVE_KEY, JSON.stringify({ clientId, sw, at: Date.now() }))
+    else localStorage.removeItem(ACTIVE_KEY)
+  } catch { /* storage unavailable */ }
+}
+function readActiveWorkout(clientId) {
+  try {
+    const v = JSON.parse(localStorage.getItem(ACTIVE_KEY))
+    if (v?.clientId === clientId && v.sw?.id && Date.now() - v.at < 12 * 3600 * 1000) return v.sw
+  } catch { /* storage unavailable */ }
+  return null
+}
+function readTab() {
+  try { return sessionStorage.getItem(TAB_KEY) || 'home' } catch { return 'home' }
+}
+
 const TABS = [
   { id: 'home', label: 'Home', icon: Home },
   { id: 'train', label: 'Training', icon: Dumbbell },
@@ -63,7 +85,7 @@ export default function ClientApp() {
   const [unseenReplies, setUnseenReplies] = useState(0)
 
   // Navigation
-  const [tab, setTab] = useState('home')
+  const [tab, setTab] = useState(readTab)
   const [trainView, setTrainView] = useState('workouts')
   const [foodView, setFoodView] = useState('log')
   const [addFoodOpen, setAddFoodOpen] = useState(false)
@@ -84,25 +106,25 @@ export default function ClientApp() {
 
   useEffect(() => {
     async function init() {
-      const { data: { user } } = await supabase.auth.getUser()
+      // The session is already on the phone, so no network round trip is needed here.
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
       if (!user) { setLoading(false); return }
       const { data: clientRow } = await supabase.from('clients').select('*').eq('user_id', user.id).maybeSingle()
       if (!clientRow) { setLoading(false); return }
       setClient(clientRow)
       setUserId(user.id)
+      if (!clientRow.pt_id) setTab((t) => (t === 'messages' ? 'home' : t))
       const id = clientRow.id
 
-      const asgn = await fetchAssignment(id)
-      setAssignment(asgn.assignment)
-      setProgramWorkouts(asgn.programWorkouts)
-      setAllProgramExercises(asgn.exercises)
-
-      const sw = await fetchScheduled(id)
-      setScheduledWorkouts(sw)
-      const pwIds = [...new Set(sw.map((s) => s.program_workout_id).filter(Boolean))]
-      if (pwIds.length > 0) setWorkoutExercises(await fetchExercisesFor(pwIds))
-
-      const [logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, unread] = await Promise.all([
+      // Everything else at once rather than one after another.
+      const scheduledWithExercises = fetchScheduled(id).then(async (sw) => {
+        const pwIds = [...new Set(sw.map((s) => s.program_workout_id).filter(Boolean))]
+        return { sw, ex: pwIds.length > 0 ? await fetchExercisesFor(pwIds) : {} }
+      })
+      const [asgn, sched, logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, unread] = await Promise.all([
+        fetchAssignment(id),
+        scheduledWithExercises,
         fetchWorkoutLogs(id),
         fetchFoodLogs(id),
         fetchResources(clientRow.pt_id),
@@ -117,6 +139,14 @@ export default function ClientApp() {
         fetchDailyCheckins(id),
         clientRow.pt_id ? fetchUnreadCounts({ readerId: user.id, clientId: id }) : {},
       ])
+      setAssignment(asgn.assignment)
+      setProgramWorkouts(asgn.programWorkouts)
+      setAllProgramExercises(asgn.exercises)
+      setScheduledWorkouts(sched.sw)
+      setWorkoutExercises(sched.ex)
+      // Back into the workout they had open, unless it has been saved since.
+      const active = readActiveWorkout(id)
+      if (active && !logs.some((l) => l.scheduled_workout_id === active.id && l.completed)) setLoggingWorkout(active)
       setDailyCheckins(daily)
       setUnreadMessages(unread[id] || 0)
       setUnseenReplies(clientRow.pt_id ? unseenReplyCount(ci, id) : 0)
@@ -258,8 +288,15 @@ export default function ClientApp() {
     showToast('Meal saved')
   }
 
+  // Remember the open workout and tab so a reload puts the client back where they were.
+  useEffect(() => {
+    if (loading || !client?.id) return
+    saveActiveWorkout(client.id, loggingWorkout && !loggingWorkout._existingLog ? loggingWorkout : null)
+  }, [loading, client?.id, loggingWorkout])
+
   function goTab(id) {
     setTab(id)
+    try { sessionStorage.setItem(TAB_KEY, id) } catch { /* storage unavailable */ }
     // Opening Messages marks the thread read (useThread) and the check-in replies seen, so
     // the badge clears.
     if (id === 'messages') {
