@@ -7,7 +7,7 @@ import { PageTitle, Card, Button, Segmented, SectionLabel, Stat, PhotoViewer } f
 import { photoPath, usePhotoUrls, PHOTO_BUCKET } from '../lib/photos'
 import { toLocalDateStr, addDays, formatShortDate, parseDay } from './dates'
 import {
-  weightSeries, currentWeight, weightAverage7, weightForDay, plural, sessionsThisMonth, bestWeekStreak, weekStreak, liftBests, fmtKg,
+  weightSeries, currentWeight, weightAverage7, weightForDay, plural, sessionsLast7, sessionsTotal, bestWeekStreak, weekStreak, liftBests, fmtKg,
 } from './metrics'
 import WeightChart from './WeightChart'
 import SessionsList from './SessionsList'
@@ -253,7 +253,19 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
   const shownCheckins = showAllCheckins ? checkins : checkins.slice(0, 4)
   const best = bestWeekStreak(workoutLogs)
   const streak = weekStreak(workoutLogs)
-  const month = sessionsThisMonth(workoutLogs)
+  const week = sessionsLast7(workoutLogs)
+  const total = sessionsTotal(workoutLogs)
+  // Only tiles with something to celebrate. No zeros: a quiet week shows the total
+  // instead, and the streak only appears once there is one.
+  const tiles = [
+    week > 0
+      ? { label: 'Last 7 days', value: week, hint: week === 1 ? 'session' : 'sessions' }
+      : total > 0 && { label: 'All time', value: total, hint: total === 1 ? 'session' : 'sessions' },
+    checkins.length > 0 && { label: 'Check-ins', value: checkins.length, hint: 'weekly' },
+    streak > 0
+      ? { label: 'Streak', value: streak, hint: `${streak === 1 ? 'week' : 'weeks'} in a row${best > streak ? `, best ${best}` : ''}` }
+      : best > 1 && { label: 'Best streak', value: best, hint: 'weeks in a row' },
+  ].filter(Boolean)
 
   return (
     <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-7">
@@ -261,13 +273,11 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
 
       <WeightCard client={client} weightLogs={weightLogs} setWeightLogs={setWeightLogs} />
 
-      {(workoutLogs.length > 0 || checkins.length > 0) && (
+      {tiles.length > 0 && (
         <section>
           <SectionLabel>Showing up</SectionLabel>
-          <Card className="grid grid-cols-3 gap-3">
-            <Stat label="This month" value={month} hint={month === 1 ? 'session' : 'sessions'} />
-            <Stat label="Check-ins" value={checkins.length} hint="weekly, sent" />
-            <Stat label="Best streak" value={best} hint={`${best === 1 ? 'week' : 'weeks'}${streak > 0 ? ` (now on ${streak})` : ''}`} />
+          <Card className="grid gap-3" style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}>
+            {tiles.map((t) => <Stat key={t.label} label={t.label} value={t.value} hint={t.hint} />)}
           </Card>
         </section>
       )}

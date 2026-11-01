@@ -151,6 +151,17 @@ export function sessionsThisMonth(workoutLogs, today = toLocalDateStr()) {
   return sessionDays(workoutLogs).filter((d) => d.slice(0, 7) === month).length
 }
 
+// Finished sessions in the last 7 days, today included. The coach's client list and
+// profile use this too (re-exported from coach/lib.js), so both sides agree.
+export function sessionsLast7(workoutLogs, today = toLocalDateStr()) {
+  const from = addDays(today, -6)
+  return sessionDays(workoutLogs).filter((d) => d >= from && d <= today).length
+}
+
+export function sessionsTotal(workoutLogs) {
+  return sessionDays(workoutLogs).length
+}
+
 /* ---------- Check-ins ---------- */
 
 // A check-in is due 7 calendar days after the last one (or straight away if there is

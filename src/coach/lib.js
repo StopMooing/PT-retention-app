@@ -87,11 +87,8 @@ export function clientStatus({ lastCheckIn, workoutLogs, scheduledWorkouts } = {
   return 'Engaged'
 }
 
-// Finished sessions in the last 7 days (today included).
-export function sessionsLast7(workoutLogs) {
-  const from = addDays(toLocalDateStr(), -6)
-  return (workoutLogs ?? []).filter((w) => w.completed && dayOf(w.logged_at) >= from).length
-}
+// Finished sessions in the last 7 days: the same function the client app uses.
+export { sessionsLast7 } from '../client/metrics'
 
 export const STATUS = {
   Engaged: { tone: 'accent', label: 'Engaged' },
