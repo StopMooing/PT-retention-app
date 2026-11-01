@@ -8,6 +8,10 @@ import { Button } from '../ui'
 import { isBarcode } from './barcode'
 
 const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e']
+// A blurry frame can misread digits and still pass the barcode's check digit (a real
+// Weet-Bix box once read as a different number). Only accept a number once it has been
+// read the same way this many frames in a row.
+const SAME_READS_NEEDED = 3
 
 export default function BarcodeScanner({ onResult, onClose }) {
   const videoRef = useRef(null)
@@ -26,25 +30,35 @@ export default function BarcodeScanner({ onResult, onClose }) {
         ])
         prepareZXingModule({ overrides: { locateFile: (path, prefix) => (path.endsWith('.wasm') ? wasmUrl : prefix + path) } })
         const detector = new BarcodeDetector({ formats: FORMATS })
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+        // A sharper picture means fewer misreads.
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false,
+        })
         if (stopped) return
         const video = videoRef.current
         video.srcObject = stream
         await video.play()
         setStatus('scanning')
+        let last = null
+        let same = 0
         const tick = async () => {
           if (stopped) return
           try {
             const codes = await detector.detect(video)
             const hit = codes.find((c) => isBarcode(c.rawValue))
             if (hit) {
-              stopped = true
-              navigator.vibrate?.(40)
-              onResult(hit.rawValue)
-              return
+              same = hit.rawValue === last ? same + 1 : 1
+              last = hit.rawValue
+              if (same >= SAME_READS_NEEDED) {
+                stopped = true
+                navigator.vibrate?.(40)
+                onResult(hit.rawValue)
+                return
+              }
             }
           } catch { /* a frame that could not be read */ }
-          timer = setTimeout(tick, 200)
+          timer = setTimeout(tick, 120)
         }
         tick()
       } catch (e) {

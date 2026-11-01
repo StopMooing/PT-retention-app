@@ -200,7 +200,8 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
           <div className="rounded-[16px] border border-line p-4 space-y-3">
             <div>
               <p className="text-[15px] font-bold text-ink">New product</p>
-              <p className="text-[13px] text-muted">Nobody has added barcode {newProduct.barcode} yet. Copy the per 100 g column from the label once and it's saved for everyone.</p>
+              <p className="text-[13px] text-muted">Nobody has added this product yet. Copy the per 100 g column from the label once and it's saved for everyone.</p>
+              <p className="mt-2 text-[13px] text-ink">Check this matches the number under the barcode: <span className="font-bold tabular-nums">{newProduct.barcode}</span>. If it doesn't, scan again.</p>
             </div>
             <Field label="Name" value={newProduct.name} onChange={(e) => setNewProduct((p) => ({ ...p, name: e.target.value }))} placeholder="e.g. Protein yoghurt, vanilla" />
             <div className="grid grid-cols-2 gap-3">
