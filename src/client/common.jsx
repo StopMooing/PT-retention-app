@@ -58,7 +58,7 @@ export function Toast({ toast }) {
     <div
       role="status"
       className={cx(
-        'fixed bottom-28 left-1/2 -translate-x-1/2 z-[60] w-max max-w-[calc(100vw-32px)] bg-ink text-bg text-sm font-bold rounded-full shadow-lg flex items-center gap-3 text-center',
+        'fixed bottom-[calc(var(--tabbar-space)+12px)] left-1/2 -translate-x-1/2 z-[60] w-max max-w-[calc(100vw-32px)] bg-ink text-bg text-sm font-bold rounded-full shadow-lg flex items-center gap-3 text-center',
         t.action ? 'pl-5 pr-2 py-2' : 'px-5 py-3 pointer-events-none',
       )}
     >

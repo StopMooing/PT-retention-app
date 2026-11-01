@@ -11,6 +11,8 @@
    (bg-surface, text-ink, text-muted, border-line, bg-accent, ...), never raw hex.
    ------------------------------------------------------------------------------------ */
 :root {
+  /* Room the floating tab bar takes at the bottom of a phone screen (TabBar in src/ui). */
+  --tabbar-space: calc(max(env(safe-area-inset-bottom), 12px) + 76px);
   color-scheme: light;
   --bg: #F3F1EC;
   --surface: #FFFFFF;

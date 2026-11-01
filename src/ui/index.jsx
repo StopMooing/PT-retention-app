@@ -300,3 +300,41 @@ export function Field({ label, hint, className, inputClassName, id, ...rest }) {
     </label>
   )
 }
+
+/* The phone tab bar on both apps: a rounded bar floating just above the bottom edge,
+   the current tab in a soft pill. items: { key, label, icon, active, badge, onClick }.
+   Content above it needs bottom padding of var(--tabbar-space). */
+export function TabBar({ items, className }) {
+  return (
+    <nav
+      aria-label="Main"
+      className={cx('fixed bottom-0 inset-x-0 z-30 px-3 pointer-events-none', className)}
+      style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
+    >
+      <div className="max-w-[480px] mx-auto pointer-events-auto flex gap-1 p-1.5 rounded-[30px] bg-surface/95 backdrop-blur-xl border border-line shadow-[0_8px_28px_rgba(0,0,0,0.14)]">
+        {items.map(({ key, label, icon: Icon, active, badge, onClick }) => (
+          <button
+            key={key}
+            onClick={onClick}
+            aria-current={active ? 'page' : undefined}
+            aria-label={badge > 0 ? `${label}, ${badge} unread` : undefined}
+            className={cx(
+              'relative flex-1 min-w-0 h-14 rounded-[24px] flex flex-col items-center justify-center gap-0.5 transition-colors',
+              active ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink',
+            )}
+          >
+            <span className="relative">
+              <Icon size={22} strokeWidth={active ? 2.4 : 2} />
+              {badge > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-on-accent text-[11px] font-bold leading-[18px] text-center tabular-nums ring-2 ring-surface">
+                  {badge > 9 ? '9+' : badge}
+                </span>
+              )}
+            </span>
+            <span className="text-[11px] font-bold truncate max-w-full px-1">{label}</span>
+          </button>
+        ))}
+      </div>
+    </nav>
+  )
+}

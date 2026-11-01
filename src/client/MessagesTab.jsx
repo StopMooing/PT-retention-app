@@ -121,7 +121,7 @@ export default function MessagesTab({ clientId, userId, coachName }) {
       </div>
 
       {/* Composer, just above the tab bar. */}
-      <div className="fixed inset-x-0 z-20 bg-bg border-t border-line" style={{ bottom: 'calc(57px + env(safe-area-inset-bottom))' }}>
+      <div className="fixed inset-x-0 z-20 bg-bg border-t border-line" style={{ bottom: 'var(--tabbar-space)' }}>
         <div className="max-w-[480px] mx-auto px-4 py-2.5">
           {sendError && <p role="alert" className="text-[13px] font-semibold text-bad mb-1.5">{sendError}</p>}
           <div className="flex items-end gap-2">

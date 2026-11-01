@@ -29,7 +29,7 @@ const TABS = [
   { id: 'notes', label: 'Notes' },
 ]
 
-const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
+const SW_SELECT = 'id, scheduled_date, created_at, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
 const enrichSW = (sw) => ({ ...sw, _displayName: sw.program_workouts?.name || sw.saved_workouts?.name || 'Workout', _isCustom: !!sw.custom_workout_id })
 
 export default function ClientProfile({ user }) {
@@ -596,7 +596,7 @@ export default function ClientProfile({ user }) {
 
   /* ---------------- View ---------------- */
 
-  const status = clientStatus(checkins[0]?.submitted_at)
+  const status = clientStatus({ lastCheckIn: checkins[0]?.submitted_at, workoutLogs, scheduledWorkouts })
   const awaiting = checkins.filter((c) => !c.coach_reply).length
   const month = sessionsThisMonth(workoutLogs)
   const reply = {

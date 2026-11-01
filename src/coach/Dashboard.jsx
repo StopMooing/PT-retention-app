@@ -5,7 +5,7 @@ import { Search, ChevronRight, Plus, Link2, Check, MessageSquare, MessageCircle,
 import { supabase } from '../supabase'
 import { fetchUnreadCounts, fetchLatestPerThread } from '../lib/messages'
 import { PageTitle, SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, EmptyState, Mark } from '../ui'
-import { clientStatus, STATUS, relativeDay, sessionsThisMonth, checkinsThisWeek, checkinNote, firstName, messageTime } from './lib'
+import { clientStatus, STATUS, relativeDay, sessionsLast7, checkinsThisWeek, checkinNote, firstName, messageTime, toLocalDateStr, addDays } from './lib'
 import { useMessageEvent, READ, INCOMING } from './messages/events'
 
 function greeting() {
@@ -88,6 +88,7 @@ export default function Dashboard({ user }) {
   const [clients, setClients] = useState([])
   const [checkins, setCheckins] = useState([])
   const [workoutLogs, setWorkoutLogs] = useState([])
+  const [scheduled, setScheduled] = useState([])
   const [unread, setUnread] = useState({})
   const [latestMsg, setLatestMsg] = useState({})
   const [loading, setLoading] = useState(true)
@@ -107,11 +108,12 @@ export default function Dashboard({ user }) {
     if (clientData.length === 0) { setLoading(false); return }
 
     const clientIds = clientData.map((c) => c.id)
-    const startOfMonth = new Date()
-    startOfMonth.setDate(1)
-    startOfMonth.setHours(0, 0, 0, 0)
+    // 30 days of sessions is enough for the status rule (14 days) and the 7-day count.
+    const since = new Date()
+    since.setDate(since.getDate() - 30)
+    const today = toLocalDateStr()
 
-    const [{ data: checkinRows }, { data: logRows }, unreadCounts, latest] = await Promise.all([
+    const [{ data: checkinRows }, { data: logRows }, { data: swRows }, unreadCounts, latest] = await Promise.all([
       supabase
         .from('checkins')
         .select('id, client_id, submitted_at, training_score, energy_score, blocker, notes, coach_reply')
@@ -119,15 +121,22 @@ export default function Dashboard({ user }) {
         .order('submitted_at', { ascending: false }),
       supabase
         .from('workout_logs')
-        .select('client_id, logged_at, completed')
+        .select('client_id, logged_at, completed, scheduled_workout_id')
         .in('client_id', clientIds)
         .eq('completed', true)
-        .gte('logged_at', startOfMonth.toISOString()),
+        .gte('logged_at', since.toISOString()),
+      supabase
+        .from('scheduled_workouts')
+        .select('id, client_id, scheduled_date, created_at')
+        .in('client_id', clientIds)
+        .gte('scheduled_date', addDays(today, -14))
+        .lt('scheduled_date', today),
       fetchUnreadCounts({ readerId: user.id }),
       fetchLatestPerThread(clientIds),
     ])
     setCheckins(checkinRows ?? [])
     setWorkoutLogs(logRows ?? [])
+    setScheduled(swRows ?? [])
     setUnread(unreadCounts)
     setLatestMsg(latest)
     setLoading(false)
@@ -166,36 +175,39 @@ export default function Dashboard({ user }) {
     return null
   }
 
-  const byId = Object.fromEntries(clients.map((c) => [c.id, c]))
 
   const enriched = clients.map((c) => {
     const own = checkins.filter((ci) => ci.client_id === c.id)
     const lastCheckIn = own[0]?.submitted_at ?? null
+    const logs = workoutLogs.filter((w) => w.client_id === c.id)
     return {
       ...c,
       lastCheckIn,
-      awaitingReply: own.filter((ci) => !ci.coach_reply).length,
+      // Only their latest check-in is owed a reply; a newer one replaces older ones.
+      awaitingCheckin: own[0] && !own[0].coach_reply ? own[0] : null,
       unreadMessages: unread[c.id] || 0,
-      sessions: sessionsThisMonth(workoutLogs.filter((w) => w.client_id === c.id)),
-      status: clientStatus(lastCheckIn),
+      sessions: sessionsLast7(logs),
+      status: clientStatus({ lastCheckIn, workoutLogs: logs, scheduledWorkouts: scheduled.filter((sw) => sw.client_id === c.id) }),
     }
   })
 
-  // Newest first. Counted across all time: an unanswered one from three weeks ago is still owed a reply.
-  const awaiting = checkins.filter((ci) => !ci.coach_reply && byId[ci.client_id])
-  // Unread messages: one row per client, showing their newest message.
-  const messageItems = clients
-    .filter((c) => unread[c.id] > 0)
+  // One row per client who is owed a reply (their latest check-in, new messages or
+  // both), newest first. Reply opens their chat, where check-ins and messages live.
+  const replyItems = enriched
+    .filter((c) => c.awaitingCheckin || c.unreadMessages > 0)
     .map((c) => {
       const m = latestMsg[c.id]
-      return { kind: 'message', id: `m${c.id}`, client: c, count: unread[c.id], preview: m && m.sender_id !== user.id ? m.body : '', at: m?.created_at ?? '' }
+      const msgAt = c.unreadMessages > 0 ? m?.created_at ?? '' : ''
+      const ciAt = c.awaitingCheckin?.submitted_at ?? ''
+      return {
+        id: c.id, client: c, ci: c.awaitingCheckin, count: c.unreadMessages,
+        preview: c.unreadMessages > 0 && m && m.sender_id !== user.id ? m.body : '',
+        at: new Date(msgAt || 0) > new Date(ciAt || 0) ? msgAt : ciAt,
+      }
     })
-  // Check-ins awaiting a reply and unread messages together, newest first.
-  const replyItems = [
-    ...awaiting.map((ci) => ({ kind: 'checkin', id: ci.id, ci, at: ci.submitted_at })),
-    ...messageItems,
-  ].sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
-  const awaitingIds = new Set([...awaiting.map((ci) => ci.client_id), ...messageItems.map((m) => m.client.id)])
+    .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
+  const awaitingCount = enriched.filter((c) => c.awaitingCheckin).length
+  const awaitingIds = new Set(replyItems.map((i) => i.id))
   const slipping = enriched
     .filter((c) => (c.status === 'Drifting' || c.status === 'At Risk') && !awaitingIds.has(c.id))
     .sort((a, b) => new Date(a.lastCheckIn) - new Date(b.lastCheckIn))
@@ -236,7 +248,7 @@ export default function Dashboard({ user }) {
         {[
           { label: 'Clients', value: enriched.length },
           { label: 'Check-ins this week', short: 'This week', value: checkinsThisWeek(checkins) },
-          { label: 'Awaiting reply', short: 'To reply', value: awaiting.length, warn: awaiting.length > 0 },
+          { label: 'Awaiting reply', short: 'To reply', value: awaitingCount, warn: awaitingCount > 0 },
         ].map((s) => (
           <Card key={s.label} className="!p-3.5 md:!p-4">
             <p className="text-[13px] text-muted truncate">
@@ -256,53 +268,38 @@ export default function Dashboard({ user }) {
               <span className="w-10 h-10 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Check size={20} /></span>
               <div>
                 <p className="font-bold text-ink">All caught up</p>
-                <p className="text-[13px] text-muted">Every check-in and message has a reply, and everyone checked in this week.</p>
+                <p className="text-[13px] text-muted">Every check-in and message has a reply, and everyone is showing up.</p>
               </div>
             </div>
           </Card>
         ) : (
           <Card padded={false} className="divide-y divide-line overflow-hidden">
             {replyItems.map((item) => {
-              if (item.kind === 'message') {
-                const c = item.client
-                return (
-                  <div key={item.id} className="flex items-center gap-3 px-4 py-3.5">
-                    <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
-                    <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/messages/${c.id}`)}>
-                      <p className="flex items-center gap-2 min-w-0">
-                        <span className="font-bold text-ink truncate">{c.full_name}</span>
-                        {item.at && <span className="text-[13px] text-muted whitespace-nowrap">{messageTime(item.at)}</span>}
-                      </p>
-                      <span className="flex items-center gap-1.5 text-[13px] text-accent font-bold">
-                        <MessageCircle size={14} /> {item.count === 1 ? 'New message' : `${item.count} new messages`}
-                      </span>
-                      {item.preview && <p className="text-[13px] text-ink truncate mt-0.5">"{item.preview}"</p>}
-                    </button>
-                    <Button variant="soft" size="sm" onClick={() => navigate(`/messages/${c.id}`)}>
-                      <MessageSquare size={16} /> Reply
-                    </Button>
-                  </div>
-                )
-              }
+              const c = item.client
               const ci = item.ci
-              const c = byId[ci.client_id]
-              const note = checkinNote(ci)
-              const st = clientStatus(checkins.find((x) => x.client_id === c.id)?.submitted_at)
+              const note = ci ? checkinNote(ci) : ''
               return (
-                <div key={ci.id} className="flex items-center gap-3 px-4 py-3.5">
-                  <Avatar name={c.full_name} size={40} />
+                <div key={item.id} className="flex items-center gap-3 px-4 py-3.5">
+                  <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
                   <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/clients/${c.id}`)}>
                     <p className="flex items-center gap-2 min-w-0">
                       <span className="font-bold text-ink truncate">{c.full_name}</span>
-                      <span className="text-[13px] text-muted whitespace-nowrap">{relativeDay(ci.submitted_at)}</span>
+                      {item.at && <span className="text-[13px] text-muted whitespace-nowrap">{ci && item.at === ci.submitted_at ? relativeDay(item.at) : messageTime(item.at)}</span>}
                     </p>
-                    <span className="flex items-center gap-2 flex-wrap">
-                      <Scores ci={ci} />
-                      {st !== 'Engaged' && <Chip tone={STATUS[st].tone}>{STATUS[st].label}</Chip>}
-                    </span>
-                    {note && <p className="text-[13px] text-ink truncate mt-0.5">"{note}"</p>}
+                    {ci && (
+                      <span className="flex items-center gap-2 flex-wrap">
+                        <Scores ci={ci} />
+                        {c.status !== 'Engaged' && <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>}
+                      </span>
+                    )}
+                    {item.count > 0 && (
+                      <span className="flex items-center gap-1.5 text-[13px] text-accent font-bold">
+                        <MessageCircle size={14} /> {item.count === 1 ? 'New message' : `${item.count} new messages`}
+                      </span>
+                    )}
+                    {(item.preview || note) && <p className="text-[13px] text-ink truncate mt-0.5">"{item.preview || note}"</p>}
                   </button>
-                  <Button variant="soft" size="sm" onClick={() => navigate(`/messages/${c.id}`, { state: { replyCheckin: ci.id } })}>
+                  <Button variant="soft" size="sm" onClick={() => navigate(`/messages/${c.id}`, ci ? { state: { replyCheckin: ci.id } } : undefined)}>
                     <MessageSquare size={16} /> Reply
                   </Button>
                 </div>
@@ -372,7 +369,7 @@ export default function Dashboard({ user }) {
           ) : (
             <>
               <div className="hidden md:grid grid-cols-[minmax(0,1fr)_120px_130px_110px_120px_20px] gap-4 px-4 h-10 items-center border-b border-line text-xs font-bold uppercase tracking-[0.06em] text-muted">
-                <span>Client</span><span>Status</span><span>Last check-in</span><span className="text-right">Sessions (month)</span><span /><span />
+                <span>Client</span><span>Status</span><span>Last check-in</span><span className="text-right">Sessions (7 days)</span><span /><span />
               </div>
               <ul className="divide-y divide-line">
                 {filtered.map((c) => (
@@ -389,7 +386,6 @@ export default function Dashboard({ user }) {
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <span className="font-bold text-ink truncate">{c.full_name}</span>
-                            {c.awaitingReply > 0 && <span className="w-2 h-2 rounded-full bg-warn shrink-0" title={`${c.awaitingReply} awaiting reply`} />}
                             {c.unreadMessages > 0 && (
                               <span
                                 className="inline-flex items-center gap-0.5 h-5 px-1.5 rounded-full bg-accent-soft text-accent text-[11px] font-bold shrink-0 tabular-nums"
@@ -403,12 +399,14 @@ export default function Dashboard({ user }) {
                           </span>
                           <span className="block text-[13px] text-muted truncate">{c.goal || 'No goal set'}</span>
                           <span className="md:hidden block text-[13px] text-muted">
-                            {c.lastCheckIn ? `Checked in ${relativeDay(c.lastCheckIn).toLowerCase()}` : 'No check-ins yet'} · {c.sessions} {c.sessions === 1 ? 'session' : 'sessions'} this month
+                            {c.awaitingCheckin
+                              ? <span className="font-bold text-warn">Check-in to reply</span>
+                              : c.lastCheckIn ? `Checked in ${relativeDay(c.lastCheckIn).toLowerCase()}` : 'No check-ins yet'} · {c.sessions} {c.sessions === 1 ? 'session' : 'sessions'} in 7 days
                           </span>
                         </span>
                       </span>
                       <span className="hidden md:block"><Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip></span>
-                      <span className="hidden md:block text-sm text-ink">{c.lastCheckIn ? relativeDay(c.lastCheckIn) : 'Never'}</span>
+                      <span className={`hidden md:block text-sm ${c.awaitingCheckin ? 'font-bold text-warn' : 'text-ink'}`}>{c.awaitingCheckin ? 'To reply' : c.lastCheckIn ? relativeDay(c.lastCheckIn) : 'Never'}</span>
                       <span className="hidden md:block text-sm text-ink text-right tabular-nums">{c.sessions}</span>
                       <span className="hidden md:flex justify-end"><InviteButton client={c} /></span>
                       <ChevronRight size={20} className="text-faint shrink-0" />

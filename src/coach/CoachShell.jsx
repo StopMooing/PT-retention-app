@@ -1,12 +1,13 @@
-// The frame around every coach page: a slim sidebar on desktop, a top bar and a bottom
-// tab bar on phones. Pages render their own PageTitle inside the frame.
-// Phone tabs: Clients, Programs, Messages, Nutrition, More (Exercises, Habits, settings).
+// The frame around every coach page: a slim sidebar on desktop, a floating tab bar on
+// phones. Pages render their own PageTitle inside the frame.
+// Phone tabs follow what a coach does daily: Clients, Messages, Library (Programs,
+// Exercises, Nutrition, Habits, with a switcher on top), You (account and appearance).
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Users, ClipboardList, Dumbbell, Utensils, Heart, LogOut, Settings, MessageSquare, Menu, ChevronRight } from 'lucide-react'
+import { Users, ClipboardList, Dumbbell, Utensils, Heart, LogOut, Settings, MessageSquare, LibraryBig, CircleUser } from 'lucide-react'
 import { supabase } from '../supabase'
 import { fetchUnreadCounts } from '../lib/messages'
-import { Logo, Mark, Avatar, Sheet, ThemeSwitch, Button } from '../ui'
+import { Logo, Avatar, Sheet, ThemeSwitch, Button, TabBar } from '../ui'
 import { totalUnread } from './lib'
 import { emit, useMessageEvent, READ, INCOMING } from './messages/events'
 
@@ -18,8 +19,7 @@ const NUTRITION = { label: 'Nutrition', icon: Utensils, path: '/nutrition' }
 const HABITS = { label: 'Habits', icon: Heart, path: '/habits' }
 
 const SIDEBAR = [CLIENTS, MESSAGES, PROGRAMS, EXERCISES, NUTRITION, HABITS]
-const TABS = [CLIENTS, PROGRAMS, MESSAGES, NUTRITION]
-const MORE = [EXERCISES, HABITS]
+const LIBRARY = [PROGRAMS, EXERCISES, NUTRITION, HABITS]
 
 function isActive(item, pathname) {
   return pathname === item.path || (item.also ?? []).some((p) => pathname.startsWith(p + '/'))
@@ -34,26 +34,10 @@ function Badge({ count, className = '' }) {
   )
 }
 
-// Settings on desktop; on a phone the same sheet is "More" and also lists Exercises and Habits.
-function SettingsSheet({ open, onClose, name, email, onSignOut, links }) {
+// Account, appearance and sign out. Desktop opens it from the sidebar, phones from "You".
+function SettingsSheet({ open, onClose, name, email, onSignOut }) {
   return (
-    <Sheet open={open} onClose={onClose} title={links ? 'More' : 'Settings'}>
-      {links && (
-        <ul className="-mx-5 mb-4 divide-y divide-line border-y border-line">
-          {MORE.map((item) => {
-            const Icon = item.icon
-            return (
-              <li key={item.path}>
-                <NavLink to={item.path} onClick={onClose} className="flex items-center gap-3 px-5 min-h-[56px] text-[15px] font-semibold text-ink hover:bg-surface-2">
-                  <Icon size={20} className="text-muted" />
-                  <span className="flex-1">{item.label}</span>
-                  <ChevronRight size={18} className="text-faint" />
-                </NavLink>
-              </li>
-            )
-          })}
-        </ul>
-      )}
+    <Sheet open={open} onClose={onClose} title="You">
       <div className="flex items-center gap-3 py-2">
         <Avatar name={name || email} size={44} />
         <div className="min-w-0">
@@ -70,10 +54,32 @@ function SettingsSheet({ open, onClose, name, email, onSignOut, links }) {
   )
 }
 
+// Phone only: the four parts of the Library, one tap apart.
+function LibrarySwitch({ pathname, navigate }) {
+  return (
+    <div className="md:hidden flex p-1 rounded-full bg-surface-2 mb-5" role="tablist" aria-label="Library">
+      {LIBRARY.map((item) => {
+        const active = isActive(item, pathname)
+        return (
+          <button
+            key={item.path}
+            role="tab"
+            aria-selected={active}
+            onClick={() => navigate(item.path)}
+            className={`flex-1 min-w-0 h-9 px-1 rounded-full text-[13px] font-bold truncate transition-colors ${active ? 'bg-surface text-ink shadow-sm' : 'text-muted'}`}
+          >
+            {item.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function CoachShell({ user }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
-  const [sheet, setSheet] = useState(null) // 'settings' | 'more' | null
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [unread, setUnread] = useState(0)
   const email = user?.email ?? ''
   const name = user?.user_metadata?.full_name ?? ''
@@ -104,7 +110,7 @@ export default function CoachShell({ user }) {
     navigate('/')
   }
 
-  const moreActive = MORE.some((i) => isActive(i, pathname))
+  const inLibrary = LIBRARY.some((i) => isActive(i, pathname))
 
   return (
     <div className="flex h-dvh bg-bg text-ink overflow-hidden">
@@ -132,7 +138,7 @@ export default function CoachShell({ user }) {
         </nav>
         <div className="p-3 border-t border-line space-y-0.5">
           <button
-            onClick={() => setSheet('settings')}
+            onClick={() => setSettingsOpen(true)}
             className="w-full flex items-center gap-3 px-2 py-2 rounded-[14px] hover:bg-surface-2 text-left transition-colors"
           >
             <Avatar name={name || email} size={36} />
@@ -152,65 +158,26 @@ export default function CoachShell({ user }) {
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Phone top bar */}
-        <header className="md:hidden h-14 shrink-0 flex items-center justify-between px-4 bg-bg border-b border-line">
-          <NavLink to="/dashboard" aria-label="Clients" className="text-ink">
-            <Mark size={28} />
-          </NavLink>
-          <button
-            onClick={() => setSheet('settings')}
-            aria-label="Settings"
-            className="w-11 h-11 -mr-1.5 rounded-full flex items-center justify-center hover:bg-surface-2"
-          >
-            <Avatar name={name || email} size={32} />
-          </button>
-        </header>
-
-        <main className="flex-1 min-h-0 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1200px] h-full px-4 md:px-6 pt-5 md:pt-8 pb-6">
+        <main className="flex-1 min-h-0 overflow-y-auto max-md:pb-[var(--tabbar-space)]">
+          <div className="mx-auto w-full max-w-[1200px] h-full px-4 md:px-6 pt-[max(env(safe-area-inset-top),20px)] md:pt-8 pb-6">
+            {inLibrary && <LibrarySwitch pathname={pathname} navigate={navigate} />}
             <Outlet />
           </div>
         </main>
 
         {/* Phone tab bar */}
-        <nav
-          className="md:hidden shrink-0 bg-surface border-t border-line shadow-[0_-4px_16px_rgba(0,0,0,0.04)]"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-          aria-label="Main"
-        >
-          <div className="grid grid-cols-5">
-            {TABS.map((item) => {
-              const active = isActive(item, pathname)
-              const Icon = item.icon
-              return (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  className={`h-16 flex flex-col items-center justify-center gap-1 text-[11px] font-bold ${active ? 'text-accent' : 'text-muted'}`}
-                >
-                  <span className={`relative w-12 h-7 rounded-full flex items-center justify-center ${active ? 'bg-accent-soft' : ''}`}>
-                    <Icon size={22} strokeWidth={2} />
-                    {item.badge && <Badge count={unread} className="absolute -top-1 right-0 ring-2 ring-surface" />}
-                  </span>
-                  {item.label}
-                </NavLink>
-              )
-            })}
-            <button
-              onClick={() => setSheet('more')}
-              aria-label="More: exercises, habits and settings"
-              className={`h-16 flex flex-col items-center justify-center gap-1 text-[11px] font-bold ${moreActive ? 'text-accent' : 'text-muted'}`}
-            >
-              <span className={`w-12 h-7 rounded-full flex items-center justify-center ${moreActive ? 'bg-accent-soft' : ''}`}>
-                <Menu size={22} strokeWidth={2} />
-              </span>
-              More
-            </button>
-          </div>
-        </nav>
+        <TabBar
+          className="md:hidden"
+          items={[
+            { key: 'clients', label: CLIENTS.label, icon: Users, active: !settingsOpen && isActive(CLIENTS, pathname), onClick: () => navigate(CLIENTS.path) },
+            { key: 'messages', label: MESSAGES.label, icon: MessageSquare, active: !settingsOpen && isActive(MESSAGES, pathname), badge: unread, onClick: () => navigate(MESSAGES.path) },
+            { key: 'library', label: 'Library', icon: LibraryBig, active: !settingsOpen && inLibrary, onClick: () => navigate(inLibrary ? pathname : PROGRAMS.path) },
+            { key: 'you', label: 'You', icon: CircleUser, active: settingsOpen, onClick: () => setSettingsOpen(true) },
+          ]}
+        />
       </div>
 
-      <SettingsSheet open={!!sheet} onClose={() => setSheet(null)} name={name} email={email} onSignOut={signOut} links={sheet === 'more'} />
+      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} name={name} email={email} onSignOut={signOut} />
     </div>
   )
 }

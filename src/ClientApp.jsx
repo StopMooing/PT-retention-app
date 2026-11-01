@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Home, Dumbbell, Utensils, TrendingUp, MessageCircle } from 'lucide-react'
 import { supabase } from './supabase'
-import { Button } from './ui'
+import { Button, TabBar } from './ui'
 import { formatDateLabel } from './client/dates'
 import { completedKeys, workoutName } from './client/metrics'
 import {
@@ -338,7 +338,7 @@ export default function ClientApp() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <main className="max-w-[480px] mx-auto pb-32">
+      <main className="max-w-[480px] mx-auto pb-[calc(var(--tabbar-space)+24px)]">
         {tab === 'home' && (
           <HomeTab
             {...shared}
@@ -410,33 +410,12 @@ export default function ClientApp() {
         )}
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-30 bg-surface border-t border-line shadow-[0_-8px_24px_rgba(0,0,0,0.06)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="max-w-[480px] mx-auto flex px-2">
-          {TABS.filter((t) => !t.coachOnly || client.pt_id).map(({ id, label, icon: Icon }) => {
-            const active = tab === id
-            const badge = id === 'messages' && !active ? unreadMessages + unseenReplies : 0
-            return (
-              <button
-                key={id}
-                onClick={() => goTab(id)}
-                aria-current={active ? 'page' : undefined}
-                aria-label={badge > 0 ? `${label}, ${badge} unread` : undefined}
-                className={`flex-1 flex flex-col items-center gap-1 pt-2.5 pb-2 min-h-[56px] transition-colors ${active ? 'text-accent' : 'text-muted hover:text-ink'}`}
-              >
-                <span className="relative">
-                  <Icon size={22} strokeWidth={active ? 2.4 : 2} />
-                  {badge > 0 && (
-                    <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-on-accent text-[11px] font-bold leading-[18px] text-center tabular-nums">
-                      {badge > 9 ? '9+' : badge}
-                    </span>
-                  )}
-                </span>
-                <span className="text-[11px] font-bold">{label}</span>
-              </button>
-            )
-          })}
-        </div>
-      </nav>
+      <TabBar
+        items={TABS.filter((t) => !t.coachOnly || client.pt_id).map(({ id, label, icon }) => ({
+          key: id, label, icon, active: tab === id, onClick: () => goTab(id),
+          badge: id === 'messages' && tab !== id ? unreadMessages + unseenReplies : 0,
+        }))}
+      />
 
       <ProfileSheet
         open={profileOpen}

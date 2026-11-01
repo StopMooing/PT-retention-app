@@ -1,5 +1,5 @@
 // Shared coach-side helpers. Any number shown on more than one coach screen (status,
-// sessions this month, check-ins this week) is worked out here, so screens agree.
+// sessions, check-ins this week) is worked out here, so screens agree.
 
 // Day logic is always local time (Adelaide), never toISOString().
 export function toLocalDateStr(date = new Date()) {
@@ -54,12 +54,43 @@ export function addDays(dayStr, n) {
 }
 
 /* ---------- Client status: one rule for the dashboard and the profile ---------- */
-export function clientStatus(lastCheckin) {
-  if (!lastCheckin) return 'New'
-  const days = daysSince(lastCheckin)
+// Showing up counts, not just the weekly check-in: the latest check-in OR finished
+// session is their last activity.
+//   New       nothing yet
+//   At Risk   nothing for 14+ days
+//   Drifting  nothing for 7+ days, or the last 2 planned sessions were both missed
+//   Engaged   otherwise
+// Sessions put on a day that had already passed (a backdated start) are never "missed".
+export function lastActivity({ lastCheckIn, workoutLogs }) {
+  const days = [dayOf(lastCheckIn), ...(workoutLogs ?? []).filter((w) => w.completed).map((w) => dayOf(w.logged_at))].filter(Boolean)
+  return days.length ? days.sort().at(-1) : null
+}
+
+export function missedInARow({ scheduledWorkouts, workoutLogs, today = toLocalDateStr() }) {
+  const done = new Set((workoutLogs ?? []).filter((w) => w.completed && w.scheduled_workout_id).map((w) => w.scheduled_workout_id))
+  const past = (scheduledWorkouts ?? [])
+    .filter((sw) => sw.scheduled_date < today && sw.scheduled_date >= addDays(today, -14))
+    .filter((sw) => done.has(sw.id) || !sw.created_at || dayOf(sw.created_at) <= sw.scheduled_date)
+    .sort((a, b) => (a.scheduled_date < b.scheduled_date ? 1 : -1))
+  let n = 0
+  for (const sw of past) { if (done.has(sw.id)) break; n++ }
+  return n
+}
+
+export function clientStatus({ lastCheckIn, workoutLogs, scheduledWorkouts } = {}) {
+  const last = lastActivity({ lastCheckIn, workoutLogs })
+  if (!last) return 'New'
+  const days = daysSince(last)
   if (days >= 14) return 'At Risk'
   if (days >= 7) return 'Drifting'
+  if (missedInARow({ scheduledWorkouts, workoutLogs }) >= 2) return 'Drifting'
   return 'Engaged'
+}
+
+// Finished sessions in the last 7 days (today included).
+export function sessionsLast7(workoutLogs) {
+  const from = addDays(toLocalDateStr(), -6)
+  return (workoutLogs ?? []).filter((w) => w.completed && dayOf(w.logged_at) >= from).length
 }
 
 export const STATUS = {
