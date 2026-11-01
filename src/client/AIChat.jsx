@@ -46,7 +46,18 @@ function AssistantMessage({ content }) {
             <li key={i} className="text-[13px]">
               <span className="font-bold capitalize">{m.meal_type}: </span>
               <span className="font-bold">{m.name}</span>
-              <span className="text-muted"> · {m.calories} kcal · P {m.protein_g}g · C {m.carbs_g}g · F {m.fats_g}g</span>
+              <span className="text-muted"> · {Math.round(m.calories || 0)} kcal · P {Math.round(m.protein_g || 0)}g · C {Math.round(m.carbs_g || 0)}g · F {Math.round(m.fats_g || 0)}g</span>
+              {Array.isArray(m.ingredients) && m.ingredients.length > 0 && (
+                <ul className="mt-1 pl-3 border-l-2 border-line space-y-0.5">
+                  {m.ingredients.map((ing, n) => (
+                    <li key={n} className="text-muted">
+                      {Number(ing.grams) > 0 && <span className="tabular-nums">{Math.round(ing.grams)} g </span>}
+                      <span className="text-ink">{ing.label || ing.name}</span>
+                      {ing.estimated && <span className="text-faint"> (estimate)</span>}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>

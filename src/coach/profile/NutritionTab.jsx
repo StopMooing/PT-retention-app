@@ -5,6 +5,7 @@ import { Target, Droplets, CalendarCheck, TrendingUp, Utensils, BookOpen, Pencil
 import { Button, Ring, Segmented, Chip } from '../../ui'
 import { Panel, UnitInput, Bar, LineChart } from './parts'
 import { dayNutrition, dayOf, daysSince, addDays, toLocalDateStr, formatDate, formatMl } from '../lib'
+import { mealItems } from '../../lib/meals'
 
 const PERIODS = [
   { value: '7', label: '7 days' },
@@ -328,10 +329,24 @@ export default function NutritionTab(props) {
                     </p>
                     <ul className="space-y-1.5">
                       {logs.map((log) => (
-                        <li key={log.id} className="flex items-center gap-3 text-[15px]">
-                          <span className="w-20 shrink-0 text-xs font-bold text-muted capitalize">{log.meal_type ?? 'other'}</span>
-                          <span className="flex-1 min-w-0 truncate text-ink">{log.food_name}{log.brand && <span className="text-muted">, {log.brand}</span>}</span>
-                          <span className="text-[13px] text-muted tabular-nums shrink-0">{Math.round(parseFloat(log.calories) || 0)} kcal</span>
+                        <li key={log.id} className="text-[15px]">
+                          <div className="flex items-center gap-3">
+                            <span className="w-20 shrink-0 text-xs font-bold text-muted capitalize">{log.meal_type ?? 'other'}</span>
+                            <span className="flex-1 min-w-0 truncate text-ink">{log.food_name}{log.brand && <span className="text-muted">, {log.brand}</span>}</span>
+                            <span className="text-[13px] text-muted tabular-nums shrink-0">{Math.round(parseFloat(log.calories) || 0)} kcal</span>
+                          </div>
+                          {mealItems(log).length > 0 && (
+                            <ul className="ml-[92px] mt-0.5 space-y-0.5">
+                              {mealItems(log).map((i) => (
+                                <li key={i.id} className="flex items-center gap-2 text-[13px] text-muted">
+                                  <span className="flex-1 min-w-0 truncate">
+                                    {Number(i.grams) > 0 && <span className="tabular-nums">{Math.round(i.grams)} g </span>}{i.name}{(i.estimated || !i.food_id) && <span className="text-faint"> (estimate)</span>}
+                                  </span>
+                                  <span className="tabular-nums shrink-0">{Math.round(i.calories || 0)} kcal</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </li>
                       ))}
                     </ul>

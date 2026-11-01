@@ -1,17 +1,103 @@
 // Food: pick a day, see calories and macros against targets, meals grouped by type, add
 // food in a sheet, saved meals from the AI helper, and the calorie calculator tucked away.
+// A meal with ingredients (from the AI or a saved meal) opens to show them; each amount
+// can be changed or the ingredient removed, and the meal's totals follow.
 import { useState, useEffect } from 'react'
-import { Plus, X, Sparkles, Calculator } from 'lucide-react'
+import { Plus, X, Sparkles, Calculator, ChevronDown } from 'lucide-react'
 import { supabase } from '../supabase'
-import { PageTitle, Card, Button, Segmented, SectionLabel } from '../ui'
+import { PageTitle, Card, Button, Segmented, SectionLabel, Sheet, Field } from '../ui'
 import { toLocalDateStr, formatDateLabel } from './dates'
 import { logsForDate, foodTotals, nutritionTargetsFor } from './metrics'
 import { MEAL_ORDER, capitalise, parseSavedMealContent } from './foods'
 import { NutritionSummary, DayNav } from './common'
 import AddFoodSheet from './AddFoodSheet'
+import { mealItems, logMeals, updateMealItem, restoreMeal } from '../lib/meals'
 import TdeeSheet from './TdeeSheet'
 
 const macroLine = (f) => `P ${Math.round(f.protein_g || 0)} · C ${Math.round(f.carbs_g || 0)} · F ${Math.round(f.fats_g || 0)}`
+const amount = (i) => (Number(i.grams) > 0 ? `${Math.round(i.grams)} g` : null)
+
+// One ingredient: amount, name, calories. "Estimate" when the food database had no
+// good match and the number is the AI's.
+function IngredientLine({ item, onClick }) {
+  const Tag = onClick ? 'button' : 'div'
+  return (
+    <Tag onClick={onClick} className={`w-full flex items-center gap-3 py-2 text-left ${onClick ? 'hover:bg-surface-2 rounded-[10px] -mx-2 px-2' : ''}`}>
+      <span className="w-14 shrink-0 text-[13px] font-bold text-muted tabular-nums">{amount(item) ?? ''}</span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-[15px] text-ink truncate">{item.name || item.label}</span>
+        {(item.estimated || !item.food_id) && <span className="block text-[12px] text-faint">Estimate</span>}
+      </span>
+      <span className="text-[13px] text-muted tabular-nums shrink-0">{Math.round(item.calories || 0)} kcal</span>
+    </Tag>
+  )
+}
+
+// A row in the food log. Meals with ingredients open and close.
+function FoodRow({ food, onDelete, onEditItem }) {
+  const items = mealItems(food)
+  const [open, setOpen] = useState(false)
+  const head = (
+    <>
+      <p className="text-[15px] font-bold text-ink truncate">{food.food_name}</p>
+      <p className="text-[13px] text-muted tabular-nums">
+        {Math.round(food.calories || 0)} kcal · {macroLine(food)}{items.length > 0 && ` · ${items.length} ${items.length === 1 ? 'ingredient' : 'ingredients'}`}
+      </p>
+    </>
+  )
+  return (
+    <div>
+      <div className="flex items-center gap-2 pl-4 pr-2 py-3 min-h-[56px]">
+        {items.length > 0 ? (
+          <button onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex-1 min-w-0 flex items-center gap-2 text-left">
+            <span className="flex-1 min-w-0">{head}</span>
+            <ChevronDown size={18} className={`text-faint shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
+        ) : (
+          <div className="flex-1 min-w-0">{head}</div>
+        )}
+        <button onClick={() => onDelete(food)} aria-label={`Remove ${food.food_name}`} className="w-10 h-10 rounded-full flex items-center justify-center text-faint hover:text-bad hover:bg-surface-2 shrink-0">
+          <X size={18} />
+        </button>
+      </div>
+      {open && items.length > 0 && (
+        <div className="px-4 pb-3 -mt-1">
+          <div className="rounded-[14px] bg-bg px-3 py-1 divide-y divide-line">
+            {items.map((i) => <IngredientLine key={i.id} item={i} onClick={() => onEditItem(food, i)} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Change an ingredient's amount, or remove it.
+function EditIngredientSheet({ target, onClose, onSave, onRemove, busy }) {
+  const item = target?.item
+  // Keyed by the ingredient, so this starts fresh for each one.
+  const [grams, setGrams] = useState(() => (item?.grams ? String(Math.round(item.grams)) : ''))
+  const g = parseFloat(grams)
+  const valid = g > 0 && g <= 5000
+  return (
+    <Sheet
+      open={!!target}
+      onClose={onClose}
+      title={item?.name || 'Ingredient'}
+      footer={
+        <div className="flex gap-2.5">
+          <Button variant="secondary" size="lg" className="flex-1" disabled={busy} onClick={onRemove}>Remove</Button>
+          <Button size="lg" className="flex-1" disabled={busy || !valid || !item?.grams} onClick={() => onSave(g)}>{busy ? 'Saving...' : 'Save'}</Button>
+        </div>
+      }
+    >
+      {item?.grams ? (
+        <Field label="Amount (grams)" type="text" inputMode="decimal" value={grams} onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ''))} hint={valid ? `${Math.round((item.calories || 0) * g / item.grams)} kcal` : 'Enter grams'} />
+      ) : (
+        <p className="text-[15px] text-muted">This ingredient has no amount, so it can only be removed.</p>
+      )}
+    </Sheet>
+  )
+}
 
 function SavedMeals({ savedMeals, onAddItems, onDelete }) {
   const [expandedId, setExpandedId] = useState(null)
@@ -44,7 +130,12 @@ function SavedMeals({ savedMeals, onAddItems, onDelete }) {
                           <p className="text-[13px] font-bold text-muted">{capitalise(m.meal_type)}</p>
                           <p className="text-[15px] font-bold text-ink">{m.name}</p>
                           {m.description && <p className="text-[13px] text-muted">{m.description}</p>}
-                          <p className="text-[13px] text-muted tabular-nums">{m.calories} kcal · {macroLine(m)}</p>
+                          <p className="text-[13px] text-muted tabular-nums">{Math.round(m.calories || 0)} kcal · {macroLine(m)}</p>
+                          {Array.isArray(m.ingredients) && m.ingredients.length > 0 && (
+                            <div className="mt-1.5 rounded-[14px] bg-bg px-3 py-1 divide-y divide-line">
+                              {m.ingredients.map((ing, n) => <IngredientLine key={n} item={{ ...ing, name: ing.label || ing.name }} />)}
+                            </div>
+                          )}
                         </div>
                         <Button variant="secondary" size="sm" onClick={() => onAddItems([m])}>Add</Button>
                       </div>
@@ -70,6 +161,8 @@ export default function FoodTab({
   const [date, setDate] = useState(today)
   const [addMeal, setAddMeal] = useState(null)
   const [tdeeOpen, setTdeeOpen] = useState(false)
+  const [editTarget, setEditTarget] = useState(null) // { food, item }
+  const [editBusy, setEditBusy] = useState(false)
 
   // Fresh food logs whenever the tab opens or the day changes.
   useEffect(() => { refreshFoodLogs() }, [date, refreshFoodLogs])
@@ -83,6 +176,7 @@ export default function FoodTab({
   // One tap removes it; the toast offers Undo for a few seconds, which puts the same
   // values back as a new row.
   async function handleDeleteFood(food) {
+    // Deleting the meal also removes its ingredients (on delete cascade).
     const { error } = await supabase.from('food_logs').delete().eq('id', food.id)
     if (error) {
       console.error('Delete food error:', error)
@@ -94,37 +188,39 @@ export default function FoodTab({
   }
 
   async function undoDelete(food) {
-    const row = { ...food }
-    delete row.id
-    const { data, error } = await supabase.from('food_logs').insert(row).select().single()
+    const { log, error } = await restoreMeal(food)
     if (error) {
       console.error('Undo delete food error:', error)
       showToast("Couldn't put that back. Try adding it again.")
       return
     }
-    setFoodLogs((prev) => [data, ...prev])
+    setFoodLogs((prev) => [log, ...prev])
   }
 
-  // Add a saved meal (or one dish from it) to the selected day.
+  async function saveIngredient(grams) {
+    if (!editTarget) return
+    setEditBusy(true)
+    const { log, error } = await updateMealItem(editTarget.food, editTarget.item, grams)
+    setEditBusy(false)
+    if (error) {
+      console.error('Update ingredient error:', error)
+      showToast("Couldn't save that. Try again.")
+      return
+    }
+    setFoodLogs((prev) => prev.map((f) => (f.id === log.id ? log : f)))
+    setEditTarget(null)
+  }
+
+  // Add a saved meal (or one dish from it) to the selected day, with its ingredients.
   async function handleAddMealItemsToLog(items) {
     try {
-      const rows = items.map((item) => ({
-        client_id: client.id,
-        food_name: item.name,
-        meal_type: item.meal_type || 'other',
-        calories: item.calories || 0,
-        protein_g: item.protein_g || 0,
-        carbs_g: item.carbs_g || 0,
-        fats_g: item.fats_g || 0,
-        logged_at: new Date(date + 'T12:00:00').toISOString(),
-      }))
-      const { data, error } = await supabase.from('food_logs').insert(rows).select()
+      const { added, error } = await logMeals({ clientId: client.id, date, meals: items })
+      if (added.length > 0) setFoodLogs((prev) => [...added, ...prev])
       if (error) {
         console.error('Add meal error:', error)
         showToast("Couldn't add that to your log. Try again.")
         return
       }
-      setFoodLogs((prev) => [...(data ?? []), ...prev])
       refreshFoodLogs()
       setView('log')
       showToast(`Added to ${date === today ? 'today' : formatDateLabel(date)}`)
@@ -197,15 +293,7 @@ export default function FoodTab({
                 </SectionLabel>
                 <Card padded={false} className="divide-y divide-line">
                   {items.map((f) => (
-                    <div key={f.id} className="flex items-center gap-2 pl-4 pr-2 py-3 min-h-[56px]">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-bold text-ink truncate">{f.food_name}</p>
-                        <p className="text-[13px] text-muted tabular-nums">{Math.round(f.calories || 0)} kcal · {macroLine(f)}</p>
-                      </div>
-                      <button onClick={() => handleDeleteFood(f)} aria-label={`Remove ${f.food_name}`} className="w-10 h-10 rounded-full flex items-center justify-center text-faint hover:text-bad hover:bg-surface-2 shrink-0">
-                        <X size={18} />
-                      </button>
-                    </div>
+                    <FoodRow key={f.id} food={f} onDelete={handleDeleteFood} onEditItem={(food, item) => setEditTarget({ food, item })} />
                   ))}
                 </Card>
               </section>
@@ -232,6 +320,14 @@ export default function FoodTab({
           onAdded={(row) => { setFoodLogs((prev) => [row, ...prev]); refreshFoodLogs(); showToast(`Added ${row.food_name}`) }}
         />
       )}
+      <EditIngredientSheet
+        key={editTarget?.item?.id ?? 'none'}
+        target={editTarget}
+        onClose={() => setEditTarget(null)}
+        busy={editBusy}
+        onSave={saveIngredient}
+        onRemove={() => saveIngredient(null)}
+      />
       <TdeeSheet
         open={tdeeOpen}
         onClose={() => setTdeeOpen(false)}

@@ -26,18 +26,77 @@ function rateLimited(userId) {
   return false
 }
 
-const NUTRITION_PROMPT = `You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions. Keep advice evidence-based and actionable.
+const NUTRITION_PROMPT = `You are an expert nutritionist and chef. Help the user with meal ideas, recipes, and nutrition advice. Give practical, delicious suggestions using foods easy to buy in Australian supermarkets. Keep advice evidence-based and actionable. Use Australian spelling (yoghurt, flavour).
 
 CRITICAL OUTPUT FORMAT: whenever you provide a meal, recipe, or full day meal plan, write your conversational answer first, then end your response with a single valid JSON object in exactly this shape (no markdown code fences around it, raw JSON as the last thing in the message):
 
-{"title":"Plan name","meals":[{"name":"Meal name","meal_type":"breakfast","description":"Short description with key ingredients and rough amounts","calories":500,"protein_g":40,"carbs_g":50,"fats_g":15}]}
+{"title":"Plan name","meals":[{"name":"Meal name","meal_type":"breakfast","description":"One short sentence","ingredients":[{"label":"Greek yoghurt","name":"Yoghurt, Greek style, natural","grams":170,"calories":165,"protein_g":15,"carbs_g":7,"fats_g":9}],"calories":500,"protein_g":40,"carbs_g":50,"fats_g":15}]}
 
 Rules:
 - meal_type must be exactly one of: breakfast, lunch, dinner, snack
 - A single meal idea is a meals array with ONE item. A full day plan has one item per meal (typically 3 to 5 items)
-- calories, protein_g, carbs_g, fats_g must be numbers, not strings, and must be per-meal values (not day totals)
+- Every meal lists every ingredient, each with an amount in grams (use grams for liquids too: 1 ml = 1 g; a large egg is 50 g; a slice of bread is 35 g)
+- "label" is the plain name a person would say. "name" is how the Australian Food Composition Database names it: the main food first, then type and preparation, separated by commas. Examples: "Chicken, breast, lean, raw", "Rice, white, boiled", "Oats, rolled, uncooked", "Milk, cow, fluid, regular fat", "Egg, chicken, whole, boiled", "Bread, from wholemeal flour", "Nut, almond, raw", "Seed, chia", "Oil, olive", "Pasta, white wheat flour, plain, boiled", "Banana, raw", "Protein powder, whey"
+- Give your best estimate of each ingredient's calories, protein_g, carbs_g and fats_g for that amount. The app checks these against the database
+- calories, protein_g, carbs_g, fats_g and grams must be numbers, not strings. Meal values are the sum of its ingredients (not day totals)
 - For a full day plan, the per-meal calories must sum to approximately the requested daily target
 - The JSON must be valid and must be the final thing in your message`
+
+// Ingredients the database matched with at least this score use the database's numbers;
+// below it, the AI's own estimate is kept and the ingredient is marked as an estimate.
+const MATCH_MIN_SCORE = 2.2
+const round1 = (n) => Math.round(n * 10) / 10
+
+// Replaces the AI's guessed numbers with the food database's wherever an ingredient
+// matches well, and makes each meal the sum of its ingredients. Uses the caller's own
+// token (RLS applies). Any failure returns the reply unchanged.
+export async function checkMealsAgainstDatabase(text, supabase) {
+  const m = text.match(/\{[\s\S]*\}/)
+  if (!m) return text
+  let plan
+  try { plan = JSON.parse(m[0]) } catch { return text }
+  if (!Array.isArray(plan?.meals)) return text
+  const ingredients = plan.meals.flatMap((meal) => (Array.isArray(meal.ingredients) ? meal.ingredients : []))
+  if (ingredients.length === 0) return text
+  const { data: matches, error } = await supabase.rpc('match_foods', {
+    queries: ingredients.slice(0, 40).map((i) => String(i?.name || i?.label || '').slice(0, 200)),
+  })
+  if (error) {
+    console.error('match_foods error:', error.message)
+    return text
+  }
+  const byOrd = new Map((matches || []).map((r) => [r.ord, r]))
+  let n = 0
+  for (const meal of plan.meals) {
+    if (!Array.isArray(meal.ingredients) || meal.ingredients.length === 0) continue
+    meal.ingredients = meal.ingredients.map((ing) => {
+      n += 1
+      const grams = Number(ing?.grams) > 0 ? Number(ing.grams) : null
+      const hit = n <= 40 ? byOrd.get(n) : null
+      const label = String(ing?.label || ing?.name || 'Ingredient').slice(0, 200)
+      if (hit?.id && grams && Number(hit.score) >= MATCH_MIN_SCORE) {
+        const f = grams / 100
+        return {
+          label, grams, food_id: hit.id, food_name: hit.name, estimated: false,
+          calories: Math.round((hit.calories || 0) * f),
+          protein_g: round1((Number(hit.protein_g) || 0) * f),
+          carbs_g: round1((Number(hit.carbs_g) || 0) * f),
+          fats_g: round1((Number(hit.fats_g) || 0) * f),
+        }
+      }
+      return {
+        label, grams, food_id: null, food_name: null, estimated: true,
+        calories: Math.max(0, Math.round(Number(ing?.calories) || 0)),
+        protein_g: Math.max(0, round1(Number(ing?.protein_g) || 0)),
+        carbs_g: Math.max(0, round1(Number(ing?.carbs_g) || 0)),
+        fats_g: Math.max(0, round1(Number(ing?.fats_g) || 0)),
+      }
+    })
+    meal.calories = meal.ingredients.reduce((s, i) => s + i.calories, 0)
+    for (const k of ['protein_g', 'carbs_g', 'fats_g']) meal[k] = round1(meal.ingredients.reduce((s, i) => s + i[k], 0))
+  }
+  return text.replace(m[0], JSON.stringify(plan))
+}
 
 function buildWorkoutPrompt(lib) {
   const mainEx = lib.filter(e => !['warmup', 'cooldown', 'cardio'].includes(e.category))
@@ -163,7 +222,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 2048,
+        max_tokens: 4096,
         system,
         messages: messages.map(m => ({ role: m.role, content: m.content })),
       }),
@@ -176,7 +235,10 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json()
-    const text = data.content?.[0]?.text || ''
+    let text = data.content?.[0]?.text || ''
+    if (mode === 'nutrition') {
+      try { text = await checkMealsAgainstDatabase(text, auth.supabase) } catch (e) { console.error('Meal check error:', e) }
+    }
     return res.status(200).json({ text })
   } catch (err) {
     console.error('Handler error:', err)

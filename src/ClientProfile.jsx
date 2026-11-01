@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
 import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList } from 'lucide-react'
 import { supabase } from './supabase'
+import { FOOD_LOG_SELECT } from './lib/meals'
 import { Avatar, Chip, Button, Mark, Card, EmptyState } from './ui'
 import { toLocalDateStr, clientStatus, STATUS, relativeDay, sessionsLast7, formatDate, startedByClient, firstName } from './coach/lib'
 import OverviewTab from './coach/profile/OverviewTab'
@@ -214,7 +215,7 @@ export default function ClientProfile({ user }) {
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
         const { data: foodLogsData } = await supabase
           .from('food_logs')
-          .select('id, food_name, brand, meal_type, serving_size_g, servings, calories, protein_g, carbs_g, fats_g, logged_at')
+          .select(FOOD_LOG_SELECT)
           .eq('client_id', clientId)
           .gte('logged_at', ninetyDaysAgo.toISOString())
           .order('logged_at', { ascending: false })

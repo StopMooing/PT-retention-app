@@ -87,6 +87,17 @@ for (const off of [0, -1]) for (const [meal_type, food_name, g, kcal, p, c, f] o
   food_logs.push({ id: id(), client_id: CLIENT, food_name, brand: null, meal_type, serving_size_g: g, servings: 1, calories: kcal, protein_g: p, carbs_g: c, fats_g: f, barcode: null, logged_at: day(off), created_at: ts(off) })
 }
 
+// An AI meal with its ingredients (food_log_items), today.
+const bowlId = id()
+food_logs.push({ id: bowlId, client_id: CLIENT, food_name: 'Greek Yoghurt Power Bowl', brand: null, meal_type: 'breakfast', serving_size_g: null, servings: 1, calories: 455, protein_g: 31.4, carbs_g: 53.3, fats_g: 12.6, barcode: null, logged_at: day(0), created_at: ts(0) })
+const food_log_items = [
+  ['Greek yoghurt', 170, 165, 15.3, 6.8, 8.5, false],
+  ['Rolled oats', 40, 150, 4.9, 24.1, 3.3, false],
+  ['Banana', 80, 76, 1.0, 16.6, 0.3, false],
+  ['Honey', 15, 42, 0.1, 11.3, 0, false],
+  ['Protein granola', 10, 22, 10.1, -0, 0.5, true],
+].map(([name, grams, calories, protein_g, carbs_g, fats_g, estimated], position) => ({ id: id(), food_log_id: bowlId, position, name, food_id: estimated ? null : id(), grams, calories, protein_g, carbs_g: Math.abs(carbs_g), fats_g, estimated, created_at: ts(0) }))
+
 const checkins = [
   [-34, 3, 3, 3, 'First week back. Legs were very sore after Monday.', 'Great start Jane. Soreness settles by week three, keep moving on rest days.'],
   [-27, 4, 3, 4, 'Sleep was rough midweek.', 'Noted. Try the 10pm screens off we spoke about.'],
@@ -132,7 +143,7 @@ module.exports = {
     clients: [jane, ...others],
     exercises, exercise_aliases: [], programs: [program], program_workouts, workout_exercises,
     program_assignments: [{ id: id(), program_id: program.id, client_id: CLIENT, assigned_by: COACH, start_date: day(-28), is_active: true, created_at: ts(-28) }],
-    scheduled_workouts, workout_logs, workout_set_logs, body_weight_logs, food_logs,
+    scheduled_workouts, workout_logs, workout_set_logs, body_weight_logs, food_logs, food_log_items,
     checkins: [...checkins, ...otherCheckins], personal_bests, habits, habit_logs,
     progress_photos: [], resources: [], resource_assignments: [], saved_meals: [], saved_workouts: [], water_logs: [
       { id: id(), client_id: CLIENT, logged_by: CLIENT_USER, amount_ml: 750, logged_date: day(0), created_at: ts(0) },

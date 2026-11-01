@@ -1,6 +1,7 @@
 // Reads for the client app. Each returns plain data; ClientApp keeps it in state.
 // Same tables, columns and filters as before the redesign.
 import { supabase } from '../supabase'
+import { FOOD_LOG_SELECT } from '../lib/meals'
 import { toLocalDateStr, addDays } from './dates'
 
 const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, created_by, created_at, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
@@ -45,7 +46,7 @@ export async function fetchWorkoutLogs(clientId) {
 }
 
 export async function fetchFoodLogs(clientId) {
-  const { data } = await supabase.from('food_logs').select('*').eq('client_id', clientId).order('logged_at', { ascending: false })
+  const { data } = await supabase.from('food_logs').select(FOOD_LOG_SELECT).eq('client_id', clientId).order('logged_at', { ascending: false })
   return data ?? []
 }
 
