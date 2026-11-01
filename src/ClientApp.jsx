@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Home, Dumbbell, Utensils, TrendingUp, MessageCircle } from 'lucide-react'
 import { supabase } from './supabase'
-import { Button, TabBar } from './ui'
+import { Button, TabBar, StatusBarCover } from './ui'
 import { formatDateLabel } from './client/dates'
 import { completedKeys, workoutName } from './client/metrics'
 import {
@@ -375,6 +375,7 @@ export default function ClientApp() {
 
   return (
     <div className="min-h-screen bg-bg">
+      <StatusBarCover />
       <main className="max-w-[480px] mx-auto pb-[calc(var(--tabbar-space)+24px)]">
         {tab === 'home' && (
           <HomeTab

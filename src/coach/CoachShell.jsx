@@ -7,7 +7,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Users, ClipboardList, Dumbbell, Utensils, Heart, LogOut, Settings, MessageSquare, LibraryBig, CircleUser } from 'lucide-react'
 import { supabase } from '../supabase'
 import { fetchUnreadCounts } from '../lib/messages'
-import { Logo, Avatar, Sheet, ThemeSwitch, Button, TabBar } from '../ui'
+import { Logo, Avatar, Sheet, ThemeSwitch, Button, TabBar, StatusBarCover } from '../ui'
 import { totalUnread } from './lib'
 import { emit, useMessageEvent, READ, INCOMING } from './messages/events'
 
@@ -158,6 +158,7 @@ export default function CoachShell({ user }) {
       </aside>
 
       <div className="flex-1 min-w-0 flex flex-col">
+        <StatusBarCover />
         <main className="flex-1 min-h-0 overflow-y-auto max-md:pb-[var(--tabbar-space)]">
           <div className="mx-auto w-full max-w-[1200px] h-full px-4 md:px-6 pt-[max(env(safe-area-inset-top),20px)] md:pt-8 pb-6">
             {inLibrary && <LibrarySwitch pathname={pathname} navigate={navigate} />}
