@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Check } from 'lucide-react'
-import { supabasePublic } from './supabase'
+import { supabase, supabasePublic } from './supabase'
 import { Mark, Field, Button } from './ui'
 
 // The client's first screen, opened from their coach's invite link. Styled to match the
@@ -39,6 +39,8 @@ export default function ClaimPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [done, setDone] = useState(false)
+  // This email already has an account: sign in with it and link it to the invite.
+  const [existing, setExisting] = useState(false)
 
   useEffect(() => {
     async function fetchClient() {
@@ -53,17 +55,22 @@ export default function ClaimPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (password.length < 8) {
+    if (!existing && password.length < 8) {
       setError('Please choose a password of at least 8 characters.')
       return
     }
     setError(null)
     setLoading(true)
 
+    if (existing) {
+      await linkExistingAccount()
+      return
+    }
+
     // supabasePublic, not supabase: a coach opening this link while signed in must not
     // have their own session replaced. The claim token travels in metadata and the
     // handle_new_user trigger links the client row during signup.
-    const { error: signUpError } = await supabasePublic.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabasePublic.auth.signUp({
       email: client.email,
       password,
       options: {
@@ -76,11 +83,19 @@ export default function ClaimPage() {
     })
 
     setLoading(false)
+    // An existing email comes back as an error, or (with email confirmation on) as a user
+    // with no identities. Either way: offer to link that account instead.
+    const alreadyRegistered = (signUpError?.message || '').toLowerCase().includes('already registered')
+      || (!signUpError && signUpData?.user && (signUpData.user.identities?.length ?? 1) === 0)
+    if (alreadyRegistered) {
+      setExisting(true)
+      setPassword('')
+      setError('You already have an account with this email. Enter its password to link it to your trainer.')
+      return
+    }
     if (signUpError) {
       const msg = signUpError.message || ''
-      if (msg.toLowerCase().includes('already registered')) {
-        setError('An account already exists for this email address. Try signing in instead.')
-      } else if (msg.includes('claim link')) {
+      if (msg.includes('claim link')) {
         setError('This invite link has already been used.')
       } else {
         setError('Could not set up your account. Please contact your trainer.')
@@ -88,6 +103,30 @@ export default function ClaimPage() {
       return
     }
     setDone(true)
+  }
+
+  // Signs in with the existing account (this browser now uses it), then links it to the
+  // invite. The database only links when the account's email is the invite's email.
+  async function linkExistingAccount() {
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email: client.email, password })
+    if (signInError) {
+      setLoading(false)
+      setError("That password didn't work. Use Forgot password on the sign-in page if you need a new one.")
+      return
+    }
+    const { data: result, error: linkError } = await supabase.rpc('claim_client_with_account', { p_token: token })
+    if (linkError || result !== 'linked') {
+      await supabase.auth.signOut()
+      setLoading(false)
+      setError(result === 'already_linked'
+        ? 'This account is already linked to a trainer. Ask your trainer to check your email address.'
+        : result === 'email_mismatch'
+          ? "This account's email doesn't match the invite. Ask your trainer to check your email address."
+          : 'Could not link your account. Please contact your trainer.')
+      return
+    }
+    // Full reload so the app picks up the client account straight away.
+    window.location.href = '/'
   }
 
   const firstName = client?.full_name?.split(' ')[0] ?? ''
@@ -161,7 +200,7 @@ export default function ClaimPage() {
           {firstName ? `Welcome, ${firstName}` : 'Welcome'}
         </h1>
         <p className="m-0 mt-2 text-[15px] leading-relaxed text-muted">
-          Your trainer has set up your account. Choose a password and you're in.
+          {existing ? 'Sign in with your existing account to link it to your trainer.' : "Your trainer has set up your account. Choose a password and you're in."}
         </p>
       </div>
 
@@ -177,25 +216,27 @@ export default function ClaimPage() {
         />
         <Field
           id="claim-password"
-          label="Choose a password"
+          label={existing ? 'Your password' : 'Choose a password'}
           type="password"
           required
-          autoComplete="new-password"
+          autoComplete={existing ? 'current-password' : 'new-password'}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="At least 8 characters"
+          placeholder={existing ? '' : 'At least 8 characters'}
         />
 
         {error && <p className="m-0 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{error}</p>}
 
         <Button type="submit" size="lg" block disabled={loading} className="mt-2">
-          {loading ? 'Setting up…' : 'Create my account'}
+          {loading ? (existing ? 'Linking...' : 'Setting up...') : existing ? 'Link my account' : 'Create my account'}
         </Button>
       </form>
 
       <p className="text-center text-sm mt-8 text-muted">
-        Already have an account?{' '}
-        <Link to="/login" className="font-semibold underline underline-offset-2 text-accent">Sign in</Link>
+        {existing ? 'New here?' : 'Already have an account?'}{' '}
+        <button type="button" onClick={() => { setExisting(!existing); setError(null); setPassword('') }} className="font-semibold underline underline-offset-2 text-accent">
+          {existing ? 'Create an account' : 'Sign in to link it'}
+        </button>
       </p>
     </Shell>
   )
