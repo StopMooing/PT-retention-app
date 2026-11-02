@@ -1,6 +1,7 @@
-// Food data and search for the client Food tab. The search reads three sources: the AFCD
-// generic foods (Supabase RPC), a short list of common whole foods, and Open Food Facts
-// for branded products. One source failing never breaks the others.
+// Food data and search for the client Food tab. The search reads four sources: takeaway
+// menu items (per serve, chains' own figures), the Australian generic foods (AFCD and
+// AUSNUT, Supabase RPC), a short list of common whole foods, and Open Food Facts for
+// branded products. One source failing never breaks the others.
 import { supabase } from '../supabase'
 
 export const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snack', 'other']
@@ -39,10 +40,52 @@ export const COMMON_FOODS = [
   { name: 'Pork loin, lean, raw', brand: 'Whole food', calories: 143, protein: 21.3, carbs: 0, fats: 6.3 },
 ]
 
+// What people call the chains, so "maccas big mac" or "hjs whopper" finds them.
+const CHAIN_NICKNAMES = [
+  [/\bmaccas\b|\bmacca'?s\b|\bmcdonald'?s\b|\bmcdonalds\b|\bmaccy'?s\b/g, 'mcdonalds'],
+  [/\bhj'?s\b|\bhungry jack'?s\b|\bhungry jacks\b/g, 'hungry jacks'],
+  [/\bgrill'?d\b|\bgrilld\b/g, 'grilld'],
+  [/\bnando'?s\b/g, 'nandos'],
+  [/\bzambreros?\b|\bzambrero'?s\b/g, 'zambrero'],
+]
+const plain = (s) => {
+  let t = s.toLowerCase()
+  for (const [re, to] of CHAIN_NICKNAMES) t = t.replace(re, to)
+  return t.replace(/[^a-z0-9 ]+/g, '').replace(/\s+/g, ' ').trim()
+}
+
+// The menu list is small, so it loads once and is searched on the phone.
+let menuCache = null
+async function menuItems() {
+  if (menuCache) return menuCache
+  const { data, error } = await supabase.from('menu_items').select('chain, name, serving_g, calories, protein_g, carbs_g, fats_g')
+  if (error) { console.error('Menu items error:', error); return [] }
+  menuCache = (data ?? []).map((m) => ({ ...m, key: plain(`${m.chain} ${m.name}`) }))
+  return menuCache
+}
+
 export async function searchFoods(query) {
   if (!query || query.trim().length < 2) return []
   const q = query.trim().toLowerCase()
   const commonMatches = COMMON_FOODS.filter((f) => f.name.toLowerCase().includes(q))
+
+  // Source 0: takeaway menu items, per serve. Every word typed must match.
+  let menuResults = []
+  try {
+    const words = plain(query).split(' ').filter((w) => w.length >= 2)
+    if (words.length > 0) {
+      menuResults = (await menuItems())
+        .filter((m) => words.every((w) => m.key.includes(w)))
+        .slice(0, 6)
+        .map((m) => ({
+          name: `${m.chain} ${m.name}`, brand: m.chain, perServe: true, servingG: Number(m.serving_g) || null,
+          calories: Math.round(m.calories), protein: parseFloat(Number(m.protein_g).toFixed(1)),
+          carbs: parseFloat(Number(m.carbs_g).toFixed(1)), fats: parseFloat(Number(m.fats_g).toFixed(1)),
+        }))
+    }
+  } catch (e) {
+    console.error('Menu search error:', e)
+  }
 
   // Source 1: AFCD generic foods via Supabase RPC.
   let afcdResults = []
@@ -77,10 +120,10 @@ export async function searchFoods(query) {
         carbs: parseFloat((p.nutriments['carbohydrates_100g'] || 0).toFixed(1)),
         fats: parseFloat((p.nutriments['fat_100g'] || 0).toFixed(1)),
       }))
-    return [...afcdResults, ...commonMatches, ...apiResults].slice(0, 8)
+    return [...menuResults, ...afcdResults, ...commonMatches, ...apiResults].slice(0, menuResults.length > 0 ? 10 : 8)
   } catch (e) {
     console.error('Food search error:', e)
-    return [...afcdResults, ...commonMatches].slice(0, 8)
+    return [...menuResults, ...afcdResults, ...commonMatches].slice(0, 10)
   }
 }
 

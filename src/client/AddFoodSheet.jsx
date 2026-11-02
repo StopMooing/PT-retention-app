@@ -32,6 +32,8 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
   const [searching, setSearching] = useState(false)
   const [servingSize, setServingSize] = useState(100)
   const [base, setBase] = useState(null)
+  const [perServe, setPerServe] = useState(false) // takeaway items are counted in serves, not grams
+  const [menuServeG, setMenuServeG] = useState(null)
   const [adding, setAdding] = useState(false)
   const [error, setError] = useState(null)
   const [scanOpen, setScanOpen] = useState(false)
@@ -57,9 +59,12 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
     }, 400)
   }
 
-  // r is per 100 g. serving (grams) defaults to 100.
-  function pick(r, serving = 100) {
-    const k = serving / 100
+  // r is per 100 g (serving in grams, default 100), or per serve for takeaway items
+  // (serving = number of serves, default 1).
+  function pick(r, serving = r.perServe ? 1 : 100) {
+    setPerServe(!!r.perServe)
+    setMenuServeG(r.perServe ? r.servingG : null)
+    const k = r.perServe ? serving : serving / 100
     setBase({ calories: r.calories, protein: r.protein, carbs: r.carbs, fats: r.fats })
     setFoodInput((f) => ({
       ...f, name: r.name,
@@ -107,10 +112,10 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
   }
 
   function applyServing(value) {
-    const size = parseFloat(value) || 100
+    const size = parseFloat(value) || (perServe ? 1 : 100)
     setServingSize(size)
     if (base) {
-      const scale = size / 100
+      const scale = perServe ? size : size / 100
       setFoodInput((f) => ({
         ...f,
         calories: String(Math.round(base.calories * scale)),
@@ -134,7 +139,8 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
         protein_g: parseFloat(foodInput.protein) || 0,
         carbs_g: parseFloat(foodInput.carbs) || 0,
         fats_g: parseFloat(foodInput.fats) || 0,
-        serving_size_g: base ? parseFloat(servingSize) || null : null,
+        serving_size_g: base ? (perServe ? menuServeG : parseFloat(servingSize) || null) : null,
+        servings: base && perServe ? parseFloat(servingSize) || 1 : 1,
         barcode,
         logged_at: new Date(date + 'T12:00:00').toISOString(),
       }).select().single()
@@ -227,7 +233,7 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
               <button key={i} type="button" onClick={() => pick(r)} className="w-full text-left px-4 py-3 hover:bg-surface-2">
                 <p className="text-[15px] font-bold text-ink truncate">{r.name}</p>
                 <p className="text-[13px] text-muted truncate">
-                  {r.brand ? `${r.brand} · ` : ''}{r.calories} kcal · P {r.protein} · C {r.carbs} · F {r.fats} <span className="text-faint">per 100 g</span>
+                  {r.brand && !r.perServe ? `${r.brand} · ` : ''}{r.calories} kcal · P {r.protein} · C {r.carbs} · F {r.fats} <span className="text-faint">{r.perServe ? 'per serve' : 'per 100 g'}</span>
                 </p>
               </button>
             ))}
@@ -246,7 +252,7 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
               onBlur={(e) => applyServing(e.target.value)}
               className="w-20 h-10 rounded-[12px] border border-line-strong bg-surface text-ink text-center font-bold tabular-nums outline-none focus:border-accent"
             />
-            <span className="text-[15px] text-muted">g</span>
+            <span className="text-[15px] text-muted">{perServe ? (Number(servingSize) === 1 ? 'serve' : 'serves') : 'g'}</span>
             <span className="ml-auto text-[15px] font-bold text-ink tabular-nums">{foodInput.calories} kcal</span>
           </div>
         )}
