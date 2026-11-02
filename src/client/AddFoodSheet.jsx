@@ -273,7 +273,7 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
             />
           ))}
         </div>
-        <p className="text-[12px] text-faint text-center">Food data from Food Standards Australia New Zealand (CC BY) and Open Food Facts (ODbL).</p>
+        <p className="text-[12px] text-faint text-center">Food data from Food Standards Australia New Zealand (CC BY), Open Food Facts (ODbL) and each restaurant's published nutrition information.</p>
       </div>
       {scanOpen && (
         <Suspense fallback={null}>

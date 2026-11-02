@@ -1,0 +1,37 @@
+{
+  "chain": "Nando's",
+  "country": "AU",
+  "checked_on": "2026-11-02",
+  "items": [
+    {"name": "Half PERi-PERi Chicken", "serving_g": 460, "energy_kj": 2990, "calories_kcal": 715, "protein_g": 108, "carbs_g": 1.1, "fat_g": 30.8, "source_url": "https://www.nandos.com.au/menu-item/half-chicken"},
+    {"name": "Whole PERi-PERi Chicken", "serving_g": 889, "energy_kj": 5780, "calories_kcal": 1380, "protein_g": 208, "carbs_g": 2.2, "fat_g": 59.7, "source_url": "https://www.nandos.com.au/menu-item/whole-chicken"},
+    {"name": "4 PERi-PERi Grilled Tenders", "serving_g": 160, "energy_kj": 922, "calories_kcal": 220, "protein_g": 39.6, "carbs_g": 0.7, "fat_g": 6.5, "source_url": "https://www.nandos.com.au/menu-item/tenders"},
+    {"name": "BBQ Chicken Ribs (4 ribs)", "serving_g": 128, "energy_kj": 1240, "calories_kcal": 297, "protein_g": 29.6, "carbs_g": 4.4, "fat_g": 18, "source_url": "https://www.nandos.com.au/menu-item/ribs"},
+    {"name": "PERinaise Classic (chicken, soft white bun)", "serving_g": 259, "energy_kj": 2070, "calories_kcal": 496, "protein_g": 41, "carbs_g": 42.5, "fat_g": 16.9, "source_url": "https://www.nandos.com.au/menu-item/perinaise-classic"},
+    {"name": "Supremo Chicken Wrap", "serving_g": 332, "energy_kj": 2710, "calories_kcal": 648, "protein_g": 41.9, "carbs_g": 52.5, "fat_g": 28.9, "source_url": "https://www.nandos.com.au/menu-item/supremo"},
+    {"name": "Avo Goodness (chicken, wrap)", "serving_g": 333, "energy_kj": 2380, "calories_kcal": 568, "protein_g": 38.4, "carbs_g": 52.4, "fat_g": 21.5, "source_url": "https://www.nandos.com.au/menu-item/avo-goodness-nutritional-information"},
+    {"name": "Double Cheese & Bacon (chicken, Portuguese roll)", "serving_g": 327, "energy_kj": 2790, "calories_kcal": 667, "protein_g": 47.2, "carbs_g": 48.4, "fat_g": 31.4, "source_url": "https://www.nandos.com.au/menu-item/double-cheese-and-bacon"},
+    {"name": "The Halloumi (pita)", "serving_g": 283, "energy_kj": 2510, "calories_kcal": 599, "protein_g": 40.1, "carbs_g": 53.9, "fat_g": 24.7, "source_url": "https://www.nandos.com.au/menu-item/halloumi"},
+    {"name": "Great Pretender Protein (patty only)", "serving_g": 120, "energy_kj": 1240, "calories_kcal": 297, "protein_g": 17.4, "carbs_g": 9.5, "fat_g": 4.6, "source_url": "https://www.nandos.com.au/menu-item/the-great-pretender-protein"},
+    {"name": "Paella with chicken", "serving_g": 395, "energy_kj": 2330, "calories_kcal": 557, "protein_g": 31, "carbs_g": 81.9, "fat_g": 10, "source_url": "https://www.nandos.com.au/menu-item/paella"},
+    {"name": "PERi-Harvest Bowl", "serving_g": 382, "energy_kj": 1760, "calories_kcal": 421, "protein_g": 9.9, "carbs_g": 26.7, "fat_g": 22.6, "source_url": "https://www.nandos.com.au/menu-item/peri-harvest-bowl"},
+    {"name": "Mediterranean Salad with Chicken (3 tenders)", "serving_g": 485, "energy_kj": 2430, "calories_kcal": 581, "protein_g": 37.8, "carbs_g": 15.3, "fat_g": 35, "source_url": "https://www.nandos.com.au/menu-item/mediterranean-salad-with-chicken"},
+    {"name": "Avo Parmesan Crunch", "serving_g": 204, "energy_kj": 1080, "calories_kcal": 259, "protein_g": 10.5, "carbs_g": 7.1, "fat_g": 20.6, "source_url": "https://www.nandos.com.au/menu-item/avo-parmesan-crunch"},
+    {"name": "PERi-PERi Chips, Regular", "serving_g": 140, "energy_kj": 1360, "calories_kcal": 326, "protein_g": 5.4, "carbs_g": 44.7, "fat_g": 13, "source_url": "https://www.nandos.com.au/menu-item/peri-peri-chips"},
+    {"name": "PERi-PERi Chips, Large", "serving_g": 230, "energy_kj": 2230, "calories_kcal": 533, "protein_g": 8.9, "carbs_g": 73.3, "fat_g": 21.2, "source_url": "https://www.nandos.com.au/menu-item/peri-peri-chips"},
+    {"name": "PERi-PERi Chips, Seriously Large", "serving_g": 400, "energy_kj": 3880, "calories_kcal": 928, "protein_g": 15.5, "carbs_g": 128, "fat_g": 37, "source_url": "https://www.nandos.com.au/menu-item/peri-peri-chips"},
+    {"name": "Roasted Broccoli with PERi-Crackle", "serving_g": 175, "energy_kj": 1420, "calories_kcal": 339, "protein_g": 11.4, "carbs_g": 3.2, "fat_g": 30.3, "source_url": "https://www.nandos.com.au/menu-item/roasted-broccoli-peri-crackle"}
+  ],
+  "skipped": [
+    "1/4 chicken: no nutrition page on nandos.com.au (not on the official menu-item index; /menu-item/quarter-chicken returns an error)",
+    "Chicken breast fillet / plain chicken burger: no standalone page; nearest published items are PERinaise Classic and 4 Grilled Tenders",
+    "Wings: not on the official menu-item nutrition index",
+    "Spicy rice: not on the official index; /menu-item/spicy-rice returns an error",
+    "Corn: not on the official menu-item nutrition index",
+    "Coleslaw: not on the official index; /menu-item/coleslaw returns an error",
+    "Supremo, Avo Goodness, Double Cheese & Bacon, PERinaise Classic in other breads or with veggie/plant patties: only one build is published per item",
+    "Paella with Superfood Veggie Patty / Great Pretender Protein: energy only published (2920 kJ / 698 kcal and 3000 kJ / 718 kcal), no macros",
+    "Mediterranean Salad without chicken, Halloumi Sticks & Dip: pages exist, not fetched (less commonly ordered)"
+  ],
+  "notes": "Nando's AU has no nutrition PDF; each item has its own page under nandos.com.au/menu-item (index at https://www.nandos.com.au/menu-item). Figures are per serve for the build shown and exclude sides; the Double Cheese & Bacon page notes the South Australian recipe may vary. Chips and Avo Parmesan Crunch pages show two different energy values: a headline figure (Chips Regular 1480 kJ / 353 kcal, Large 2360 kJ / 565 kcal, Seriously Large 4090 kJ / 977 kcal; Avo Parmesan Crunch 1050 kJ / 251 kcal) and a nutrition table figure. The table figures are recorded here because they sit with the macros. Avo Goodness allergen section refers to a bun but nutrition figures are for the wrap."
+}

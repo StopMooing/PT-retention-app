@@ -149,6 +149,11 @@ module.exports = {
       { id: id(), client_id: CLIENT, logged_by: CLIENT_USER, amount_ml: 750, logged_date: day(0), created_at: ts(0) },
     ],
     pt_notes: [], meal_plans: [], meals: [], meal_foods: [], meal_templates: [], meal_template_foods: [], foods: [],
+    menu_items: [
+      { id: id(), chain: "Hungry Jack's", name: 'Cheeseburger', serving_g: 119, calories: 322, protein_g: 15.8, carbs_g: 28.3, fats_g: 16 },
+      { id: id(), chain: "Hungry Jack's", name: 'Chips Medium', serving_g: 108, calories: 308, protein_g: 3.8, carbs_g: 41.1, fats_g: 14.3 },
+      { id: id(), chain: 'Zambrero', name: 'Classic Bowl (without sauce), Grilled Chicken', serving_g: null, calories: 492, protein_g: 28, carbs_g: 46.5, fats_g: 21.1 },
+    ],
   },
 }
 

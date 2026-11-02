@@ -1,0 +1,17 @@
+{
+  "chain": "McDonald's",
+  "country": "AU",
+  "checked_on": "2026-11-02",
+  "items": [],
+  "skipped": [
+    "All burgers (Big Mac, Quarter Pounder, Double Quarter Pounder, Cheeseburger, Double Cheeseburger, McChicken, Filet-O-Fish, McCrispy, Big Arch): official PDF text loses the product names next to the nutrition tables, so numbers cannot be tied to items; product pages load values by script and show an empty table to WebFetch",
+    "Chicken McNuggets 6 and 10 pack: same reason (names not attached to tables in the official PDF; product pages empty)",
+    "Fries small/medium/large: same reason",
+    "Wraps: same reason",
+    "Bacon & Egg McMuffin, Sausage & Egg McMuffin, Egg McMuffin, Hash Brown, Hotcakes, Big Brekkie: same reason (Egg McMuffin heading not present in the Jan 2026 PDF at all)",
+    "McCafe flat white / latte / cappuccino / hot chocolate (full cream): McCafe beverage PDF covers skim and alternative milks only (no full cream rows), uses Small/Medium/Large not Regular, and the extracted text does not tie tables to drink names",
+    "McFlurry, sundaes, soft serve cone, apple pie: Desserts June 2026 PDF extracted text contains none of these names next to any nutrition values",
+    "Soft drinks: Main Drinks Menu PDF link is not exposed to WebFetch (old mcdonalds.com.au file URLs redirect to the home page)"
+  ],
+  "notes": "No item could be recorded without guessing which table belongs to which product, so none were recorded. Official sources found: nutrition hub https://www.mcdonalds.com/au/en-au/about-us/our-impact/food-sourcing/nutrition.html and https://www.mcdonalds.com/au/en-au/nutrition.html; Main Food Menu PDF (Revision 113, 'Information correct as at January 2026') https://www.mcdonalds.com/content/dam/sites/au/nfl/nutrition/PDFs/Aus%20Core%20Food%20Menu_January%202026.pdf; McCafe beverages https://www.mcdonalds.com/content/dam/sites/au/nfl/nutrition/PDFs/Aus%20McCafe%20Beverages%20_January%202026%20V2.pdf; Desserts https://www.mcdonalds.com/content/dam/sites/au/nfl/our-impact/food-quality-sourcing/Aus%20Dessert%20and%20Condiments_Jun%202026%20%281%29.pdf. All legacy mcdonalds.com.au/sites/mcdonalds.com.au/files/*.pdf links now 302 to the home page. Product pages such as https://www.mcdonalds.com/au/en-au/menu/beef/big-mac.html render the nutrition panel by script, so WebFetch sees headers only. Direct download of the PDFs from this environment is blocked (www.mcdonalds.com is not on the session's network allowlist), so the tables could not be parsed locally. Fix options: open the PDFs or product pages in a real browser, or add www.mcdonalds.com to the allowed domains so the PDF can be downloaded and its tables read properly."
+}

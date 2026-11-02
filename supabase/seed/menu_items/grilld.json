@@ -1,0 +1,13 @@
+{
+  "chain": "Grill'd",
+  "country": "AU",
+  "checked_on": "2026-11-02",
+  "items": [],
+  "skipped": [
+    "Simply Grill'd, Garden Goodness, Crispy Bacon & Cheese and all other burgers: no per-item nutrition published on grilld.com.au",
+    "Low-carb / SuperBun / salad options: only claim published is SuperBun '15.7g of protein per bun', no energy, fat or carbs",
+    "Protein Pro: only '81g of protein per serve' published, no energy, fat or carbs",
+    "Chips: no nutrition published"
+  ],
+  "notes": "Grill'd's official nutrition page (https://grilld.com.au/nutrition, mirrored at https://web.digital.grilld.com.au/nutrition) has only general claims (all burgers low in sugar, more than one third of daily protein) and no per-item figures or PDF. The menu pages (https://grilld.com.au/menu, https://grilld.com.au/high-performance-menu) also show no kJ or macros. Per-item numbers appear only on third-party sites (fatsecret etc.), which were not used per the rules. Possibly Grill'd shows figures inside its ordering app, which could not be checked here."
+}
