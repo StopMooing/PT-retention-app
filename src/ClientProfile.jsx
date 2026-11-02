@@ -1,12 +1,13 @@
 // Coach view of one client. This file loads the data and owns every save; the tabs in
 // src/coach/profile/ only draw it. Reply to a check-in is the first thing on Overview.
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate, useLocation, Link } from 'react-router-dom'
-import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList } from 'lucide-react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList, Pencil } from 'lucide-react'
 import { supabase } from './supabase'
 import { FOOD_LOG_SELECT } from './lib/meals'
+import { fetchExercisesFor } from './client/data'
 import { Avatar, Chip, Button, Mark, Card, EmptyState } from './ui'
-import { toLocalDateStr, clientStatus, STATUS, relativeDay, sessionsLast7, formatDate, startedByClient, firstName } from './coach/lib'
+import { toLocalDateStr, clientStatus, awaitingReply, STATUS, relativeDay, sessionsLast7, formatDate, startedByClient, firstName } from './coach/lib'
 import OverviewTab from './coach/profile/OverviewTab'
 import CheckinsTab from './coach/profile/CheckinsTab'
 import TrainingTab from './coach/profile/TrainingTab'
@@ -15,8 +16,9 @@ import HabitsTab from './coach/profile/HabitsTab'
 import NotesTab from './coach/profile/NotesTab'
 import MessagesTab from './coach/profile/MessagesTab'
 import { fetchUnreadCounts, saveCheckinReply } from './lib/messages'
-import { useMessageEvent, READ } from './coach/messages/events'
+import { useMessageEvent, READ, REPLIED } from './coach/messages/events'
 import WorkoutSheet from './coach/profile/WorkoutSheet'
+import EditDetailsSheet from './coach/profile/EditDetailsSheet'
 import { programPlan, planWeeks } from './lib/schedule.js'
 import { insertPlannedSessions, clearUpcoming } from './lib/planWrites'
 
@@ -36,9 +38,6 @@ const enrichSW = (sw) => ({ ...sw, _displayName: sw.program_workouts?.name || sw
 export default function ClientProfile({ user }) {
   const { clientId } = useParams()
   const navigate = useNavigate()
-  const location = useLocation()
-  // A Reply link from the dashboard lands on Overview (the default tab) with that check-in focused.
-  const focusReplyId = location.state?.reply ?? null
 
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
@@ -73,6 +72,7 @@ export default function ClientProfile({ user }) {
   const [selectedCalendarDay, setSelectedCalendarDay] = useState(null)
   const [assignOpen, setAssignOpen] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
   // Check-in replies
   const [replyDrafts, setReplyDrafts] = useState({})
@@ -98,7 +98,7 @@ export default function ClientProfile({ user }) {
           supabase.from('checkins').select('*').eq('client_id', clientId).order('submitted_at', { ascending: false }),
           supabase.from('program_assignments').select('*, programs(*)').eq('client_id', clientId).eq('is_active', true).order('created_at', { ascending: false }).limit(1),
           supabase.from('habits').select('*').eq('client_id', clientId).eq('is_active', true),
-          supabase.from('meal_plans').select('*').eq('client_id', clientId).eq('is_active', true).limit(1),
+          supabase.from('meal_plans').select('*').eq('client_id', clientId).eq('is_active', true).order('created_at', { ascending: false }).limit(1),
           supabase.from('workout_logs').select('*').eq('client_id', clientId).order('logged_at', { ascending: false }).limit(200),
           supabase.from('body_weight_logs').select('*').eq('client_id', clientId).order('logged_date', { ascending: true }),
           // Coaches can only read daily check-ins (no writes). Newest 60 days is plenty here.
@@ -137,16 +137,8 @@ export default function ClientProfile({ user }) {
 
         let fetchedAllPW = []
         const exerciseMap = {}
-        const loadExercises = (pws) => Promise.all(
-          pws.map(async (pw) => {
-            const { data: exData } = await supabase
-              .from('workout_exercises')
-              .select('id, sets, reps, order_index, exercises(id, name, muscle_group)')
-              .eq('program_workout_id', pw.id)
-              .order('order_index', { ascending: true })
-            exerciseMap[pw.id] = exData ?? []
-          }),
-        )
+        // One request for every day's exercises (shared with the client app).
+        const loadExercises = async (pws) => Object.assign(exerciseMap, await fetchExercisesFor(pws.map((pw) => pw.id)))
         if (fetchedPrograms.length > 0) {
           const { data: allPWData } = await supabase
             .from('program_workouts')
@@ -217,7 +209,7 @@ export default function ClientProfile({ user }) {
           .from('food_logs')
           .select(FOOD_LOG_SELECT)
           .eq('client_id', clientId)
-          .gte('logged_at', ninetyDaysAgo.toISOString())
+          .gte('logged_at', toLocalDateStr(ninetyDaysAgo))
           .order('logged_at', { ascending: false })
         setFoodLogs(foodLogsData ?? [])
 
@@ -256,6 +248,10 @@ export default function ClientProfile({ user }) {
   }, [clientId])
 
   useMessageEvent(READ, useCallback(({ clientId: id }) => { if (id === clientId) setUnreadMessages(0) }, [clientId]))
+  // A reply sent from the Messages tab shows on Overview and Check-ins straight away.
+  useMessageEvent(REPLIED, useCallback((ci) => {
+    if (ci.client_id === clientId) setCheckins((prev) => prev.map((c) => (c.id === ci.id ? { ...c, coach_reply: ci.coach_reply, replied_at: ci.replied_at } : c)))
+  }, [clientId]))
 
   if (loading) {
     return (
@@ -275,10 +271,14 @@ export default function ClientProfile({ user }) {
 
   /* ---------------- Saves ---------------- */
 
-  function handleCopyInvite() {
-    navigator.clipboard.writeText(`${window.location.origin}/claim/${client.claim_token}`)
-    setInviteCopied(true)
-    setTimeout(() => setInviteCopied(false), 2000)
+  async function handleCopyInvite() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/claim/${client.claim_token}`)
+      setInviteCopied(true)
+      setTimeout(() => setInviteCopied(false), 2000)
+    } catch {
+      window.prompt('Copy this invite link:', `${window.location.origin}/claim/${client.claim_token}`)
+    }
   }
 
   async function handleSaveReply(checkinId) {
@@ -325,19 +325,29 @@ export default function ClientProfile({ user }) {
     const w = parseFloat(value)
     if (!w || w <= 0 || w > 500) return false
     try {
+      // One weigh-in per day each, same as the client app: the coach's own entry for today
+      // is replaced, not doubled. A client's own entry is left alone (the newest counts).
+      const today = toLocalDateStr()
       const { data: { user } } = await supabase.auth.getUser()
-      const { data, error } = await supabase
-        .from('body_weight_logs')
-        .insert({ client_id: clientId, logged_by: user.id, weight_kg: w, logged_date: toLocalDateStr() })
-        .select()
-        .single()
+      const existing = weightLogs.find((l) => l.logged_date === today && l.logged_by === user.id)
+      const { data, error } = existing
+        ? await supabase.from('body_weight_logs').update({ weight_kg: w }).eq('id', existing.id).select().single()
+        : await supabase.from('body_weight_logs').insert({ client_id: clientId, logged_by: user.id, weight_kg: w, logged_date: today }).select().single()
       if (error) throw error
-      setWeightLogs((prev) => [...prev, data].sort((a, b) => new Date(a.logged_date) - new Date(b.logged_date)))
+      setWeightLogs((prev) => [...prev.filter((l) => l.id !== data.id), data].sort((a, b) => (a.logged_date < b.logged_date ? -1 : 1)))
       return true
     } catch (e) {
       console.error(e)
       return false
     }
+  }
+
+  // Name, email and phone. Returns an error message, or null when saved.
+  async function handleSaveDetails(fields) {
+    const { data, error } = await supabase.from('clients').update(fields).eq('id', clientId).select().single()
+    if (error) { console.error('Save details error:', error); return "Couldn't save those details. Try again." }
+    setClient(data)
+    return null
   }
 
   // Returns an error message, or null when saved.
@@ -426,12 +436,10 @@ export default function ClientProfile({ user }) {
   }
 
   async function handleDeleteWaterLog(logId) {
-    try {
-      await supabase.from('water_logs').delete().eq('id', logId)
-      setWaterLogs((prev) => prev.filter((w) => w.id !== logId))
-    } catch (e) {
-      console.error(e)
-    }
+    if (!window.confirm('Remove this water entry?')) return
+    const { data, error } = await supabase.from('water_logs').delete().eq('id', logId).select('id')
+    if (error || !data?.length) { console.error('Delete water error:', error); return }
+    setWaterLogs((prev) => prev.filter((w) => w.id !== logId))
   }
 
   async function loadSessionSets(log) {
@@ -462,13 +470,16 @@ export default function ClientProfile({ user }) {
     }
   }
 
+  // Returns an error message, or null when removed. A done session is never removed.
   async function handleRemoveScheduledWorkout(scheduledWorkoutId) {
-    try {
-      await supabase.from('scheduled_workouts').delete().eq('id', scheduledWorkoutId)
-      setScheduledWorkouts((prev) => prev.filter((sw) => sw.id !== scheduledWorkoutId))
-    } catch (e) {
-      console.error(e)
+    if (workoutLogs.some((l) => l.scheduled_workout_id === scheduledWorkoutId && l.completed)) return 'That session is done, so it stays on the calendar.'
+    const { data, error } = await supabase.from('scheduled_workouts').delete().eq('id', scheduledWorkoutId).select('id')
+    if (error || !data?.length) {
+      console.error('Remove session error:', error)
+      return "Couldn't remove that session. Try again."
     }
+    setScheduledWorkouts((prev) => prev.filter((sw) => sw.id !== scheduledWorkoutId))
+    return null
   }
 
   // Puts a plan on the schedule and into state. Returns { error, count }.
@@ -492,8 +503,11 @@ export default function ClientProfile({ user }) {
     if (!program || !startDate) return { ok: false }
     const oldProgramId = programAssignment?.programs?.id ?? programAssignment?.program_id ?? null
     try {
+      // One active program per client: switch the old one off first, and back on if the new
+      // one fails to save, so the client is never left without a program.
       if (programAssignment) {
-        await supabase.from('program_assignments').update({ is_active: false }).eq('id', programAssignment.id)
+        const { error: offError } = await supabase.from('program_assignments').update({ is_active: false }).eq('id', programAssignment.id)
+        if (offError) throw offError
       }
       const { data: { user } } = await supabase.auth.getUser()
       const { data: newAssignment, error } = await supabase
@@ -501,7 +515,10 @@ export default function ClientProfile({ user }) {
         .insert({ client_id: clientId, program_id: program.id, assigned_by: user.id, start_date: startDate, is_active: true })
         .select('id, start_date, assigned_by, programs(id, name, description)')
         .single()
-      if (error) throw error
+      if (error) {
+        if (programAssignment) await supabase.from('program_assignments').update({ is_active: true }).eq('id', programAssignment.id)
+        throw error
+      }
       setProgramAssignment(newAssignment)
 
       const { data: pwData } = await supabase
@@ -512,19 +529,8 @@ export default function ClientProfile({ user }) {
       const fetchedPW = pwData ?? []
       setProgramWorkouts(fetchedPW)
 
-      const exerciseMap = { ...workoutExercises }
-      await Promise.all(
-        fetchedPW.map(async (pw) => {
-          if (!exerciseMap[pw.id]) {
-            const { data: exData } = await supabase
-              .from('workout_exercises')
-              .select('id, sets, reps, order_index, exercises(id, name, muscle_group)')
-              .eq('program_workout_id', pw.id)
-              .order('order_index', { ascending: true })
-            exerciseMap[pw.id] = exData ?? []
-          }
-        }),
-      )
+      const missingEx = fetchedPW.filter((pw) => !workoutExercises[pw.id]).map((pw) => pw.id)
+      const exerciseMap = { ...workoutExercises, ...(await fetchExercisesFor(missingEx)) }
       setWorkoutExercises(exerciseMap)
 
       const plan = programPlan({ days: fetchedPW, weeks: planWeeks(newAssignment.programs ?? program), startDate, trainingDays })
@@ -586,6 +592,7 @@ export default function ClientProfile({ user }) {
       date: sw.scheduled_date,
       workout: {
         id: sw.id,
+        program_workout_id: sw.program_workout_id ?? null,
         name: sw._displayName || sw.program_workouts?.name || sw.saved_workouts?.name || 'Workout',
         exercises: workoutExercises[sw.program_workout_id] ?? [],
         _isCustom: sw._isCustom,
@@ -598,7 +605,7 @@ export default function ClientProfile({ user }) {
   /* ---------------- View ---------------- */
 
   const status = clientStatus({ lastCheckIn: checkins[0]?.submitted_at, workoutLogs, scheduledWorkouts })
-  const awaiting = checkins.filter((c) => !c.coach_reply).length
+  const awaiting = awaitingReply(checkins) ? 1 : 0
   const week = sessionsLast7(workoutLogs)
   const reply = {
     drafts: replyDrafts, setDrafts: setReplyDrafts, savingId: savingReplyId,
@@ -613,7 +620,7 @@ export default function ClientProfile({ user }) {
     carbs: parseInt(carbsTarget) || 0, fats: parseInt(fatsTarget) || 0, water: waterTarget,
   }
   const shared = {
-    client, checkins, dailyCheckins, reply, focusReplyId, onOpenTab: setActiveTab,
+    client, checkins, dailyCheckins, reply, onOpenTab: setActiveTab,
     onOpenDaily: () => { setCheckinsView('daily'); setActiveTab('checkins') }, weightLogs, onLogWeight: handleLogWeight,
     scheduledWorkouts, workoutLogs, onOpenWorkout: openWorkout, foodLogs, waterLogs, targets, limitations: clientLimitations,
   }
@@ -650,7 +657,7 @@ export default function ClientProfile({ user }) {
             </Button>
           )}
           {client.user_id ? null : !client.email ? (
-            <span title="Add an email to this client before you can invite them" className="inline-flex items-center h-9 px-3.5 rounded-full text-sm font-semibold text-muted border border-dashed border-line-strong">Add an email to invite</span>
+            <Button variant="soft" size="sm" onClick={() => setEditOpen(true)}><Mail size={16} /> Add an email to invite</Button>
           ) : (
             <Button variant="soft" size="sm" onClick={handleCopyInvite}>
               {inviteCopied ? <Check size={16} /> : <Link2 size={16} />} {inviteCopied ? 'Copied' : 'Copy invite link'}
@@ -666,6 +673,9 @@ export default function ClientProfile({ user }) {
               <Mail size={16} /> Email
             </a>
           )}
+          <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil size={16} /> Edit details
+          </Button>
           <Button variant="secondary" size="sm" onClick={() => { setActiveTab('training'); setAssignOpen(true) }}>
             <ClipboardList size={16} /> {programAssignment ? 'Change program' : 'Assign program'}
           </Button>
@@ -757,6 +767,8 @@ export default function ClientProfile({ user }) {
           />
         )}
       </div>
+
+      <EditDetailsSheet open={editOpen} onClose={() => setEditOpen(false)} client={client} onSave={handleSaveDetails} />
 
       <WorkoutSheet
         selectedDay={selectedCalendarDay}

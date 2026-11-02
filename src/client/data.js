@@ -7,16 +7,17 @@ import { toLocalDateStr, addDays } from './dates'
 const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, created_by, created_at, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
 const EX_SELECT = 'id, sets, reps, rest_seconds, notes, order_index, exercises(id, name, muscle_group)'
 
-// Scheduled sessions from 4 weeks back to 13 weeks ahead (an 8-week program started next
-// Monday fits).
+// Scheduled sessions from a year back to 13 weeks ahead (an 8-week program started next
+// Monday fits). The Training week arrows stop at the same window (SCHEDULE_WINDOW).
+export const SCHEDULE_WINDOW = { back: 364, ahead: 91 }
 export async function fetchScheduled(clientId) {
   const today = toLocalDateStr()
   const { data } = await supabase
     .from('scheduled_workouts')
     .select(SW_SELECT)
     .eq('client_id', clientId)
-    .gte('scheduled_date', addDays(today, -28))
-    .lte('scheduled_date', addDays(today, 91))
+    .gte('scheduled_date', addDays(today, -SCHEDULE_WINDOW.back))
+    .lte('scheduled_date', addDays(today, SCHEDULE_WINDOW.ahead))
     .order('scheduled_date', { ascending: true })
   return (data ?? []).map((sw) => ({
     ...sw,
@@ -27,12 +28,17 @@ export async function fetchScheduled(clientId) {
 }
 
 // Exercises for each program workout id: { [id]: rows }
+// One request for all of them.
 export async function fetchExercisesFor(programWorkoutIds) {
-  const exMap = {}
-  await Promise.all(programWorkoutIds.map(async (id) => {
-    const { data } = await supabase.from('workout_exercises').select(EX_SELECT).eq('program_workout_id', id).order('order_index', { ascending: true })
-    exMap[id] = data ?? []
-  }))
+  const exMap = Object.fromEntries(programWorkoutIds.map((id) => [id, []]))
+  if (programWorkoutIds.length === 0) return exMap
+  const { data, error } = await supabase
+    .from('workout_exercises')
+    .select(`program_workout_id, ${EX_SELECT}`)
+    .in('program_workout_id', programWorkoutIds)
+    .order('order_index', { ascending: true })
+  if (error) console.error('Exercises load error:', error)
+  for (const row of data ?? []) (exMap[row.program_workout_id] ||= []).push(row)
   return exMap
 }
 

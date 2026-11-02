@@ -21,7 +21,8 @@ export default function ProfileSheet({ open, onClose, client, setClient, hasReso
       const path = `${user.id}/profile.${ext}`
       const { error: uploadError } = await supabase.storage.from('profile-photos').upload(path, file, { upsert: true })
       if (uploadError) throw uploadError
-      const { data: { publicUrl } } = supabase.storage.from('profile-photos').getPublicUrl(path)
+      // Same file path each time, so a version on the end makes phones load the new photo.
+      const publicUrl = `${supabase.storage.from('profile-photos').getPublicUrl(path).data.publicUrl}?v=${Date.now()}`
       const { error: rowError } = await supabase.from('clients').update({ profile_photo_url: publicUrl }).eq('id', client.id)
       if (rowError) throw rowError
       setClient((prev) => ({ ...prev, profile_photo_url: publicUrl }))

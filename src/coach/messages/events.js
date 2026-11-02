@@ -2,10 +2,12 @@
 // messages without each opening its own live connection.
 //   READ:     a thread was marked read. detail: { clientId }
 //   INCOMING: a new message arrived (from the shell's live feed). detail: message row
+//   REPLIED:  the coach replied to a weekly check-in. detail: the updated check-in row
 import { useEffect, useState } from 'react'
 
 export const READ = 'unfnshd:messages-read'
 export const INCOMING = 'unfnshd:message-in'
+export const REPLIED = 'unfnshd:checkin-replied'
 
 export function emit(name, detail) {
   window.dispatchEvent(new CustomEvent(name, { detail }))

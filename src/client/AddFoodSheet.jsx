@@ -49,7 +49,11 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
     setQuery(value)
     setBarcode(null)
     setScanNote(null)
-    setFoodInput((f) => ({ ...f, name: value }))
+    // A new search drops the last picked food's numbers, so they can't be logged under a new name.
+    setBase(null)
+    setPerServe(false)
+    setMenuServeG(null)
+    setFoodInput((f) => ({ ...f, name: value, calories: '', protein: '', carbs: '', fats: '' }))
     clearTimeout(timer.current)
     timer.current = setTimeout(async () => {
       setSearching(true)
@@ -142,7 +146,7 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
         serving_size_g: base ? (perServe ? menuServeG : parseFloat(servingSize) || null) : null,
         servings: base && perServe ? parseFloat(servingSize) || 1 : 1,
         barcode,
-        logged_at: new Date(date + 'T12:00:00').toISOString(),
+        logged_at: date,
       }).select().single()
       if (error) throw error
       onAdded(data)

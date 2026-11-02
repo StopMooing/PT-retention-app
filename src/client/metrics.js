@@ -226,7 +226,8 @@ export function weightAverage7(weightLogs, today = toLocalDateStr()) {
 /* ---------- Food ---------- */
 
 export function logsForDate(foodLogs, dateStr) {
-  return (foodLogs ?? []).filter((f) => f.logged_at && toLocalDateStr(new Date(f.logged_at)) === dateStr)
+  // logged_at is a plain date column ("2026-11-02"): compare the text, no time zones involved.
+  return (foodLogs ?? []).filter((f) => f.logged_at && String(f.logged_at).slice(0, 10) === dateStr)
 }
 
 export function foodTotals(logs) {

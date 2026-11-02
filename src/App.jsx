@@ -13,16 +13,24 @@ const ClientApp = lazy(() => import('./ClientApp'))
 const CoachShell = lazy(() => import('./coach/CoachShell'))
 const Dashboard = lazy(() => import('./coach/Dashboard'))
 const MessagesPage = lazy(() => import('./coach/messages/MessagesPage'))
+const ResetPasswordPage = lazy(() => import('./ResetPasswordPage'))
 import { Mark } from './ui'
+
+// A password reset link lands on /reset (or on the home page with type=recovery in the
+// address if /reset isn't on Supabase's allowed list). Read before Supabase tidies the URL.
+const RECOVERY_AT_LOAD = typeof window !== 'undefined' &&
+  (window.location.pathname === '/reset' || window.location.hash.includes('type=recovery'))
 
 export default function App() {
   const [session, setSession] = useState(undefined)
   const [userRole, setUserRole] = useState(null)
   const [roleLoading, setRoleLoading] = useState(true)
+  const [recovering, setRecovering] = useState(RECOVERY_AT_LOAD)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true)
       setSession(session)
     })
     return () => subscription.unsubscribe()
@@ -66,6 +74,14 @@ export default function App() {
     </div>
   )
   if (session === undefined || roleLoading) return splash
+
+  if (recovering) {
+    return (
+      <Suspense fallback={splash}>
+        <ResetPasswordPage hasSession={!!session} onDone={() => { setRecovering(false); window.history.replaceState(null, '', '/') }} />
+      </Suspense>
+    )
+  }
 
   const loggedInRedirect = userRole === 'pt'
     ? <Navigate to="/dashboard" replace />

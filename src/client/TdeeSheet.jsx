@@ -27,7 +27,11 @@ export default function TdeeSheet({ open, onClose, client, onSaved }) {
     setError(null)
     const bmr = inputs.gender === 'male' ? 10 * w + 6.25 * h - 5 * age + 5 : 10 * w + 6.25 * h - 5 * age - 161
     const maintenance = Math.round(bmr * act)
-    setResult({ maintenance, fatLoss: maintenance - 500, aggressiveLoss: maintenance - 750, muscleGain: maintenance + 300 })
+    // Fat-loss options never go below a safe floor (1,200 kcal women, 1,500 men); one
+    // that would is left out rather than offered.
+    const floor = inputs.gender === 'male' ? 1500 : 1200
+    const safe = (kcal) => (kcal >= floor ? kcal : null)
+    setResult({ maintenance, fatLoss: safe(maintenance - 500), aggressiveLoss: safe(maintenance - 750), muscleGain: maintenance + 300 })
   }
 
   async function handleSetGoal(calories) {
@@ -75,7 +79,7 @@ export default function TdeeSheet({ open, onClose, client, onSaved }) {
               ['Steady fat loss', result.fatLoss, 'About 0.5 kg a week'],
               ['Faster fat loss', result.aggressiveLoss, 'About 0.75 kg a week'],
               ['Build muscle', result.muscleGain, 'Lean gain'],
-            ].map(([label, cal, desc]) => (
+            ].filter(([, cal]) => cal != null).map(([label, cal, desc]) => (
               <div key={label} className="flex items-center gap-3 px-4 py-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-[15px] font-bold text-ink">{label}</p>

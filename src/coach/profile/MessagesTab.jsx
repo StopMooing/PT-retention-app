@@ -20,15 +20,15 @@ export default function MessagesTab({ client, userId }) {
   return <ThreadCard client={client} userId={userId} />
 }
 
-// On a phone the profile header is tall, so the thread fills the screen between the top
-// and tab bars and scrolls into view, keeping the composer visible.
+// On a phone the profile header is tall, so the thread fills the screen above the floating
+// tab bar and scrolls into view, keeping the composer clear of the bar.
 function ThreadCard({ client, userId }) {
   const ref = useRef(null)
   useEffect(() => {
     if (!window.matchMedia('(min-width: 768px)').matches) ref.current?.scrollIntoView({ block: 'end' })
   }, [])
   return (
-    <Card ref={ref} padded={false} className="overflow-hidden max-w-[760px] flex flex-col h-[calc(100dvh-152px)] min-h-[380px] scroll-mb-4 md:h-[min(640px,calc(100dvh-300px))]">
+    <Card ref={ref} padded={false} className="overflow-hidden max-w-[760px] flex flex-col h-[calc(100dvh-var(--tabbar-space)-max(env(safe-area-inset-top),12px)-16px)] min-h-[380px] scroll-mb-[calc(var(--tabbar-space)+8px)] md:scroll-mb-4 md:h-[min(640px,calc(100dvh-300px))]">
       <Thread clientId={client.id} userId={userId} clientName={client.full_name} className="flex-1" autoFocus />
     </Card>
   )

@@ -3,6 +3,7 @@
 // error and notice are friendly messages for a toast. Raw errors go to the console.
 import { supabase } from '../supabase'
 import { toLocalDateStr } from './dates'
+import { itemsTotals } from '../lib/meals'
 
 const SAVE_WORKOUT_FAILED = "Couldn't save that workout. Try again in a moment."
 const SAVE_MEAL_FAILED = "Couldn't save that meal. Try again in a moment."
@@ -88,15 +89,33 @@ export async function saveAiMeal(client, content) {
   let name, calories, protein, carbs, fats, storedContent
   if (parsed) {
     const VALID_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
-    parsed.meals = parsed.meals.map((m) => ({
-      name: (m?.name || 'Meal').toString().slice(0, 80),
-      meal_type: VALID_TYPES.includes((m?.meal_type || '').toLowerCase()) ? m.meal_type.toLowerCase() : 'other',
-      description: (m?.description || '').toString(),
-      calories: Math.round(parseFloat(m?.calories) || 0),
-      protein_g: Math.round(parseFloat(m?.protein_g) || 0),
-      carbs_g: Math.round(parseFloat(m?.carbs_g) || 0),
-      fats_g: Math.round(parseFloat(m?.fats_g) || 0),
-    }))
+    parsed.meals = parsed.meals.map((m) => {
+      // Keep the ingredients so a saved meal logs with them. Totals are their sum.
+      const ingredients = (Array.isArray(m?.ingredients) ? m.ingredients : [])
+        .filter((i) => i && (i.label || i.name))
+        .map((i) => ({
+          label: String(i.label || i.name).slice(0, 200),
+          name: String(i.name || i.label).slice(0, 200),
+          grams: Number(i.grams) > 0 ? Number(i.grams) : null,
+          calories: Math.max(0, Math.round(Number(i.calories) || 0)),
+          protein_g: Math.max(0, Number(i.protein_g) || 0),
+          carbs_g: Math.max(0, Number(i.carbs_g) || 0),
+          fats_g: Math.max(0, Number(i.fats_g) || 0),
+          food_id: i.food_id || null,
+          estimated: !!i.estimated || !i.food_id,
+        }))
+      const t = ingredients.length > 0 ? itemsTotals(ingredients) : null
+      return {
+        name: (m?.name || 'Meal').toString().slice(0, 80),
+        meal_type: VALID_TYPES.includes((m?.meal_type || '').toLowerCase()) ? m.meal_type.toLowerCase() : 'other',
+        description: (m?.description || '').toString(),
+        calories: Math.round(t ? t.calories : parseFloat(m?.calories) || 0),
+        protein_g: Math.round(t ? t.protein_g : parseFloat(m?.protein_g) || 0),
+        carbs_g: Math.round(t ? t.carbs_g : parseFloat(m?.carbs_g) || 0),
+        fats_g: Math.round(t ? t.fats_g : parseFloat(m?.fats_g) || 0),
+        ...(ingredients.length > 0 ? { ingredients } : {}),
+      }
+    })
     name = (parsed.title || parsed.meals[0].name || 'AI Meal Plan').slice(0, 50)
     calories = parsed.meals.reduce((s, m) => s + m.calories, 0)
     protein = parsed.meals.reduce((s, m) => s + m.protein_g, 0)

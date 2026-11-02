@@ -41,7 +41,7 @@ export async function logMeals({ clientId, date, meals }) {
       food_name: String(meal.name || 'Meal').slice(0, 200),
       meal_type: meal.meal_type || 'other',
       ...totals,
-      logged_at: new Date(date + 'T12:00:00').toISOString(),
+      logged_at: date,
     }).select().single()
     if (error) return { added, error }
     let saved = []
@@ -72,6 +72,12 @@ export async function updateMealItem(log, item, grams) {
   const items = mealItems(log)
   let next
   if (grams == null) {
+    // Last ingredient gone: the meal goes too (its items cascade with it).
+    if (items.length <= 1) {
+      const { error } = await supabase.from('food_logs').delete().eq('id', log.id)
+      if (error) return { error }
+      return { log: null, removed: true, error: null }
+    }
     const { error } = await supabase.from('food_log_items').delete().eq('id', item.id)
     if (error) return { error }
     next = items.filter((i) => i.id !== item.id)

@@ -58,8 +58,8 @@ function WeightCard({ client, weightLogs, setWeightLogs }) {
     if (!window.confirm("Delete this weigh-in? You can't undo this.")) return
     setError(null)
     try {
-      const { error: err } = await supabase.from('body_weight_logs').delete().eq('id', id)
-      if (err) throw err
+      const { data, error: err } = await supabase.from('body_weight_logs').delete().eq('id', id).select('id')
+      if (err || !data?.length) throw err ?? new Error('no row deleted')
       setWeightLogs((prev) => prev.filter((w) => w.id !== id))
     } catch (e) {
       console.error('Delete weight error:', e)
@@ -119,9 +119,14 @@ function WeightCard({ client, weightLogs, setWeightLogs }) {
                   <div key={w.id} className="flex items-center gap-3 pl-4 pr-2 py-2">
                     <span className="flex-1 text-[15px] text-muted">{parseDay(w.logged_date).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                     <span className="text-[15px] font-bold text-ink tabular-nums">{w.weight_kg} kg</span>
-                    <button onClick={() => handleDeleteWeight(w.id)} aria-label="Delete weigh-in" className="w-10 h-10 rounded-full flex items-center justify-center text-faint hover:text-bad hover:bg-surface-2">
-                      <X size={16} />
-                    </button>
+                    {/* The client can remove their own weigh-ins; ones the coach logged stay. */}
+                    {w.logged_by === client.user_id ? (
+                      <button onClick={() => handleDeleteWeight(w.id)} aria-label="Delete weigh-in" className="w-10 h-10 rounded-full flex items-center justify-center text-faint hover:text-bad hover:bg-surface-2">
+                        <X size={16} />
+                      </button>
+                    ) : (
+                      <span className="w-10 text-center text-[11px] font-bold text-muted">Coach</span>
+                    )}
                   </div>
                 ))}
               </div>

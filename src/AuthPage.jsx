@@ -17,6 +17,15 @@ export default function AuthPage({ defaultMode = 'login' }) {
     setMessage(null)
     setLoading(true)
 
+    if (mode === 'forgot') {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: `${window.location.origin}/reset` })
+      setLoading(false)
+      if (resetError) { setError(resetError.message); return }
+      setMessage("If that email has an account, a reset link is on its way. Check your inbox (and junk folder).")
+      setMode('login')
+      return
+    }
+
     if (mode === 'signup') {
       const { error: signUpError } = await supabase.auth.signUp({
         email,
@@ -50,7 +59,7 @@ export default function AuthPage({ defaultMode = 'login' }) {
           <Mark size={72} />
           <h1 className="m-0 mt-2 font-display text-[46px] leading-none tracking-[0.01em]">UNFNSHD</h1>
           <p className="m-0 text-[15px] text-muted">
-            {mode === 'login' ? "We aren't done." : 'Create your coach account'}
+            {mode === 'login' ? "We aren't done." : mode === 'forgot' ? 'Reset your password' : 'Create your coach account'}
           </p>
         </div>
 
@@ -61,29 +70,44 @@ export default function AuthPage({ defaultMode = 'login' }) {
           )}
           <Field id="auth-email" label="Email" type="email" required autoComplete="email"
             value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
-          <Field id="auth-password" label="Password" type="password" required
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-            value={password} onChange={(e) => setPassword(e.target.value)} />
+          {mode !== 'forgot' && (
+            <Field id="auth-password" label="Password" type="password" required
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              value={password} onChange={(e) => setPassword(e.target.value)} />
+          )}
+          {mode === 'login' && (
+            <button type="button" onClick={() => { setMode('forgot'); setError(null); setMessage(null) }} className="self-end -mt-2 text-sm font-semibold text-accent underline underline-offset-2">
+              Forgot password?
+            </button>
+          )}
 
           {error && <p className="m-0 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{error}</p>}
           {message && <p className="m-0 text-sm text-accent bg-accent-soft rounded-[14px] px-4 py-3">{message}</p>}
 
           <Button type="submit" size="lg" block disabled={loading} className="mt-2">
             {loading
-              ? mode === 'login' ? 'Signing in…' : 'Creating account…'
-              : mode === 'login' ? 'Sign in' : 'Create account'}
+              ? mode === 'login' ? 'Signing in...' : mode === 'forgot' ? 'Sending...' : 'Creating account...'
+              : mode === 'login' ? 'Sign in' : mode === 'forgot' ? 'Send reset link' : 'Create account'}
           </Button>
         </form>
 
-        <p className="text-center text-sm mt-8 text-muted">
-          {mode === 'login' ? 'Coach without an account? ' : 'Already have an account? '}
-          <button
-            onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(null); setMessage(null) }}
-            className="font-semibold underline underline-offset-2 text-accent"
-          >
-            {mode === 'login' ? 'Sign up' : 'Sign in'}
-          </button>
-        </p>
+        {mode === 'login' ? (
+          <>
+            <p className="text-center text-sm mt-8 text-muted">Got an invite link from your coach? Open it to set up your account.</p>
+            <p className="text-center text-sm mt-3 text-muted">
+              Coach?{' '}
+              <button onClick={() => { setMode('signup'); setError(null); setMessage(null) }} className="font-semibold underline underline-offset-2 text-accent">
+                Create a coach account
+              </button>
+            </p>
+          </>
+        ) : (
+          <p className="text-center text-sm mt-8 text-muted">
+            <button onClick={() => { setMode('login'); setError(null); setMessage(null) }} className="font-semibold underline underline-offset-2 text-accent">
+              Back to sign in
+            </button>
+          </p>
+        )}
       </div>
     </div>
   )

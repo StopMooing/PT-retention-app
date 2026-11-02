@@ -8,7 +8,7 @@ import { fetchLatestActivity, fetchUnreadCounts } from '../../lib/messages'
 import { PageTitle, Card, Avatar, EmptyState, Mark, SectionLabel } from '../../ui'
 import { messageTime, firstName } from '../lib'
 import Thread from './Thread'
-import { useMessageEvent, useIsDesktop, READ, INCOMING } from './events'
+import { useMessageEvent, useIsDesktop, READ, INCOMING, REPLIED } from './events'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 
@@ -96,8 +96,12 @@ export default function MessagesPage({ user }) {
   // The open thread keeps its row's preview current and clears its unread count.
   const onThreadChange = useCallback((msgs) => {
     const m = msgs[msgs.length - 1]
-    if (m) setLatest((prev) => (prev[m.client_id]?.id === m.id ? prev : { ...prev, [m.client_id]: m }))
+    // Only if it's newer: a check-in can be the latest thing in the conversation.
+    if (m) setLatest((prev) => (prev[m.client_id]?.id === m.id || (prev[m.client_id] && prev[m.client_id].created_at > m.created_at) ? prev : { ...prev, [m.client_id]: m }))
   }, [])
+  useMessageEvent(REPLIED, useCallback((ci) => {
+    setLatest((prev) => ({ ...prev, [ci.client_id]: { client_id: ci.client_id, created_at: ci.replied_at, sender_id: user.id, body: ci.coach_reply } }))
+  }, [user.id]))
   useMessageEvent(READ, useCallback(({ clientId: id }) => setUnread((prev) => ({ ...prev, [id]: 0 })), []))
   useMessageEvent(INCOMING, useCallback((m) => {
     setLatest((prev) => ({ ...prev, [m.client_id]: m }))
@@ -110,7 +114,8 @@ export default function MessagesPage({ user }) {
     .sort((a, b) => (latest[a.id].created_at < latest[b.id].created_at ? 1 : -1))
   const shown = q ? threads.filter((c) => c.full_name?.toLowerCase().includes(q)) : threads
   // Searching also finds clients with no messages yet, so the coach can start one.
-  const fresh = q ? clients.filter((c) => !latest[c.id] && c.full_name?.toLowerCase().includes(q)) : []
+  // Only clients who have joined: the others can't receive messages yet.
+  const fresh = q ? clients.filter((c) => !latest[c.id] && c.user_id && c.full_name?.toLowerCase().includes(q)) : []
   const open = clients.find((c) => c.id === clientId) ?? null
   const openThread = (id) => navigate(`/messages/${id}`)
 

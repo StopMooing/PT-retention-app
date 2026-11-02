@@ -1,5 +1,4 @@
 // Weekly check-ins (newest first, each with its reply) and the client's daily check-ins.
-import { useState } from 'react'
 import { MessageSquare, Activity } from 'lucide-react'
 import { Card, EmptyState, Segmented } from '../../ui'
 import { CheckinCard } from './parts'
@@ -11,7 +10,6 @@ function avg(list, key) {
 }
 
 function Weekly({ checkins, client, reply }) {
-  const [show, setShow] = useState('all')
   if (checkins.length === 0) {
     return (
       <Card>
@@ -21,8 +19,6 @@ function Weekly({ checkins, client, reply }) {
   }
   const recent = checkins.slice(0, 4)
   const trend = recent.length >= 2 ? recent[0].training_score - recent[recent.length - 1].training_score : 0
-  const unreplied = checkins.filter((c) => !c.coach_reply).length
-  const list = show === 'reply' ? checkins.filter((c) => !c.coach_reply) : checkins
 
   return (
     <>
@@ -41,15 +37,7 @@ function Weekly({ checkins, client, reply }) {
         ))}
       </Card>
 
-      {unreplied > 0 && (
-        <Segmented
-          value={show}
-          onChange={setShow}
-          options={[{ value: 'all', label: `All (${checkins.length})` }, { value: 'reply', label: `Needs reply (${unreplied})` }]}
-        />
-      )}
-
-      {list.map((ci) => (
+      {checkins.map((ci) => (
         <CheckinCard key={ci.id} ci={ci} number={checkins.length - checkins.indexOf(ci)} clientName={firstName(client.full_name)} reply={reply} />
       ))}
     </>

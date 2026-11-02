@@ -84,7 +84,7 @@ export async function fetchLatestActivity(clientIds, coachId) {
   if (!clientIds?.length) return {}
   const [latestMsgs, weekly, daily] = await Promise.all([
     fetchLatestPerThread(clientIds),
-    supabase.from('checkins').select('client_id, submitted_at, notes, training_score, energy_score, coach_reply, replied_at')
+    supabase.from('checkins').select('client_id, submitted_at, notes, blocker, training_score, energy_score, coach_reply, replied_at')
       .in('client_id', clientIds).order('submitted_at', { ascending: false }).limit(300),
     supabase.from('daily_checkins').select('client_id, created_at, note, energy, sleep, soreness')
       .in('client_id', clientIds).order('created_at', { ascending: false }).limit(300),
@@ -100,7 +100,7 @@ export async function fetchLatestActivity(clientIds, coachId) {
   }
   for (const c of weekly.data ?? []) {
     const scores = [c.training_score && `Training ${c.training_score}/5`, c.energy_score && `Energy ${c.energy_score}/5`].filter(Boolean).join(' · ')
-    consider({ client_id: c.client_id, created_at: c.submitted_at, sender_id: null, body: `Weekly check-in: ${c.notes?.trim() || scores || 'sent'}` })
+    consider({ client_id: c.client_id, created_at: c.submitted_at, sender_id: null, body: `Weekly check-in: ${checkinNote(c) || scores || 'sent'}` })
     if (c.coach_reply?.trim() && c.replied_at) consider({ client_id: c.client_id, created_at: c.replied_at, sender_id: coachId, body: c.coach_reply.trim() })
   }
   for (const d of daily.data ?? []) {

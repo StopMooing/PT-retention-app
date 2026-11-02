@@ -12,6 +12,7 @@ import { MEAL_ORDER, capitalise, parseSavedMealContent } from './foods'
 import { NutritionSummary, DayNav } from './common'
 import AddFoodSheet from './AddFoodSheet'
 import { mealItems, logMeals, updateMealItem, restoreMeal } from '../lib/meals'
+import MealPlanCard from './MealPlanCard'
 import TdeeSheet from './TdeeSheet'
 
 const macroLine = (f) => `P ${Math.round(f.protein_g || 0)} · C ${Math.round(f.carbs_g || 0)} · F ${Math.round(f.fats_g || 0)}`
@@ -200,15 +201,21 @@ export default function FoodTab({
   async function saveIngredient(grams) {
     if (!editTarget) return
     setEditBusy(true)
-    const { log, error } = await updateMealItem(editTarget.food, editTarget.item, grams)
+    const meal = editTarget.food
+    const { log, removed, error } = await updateMealItem(meal, editTarget.item, grams)
     setEditBusy(false)
     if (error) {
       console.error('Update ingredient error:', error)
       showToast("Couldn't save that. Try again.")
       return
     }
-    setFoodLogs((prev) => prev.map((f) => (f.id === log.id ? log : f)))
     setEditTarget(null)
+    if (removed) {
+      setFoodLogs((prev) => prev.filter((f) => f.id !== meal.id))
+      showToast(`Removed ${meal.food_name}`, { action: { label: 'Undo', onClick: () => undoDelete(meal) } })
+      return
+    }
+    setFoodLogs((prev) => prev.map((f) => (f.id === log.id ? log : f)))
   }
 
   // Add a saved meal (or one dish from it) to the selected day, with its ingredients.
@@ -261,6 +268,7 @@ export default function FoodTab({
         <SavedMeals savedMeals={savedMeals} onAddItems={handleAddMealItemsToLog} onDelete={handleDeleteSavedMeal} />
       ) : (
         <div className="space-y-3">
+          <MealPlanCard client={client} />
           <Card>
             <NutritionSummary totals={totals} targets={targets} />
           </Card>

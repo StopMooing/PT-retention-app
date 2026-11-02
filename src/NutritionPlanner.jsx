@@ -290,6 +290,11 @@ export default function NutritionPlanner() {
     e?.preventDefault();
     if (!newPlan.name.trim()) { showError("Plan name is required"); return; }
     try {
+      // One active plan per client: the new one replaces any earlier plan they had.
+      if (newPlan.client_id) {
+        const { error: offError } = await supabase.from("meal_plans").update({ is_active: false }).eq("client_id", newPlan.client_id).eq("is_active", true);
+        if (offError) throw offError;
+      }
       const { error } = await supabase.from("meal_plans").insert({
         name: newPlan.name.trim(),
         client_id: newPlan.client_id || null,
@@ -765,7 +770,7 @@ export default function NutritionPlanner() {
                 <Card key={plan.id} as="button" onClick={() => setSelectedPlan(plan)} className="flex items-center gap-3 min-h-[88px]">
                   <span className="min-w-0 flex-1">
                     <span className="block text-[17px] font-bold text-ink truncate">{plan.name}</span>
-                    <span className="block text-[13px] text-muted truncate">{clientName ?? "Not assigned"}</span>
+                    <span className="block text-[13px] text-muted truncate">{clientName ?? "Not assigned"}{clientName && !plan.is_active ? " · replaced by a newer plan" : ""}</span>
                     {plan.daily_calories ? (
                       <span className="flex flex-wrap items-center gap-x-2 mt-1 text-[13px] font-semibold tabular-nums">
                         <span style={{ color: "var(--kcal)" }}>{fmt(plan.daily_calories)} kcal</span>

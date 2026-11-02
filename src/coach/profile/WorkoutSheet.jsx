@@ -44,13 +44,14 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
   const [coachAiExercises, setCoachAiExercises] = useState(null)
   const [aiParseError, setAiParseError] = useState(false)
   const [completing, setCompleting] = useState(false)
+  const [sheetError, setSheetError] = useState(null)
 
   const completedLog = selectedDay?.workout?.completedLog ?? null
   const workoutRef = selectedDay?.workout ?? null
   const isCustom = !!workoutRef?._isCustom
 
   useEffect(() => {
-    setLoggedSets([]); setEditedSets({}); setLoggingMode(false); setLiveSetData({}); setCoachAiExercises(null); setAiParseError(false)
+    setLoggedSets([]); setEditedSets({}); setLoggingMode(false); setLiveSetData({}); setCoachAiExercises(null); setAiParseError(false); setSheetError(null)
     if (!selectedDay || !completedLog || !clientId) return
     let cancelled = false
     async function fetchLoggedSets() {
@@ -252,7 +253,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
       setTimeout(() => setSavedFlash(false), 2500)
     } catch (e) {
       console.error('Save edits error:', e)
-      alert('Failed to save changes: ' + e.message)
+      setSheetError("Couldn't save those changes. Try again.")
     }
     setSavingEdits(false)
   }
@@ -260,6 +261,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
   async function handleCompleteSession() {
     if (completing) return
     setCompleting(true)
+    setSheetError(null)
     try {
       const now = new Date().toISOString()
       let totalVolume = 0
@@ -290,12 +292,8 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
           }
         }
       })
-      let insertedSetIds = []
-      if (setInserts.length > 0) {
-        const { data: insertedSets, error: setsError } = await supabase.from('workout_set_logs').insert(setInserts).select('id')
-        if (setsError) throw setsError
-        insertedSetIds = (insertedSets ?? []).map(r => r.id)
-      }
+      // The session log first, then its sets. If the sets fail, the log comes off again so
+      // the session is never marked done without them (same order as the client app).
       const { data: newLog, error: logError } = await supabase
         .from('workout_logs')
         .insert({
@@ -309,9 +307,13 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
         .select()
         .single()
       if (logError) throw logError
-      if (newLog && insertedSetIds.length > 0) {
-        const { error: stampError } = await supabase.from('workout_set_logs').update({ workout_log_id: newLog.id }).in('id', insertedSetIds)
-        if (stampError) console.error('workout_log_id stamp error:', stampError)
+      if (setInserts.length > 0) {
+        const { error: setsError } = await supabase.from('workout_set_logs').insert(setInserts.map((r) => ({ ...r, workout_log_id: newLog.id })))
+        if (setsError) {
+          const { error: undoErr } = await supabase.from('workout_logs').delete().eq('id', newLog.id)
+          if (undoErr) console.error('workout_logs rollback error:', undoErr)
+          throw setsError
+        }
       }
       for (const exerciseId of touchedExerciseIds) {
         await recomputePBsForExercise(exerciseId)
@@ -320,7 +322,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
       onClose()
     } catch (e) {
       console.error('Complete session error:', e)
-      alert('Failed to complete session: ' + e.message)
+      setSheetError("Couldn't save the session. Check your connection and try again.")
     }
     setCompleting(false)
   }
@@ -334,7 +336,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
     } catch { /* legacy plain-text content, shown as text below */ }
   }
 
-  const footer = completedLog ? (
+  const footerButtons = completedLog ? (
     <Button block size="lg" onClick={handleSaveEdits} disabled={!hasEdits || savingEdits}>
       {savingEdits ? 'Saving' : savedFlash ? 'Saved' : hasEdits ? 'Save changes' : 'No changes'}
     </Button>
@@ -345,6 +347,12 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
     </div>
   ) : (
     <Button block size="lg" onClick={() => setLoggingMode(true)}>Start workout</Button>
+  )
+  const footer = (
+    <div className="space-y-2">
+      {sheetError && <p role="alert" className="text-[13px] font-semibold text-bad text-center">{sheetError}</p>}
+      {footerButtons}
+    </div>
   )
 
   return (

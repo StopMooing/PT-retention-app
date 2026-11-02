@@ -9,6 +9,7 @@ import {
 import { supabase } from '../supabase'
 import { PageTitle, Card, Button, Segmented, Sheet, SectionLabel, Chip } from '../ui'
 import { toLocalDateStr, formatShortDate, addDays, mondayOf, weekDays, weekLabel, shortDayLabel, dayMonth, parseDay } from './dates'
+import { SCHEDULE_WINDOW } from './data'
 import {
   isDone, workoutName, groupByDate, estMinutes, plural, muscleGroups, programWeeks, programProgress,
   sessionsInWeek, sessionStatusLine,
@@ -253,7 +254,8 @@ export default function TrainTab({
   const onDemandItems = onDemand.workouts.map((p) => programItem(p.days[0], exMap, { key: `od_${p.id}`, name: p.name, eyebrow: 'On demand', onDemand: true }))
   const savedItems = savedWorkouts.map((w) => savedItem(w))
   const hasPrograms = !!assignment || onDemand.programs.length > 0
-  const tab = view === 'programs' ? 'programs' : 'workouts'
+  // No programs to show (no coach program, no on-demand ones): no Programs tab at all.
+  const tab = view === 'programs' && hasPrograms ? 'programs' : 'workouts'
   const progress = assignment ? programProgress({ assignment, programWorkouts, workoutLogs, today }) : null
 
   /* ----- the shown week ----- */
@@ -285,7 +287,8 @@ export default function TrainTab({
   }
 
   async function handleDuplicateWorkout(date) {
-    if (!detailSw || !date) return
+    if (!detailSw || !date || busy) return
+    setBusy(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const { error } = await supabase.from('scheduled_workouts').insert({
@@ -303,6 +306,8 @@ export default function TrainTab({
     } catch (e) {
       console.error('Duplicate workout error:', e)
       setSheetError("Couldn't copy that session. Try again.")
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -484,11 +489,13 @@ export default function TrainTab({
         }
       />
 
-      <Segmented
-        options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
-        value={tab}
-        onChange={setView}
-      />
+      {hasPrograms && (
+        <Segmented
+          options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
+          value={tab}
+          onChange={setView}
+        />
+      )}
 
       {tab === 'workouts' && (
         <div className="space-y-7">
@@ -498,6 +505,8 @@ export default function TrainTab({
               label={weekLabel(weekStart, today)}
               onPrev={() => setWeekStart(addDays(weekStart, -7))}
               onNext={() => setWeekStart(addDays(weekStart, 7))}
+              prevDisabled={addDays(weekStart, -7) < mondayOf(addDays(today, -SCHEDULE_WINDOW.back))}
+              nextDisabled={addDays(weekStart, 7) > addDays(today, SCHEDULE_WINDOW.ahead)}
               prevLabel="Previous week"
               nextLabel="Next week"
             />
@@ -530,8 +539,8 @@ export default function TrainTab({
                   )
                 })}
               </Card>
-            ) : (
-              <p className="text-[15px] text-muted px-1">Nothing planned this week.</p>
+            ) : !canAdd && (
+              <p className="text-[15px] text-muted px-1">A rest week.</p>
             )}
             {canAdd && (
               <Button variant="secondary" block onClick={openPicker}><Plus size={18} /> Add a workout</Button>
@@ -565,9 +574,6 @@ export default function TrainTab({
 
       {tab === 'programs' && (
         <div className="space-y-7">
-          {!hasPrograms && (
-            <p className="text-[15px] text-muted text-center px-4 py-2">No programs yet. Your coach can give you one, or start an on-demand program when they're available.</p>
-          )}
           {assignment && (
             <section className="space-y-3">
               <ProgramHeader
@@ -649,7 +655,7 @@ export default function TrainTab({
         open={!!dateMode}
         onClose={() => { setDateMode(null); setDetailSw(null) }}
         title={dateMode === 'move' ? 'Move to another day' : 'Copy to another day'}
-        footer={<Button size="lg" block onClick={() => (dateMode === 'move' ? handleMoveWorkout(pickedDate) : handleDuplicateWorkout(pickedDate))}>{dateMode === 'move' ? 'Move' : 'Copy'} to {formatShortDate(pickedDate)}</Button>}
+        footer={<Button size="lg" block disabled={busy} onClick={() => (dateMode === 'move' ? handleMoveWorkout(pickedDate) : handleDuplicateWorkout(pickedDate))}>{dateMode === 'move' ? 'Move' : 'Copy'} to {formatShortDate(pickedDate)}</Button>}
       >
         <DayGrid days={28} selected={[pickedDate]} onToggle={setPickedDate} busy={new Set(Object.keys(byDate))} />
         {sheetError && <p role="alert" className="text-[13px] font-semibold text-bad mt-3">{sheetError}</p>}

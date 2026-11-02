@@ -13,6 +13,7 @@ import {
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
 import DailyCheckinSheet from './DailyCheckinSheet'
+import HabitsCard from './HabitsCard'
 import { NutritionSummary, DoneDot } from './common'
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -183,7 +184,7 @@ function DaySheet({ date, setDate, today, byDate, completedIds, workoutLogs, wor
           </section>
         )}
         {sessions.length === 0 && food.length === 0 && (
-          <p className="text-[15px] text-muted py-2">Nothing logged or planned.</p>
+          <p className="text-[15px] text-muted py-2">A rest day.</p>
         )}
       </div>
     </Sheet>
@@ -287,7 +288,7 @@ export default function HomeTab({
     todayCard = {
       eyebrow: 'Today',
       title: 'Rest day',
-      body: next ? `Next up: ${workoutName(next)}, ${when}` : 'Nothing scheduled yet',
+      body: next ? `Next up: ${workoutName(next)}, ${when}` : 'Rest and recover',
       action: next ? <ChevronRight size={20} className="text-faint shrink-0" /> : null,
       onClick: next ? () => onOpenWorkout(next) : undefined,
     }
@@ -326,6 +327,7 @@ export default function HomeTab({
         <NextThing todo={todayCard} />
         {checkinCard && <NextThing todo={checkinCard} />}
         <DailyCard todays={todaysDaily} onOpen={() => setDailyOpen(true)} />
+        <HabitsCard client={client} showToast={showToast} />
 
         {/* Today's food */}
         <Card padded={false}>
@@ -378,7 +380,7 @@ export default function HomeTab({
           setCheckinOpen(false)
           // The reply comes back in Messages (it shows there with the check-in).
           showToast?.(
-            hasCoach ? (coachName ? `Sent to ${coachName}. You'll see his reply in Messages.` : "Sent to your coach. You'll see their reply in Messages.") : 'Check-in saved.',
+            hasCoach ? (coachName ? `Sent to ${coachName}. You'll see the reply in Messages.` : "Sent to your coach. You'll see their reply in Messages.") : 'Check-in saved.',
             { ms: 4500 },
           )
         }}

@@ -62,7 +62,7 @@ function DroppableDay({ dateStr, isToday, isPast, day, items, canAdd, dragging, 
         )}
       </div>
       <div className="flex flex-col gap-1">
-        {items.map((sw) => <DraggableWorkout key={sw.id} workout={sw} done={isDone(sw)} onRemove={() => onRemove(sw.id)} onClick={() => onOpen(sw)} />)}
+        {items.map((sw) => { const done = isDone(sw); return <DraggableWorkout key={sw.id} workout={sw} done={done} onRemove={done ? null : () => onRemove(sw)} onClick={() => onOpen(sw)} /> })}
       </div>
     </div>
   )
@@ -429,6 +429,15 @@ export default function TrainingTab(props) {
   const doneLog = (sw) => workoutLogs.find((l) => l.scheduled_workout_id === sw.id && l.completed) ?? null
   const isDone = (sw) => !!doneLog(sw)
   const openSw = (sw) => onOpenWorkout(sw, doneLog(sw))
+  // A one-off session can come from any of the coach's programs, assigned or not.
+  const canAddOneOff = allProgramWorkouts.length > 0
+  // Done sessions can't be removed (their logged sets stay with them). Others confirm first.
+  async function removeSw(sw) {
+    if (isDone(sw)) return
+    if (!window.confirm(`Take ${sw._displayName || 'this workout'} off ${client.full_name.split(' ')[0]}'s calendar?`)) return
+    const err = await onRemoveScheduled(sw.id)
+    if (err) setNotice(err)
+  }
   const move = (dir) => setStart((prev) => { const d = new Date(prev); d.setDate(d.getDate() + dir * weeksN * 7); return d })
 
   function handleDragEnd({ active, over }) {
@@ -509,11 +518,11 @@ export default function TrainingTab(props) {
                         isToday={ds === today}
                         isPast={ds < today}
                         items={scheduledWorkouts.filter((sw) => sw.scheduled_date === ds)}
-                        canAdd={!!programAssignment}
+                        canAdd={canAddOneOff}
                         dragging={dragging}
                         isDone={isDone}
                         onAdd={() => setAddDate(day)}
-                        onRemove={onRemoveScheduled}
+                        onRemove={removeSw}
                         onOpen={openSw}
                       />
                     )
@@ -545,12 +554,12 @@ export default function TrainingTab(props) {
                           <button onClick={() => openSw(sw)} className="flex-1 min-w-0 text-left px-3 py-2 text-sm font-bold truncate">
                             {done && <Check size={13} strokeWidth={3} className="inline -mt-0.5 mr-1" />}{sw._displayName}
                           </button>
-                          <button onClick={() => onRemoveScheduled(sw.id)} aria-label="Remove from schedule" className="w-10 h-10 flex items-center justify-center opacity-70"><X size={15} /></button>
+                          {!done && <button onClick={() => removeSw(sw)} aria-label="Remove from schedule" className="w-10 h-10 flex items-center justify-center opacity-70"><X size={15} /></button>}
                         </span>
                       )
                     })}
                   </span>
-                  {programAssignment && (
+                  {canAddOneOff && (
                     <button onClick={() => setAddDate(day)} aria-label={`Add workout on ${ds}`} className="w-10 h-10 self-center rounded-full flex items-center justify-center text-muted hover:bg-surface-2"><Plus size={18} /></button>
                   )}
                 </li>

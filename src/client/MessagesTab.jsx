@@ -73,7 +73,7 @@ export default function MessagesTab({ clientId, userId, coachName }) {
         </div>
       </header>
 
-      <div className="flex-1 px-4 pt-4 pb-6">
+      <div className="flex-1 px-4 pt-4 pb-28">
         {loading ? (
           <Loading />
         ) : error && items.length === 0 ? (

@@ -217,26 +217,26 @@ export default function HabitTracker() {
     }
 
     try {
-      if (existingLog) {
-        await supabase.from('habit_logs').delete().eq('habit_id', habit.id).eq('completed_date', today)
-      } else {
-        await supabase.from('habit_logs').insert({
+      const { error } = existingLog
+        ? await supabase.from('habit_logs').delete().eq('habit_id', habit.id).eq('completed_date', today)
+        : await supabase.from('habit_logs').insert({
           habit_id: habit.id,
           client_id: selectedClient.id,
           completed_date: today,
           completed: true,
         })
-      }
-      await refetchLogs()
+      if (error) throw error
     } catch (e) {
       console.error(e)
+      showToast("Couldn't save that. Try again.", "bad")
       await refetchLogs()
     }
   }
 
   async function handleDeleteHabit(habit) {
     try {
-      await supabase.from('habits').update({ is_active: false }).eq('id', habit.id)
+      const { error } = await supabase.from('habits').update({ is_active: false }).eq('id', habit.id)
+      if (error) throw error
       const updatedHabits = habits.filter(h => h.id !== habit.id)
       setHabits(updatedHabits)
       setClientHabitCounts(prev => ({ ...prev, [selectedClient.id]: updatedHabits.length }))

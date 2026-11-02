@@ -17,13 +17,18 @@ const fmtTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}
 const SAVE_FAILED = "Couldn't save your session. Check your signal and tap Finish again."
 
 // The numbers saved for a ticked set. Saving and personal bests both use these, so they
-// always agree. Blank reps fall back to the prescribed reps when that is a plain number
-// ("8"), otherwise 0 (ranges like "8-10" or "45s" are not a count).
+// always agree. Blank reps fall back to the prescribed reps: the first number in it, so
+// "8-10" counts as 8 and "8 each leg" as 8. A timed target ("30s") has no rep count: 0.
 function repsFor(set, ex) {
   const typed = String(set?.reps ?? '').trim()
-  const reps = typed !== '' ? parseFloat(typed) || 0 : (/^\d+$/.test(String(ex?.reps ?? '').trim()) ? parseInt(ex.reps, 10) : 0)
+  const target = String(ex?.reps ?? '').trim()
+  const timed = /^\d+\s*(s|sec|secs|seconds?|min|mins|minutes?)\b/i.test(target)
+  const reps = typed !== '' ? parseFloat(typed) || 0 : (!timed && parseInt(target.match(/\d+/)?.[0] ?? '', 10)) || 0
   return Math.min(100, Math.max(0, reps))
 }
+// An exercise can only be logged when it is in the exercise library (an AI workout can
+// name one that isn't). Those show as plan only.
+const loggable = (ex) => !!(ex.exercise_id || ex.exercises?.id)
 function weightFor(set) {
   return Math.min(500, Math.max(0, parseFloat(set?.weight) || 0))
 }
@@ -52,7 +57,7 @@ function clearDraft(swId) {
 const PB_LABELS = {
   '1rm': { label: 'Estimated 1RM', desc: 'Heaviest estimated single rep' },
   best_set: { label: 'Best set', desc: 'Highest weight x reps' },
-  volume: { label: 'Session volume', desc: 'Total kg moved this session' },
+  volume: { label: 'Volume on this lift', desc: 'Total kg moved on this lift in one session' },
 }
 
 const FEEL = ['Easy', 'Steady', 'Solid', 'Hard', 'All out']
@@ -205,7 +210,11 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
   const [aiParseError, setAiParseError] = useState(false)
 
   const trackedExercises = isCustom ? (aiExercises || EMPTY) : exercises
-  const hasSetTracking = !isCustom || (aiExercises !== null && !aiParseError)
+  const loggableExercises = trackedExercises.filter(loggable)
+  // An AI workout we can't read, or none of whose exercises are in the library, is just
+  // marked as done.
+  const planOnly = isCustom && (aiParseError || (aiExercises !== null && loggableExercises.length === 0))
+  const hasSetTracking = !isCustom || (aiExercises !== null && !planOnly)
 
   // Last session's sets for each exercise, shown in the "Previous" column.
   useEffect(() => {
@@ -366,14 +375,14 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     if (restSeconds) startRestTimer(restSeconds)
   }
 
-  const totalSetsCount = trackedExercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)
-  const doneSetsCount = Object.values(setData).reduce((sum, ex) => sum + Object.values(ex).filter((s) => s.done).length, 0)
+  const totalSetsCount = loggableExercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)
+  const doneSetsCount = loggableExercises.reduce((sum, ex) => sum + Object.values(setData[ex.id] || {}).filter((s) => s.done).length, 0)
   const allDone = hasSetTracking && totalSetsCount > 0 && doneSetsCount >= totalSetsCount
   const progressPct = totalSetsCount > 0 ? Math.round((doneSetsCount / totalSetsCount) * 100) : 0
 
   // The first set not ticked yet, so the screen can say what is next.
   let nextUp = null
-  for (const ex of trackedExercises) {
+  for (const ex of loggableExercises) {
     for (let s = 1; s <= (ex.sets || 0); s++) {
       if (!setData[ex.id]?.[s]?.done) { nextUp = { ex, set: s }; break }
     }
@@ -562,11 +571,16 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     }
     clearDraft(scheduledWorkout.id)
     setCompleting(false)
-    onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs, totalVolume, setsCompleted: doneSetsCount, exerciseCount: trackedExercises.length, workoutName, edited: isEditing, logId })
+    onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs, totalVolume, setsCompleted: setRows.length, exerciseCount: byExercise.length, workoutName, edited: isEditing, logId })
   }
 
   // AI workout whose plan could not be read: log it as done without sets.
   async function handleCompleteCustom() {
+    // Already logged: nothing more to save, and never a second log for the same session.
+    if (isEditing) {
+      onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName, edited: true, logId: existingLog.id })
+      return
+    }
     setCompleting(true)
     setSaveError(null)
     let log
@@ -630,7 +644,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
             const exSetData = setData[rowKey] || {}
             const prevSets = previousSets[exerciseId] || []
             const muscle = ex.exercises?.muscle_group
-            const exDone = Array.from({ length: ex.sets || 0 }, (_, i) => exSetData[i + 1]?.done).every(Boolean)
+            const exDone = loggable(ex) && Array.from({ length: ex.sets || 0 }, (_, i) => exSetData[i + 1]?.done).every(Boolean)
             return (
               <Card key={rowKey} padded={false} className="overflow-hidden">
                 <div className="px-4 pt-3.5 pb-2.5 flex items-start gap-3">
@@ -647,15 +661,18 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                   {muscle && <Chip className="mt-0.5">{muscle}</Chip>}
                 </div>
 
-                <div className="grid grid-cols-[28px_1fr_64px_56px_40px] gap-2 items-center px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.06em] text-faint">
+                {loggable(ex) && <div className="grid grid-cols-[28px_1fr_64px_56px_40px] gap-2 items-center px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.06em] text-faint">
                   <span className="text-center">Set</span>
                   <span>Previous</span>
                   <span className="text-center">kg</span>
                   <span className="text-center">Reps</span>
                   <span className="flex justify-center"><Check size={14} strokeWidth={3} /></span>
-                </div>
+                </div>}
 
-                {Array.from({ length: ex.sets || 0 }, (_, i) => {
+                {!loggable(ex) && (
+                  <p className="px-4 pb-3 text-[13px] text-muted">Not in the exercise library yet, so this one isn't tracked.</p>
+                )}
+                {loggable(ex) && Array.from({ length: ex.sets || 0 }, (_, i) => {
                   const setNum = i + 1
                   const setInfo = exSetData[setNum] || {}
                   const isDone = !!setInfo.done
@@ -702,7 +719,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
         )}
       </div>
 
-      {(isCustom && aiParseError) ? (
+      {planOnly ? (
         <div className="shrink-0 border-t border-line bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
           {saveError && <p role="alert" className="text-[13px] font-semibold text-bad text-center mb-2.5">{saveError}</p>}
           <Button size="lg" block onClick={handleCompleteCustom} disabled={completing}>

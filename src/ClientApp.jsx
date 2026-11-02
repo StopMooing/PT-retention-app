@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Home, Dumbbell, Utensils, TrendingUp, MessageCircle } from 'lucide-react'
 import { supabase } from './supabase'
 import { Button, TabBar, StatusBarCover } from './ui'
-import { formatDateLabel } from './client/dates'
+import { formatDateLabel, toLocalDateStr } from './client/dates'
 import { completedKeys, workoutName } from './client/metrics'
 import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
@@ -101,8 +101,8 @@ export default function ClientApp() {
 
   // AI helper
   const [aiMode, setAiMode] = useState(null) // 'workout' | 'nutrition'
-  const [workoutLibrary, setWorkoutLibrary] = useState(null)
-  const [workoutLibraryError, setWorkoutLibraryError] = useState(false)
+  // A failed first load (no signal) is not the same as an account with no client record.
+  const [loadFailed, setLoadFailed] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -110,7 +110,8 @@ export default function ClientApp() {
       const { data: { session } } = await supabase.auth.getSession()
       const user = session?.user
       if (!user) { setLoading(false); return }
-      const { data: clientRow } = await supabase.from('clients').select('*').eq('user_id', user.id).maybeSingle()
+      const { data: clientRow, error: clientError } = await supabase.from('clients').select('*').eq('user_id', user.id).maybeSingle()
+      if (clientError) { console.error('Client load error:', clientError); setLoadFailed(true); setLoading(false); return }
       if (!clientRow) { setLoading(false); return }
       setClient(clientRow)
       setUserId(user.id)
@@ -173,22 +174,29 @@ export default function ClientApp() {
     init()
   }, [])
 
-  // The AI workout builder needs the exercise library first.
+  // New coach messages show on the Messages badge while the app is open, and coming back
+  // to the app re-checks messages and check-in replies.
+  const tabRef = useRef(tab)
+  useEffect(() => { tabRef.current = tab }, [tab])
   useEffect(() => {
-    if (aiMode !== 'workout' || (workoutLibrary && workoutLibrary.length > 0)) return
-    let cancelled = false
-    ;(async () => {
-      const { data, error } = await supabase.from('exercises').select('name, muscle_group, category')
-      if (cancelled) return
-      if (error || !data || data.length === 0) {
-        console.error('Workout library load error:', error || 'no rows')
-        setWorkoutLibraryError(true)
-        return
-      }
-      setWorkoutLibrary(data)
-    })()
-    return () => { cancelled = true }
-  }, [aiMode, workoutLibrary])
+    if (!client?.id || !client.pt_id || !userId) return
+    const id = client.id
+    const channel = supabase
+      .channel(`client-badge-${id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'coach_messages', filter: `client_id=eq.${id}` }, (payload) => {
+        if (payload.new?.sender_id !== userId && tabRef.current !== 'messages') setUnreadMessages((n) => n + 1)
+      })
+      .subscribe()
+    async function refresh() {
+      if (document.visibilityState !== 'visible' || tabRef.current === 'messages') return
+      const [u, ci] = await Promise.all([fetchUnreadCounts({ readerId: userId, clientId: id }), fetchByClient('checkins', id, 'submitted_at')])
+      setUnreadMessages(u[id] || 0)
+      setCheckins(ci)
+      setUnseenReplies(unseenReplyCount(ci, id))
+    }
+    document.addEventListener('visibilitychange', refresh)
+    return () => { supabase.removeChannel(channel); document.removeEventListener('visibilitychange', refresh) }
+  }, [client?.id, client?.pt_id, userId])
 
   // A short message near the bottom. Pass { action: { label, onClick }, ms } for an Undo.
   const showToast = useCallback((message, opts = {}) => {
@@ -234,14 +242,27 @@ export default function ClientApp() {
     setFoodLogs(await fetchFoodLogs(clientId))
   }, [clientId])
 
+  // A done session opens its log (to edit, never to log again); others open the preview.
   function openWorkout(sw) {
-    const existing = workoutLogs.find((l) => l.scheduled_workout_id === sw.id && l.completed) ?? null
+    const existing = sw?.id ? workoutLogs.find((l) => l.scheduled_workout_id === sw.id && l.completed) ?? null : null
     if (existing) setLoggingWorkout({ ...sw, _existingLog: existing })
     else setPreviewWorkout({ ...sw, _existingLog: null })
   }
 
+  // Starting a session planned for a later day moves it to today first, so the week ring,
+  // the calendar and the streak all agree on when it was done.
+  async function beginSession(sw) {
+    let next = { ...sw, _existingLog: null }
+    const today = toLocalDateStr()
+    if (sw?.id && sw.scheduled_date > today) {
+      const { data, error } = await supabase.from('scheduled_workouts').update({ scheduled_date: today }).eq('id', sw.id).select('id')
+      if (error || !data?.length) console.error('Move early session error:', error ?? 'no row changed')
+      else { next = { ...next, scheduled_date: today }; reloadScheduledWorkouts() }
+    }
+    setLoggingWorkout(next)
+  }
+
   function openWorkoutAI() {
-    setWorkoutLibraryError(false)
     setAiMode('workout')
   }
 
@@ -311,9 +332,20 @@ export default function ClientApp() {
 
   if (!client) return (
     <div className="min-h-screen bg-bg flex items-center justify-center px-6">
-      <div className="text-center max-w-sm">
-        <p className="font-display text-[28px] text-ink">Account not linked</p>
-        <p className="text-muted mt-1">Ask your coach for a new invite link to get access.</p>
+      <div className="text-center max-w-sm w-full">
+        {loadFailed ? (
+          <>
+            <p className="font-display text-[28px] text-ink">Couldn't load</p>
+            <p className="text-muted mt-1">Check your signal and try again.</p>
+            <Button size="lg" block className="mt-6" onClick={() => window.location.reload()}>Try again</Button>
+          </>
+        ) : (
+          <>
+            <p className="font-display text-[28px] text-ink">Account not linked</p>
+            <p className="text-muted mt-1">This login isn't linked to a client yet. Sign out and sign in with the email your coach invited, or ask them for a new invite link.</p>
+          </>
+        )}
+        <Button variant="secondary" size="lg" block className="mt-3" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login' }}>Sign out</Button>
       </div>
     </div>
   )
@@ -321,19 +353,7 @@ export default function ClientApp() {
   const shared = { client, scheduledWorkouts, completedIds, workoutLogs, workoutExercises: exerciseMap, showToast }
 
   let overlay = null
-  if (aiMode === 'workout' && workoutLibraryError) {
-    overlay = (
-      <div className="fixed inset-0 z-50 bg-bg flex items-center justify-center px-6">
-        <div className="text-center max-w-sm w-full">
-          <p className="text-[17px] font-bold text-ink">Couldn't load the exercise library.</p>
-          <p className="text-muted mt-1">The workout builder needs it. Try again in a moment.</p>
-          <Button size="lg" block className="mt-6" onClick={() => { setWorkoutLibraryError(false); setAiMode(null) }}>Go back</Button>
-        </div>
-      </div>
-    )
-  } else if (aiMode === 'workout' && (!workoutLibrary || workoutLibrary.length === 0)) {
-    overlay = <div className="fixed inset-0 z-50"><Loading full /></div>
-  } else if (aiMode === 'workout') {
+  if (aiMode === 'workout') {
     overlay = <AIChat context="Build a workout" placeholder="For example: a 45 minute upper body workout with dumbbells only" mode="workout" onClose={() => setAiMode(null)} onSave={handleSaveWorkout} saveLabel="Save workout" />
   } else if (aiMode === 'nutrition') {
     overlay = <AIChat context="Meal ideas" placeholder="For example: a high protein breakfast under 500 calories" mode="nutrition" onClose={() => setAiMode(null)} onSave={handleSaveMeal} saveLabel="Save meal" />
@@ -366,7 +386,7 @@ export default function ClientApp() {
         exercises={exerciseMap[previewWorkout.program_workout_id] ?? EMPTY}
         customContent={previewWorkout._isCustom || !previewWorkout.program_workout_id ? (previewWorkout._customWorkout?.content || previewWorkout.saved_workouts?.content || '') : null}
         onBack={() => setPreviewWorkout(null)}
-        footer={<Button size="lg" block onClick={() => { setLoggingWorkout(previewWorkout); setPreviewWorkout(null) }}><Dumbbell size={20} /> Start workout</Button>}
+        footer={<Button size="lg" block onClick={() => { beginSession(previewWorkout); setPreviewWorkout(null) }}><Dumbbell size={20} /> Start workout</Button>}
       />
     )
   } else if (resourcesOpen) {
@@ -390,7 +410,7 @@ export default function ClientApp() {
             personalBests={strength.personalBests}
             coachName={coachName}
             onOpenWorkout={openWorkout}
-            onStartWorkout={(sw) => setLoggingWorkout({ ...sw, _existingLog: null })}
+            onStartWorkout={beginSession}
             onOpenProfile={() => setProfileOpen(true)}
             onLogFood={() => { setFoodView('log'); setAddFoodOpen(true); goTab('food') }}
           />
@@ -407,8 +427,8 @@ export default function ClientApp() {
             reloadScheduledWorkouts={reloadScheduledWorkouts}
             reloadAssignment={reloadAssignment}
             onOpenWorkout={openWorkout}
-            onStartWorkout={(sw) => setLoggingWorkout({ ...sw, _existingLog: null })}
-            onPreviewWorkout={(sw) => setPreviewWorkout(sw)}
+            onStartWorkout={beginSession}
+            onPreviewWorkout={openWorkout}
             onBuildWorkout={openWorkoutAI}
           />
         )}

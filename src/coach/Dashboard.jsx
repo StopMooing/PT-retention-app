@@ -5,7 +5,7 @@ import { Search, ChevronRight, Plus, Link2, Check, MessageSquare, MessageCircle,
 import { supabase } from '../supabase'
 import { fetchUnreadCounts, fetchLatestPerThread } from '../lib/messages'
 import { PageTitle, SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, EmptyState, Mark } from '../ui'
-import { clientStatus, STATUS, relativeDay, sessionsLast7, checkinsThisWeek, checkinNote, firstName, messageTime, toLocalDateStr, addDays } from './lib'
+import { clientStatus, STATUS, relativeDay, sessionsLast7, checkinsThisWeek, checkinNote, firstName, messageTime, toLocalDateStr, addDays, awaitingReply, lastActivity, missedInARow, daysSince } from './lib'
 import { useMessageEvent, READ, INCOMING } from './messages/events'
 
 function greeting() {
@@ -25,11 +25,16 @@ function InviteButton({ client, compact }) {
       </span>
     )
   }
-  function handleCopy(e) {
+  async function handleCopy(e) {
     e.stopPropagation()
-    navigator.clipboard.writeText(`${window.location.origin}/claim/${client.claim_token}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    const link = `${window.location.origin}/claim/${client.claim_token}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      window.prompt('Copy this invite link:', link)
+    }
   }
   return (
     <Button variant="secondary" size="sm" onClick={handleCopy} title="Copy account invite link" className="shrink-0">
@@ -134,8 +139,19 @@ export default function Dashboard({ user }) {
       fetchUnreadCounts({ readerId: user.id }),
       fetchLatestPerThread(clientIds),
     ])
+    // A client with no session in the window still has a last session further back, and
+    // the status rule needs it (the profile sees it too, so both screens agree).
+    const quiet = clientIds.filter((id) => !(logRows ?? []).some((l) => l.client_id === id))
+    const older = await Promise.all(quiet.map((id) => supabase
+      .from('workout_logs')
+      .select('client_id, logged_at, completed, scheduled_workout_id')
+      .eq('client_id', id)
+      .eq('completed', true)
+      .order('logged_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => data?.[0] ?? null)))
     setCheckins(checkinRows ?? [])
-    setWorkoutLogs(logRows ?? [])
+    setWorkoutLogs([...(logRows ?? []), ...older.filter(Boolean)])
     setScheduled(swRows ?? [])
     setUnread(unreadCounts)
     setLatestMsg(latest)
@@ -183,8 +199,10 @@ export default function Dashboard({ user }) {
     return {
       ...c,
       lastCheckIn,
-      // Only their latest check-in is owed a reply; a newer one replaces older ones.
-      awaitingCheckin: own[0] && !own[0].coach_reply ? own[0] : null,
+      // Only their latest check-in is owed a reply (shared rule with the profile).
+      awaitingCheckin: awaitingReply(own),
+      lastActive: lastActivity({ lastCheckIn, workoutLogs: logs }),
+      missed: missedInARow({ scheduledWorkouts: scheduled.filter((sw) => sw.client_id === c.id), workoutLogs: logs }),
       unreadMessages: unread[c.id] || 0,
       sessions: sessionsLast7(logs),
       status: clientStatus({ lastCheckIn, workoutLogs: logs, scheduledWorkouts: scheduled.filter((sw) => sw.client_id === c.id) }),
@@ -210,7 +228,7 @@ export default function Dashboard({ user }) {
   const awaitingIds = new Set(replyItems.map((i) => i.id))
   const slipping = enriched
     .filter((c) => (c.status === 'Drifting' || c.status === 'At Risk') && !awaitingIds.has(c.id))
-    .sort((a, b) => new Date(a.lastCheckIn) - new Date(b.lastCheckIn))
+    .sort((a, b) => ((a.lastActive ?? '') < (b.lastActive ?? '') ? -1 : 1))
   const notStarted = enriched.filter((c) => c.status === 'New' && !c.user_id)
 
   const q = search.trim().toLowerCase()
@@ -307,20 +325,24 @@ export default function Dashboard({ user }) {
             })}
             {slipping.map((c) => (
               <button key={c.id} onClick={() => navigate(`/clients/${c.id}`)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2 transition-colors">
-                <Avatar name={c.full_name} size={40} />
+                <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="font-bold text-ink truncate">{c.full_name}</span>
                     <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>
                   </span>
-                  <span className="block text-[13px] text-muted">Last check-in {relativeDay(c.lastCheckIn).toLowerCase()}</span>
+                  <span className="block text-[13px] text-muted">
+                    {c.status === 'Drifting' && c.missed >= 2 && daysSince(c.lastActive) < 7
+                      ? `Last ${c.missed} planned sessions not logged`
+                      : `Last active ${relativeDay(c.lastActive).toLowerCase()}`}
+                  </span>
                 </span>
                 <ChevronRight size={20} className="text-faint shrink-0" />
               </button>
             ))}
             {notStarted.map((c) => (
               <div key={c.id} className="flex items-center gap-3 px-4 py-3.5">
-                <Avatar name={c.full_name} size={40} />
+                <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
                 <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/clients/${c.id}`)}>
                   <span className="block font-bold text-ink truncate">{c.full_name}</span>
                   <span className="block text-[13px] text-muted">Has not set up their account yet</span>
@@ -355,6 +377,7 @@ export default function Dashboard({ user }) {
               { value: 'Engaged', label: 'Engaged' },
               { value: 'Drifting', label: 'Drifting' },
               { value: 'At Risk', label: 'At risk' },
+              { value: 'New', label: 'New' },
             ]}
           />
         </div>
@@ -382,7 +405,7 @@ export default function Dashboard({ user }) {
                       className="flex md:grid md:grid-cols-[minmax(0,1fr)_120px_130px_110px_120px_20px] gap-3 md:gap-4 items-center px-4 py-3 min-h-[64px] cursor-pointer hover:bg-surface-2 transition-colors"
                     >
                       <span className="flex items-center gap-3 min-w-0 flex-1">
-                        <Avatar name={c.full_name} size={40} />
+                        <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
                         <span className="min-w-0">
                           <span className="flex items-center gap-2">
                             <span className="font-bold text-ink truncate">{c.full_name}</span>

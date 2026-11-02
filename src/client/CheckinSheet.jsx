@@ -67,7 +67,7 @@ export default function CheckinSheet({ open, onClose, client, onSaved }) {
       title="Your week in review"
       footer={
         <Button size="lg" block onClick={submit} disabled={saving || training === 0 || energy === 0}>
-          {saving ? 'Sending...' : 'Send to your coach'}
+          {saving ? 'Sending...' : client?.pt_id ? 'Send to your coach' : 'Save check-in'}
         </Button>
       }
     >

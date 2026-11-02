@@ -94,13 +94,18 @@ export const STATUS = {
   Engaged: { tone: 'accent', label: 'Engaged' },
   Drifting: { tone: 'warn', label: 'Drifting' },
   'At Risk': { tone: 'bad', label: 'At risk' },
-  New: { tone: 'neutral', label: 'No check-ins' },
+  New: { tone: 'neutral', label: 'New' },
 }
 
 /* ---------- Counts ---------- */
-export function sessionsThisMonth(workoutLogs) {
-  const month = toLocalDateStr().slice(0, 7)
-  return (workoutLogs ?? []).filter((w) => w.completed && dayOf(w.logged_at)?.slice(0, 7) === month).length
+// Same functions the client app uses, so coach and client see the same numbers.
+export { sessionsThisMonth, sessionsThisWeek, completedKeys } from '../client/metrics'
+
+// The check-in owed a reply: the client's latest one, if it has no reply yet. A newer
+// check-in replaces older ones. Dashboard, profile badge and Overview all use this.
+export function awaitingReply(checkins) {
+  const latest = (checkins ?? []).reduce((a, c) => (!a || c.submitted_at > a.submitted_at ? c : a), null)
+  return latest && !latest.coach_reply ? latest : null
 }
 
 export function checkinsThisWeek(checkins) {
@@ -139,15 +144,6 @@ export function dayNutrition(foodLogs, waterLogs, day = toLocalDateStr()) {
     fats: sum('fats_g'),
     waterMl: water.reduce((s, w) => s + (w.amount_ml || 0), 0),
   }
-}
-
-// Seven-day rolling average of body weight, one value per log (logs sorted oldest first).
-export function weightAverages(logs) {
-  return logs.map((w) => {
-    const from = addDays(w.logged_date, -6)
-    const win = logs.filter((x) => x.logged_date >= from && x.logged_date <= w.logged_date)
-    return Math.round((win.reduce((s, x) => s + parseFloat(x.weight_kg), 0) / win.length) * 10) / 10
-  })
 }
 
 /* ---------- Messages ---------- */

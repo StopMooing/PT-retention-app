@@ -216,11 +216,11 @@ export function DayGrid({ days = 28, past = 7, selected = [], onToggle, busy }) 
 
 /* Left arrow, a label, right arrow. DayNav (Nutrition) and the Training week navigator
    both use it so they look the same. */
-export function StepNav({ label, onPrev, onNext, prevLabel, nextLabel, nextDisabled }) {
+export function StepNav({ label, onPrev, onNext, prevLabel, nextLabel, prevDisabled, nextDisabled }) {
   const btn = 'w-11 h-11 rounded-full flex items-center justify-center text-ink bg-surface border border-line hover:bg-surface-2 disabled:opacity-30'
   return (
     <div className="flex items-center gap-2">
-      <button onClick={onPrev} aria-label={prevLabel} className={btn}>
+      <button disabled={prevDisabled} onClick={onPrev} aria-label={prevLabel} className={btn}>
         <ChevronLeft size={20} />
       </button>
       <p className="flex-1 text-center text-[17px] font-bold text-ink">{label}</p>

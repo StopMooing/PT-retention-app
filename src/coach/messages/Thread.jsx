@@ -9,7 +9,7 @@ import { useConversation, markThreadRead, checkinNote } from '../../lib/messages
 import { CheckinChatCard, DailyChatCard, ReplyLabel } from '../../lib/CheckinChatCards'
 import { Mark, Button } from '../../ui'
 import { dayOf, messageDayLabel, clockTime, firstName, formatDate } from '../lib'
-import { emit, READ } from './events'
+import { emit, READ, REPLIED } from './events'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 const GROUP_MS = 5 * 60 * 1000
@@ -101,6 +101,8 @@ export default function Thread({ clientId, userId, clientName = '', onChange, cl
     setSending(true)
     setSendError(null)
     const { ok } = replyCi ? await replyToCheckin(replyCi.id, text) : await send(text)
+    // The profile and inbox keep their own copy of check-ins: tell them about the reply.
+    if (ok && replyCi) emit(REPLIED, { ...replyCi, client_id: clientId, coach_reply: text, replied_at: new Date().toISOString() })
     setSending(false)
     if (ok) {
       setDraft('')

@@ -44,7 +44,7 @@ function DailyForm({ client, existing, onSaved }) {
           <Scale key={s.key} label={s.label} low={s.low} high={s.high} value={scores[s.key]} onChange={(n) => setScores((p) => ({ ...p, [s.key]: n }))} />
         ))}
         <label className="block">
-          <span className="text-[15px] font-bold text-ink">Anything for your coach?</span>
+          <span className="text-[15px] font-bold text-ink">{client?.pt_id ? "Anything for your coach?" : "Anything to note?"}</span>
           <textarea
             rows={2}
             maxLength={1000}

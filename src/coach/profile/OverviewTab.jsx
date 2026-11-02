@@ -3,7 +3,8 @@ import { Fragment, useState } from 'react'
 import { MessageSquare, CalendarDays, Scale, Utensils, Plus, ChevronRight, Check, AlertCircle, Activity } from 'lucide-react'
 import { Button, Ring, EmptyState, Segmented, Card } from '../../ui'
 import { Panel, CheckinCard, LineChart, UnitInput, Bar } from './parts'
-import { startOfWeekStr, addDays, toLocalDateStr, formatDate, dayNutrition, weightAverages, formatMl, sessionsThisMonth, dayOf, firstName, relativeDay, lastDays, feelingFlag, scoreTone, DAILY_SCORES } from '../lib'
+import { startOfWeekStr, addDays, toLocalDateStr, formatDate, dayNutrition, formatMl, sessionsThisMonth, sessionsThisWeek, completedKeys, awaitingReply, dayOf, firstName, relativeDay, lastDays, feelingFlag, scoreTone, DAILY_SCORES } from '../lib'
+import { weightSeries } from '../../client/metrics'
 
 const PERIODS = [
   { value: '14', label: '2 wks' },
@@ -11,7 +12,7 @@ const PERIODS = [
   { value: '90', label: '90 days' },
 ]
 
-function LatestCheckin({ checkins, client, reply, focusReplyId, onOpenTab }) {
+function LatestCheckin({ checkins, client, reply }) {
   if (checkins.length === 0) {
     return (
       <Card>
@@ -23,25 +24,16 @@ function LatestCheckin({ checkins, client, reply, focusReplyId, onOpenTab }) {
       </Card>
     )
   }
-  const unreplied = checkins.filter((c) => !c.coach_reply)
-  const focus = checkins.find((c) => c.id === focusReplyId) ?? unreplied[0] ?? checkins[0]
-  const others = unreplied.filter((c) => c.id !== focus.id).length
+  // The latest check-in, with its reply box if it's still owed one (shared rule).
+  const focus = awaitingReply(checkins) ?? checkins[0]
   return (
-    <div>
-      <CheckinCard
-        ci={focus}
-        number={checkins.length - checkins.indexOf(focus)}
-        clientName={firstName(client.full_name)}
-        reply={reply}
-        autoFocus={!!focusReplyId}
-        compact
-      />
-      {others > 0 && (
-        <button onClick={() => onOpenTab('checkins')} className="mt-2 px-1 text-[13px] font-bold text-accent hover:underline">
-          {others} more {others === 1 ? 'check-in needs' : 'check-ins need'} a reply
-        </button>
-      )}
-    </div>
+    <CheckinCard
+      ci={focus}
+      number={checkins.length - checkins.indexOf(focus)}
+      clientName={firstName(client.full_name)}
+      reply={reply}
+      compact
+    />
   )
 }
 
@@ -53,18 +45,19 @@ function ThisWeek({ scheduledWorkouts, workoutLogs, onOpenWorkout, onOpenTab }) 
     .filter((sw) => sw.scheduled_date >= start && sw.scheduled_date <= end)
     .sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date))
   const doneLog = (sw) => workoutLogs.find((l) => l.scheduled_workout_id === sw.id && l.completed) ?? null
-  const done = week.filter(doneLog).length
+  // Same count as the client's Train ring (a backdated, not done session doesn't count).
+  const { scheduled: planned, done } = sessionsThisWeek(scheduledWorkouts, completedKeys(workoutLogs), today)
   const extra = workoutLogs.filter((l) => l.completed && !l.scheduled_workout_id && dayOf(l.logged_at) >= start && dayOf(l.logged_at) <= end).length
   const month = sessionsThisMonth(workoutLogs)
 
   return (
     <Panel title="This week" icon={CalendarDays} action={<Button variant="ghost" size="sm" onClick={() => onOpenTab('training')}>Schedule</Button>}>
       <div className="flex items-center gap-4">
-        <Ring value={week.length ? done / week.length : 0} size={64} stroke={7}>
-          <span className="font-display text-lg leading-none text-ink">{done}<span className="text-muted text-sm">/{week.length}</span></span>
+        <Ring value={planned ? done / planned : 0} size={64} stroke={7}>
+          <span className="font-display text-lg leading-none text-ink">{done}<span className="text-muted text-sm">/{planned}</span></span>
         </Ring>
         <div className="min-w-0">
-          <p className="font-bold text-ink">{week.length ? `${done} of ${week.length} sessions done` : 'Nothing scheduled this week'}</p>
+          <p className="font-bold text-ink">{planned ? `${done} of ${planned} sessions done` : 'Nothing scheduled this week'}</p>
           <p className="text-[13px] text-muted">
             {extra > 0 ? `Plus ${extra} unscheduled · ` : ''}{month} {month === 1 ? 'session' : 'sessions'} this month
           </p>
@@ -105,11 +98,10 @@ function Weight({ weightLogs, onLogWeight }) {
   const [value, setValue] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const avgs = weightAverages(weightLogs)
+  // Same series as the client's Progress tab: one weigh-in per day, 7-day rolling average.
   const from = addDays(toLocalDateStr(), -parseInt(period))
-  const idx = weightLogs.map((w, i) => (w.logged_date >= from ? i : -1)).filter((i) => i >= 0)
-  const shown = idx.map((i) => weightLogs[i])
-  const shownAvg = idx.map((i) => avgs[i])
+  const shown = weightSeries(weightLogs).filter((p) => p.date >= from)
+  const shownAvg = shown.map((p) => p.avg)
   const latestAvg = shownAvg[shownAvg.length - 1]
   const change = shownAvg.length > 1 ? Math.round((shownAvg[shownAvg.length - 1] - shownAvg[0]) * 10) / 10 : null
 
@@ -142,15 +134,15 @@ function Weight({ weightLogs, onLogWeight }) {
               <p className="font-display text-[32px] leading-none text-ink tabular-nums">{latestAvg}<span className="font-sans text-sm font-semibold text-muted ml-1">kg</span></p>
               <p className="text-[13px] text-muted mt-1">7-day average{change !== null && change !== 0 ? ` · ${change < 0 ? 'down' : 'up'} ${Math.abs(change)} kg` : ''}</p>
             </div>
-            <p className="text-[13px] text-muted text-right">Last weigh-in<br /><span className="text-ink font-semibold">{shown[shown.length - 1].weight_kg} kg</span> · {formatDate(shown[shown.length - 1].logged_date, { day: 'numeric', month: 'short' })}</p>
+            <p className="text-[13px] text-muted text-right">Last weigh-in<br /><span className="text-ink font-semibold">{shown[shown.length - 1].weight} kg</span> · {formatDate(shown[shown.length - 1].date, { day: 'numeric', month: 'short' })}</p>
           </div>
           <LineChart
             height={110}
             series={[
-              { values: shown.map((w) => parseFloat(w.weight_kg)), color: 'var(--faint)', dots: true, dotsOnly: true, dotSize: 5, dotOpacity: 0.7 },
+              { values: shown.map((p) => p.weight), color: 'var(--faint)', dots: true, dotsOnly: true, dotSize: 5, dotOpacity: 0.7 },
               { values: shownAvg, color: 'var(--accent)', width: 3 },
             ]}
-            labels={[formatDate(shown[0].logged_date, { day: 'numeric', month: 'short' }), formatDate(shown[shown.length - 1].logged_date, { day: 'numeric', month: 'short' })]}
+            labels={[formatDate(shown[0].date, { day: 'numeric', month: 'short' }), formatDate(shown[shown.length - 1].date, { day: 'numeric', month: 'short' })]}
           />
         </>
       )}
