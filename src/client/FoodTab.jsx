@@ -13,6 +13,7 @@ import { NutritionSummary, DayNav } from './common'
 import AddFoodSheet from './AddFoodSheet'
 import { mealItems, logMeals, updateMealItem, restoreMeal } from '../lib/meals'
 import MealPlanCard from './MealPlanCard'
+import WaterCard from './WaterCard'
 import TdeeSheet from './TdeeSheet'
 
 const macroLine = (f) => `P ${Math.round(f.protein_g || 0)} · C ${Math.round(f.carbs_g || 0)} · F ${Math.round(f.fats_g || 0)}`
@@ -284,6 +285,8 @@ export default function FoodTab({
           )}
 
           <Button size="lg" block onClick={() => openAdd(null)}><Plus size={20} /> Log food</Button>
+
+          <WaterCard client={client} date={date} showToast={showToast} />
 
           {meals.map(({ type, items }) => {
             const t = foodTotals(items)
