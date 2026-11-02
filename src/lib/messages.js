@@ -59,21 +59,17 @@ export async function fetchUnreadCounts({ readerId, clientId } = {}) {
   return (data ?? []).reduce((acc, m) => ({ ...acc, [m.client_id]: (acc[m.client_id] || 0) + 1 }), {})
 }
 
-// Latest message per thread for an inbox list: { [clientId]: message }.
+// Latest message per thread for an inbox list: { [clientId]: message }. One row per
+// client from the database, so quiet clients never drop off a long list.
 export async function fetchLatestPerThread(clientIds) {
   if (!clientIds?.length) return {}
-  const { data, error } = await supabase
-    .from('coach_messages')
-    .select(COLS)
-    .in('client_id', clientIds)
-    .order('created_at', { ascending: false })
-    .limit(500)
+  const { data, error } = await supabase.rpc('latest_message_per_client', { p_client_ids: clientIds })
   if (error) {
     console.error('Inbox load error:', error)
     return {}
   }
   const latest = {}
-  for (const m of data ?? []) if (!latest[m.client_id]) latest[m.client_id] = m
+  for (const m of data ?? []) latest[m.client_id] = m
   return latest
 }
 
@@ -84,10 +80,8 @@ export async function fetchLatestActivity(clientIds, coachId) {
   if (!clientIds?.length) return {}
   const [latestMsgs, weekly, daily] = await Promise.all([
     fetchLatestPerThread(clientIds),
-    supabase.from('checkins').select('client_id, submitted_at, notes, blocker, training_score, energy_score, coach_reply, replied_at')
-      .in('client_id', clientIds).order('submitted_at', { ascending: false }).limit(300),
-    supabase.from('daily_checkins').select('client_id, created_at, note, energy, sleep, soreness')
-      .in('client_id', clientIds).order('created_at', { ascending: false }).limit(300),
+    supabase.rpc('latest_checkin_per_client', { p_client_ids: clientIds }),
+    supabase.rpc('latest_daily_checkin_per_client', { p_client_ids: clientIds }),
   ])
   if (weekly.error) console.error('Inbox check-ins error:', weekly.error)
   if (daily.error) console.error('Inbox daily check-ins error:', daily.error)

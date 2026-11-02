@@ -122,6 +122,16 @@ async function install(page, role) {
         try { const b = req.postDataJSON(); names = b.p_names || b.names || Object.values(b)[0] || [] } catch {}
         return json(200, names.map((nm) => { const e = db.exercises.find((x) => x.name.toLowerCase() === String(nm).toLowerCase()); return { input_name: nm, name: nm, exercise_id: e ? e.id : null } }))
       }
+      // Inbox: the latest row per client, like the database functions.
+      const LATEST = { latest_message_per_client: ['coach_messages', 'created_at'], latest_checkin_per_client: ['checkins', 'submitted_at'], latest_daily_checkin_per_client: ['daily_checkins', 'created_at'] }
+      if (LATEST[fn]) {
+        const [tbl, col] = LATEST[fn]
+        let ids = []
+        try { ids = req.postDataJSON().p_client_ids || [] } catch {}
+        const best = {}
+        for (const r of db[tbl] || []) if (ids.includes(r.client_id) && (!best[r.client_id] || r[col] > best[r.client_id][col])) best[r.client_id] = r
+        return json(200, Object.values(best))
+      }
       // A sample invite for the claim page. The token "expired" shows the invalid state.
       if (fn === 'get_claim_client') {
         let tok = ''
