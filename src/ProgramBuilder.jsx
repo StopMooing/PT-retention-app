@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, ChevronRight, ChevronUp, ChevronDown, Trash2, ClipboardList, Dumbbell, Check, UserPlus, PlayCircle } from 'lucide-react'
+import { Plus, ChevronRight, ChevronUp, ChevronDown, Trash2, ClipboardList, Dumbbell, Check, UserPlus, PlayCircle, Pencil } from 'lucide-react'
 import { supabase } from './supabase'
 import { PageTitle, Card, Button, Chip, Sheet, EmptyState, Field, Segmented, SectionLabel } from './ui'
 import { Loading, Toast, BackLink, Select, TextArea, MiniField, SearchBox, FilterChips, ConfirmRemove, Toggle } from './tools/kit'
@@ -105,7 +105,12 @@ export default function ProgramBuilder({ user }) {
   const [assignLoading, setAssignLoading] = useState(false)
   const [assignError, setAssignError] = useState('')
 
-  // Which sheet is open: 'program' | 'day' | 'exercise' | 'assign' | null
+  // Editing the open program (name, description) or one of its days (number, name)
+  const [editProgram, setEditProgram] = useState({ name: '', description: '' })
+  const [editDay, setEditDay] = useState(null)
+  const [savingEdits, setSavingEdits] = useState(false)
+
+  // Which sheet is open: 'program' | 'day' | 'exercise' | 'assign' | 'editProgram' | 'editDay' | null
   const [sheet, setSheet] = useState(null)
   const [toast, showToast] = useToast()
 
@@ -250,6 +255,79 @@ export default function ProgramBuilder({ user }) {
     setListView(isOnDemand(selectedProgram) ? 'ondemand' : 'coaching')
     setSelectedProgram(null)
     setEditingExerciseId(null)
+  }
+
+  /* ── Rename and delete. The database refuses to delete anything a client has used
+     (its calendar or history depends on it), so those come back as "in_use". ── */
+  const IN_USE_PROGRAM = "Clients have used this, so it stays to keep their history. You can still rename it."
+  const IN_USE_DAY = "This day is on a client's calendar or in their history, so it stays. You can still rename it."
+
+  function openEditProgram() {
+    setEditProgram({ name: selectedProgram.name ?? '', description: selectedProgram.description ?? '' })
+    setSheet('editProgram')
+  }
+
+  async function handleUpdateProgram(e) {
+    e.preventDefault()
+    if (!editProgram.name.trim() || savingEdits) return
+    setSavingEdits(true)
+    const fields = { name: editProgram.name.trim(), description: editProgram.description.trim() || null }
+    const { data, error } = await supabase.from('programs').update(fields).eq('id', selectedProgram.id).select('id')
+    setSavingEdits(false)
+    if (error || !data?.length) { showToast('Could not save that. Try again.', 'bad'); return }
+    setSelectedProgram(p => ({ ...p, ...fields }))
+    setPrograms(prev => prev.map(p => (p.id === selectedProgram.id ? { ...p, ...fields } : p)))
+    setSheet(null)
+    showToast('Saved')
+  }
+
+  async function handleDeleteProgram() {
+    if (savingEdits) return
+    if (!window.confirm(`Delete ${selectedProgram.name}? This can't be undone.`)) return
+    setSavingEdits(true)
+    const { data, error } = await supabase.from('programs').delete().eq('id', selectedProgram.id).select('id')
+    setSavingEdits(false)
+    if (error?.message?.includes('in_use')) { showToast(IN_USE_PROGRAM, 'bad'); return }
+    if (error || !data?.length) { showToast('Could not delete that. Try again.', 'bad'); return }
+    const gone = selectedProgram.id
+    setSheet(null)
+    closeProgram()
+    setPrograms(prev => prev.filter(p => p.id !== gone))
+    showToast('Deleted')
+  }
+
+  function openEditDay(day) {
+    setEditDay({ id: day.id, name: day.name ?? '', day_number: String(day.day_number ?? '') })
+    setSheet('editDay')
+  }
+
+  async function handleUpdateDay(e) {
+    e.preventDefault()
+    if (!editDay?.name.trim() || !editDay.day_number || savingEdits) return
+    setSavingEdits(true)
+    const fields = { name: editDay.name.trim(), day_number: parseInt(editDay.day_number, 10) }
+    const { data, error } = await supabase.from('program_workouts').update(fields).eq('id', editDay.id).select('id')
+    setSavingEdits(false)
+    if (error || !data?.length) { showToast('Could not save that. Try again.', 'bad'); return }
+    setWorkoutDays(prev => prev.map(d => (d.id === editDay.id ? { ...d, ...fields } : d)).sort((a, b) => a.day_number - b.day_number))
+    setSheet(null)
+    showToast('Saved')
+  }
+
+  async function handleDeleteDay() {
+    if (!editDay || savingEdits) return
+    if (!window.confirm(`Delete ${editDay.name} and its exercises? This can't be undone.`)) return
+    setSavingEdits(true)
+    const { data, error } = await supabase.from('program_workouts').delete().eq('id', editDay.id).select('id')
+    setSavingEdits(false)
+    if (error?.message?.includes('in_use')) { showToast(IN_USE_DAY, 'bad'); return }
+    if (error || !data?.length) { showToast('Could not delete that. Try again.', 'bad'); return }
+    const gone = editDay.id
+    setWorkoutDays(prev => prev.filter(d => d.id !== gone))
+    setExercisesByDay(prev => { const next = { ...prev }; delete next[gone]; return next })
+    setPrograms(prev => prev.map(p => (p.id === selectedProgram.id ? { ...p, program_workouts: (p.program_workouts ?? []).filter(w => w.id !== gone) } : p)))
+    setSheet(null)
+    showToast('Day deleted')
   }
 
   function openNewProgram() {
@@ -551,6 +629,36 @@ export default function ProgramBuilder({ user }) {
     </Sheet>
   )
 
+  const editProgramSheet = (
+    <Sheet open={sheet === 'editProgram'} onClose={() => setSheet(null)} title="Edit">
+      <form onSubmit={handleUpdateProgram} className="flex flex-col gap-4">
+        <Field label="Name" required value={editProgram.name} onChange={e => setEditProgram(p => ({ ...p, name: e.target.value }))} />
+        <TextArea label="What is it for? (optional)" rows={2} value={editProgram.description} onChange={e => setEditProgram(p => ({ ...p, description: e.target.value }))} />
+        <Button type="submit" size="lg" block disabled={savingEdits || !editProgram.name.trim()}>{savingEdits ? 'Saving...' : 'Save'}</Button>
+        <Button type="button" variant="danger" block onClick={handleDeleteProgram} disabled={savingEdits}>
+          <Trash2 size={18} /> Delete
+        </Button>
+      </form>
+    </Sheet>
+  )
+
+  const editDaySheet = (
+    <Sheet open={sheet === 'editDay'} onClose={() => setSheet(null)} title="Edit workout day">
+      {editDay && (
+        <form onSubmit={handleUpdateDay} className="flex flex-col gap-4">
+          <div className="grid grid-cols-[96px_1fr] gap-3">
+            <Field label="Day" type="number" inputMode="numeric" min="1" required value={editDay.day_number} onChange={e => setEditDay(d => ({ ...d, day_number: e.target.value }))} />
+            <Field label="Name" required value={editDay.name} onChange={e => setEditDay(d => ({ ...d, name: e.target.value }))} />
+          </div>
+          <Button type="submit" size="lg" block disabled={savingEdits || !editDay.name.trim() || !editDay.day_number}>{savingEdits ? 'Saving...' : 'Save'}</Button>
+          <Button type="button" variant="danger" block onClick={handleDeleteDay} disabled={savingEdits}>
+            <Trash2 size={18} /> Delete day
+          </Button>
+        </form>
+      )}
+    </Sheet>
+  )
+
   const addExerciseSheet = (
     <Sheet
       open={sheet === 'exercise'}
@@ -769,6 +877,16 @@ export default function ProgramBuilder({ user }) {
   // ─── One program ───────────────────────────────────────────────────────────
 
   // A single on-demand workout hides day management: one list of exercises, no "Day 1".
+  const programActions = (cls) => (
+    <div className={`flex gap-2 shrink-0 ${cls}`}>
+      <Button variant="secondary" onClick={openEditProgram}>
+        <Pencil size={18} /> Edit
+      </Button>
+      <Button onClick={openAssign} disabled={loadingDays}>
+        <UserPlus size={18} /> Assign
+      </Button>
+    </div>
+  )
   const single = isSingleWorkout(selectedProgram)
   const shownDays = single ? workoutDays.slice(0, 1) : workoutDays
   const singleList = single && shownDays[0] ? (exercisesByDay[shownDays[0].id] ?? []) : []
@@ -780,12 +898,10 @@ export default function ProgramBuilder({ user }) {
         <PageTitle
           className="mt-1 items-start [&_h1]:whitespace-normal [&_h1]:break-words"
           title={selectedProgram.name}
-          action={
-            <Button onClick={openAssign} disabled={loadingDays}>
-              <UserPlus size={18} /> Assign
-            </Button>
-          }
+          action={programActions('max-md:hidden')}
         />
+        {/* On a phone the buttons sit under the name, so a long name keeps whole words. */}
+        {programActions('md:hidden mt-3')}
         {selectedProgram.description && <p className="text-[15px] text-muted mt-1.5">{selectedProgram.description}</p>}
         {!loadingDays && single && singleList.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
@@ -852,10 +968,17 @@ export default function ProgramBuilder({ user }) {
                       {!single && <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-accent">Day {day.day_number}</p>}
                       <h2 className="text-[17px] font-bold text-ink truncate">{single ? 'Exercises' : day.name}</h2>
                     </div>
-                    {!single && list.length > 0 && (
-                      <p className="text-[13px] text-muted shrink-0">
-                        {plural(list.length, 'exercise')} · about {estimateMinutes(list)} min
-                      </p>
+                    {!single && (
+                      <span className="flex items-center gap-1 shrink-0">
+                        {list.length > 0 && (
+                          <span className="text-[13px] text-muted">
+                            {plural(list.length, 'exercise')} · about {estimateMinutes(list)} min
+                          </span>
+                        )}
+                        <button onClick={() => openEditDay(day)} aria-label={`Edit ${day.name}`} className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-surface-2">
+                          <Pencil size={16} />
+                        </button>
+                      </span>
                     )}
                   </div>
 
@@ -973,6 +1096,8 @@ export default function ProgramBuilder({ user }) {
       )}
 
       {newDaySheet}
+      {editProgramSheet}
+      {editDaySheet}
       {addExerciseSheet}
       {assignSheet}
       <Toast toast={toast} />

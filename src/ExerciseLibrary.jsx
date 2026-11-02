@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, ChevronRight, Pencil, Dumbbell } from 'lucide-react'
+import { Plus, ChevronRight, Pencil, Dumbbell, Trash2 } from 'lucide-react'
 import { supabase } from './supabase'
 import { PageTitle, SectionLabel, Card, Button, Chip, Sheet, EmptyState, Field } from './ui'
 import { Loading, Toast, Select, TextArea, SearchBox, FilterChips } from './tools/kit'
@@ -75,12 +75,25 @@ function ExerciseFields({ form, setForm, autoFocus }) {
   )
 }
 
-function ExerciseDetailSheet({ exercise, userId, onClose, onSave }) {
+function ExerciseDetailSheet({ exercise, userId, onClose, onSave, onDelete }) {
   const isOwn = !exercise.is_global && exercise.created_by === userId
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(null)
   const [editError, setEditError] = useState('')
   const [saving, setSaving] = useState(false)
+
+  // Only your own exercises, and only ones no program uses and no client has logged
+  // (the database refuses those, so a client's history never loses its sets).
+  async function handleDelete() {
+    if (!window.confirm(`Delete ${exercise.name}? This can't be undone.`)) return
+    setSaving(true)
+    setEditError('')
+    const { data, error } = await supabase.from('exercises').delete().eq('id', exercise.id).select('id')
+    setSaving(false)
+    if (error?.message?.includes('in_use')) { setEditError("It's in one of your programs or a client has logged it, so it stays. Take it out of your programs first."); return }
+    if (error || !data?.length) { console.error(error); setEditError('Could not delete it. Please try again.'); return }
+    onDelete(exercise.id)
+  }
 
   function startEditing() {
     setForm({
@@ -143,6 +156,9 @@ function ExerciseDetailSheet({ exercise, userId, onClose, onSave }) {
         <form id="edit-exercise-form" onSubmit={handleSave} className="flex flex-col gap-4">
           <ExerciseFields form={form} setForm={setForm} />
           {editError && <p className="m-0 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{editError}</p>}
+          <Button type="button" variant="danger" block onClick={handleDelete} disabled={saving}>
+            <Trash2 size={18} /> Delete exercise
+          </Button>
         </form>
       </Sheet>
     )
@@ -341,6 +357,7 @@ export default function ExerciseLibrary({ user }) {
           userId={user.id}
           onClose={() => setSelectedExercise(null)}
           onSave={handleSaveEdit}
+          onDelete={(id) => { setExercises((prev) => prev.filter((x) => x.id !== id)); setSelectedExercise(null); showToast('Exercise deleted') }}
         />
       )}
 

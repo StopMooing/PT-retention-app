@@ -574,17 +574,19 @@ export default function ClientProfile({ user }) {
     }
   }
 
+  // Returns true when moved. Done sessions stay where they were done.
   async function handleMoveWorkout(scheduledWorkoutId, newDateStr) {
     const existing = scheduledWorkouts.find((sw) => sw.id === scheduledWorkoutId)
-    if (!existing || existing.scheduled_date === newDateStr) return
+    if (!existing || existing.scheduled_date === newDateStr) return false
+    if (workoutLogs.some((l) => l.scheduled_workout_id === scheduledWorkoutId && l.completed)) return false
     setScheduledWorkouts((prev) => prev.map((sw) => (sw.id === scheduledWorkoutId ? { ...sw, scheduled_date: newDateStr } : sw)))
-    try {
-      const { error } = await supabase.from('scheduled_workouts').update({ scheduled_date: newDateStr }).eq('id', scheduledWorkoutId)
-      if (error) throw error
-    } catch (e) {
-      console.error(e)
+    const { data, error } = await supabase.from('scheduled_workouts').update({ scheduled_date: newDateStr }).eq('id', scheduledWorkoutId).select('id')
+    if (error || !data?.length) {
+      console.error('Move session error:', error ?? 'no row changed')
       setScheduledWorkouts((prev) => prev.map((sw) => (sw.id === scheduledWorkoutId ? { ...sw, scheduled_date: existing.scheduled_date } : sw)))
+      return false
     }
+    return true
   }
 
   function openWorkout(sw, completedLog) {
@@ -775,6 +777,7 @@ export default function ClientProfile({ user }) {
         clientId={clientId}
         onClose={() => setSelectedCalendarDay(null)}
         onWorkoutDone={(newLog) => { if (newLog) setWorkoutLogs((prev) => [newLog, ...prev]) }}
+        onMove={handleMoveWorkout}
       />
     </div>
   )

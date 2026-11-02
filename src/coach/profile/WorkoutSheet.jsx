@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Clock, Dumbbell, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../supabase'
-import { Sheet, Button, Chip, SectionLabel } from '../../ui'
+import { Sheet, Button, Chip, SectionLabel, Field } from '../../ui'
 import { sessionFelt } from '../lib'
 
 const numCls = 'w-20 h-10 px-2 rounded-[12px] border border-line-strong bg-surface text-ink text-center font-semibold tabular-nums outline-none focus:border-accent'
@@ -33,7 +33,7 @@ function SetRow({ label, weight, reps, onWeight, onReps, placeholder }) {
   )
 }
 
-export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkoutDone }) {
+export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkoutDone, onMove }) {
   const [loggedSets, setLoggedSets] = useState([])
   const [editedSets, setEditedSets] = useState({})
   const [loadingSets, setLoadingSets] = useState(false)
@@ -45,13 +45,16 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
   const [aiParseError, setAiParseError] = useState(false)
   const [completing, setCompleting] = useState(false)
   const [sheetError, setSheetError] = useState(null)
+  // Moving a session that isn't done yet to another day (the phone has no drag and drop).
+  const [moveDate, setMoveDate] = useState('')
+  const [moving, setMoving] = useState(false)
 
   const completedLog = selectedDay?.workout?.completedLog ?? null
   const workoutRef = selectedDay?.workout ?? null
   const isCustom = !!workoutRef?._isCustom
 
   useEffect(() => {
-    setLoggedSets([]); setEditedSets({}); setLoggingMode(false); setLiveSetData({}); setCoachAiExercises(null); setAiParseError(false); setSheetError(null)
+    setLoggedSets([]); setEditedSets({}); setLoggingMode(false); setLiveSetData({}); setCoachAiExercises(null); setAiParseError(false); setSheetError(null); setMoveDate(''); setMoving(false)
     if (!selectedDay || !completedLog || !clientId) return
     let cancelled = false
     async function fetchLoggedSets() {
@@ -365,6 +368,25 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
         {estMinutes > 0 && <Chip><Clock size={13} /> About {estMinutes} min</Chip>}
         {exercises.length > 0 && <Chip><Dumbbell size={13} /> {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}</Chip>}
       </div>
+
+      {!completedLog && !loggingMode && onMove && workout.id && (
+        <form
+          className="mt-4 flex items-end gap-2"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            if (!moveDate || moveDate === selectedDay.date || moving) return
+            setMoving(true)
+            setSheetError(null)
+            const ok = await onMove(workout.id, moveDate)
+            setMoving(false)
+            if (ok) onClose()
+            else setSheetError("Couldn't move that session. Try again.")
+          }}
+        >
+          <Field label="Move to" type="date" className="flex-1" value={moveDate || selectedDay.date} onChange={(e) => setMoveDate(e.target.value)} />
+          <Button type="submit" variant="secondary" disabled={moving || !moveDate || moveDate === selectedDay.date}>{moving ? 'Moving' : 'Move'}</Button>
+        </form>
+      )}
 
       {completedLog?.notes?.trim() && (
         <p className="mt-3 text-[15px] text-ink leading-relaxed bg-surface-2 rounded-[14px] px-4 py-3 whitespace-pre-wrap">{completedLog.notes}</p>
