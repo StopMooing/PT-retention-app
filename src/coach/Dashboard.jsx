@@ -100,6 +100,7 @@ export default function Dashboard({ user }) {
   const [showAdd, setShowAdd] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
+  const [showArchived, setShowArchived] = useState(false)
 
   async function fetchData() {
     const { data: clientData, error } = await supabase
@@ -208,10 +209,13 @@ export default function Dashboard({ user }) {
       status: clientStatus({ lastCheckIn, workoutLogs: logs, scheduledWorkouts: scheduled.filter((sw) => sw.client_id === c.id) }),
     }
   })
+  // Archived clients leave every count and list here, and only show under the Archived filter.
+  const active = enriched.filter((c) => !c.archived_at)
+  const archived = enriched.filter((c) => c.archived_at)
 
   // One row per client who is owed a reply (their latest check-in, new messages or
   // both), newest first. Reply opens their chat, where check-ins and messages live.
-  const replyItems = enriched
+  const replyItems = active
     .filter((c) => c.awaitingCheckin || c.unreadMessages > 0)
     .map((c) => {
       const m = latestMsg[c.id]
@@ -224,16 +228,16 @@ export default function Dashboard({ user }) {
       }
     })
     .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
-  const awaitingCount = enriched.filter((c) => c.awaitingCheckin).length
+  const awaitingCount = active.filter((c) => c.awaitingCheckin).length
   const awaitingIds = new Set(replyItems.map((i) => i.id))
-  const slipping = enriched
+  const slipping = active
     .filter((c) => (c.status === 'Drifting' || c.status === 'At Risk') && !awaitingIds.has(c.id))
     .sort((a, b) => ((a.lastActive ?? '') < (b.lastActive ?? '') ? -1 : 1))
-  const notStarted = enriched.filter((c) => c.status === 'New' && !c.user_id)
+  const notStarted = active.filter((c) => c.status === 'New' && !c.user_id)
 
   const q = search.trim().toLowerCase()
-  const filtered = enriched
-    .filter((c) => filter === 'All' || c.status === filter)
+  const filtered = (showArchived ? archived : active)
+    .filter((c) => showArchived || filter === 'All' || c.status === filter)
     .filter((c) => !q || c.full_name?.toLowerCase().includes(q) || c.goal?.toLowerCase().includes(q))
 
   const coachFirst = firstName(user?.user_metadata?.full_name ?? '')
@@ -264,7 +268,7 @@ export default function Dashboard({ user }) {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-3 mt-5">
         {[
-          { label: 'Clients', value: enriched.length },
+          { label: 'Clients', value: active.length },
           { label: 'Check-ins this week', short: 'This week', value: checkinsThisWeek(checkins) },
           { label: 'Awaiting reply', short: 'To reply', value: awaitingCount, warn: awaitingCount > 0 },
         ].map((s) => (
@@ -356,7 +360,7 @@ export default function Dashboard({ user }) {
 
       {/* All clients */}
       <section className="mt-7">
-        <SectionLabel>All clients</SectionLabel>
+        <SectionLabel>{showArchived ? 'Archived clients' : 'All clients'}</SectionLabel>
         <div className="flex flex-col md:flex-row gap-2.5 md:items-center mb-3">
           <label className="relative flex-1 min-w-0">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-faint pointer-events-none" />
@@ -368,18 +372,20 @@ export default function Dashboard({ user }) {
               className="w-full h-11 pl-11 pr-4 rounded-full border border-line-strong bg-surface text-ink placeholder:text-faint outline-none focus:border-accent transition-colors"
             />
           </label>
-          <Segmented
-            className="md:w-[380px] shrink-0"
-            value={filter}
-            onChange={setFilter}
-            options={[
-              { value: 'All', label: 'All' },
-              { value: 'Engaged', label: 'Engaged' },
-              { value: 'Drifting', label: 'Drifting' },
-              { value: 'At Risk', label: 'At risk' },
-              { value: 'New', label: 'New' },
-            ]}
-          />
+          {!showArchived && (
+            <Segmented
+              className="md:w-[460px] shrink-0"
+              value={filter}
+              onChange={setFilter}
+              options={[
+                { value: 'All', label: 'All' },
+                { value: 'Engaged', label: 'Engaged' },
+                { value: 'Drifting', label: 'Drifting' },
+                { value: 'At Risk', label: 'At risk' },
+                { value: 'New', label: 'New' },
+              ]}
+            />
+          )}
         </div>
 
         <Card padded={false} className="overflow-hidden">
@@ -387,7 +393,11 @@ export default function Dashboard({ user }) {
             enriched.length === 0 ? (
               <EmptyState icon={Users} title="No clients yet" body="Add your first client and send them their invite link." action={<Button onClick={() => setShowAdd(true)}><Plus size={18} /> Add client</Button>} />
             ) : (
-              <EmptyState icon={Search} title="No clients match" body="Try another name, or switch the filter back to All." />
+              active.length === 0 && !showArchived && !q ? (
+                <EmptyState icon={Users} title="No current clients" body="Add a client, or open your archived clients below." action={<Button onClick={() => setShowAdd(true)}><Plus size={18} /> Add client</Button>} />
+              ) : (
+                <EmptyState icon={Search} title="No clients match" body={showArchived ? 'Try another name.' : 'Try another name, or switch the filter back to All.'} />
+              )
             )
           ) : (
             <>
@@ -418,18 +428,20 @@ export default function Dashboard({ user }) {
                                 <MessageCircle size={12} strokeWidth={2.5} />{c.unreadMessages}
                               </span>
                             )}
-                            <Chip tone={STATUS[c.status].tone} className="md:hidden">{STATUS[c.status].label}</Chip>
+                            {c.archived_at ? <Chip className="md:hidden">Archived</Chip> : <Chip tone={STATUS[c.status].tone} className="md:hidden">{STATUS[c.status].label}</Chip>}
                           </span>
                           <span className="block text-[13px] text-muted truncate">{c.goal || 'No goal set'}</span>
                           <span className="md:hidden block text-[13px] text-muted">
-                            {c.awaitingCheckin
+                            {c.archived_at
+                              ? `Archived ${relativeDay(c.archived_at).toLowerCase()}`
+                              : c.awaitingCheckin
                               ? <span className="font-bold text-warn">Check-in to reply</span>
                               : c.lastCheckIn ? `Checked in ${relativeDay(c.lastCheckIn).toLowerCase()}` : 'No check-ins yet'} · {c.sessions} {c.sessions === 1 ? 'session' : 'sessions'} in 7 days
                           </span>
                         </span>
                       </span>
-                      <span className="hidden md:block"><Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip></span>
-                      <span className={`hidden md:block text-sm ${c.awaitingCheckin ? 'font-bold text-warn' : 'text-ink'}`}>{c.awaitingCheckin ? 'To reply' : c.lastCheckIn ? relativeDay(c.lastCheckIn) : 'Never'}</span>
+                      <span className="hidden md:block">{c.archived_at ? <Chip>Archived</Chip> : <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>}</span>
+                      <span className={`hidden md:block text-sm ${c.awaitingCheckin && !c.archived_at ? 'font-bold text-warn' : 'text-ink'}`}>{c.awaitingCheckin && !c.archived_at ? 'To reply' : c.lastCheckIn ? relativeDay(c.lastCheckIn) : 'Never'}</span>
                       <span className="hidden md:block text-sm text-ink text-right tabular-nums">{c.sessions}</span>
                       <span className="hidden md:flex justify-end"><InviteButton client={c} /></span>
                       <ChevronRight size={20} className="text-faint shrink-0" />
@@ -440,6 +452,11 @@ export default function Dashboard({ user }) {
             </>
           )}
         </Card>
+        {(archived.length > 0 || showArchived) && (
+          <button onClick={() => setShowArchived((v) => !v)} className="mt-3 px-1 text-[13px] font-bold text-accent hover:underline">
+            {showArchived ? 'Back to current clients' : `Archived clients (${archived.length})`}
+          </button>
+        )}
       </section>
     </div>
   )

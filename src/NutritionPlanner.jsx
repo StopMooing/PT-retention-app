@@ -139,7 +139,7 @@ export default function NutritionPlanner() {
     if (!userId) return;
     const run = async () => {
       try {
-        const { data, error } = await supabase.from("clients").select("id, full_name").eq("pt_id", userId);
+        const { data, error } = await supabase.from("clients").select("id, full_name, archived_at").eq("pt_id", userId);
         if (error) throw error;
         setClients(data || []);
         const map = {};
@@ -431,7 +431,7 @@ export default function NutritionPlanner() {
         <Field label="Plan name" autoFocus placeholder="e.g. Lean bulk" value={newPlan.name} onChange={e => setNewPlan(p => ({ ...p, name: e.target.value }))} />
         <Select label="Client" value={newPlan.client_id} onChange={e => setNewPlan(p => ({ ...p, client_id: e.target.value }))}>
           <option value="">Not assigned yet</option>
-          {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+          {clients.filter(c => !c.archived_at).map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
         </Select>
         <div>
           <p className="text-sm font-semibold text-ink mb-1.5">Daily targets (optional)</p>

@@ -149,7 +149,7 @@ export default function ProgramBuilder({ user }) {
   useEffect(() => {
     fetchPrograms()
     fetchAllExercises()
-    supabase.from('clients').select('id, full_name').eq('pt_id', user.id).order('full_name')
+    supabase.from('clients').select('id, full_name').eq('pt_id', user.id).is('archived_at', null).order('full_name')
       .then(({ data }) => { if (data) setClients(data) })
   }, [fetchPrograms, fetchAllExercises, user.id])
 

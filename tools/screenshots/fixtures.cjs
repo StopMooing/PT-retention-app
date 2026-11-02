@@ -122,6 +122,7 @@ const jane = {
   id: CLIENT, pt_id: COACH, user_id: CLIENT_USER, full_name: 'Jane Carter', email: 'jane@example.com', phone: '0400 000 000', goal: 'Get strong and drop 5 kg before summer',
   status: 'Engaged', created_at: ts(-40), last_checkin_at: ts(-6, 18).slice(0, 19), sessions_this_month: 9, notes: null,
   calorie_target: 1900, protein_target_g: 140, carbs_target_g: 190, fats_target_g: 60, water_target_ml: 2500, profile_photo_url: null, claim_token: id(),
+  archived_at: null,
 }
 const others = [
   ['Marcus Lee', 'Engaged', -2, 'Build muscle'], ['Priya Shah', 'Engaged', -4, 'Run a half marathon'], ['Tom Nguyen', 'Drifting', -12, 'Lose weight'],
@@ -216,6 +217,11 @@ module.exports = {
 if (process.env.NO_TARGETS) {
   const j = module.exports.tables.clients.find((c) => c.id === CLIENT)
   Object.assign(j, { calorie_target: null, protein_target_g: null, carbs_target_g: null, fats_target_g: null })
+}
+
+// ARCHIVED=1: Jane's coaching has ended (her app locks; she's under Archived for the coach).
+if (process.env.ARCHIVED) {
+  module.exports.tables.clients.find((c) => c.id === CLIENT).archived_at = ts(-1)
 }
 
 // CHECKIN_DUE=1: Jane's last check-in was 8 days ago, so a new one is due today.

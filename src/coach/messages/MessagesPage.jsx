@@ -80,6 +80,7 @@ export default function MessagesPage({ user }) {
         .from('clients')
         .select('id, full_name, profile_photo_url, user_id')
         .eq('pt_id', user.id)
+        .is('archived_at', null)
         .order('full_name', { ascending: true })
       const list = data ?? []
       const [l, u] = await Promise.all([fetchLatestActivity(list.map((c) => c.id), user.id), fetchUnreadCounts({ readerId: user.id })])

@@ -113,6 +113,13 @@ export default function ClientApp() {
       const { data: clientRow, error: clientError } = await supabase.from('clients').select('*').eq('user_id', user.id).maybeSingle()
       if (clientError) { console.error('Client load error:', clientError); setLoadFailed(true); setLoading(false); return }
       if (!clientRow) { setLoading(false); return }
+      // Archived by their coach: only the "coaching has ended" screen, nothing else loads.
+      if (clientRow.archived_at) {
+        setClient(clientRow)
+        setCoachName(await fetchCoachName(clientRow.pt_id))
+        setLoading(false)
+        return
+      }
       setClient(clientRow)
       setUserId(user.id)
       if (!clientRow.pt_id) setTab((t) => (t === 'messages' ? 'home' : t))
@@ -352,6 +359,18 @@ export default function ClientApp() {
           </>
         )}
         <Button variant="secondary" size="lg" block className="mt-3" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login' }}>Sign out</Button>
+      </div>
+    </div>
+  )
+
+  if (client.archived_at) return (
+    <div className="min-h-screen bg-bg flex items-center justify-center px-6">
+      <div className="text-center max-w-sm w-full">
+        <p className="font-display text-[28px] text-ink">Your coaching has ended</p>
+        <p className="text-muted mt-2">
+          Everything you logged is saved. If you're coming back, ask {coachName || 'your coach'} to restore your account and you'll pick up right where you left off.
+        </p>
+        <Button variant="secondary" size="lg" block className="mt-6" onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login' }}>Sign out</Button>
       </div>
     </div>
   )

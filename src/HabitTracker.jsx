@@ -53,6 +53,7 @@ export default function HabitTracker() {
           .from('clients')
           .select('*')
           .eq('pt_id', user.id)
+          .is('archived_at', null) // archived clients are hidden from the coach's lists
           .order('created_at', { ascending: false })
 
         const clientList = clientData ?? []

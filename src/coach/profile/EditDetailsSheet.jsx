@@ -1,9 +1,10 @@
 // Edit a client's name, email and phone. Before they join, the email is the one their
 // invite link signs up with, so a typo here is fixed here.
 import { useState } from 'react'
+import { Archive } from 'lucide-react'
 import { Sheet, Field, Button } from '../../ui'
 
-export default function EditDetailsSheet({ open, onClose, client, onSave }) {
+export default function EditDetailsSheet({ open, onClose, client, onSave, onArchive }) {
   const [form, setForm] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -12,6 +13,17 @@ export default function EditDetailsSheet({ open, onClose, client, onSave }) {
   const set = (k) => (e) => setForm({ ...f, [k]: e.target.value })
 
   function close() { setForm(null); setError(null); onClose() }
+
+  // Leaving clients: off your lists and their app locks, but nothing is deleted.
+  async function archive() {
+    const first = client.full_name?.split(' ')[0] || 'this client'
+    if (!window.confirm(`Archive ${client.full_name}? ${first} drops off your lists and their app shows that coaching has ended. Everything they logged is kept, and you can restore them any time from Clients, Archived.`)) return
+    setSaving(true)
+    const err = await onArchive(true)
+    setSaving(false)
+    if (err) { setError(err); return }
+    close()
+  }
 
   async function save(e) {
     e.preventDefault()
@@ -35,6 +47,11 @@ export default function EditDetailsSheet({ open, onClose, client, onSave }) {
         <Field label="Phone" type="tel" value={f.phone} onChange={set('phone')} autoComplete="off" />
         {error && <p role="alert" className="text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{error}</p>}
         <Button type="submit" size="lg" block disabled={saving}>{saving ? 'Saving' : 'Save'}</Button>
+        {onArchive && !client.archived_at && (
+          <Button type="button" variant="danger" block disabled={saving} onClick={archive}>
+            <Archive size={18} /> Archive client
+          </Button>
+        )}
       </form>
     </Sheet>
   )

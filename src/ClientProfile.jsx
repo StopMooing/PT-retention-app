@@ -73,6 +73,7 @@ export default function ClientProfile({ user }) {
   const [assignOpen, setAssignOpen] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [restoreError, setRestoreError] = useState(null)
 
   // Check-in replies
   const [replyDrafts, setReplyDrafts] = useState({})
@@ -346,6 +347,14 @@ export default function ClientProfile({ user }) {
   async function handleSaveDetails(fields) {
     const { data, error } = await supabase.from('clients').update(fields).eq('id', clientId).select().single()
     if (error) { console.error('Save details error:', error); return "Couldn't save those details. Try again." }
+    setClient(data)
+    return null
+  }
+
+  // Archive (or restore) a client. Their history stays; their app shows coaching has ended.
+  async function handleArchive(archive) {
+    const { data, error } = await supabase.from('clients').update({ archived_at: archive ? new Date().toISOString() : null }).eq('id', clientId).select().single()
+    if (error) { console.error('Archive error:', error); return archive ? "Couldn't archive. Try again." : "Couldn't restore. Try again." }
     setClient(data)
     return null
   }
@@ -633,6 +642,17 @@ export default function ClientProfile({ user }) {
         <ChevronLeft size={18} /> Clients
       </Link>
 
+      {client.archived_at && (
+        <div className="mt-3 flex items-center gap-3 rounded-[16px] bg-surface-2 px-4 py-3">
+          <p className="flex-1 text-[15px] text-ink">
+            <span className="font-bold">Archived {formatDate(client.archived_at, { day: 'numeric', month: 'short', year: 'numeric' })}.</span>{' '}
+            Their app shows coaching has ended. Everything they logged is kept.
+            {restoreError && <span role="alert" className="block text-[13px] font-semibold text-bad mt-1">{restoreError}</span>}
+          </p>
+          <Button variant="secondary" size="sm" onClick={async () => setRestoreError(await handleArchive(false))}>Restore</Button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="mt-2 flex flex-col md:flex-row md:items-start gap-4">
         <div className="flex items-start gap-4 flex-1 min-w-0">
@@ -771,7 +791,7 @@ export default function ClientProfile({ user }) {
         )}
       </div>
 
-      <EditDetailsSheet open={editOpen} onClose={() => setEditOpen(false)} client={client} onSave={handleSaveDetails} />
+      <EditDetailsSheet open={editOpen} onClose={() => setEditOpen(false)} client={client} onSave={handleSaveDetails} onArchive={handleArchive} />
 
       <WorkoutSheet
         selectedDay={selectedCalendarDay}

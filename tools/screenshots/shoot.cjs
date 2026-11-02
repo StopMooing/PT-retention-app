@@ -13,6 +13,7 @@ const BASE = process.env.BASE || 'http://localhost:4173'
     const page = await ctx.newPage()
     const errors = []
     page.on('pageerror', (e) => errors.push(e.message))
+    page.on('dialog', (d) => d.accept()) // confirm() steps go ahead, like a person tapping OK
     page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text().slice(0, 200)) })
     await install(page, shot.role)
     await page.goto(BASE + (shot.path || '/'))
