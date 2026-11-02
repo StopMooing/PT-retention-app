@@ -1,0 +1,28 @@
+{
+  "checked_on": "2026-11-02",
+  "items": [
+    {"brand": "San Remo", "name": "San Remo Couscous, dry", "per": "100g", "serving_g": 100, "energy_kj": 1530, "protein_g": 12.5, "fat_g": 2.0, "carbs_g": 72.0, "sugars_g": 2.5, "sodium_mg": 30, "source_url": "https://sanremo.com.au/products/couscous/"},
+    {"brand": "San Remo", "name": "San Remo Instant Lasagna Sheets (No103), dry", "per": "100g", "serving_g": 62.5, "energy_kj": 1530, "protein_g": 12.0, "fat_g": 2.0, "carbs_g": 72.0, "sugars_g": 2.5, "sodium_mg": 30, "source_url": "https://sanremo.com.au/products/instant-lasagna/"},
+    {"brand": "San Remo", "name": "San Remo Active Wholemeal Penne, dry", "per": "100g", "serving_g": 100, "energy_kj": 1510, "protein_g": 15.0, "fat_g": 3.9, "carbs_g": 62.1, "sugars_g": 2.9, "sodium_mg": 30, "source_url": "https://sanremo.com.au/products/penne-wholemeal/"},
+    {"brand": "San Remo", "name": "San Remo Active Wholemeal Spaghetti (No130), dry", "per": "100g", "serving_g": 100, "energy_kj": 1510, "protein_g": 15.0, "fat_g": 3.9, "carbs_g": 62.1, "sugars_g": 2.9, "sodium_mg": 30, "source_url": "https://sanremo.com.au/products/wholemeal-spaghetti/"},
+    {"brand": "Helga's", "name": "Helga's Protein Wholemeal Loaf 700g", "per": "100g", "serving_g": null, "energy_kj": 880, "protein_g": 13.4, "fat_g": 2.5, "carbs_g": 28.4, "sugars_g": 1.9, "sodium_mg": 355, "source_url": "https://www.helgas.com.au/products/helgas-loaf-protein-wholemeal-700-g"},
+    {"brand": "Tip Top", "name": "Tip Top English Muffins Original", "per": "100g", "serving_g": 67, "energy_kj": 950, "protein_g": 9.5, "fat_g": 2.8, "carbs_g": 40.4, "sugars_g": 3.6, "sodium_mg": 350, "source_url": "https://www.tiptop.com.au/product/english-muffins/"},
+    {"brand": "Sanitarium", "name": "Sanitarium Weet-Bix Original", "per": "100g", "serving_g": 31, "energy_kj": 1480, "protein_g": 12.4, "fat_g": 1.3, "carbs_g": 65.9, "sugars_g": 3.0, "sodium_mg": 270, "source_url": "https://weetbix.com.au/products/weet-bix/Original-575g"},
+    {"brand": "Real Foods", "name": "Corn Thins Original", "per": "100g", "serving_g": 18, "energy_kj": 1600, "protein_g": 10.2, "fat_g": 3.4, "carbs_g": 70.9, "sugars_g": 0.4, "sodium_mg": 259, "source_url": "https://www.cornthins.com/en-au/cornthins-original/"},
+    {"brand": "Kikkoman", "name": "Kikkoman Naturally Brewed Less Salt Soy Sauce", "per": "100mL", "serving_g": null, "energy_kj": 502, "protein_g": 9.9, "fat_g": 0, "carbs_g": 9.8, "sugars_g": 3.8, "sodium_mg": 3808, "source_url": "https://kikkoman.com.au/product/naturally-brewed-less-salt-soy-sauce/"},
+    {"brand": "MasterFoods", "name": "MasterFoods Dijon Mustard 170g", "per": "100g", "serving_g": 5, "energy_kj": 450, "protein_g": 5.1, "fat_g": 5.0, "carbs_g": 10.7, "sugars_g": 5.5, "sodium_mg": 2167, "source_url": "https://www.masterfoods.com.au/products/mustards/masterfoods-dijon-mustard-170g"}
+  ],
+  "skipped": [
+    "SunRice Basmati Rice (dry): official product pages (sunrice.com.au/products/sunrice-basmati-rice and /sunrice-basmati) show no nutrition panel",
+    "SunRice Microwave Basmati Rice pouch 250 g: official page (sunrice.com.au/products/steamed-basmati-rice) shows no nutrition panel; 450g page also has none",
+    "Tip Top Hamburger Rolls: listed on tiptop.com.au/our-range/ but no product page with a panel could be found or fetched",
+    "Mission Low GI + Protein Wraps: official page gives per-serve values only, no serving size, no per-100g column (except sodium 377mg/100g) and no sugars; full panel sits behind a 'See Nutrition' link that could not be read",
+    "Mutti Passata: mutti-parma.com/au product and range pages show no nutrition panel",
+    "Leggo's Tomato Paste: leggos.com.au tomato paste pages (jar etc.) show no nutrition panel",
+    "Old El Paso Mild Thick 'n Chunky Salsa: no product page found on oldelpaso.com.au (not listed in the Sauces & Salsa range)",
+    "Golden Circle Pineapple in Natural Juice: official Kraft Heinz AU page (pieces in juice 440g) has empty Nutrition and Ingredients sections; only serving size 110g shown",
+    "Kikkoman Teriyaki Marinade & Sauce: not on kikkoman.com.au; the only AU teriyaki is 'Gluten Free Thick Teriyaki Sauce', a different product, so not recorded",
+    "MasterFoods Barbecue Sauce: standard Barbecue Sauce product page could not be located on masterfoods.com.au (category pages list no product links; guessed product URLs returned errors)"
+  ],
+  "notes": "All values are the per-100 column as printed on the brand page. Pasta and couscous values are dry/uncooked per the pages. San Remo Wholemeal Spaghetti and Wholemeal Penne have identical panels on the official site (same dough). Helga's serving is '2 slices' with no gram weight printed on the page, so serving_g is null. Kikkoman Less Salt Soy is per 100mL with no serving size given. Macro energy check (P*17 + C*17 + F*37 vs kJ): all within 15% except Kikkoman Less Salt Soy Sauce (calculated 335 kJ vs printed 502 kJ, about 33% low; re-read confirms 502kJ/120kcal, 9.9g protein, 9.8g carbs, 0g fat; likely alcohol from brewing contributes energy not captured by macros; flagged, kept as printed). Weet-Bix (7% low), Helga's (9% low), Corn Thins (6% low), wholemeal pasta (4% low) are slightly low as expected from fibre."
+}

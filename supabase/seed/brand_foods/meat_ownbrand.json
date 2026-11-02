@@ -1,0 +1,29 @@
+{
+  "checked_on": "2026-11-02",
+  "items": [
+    {
+      "brand": "Woolworths",
+      "name": "Woolworths Heart Smart Extra Lean Beef Mince",
+      "per": "100g",
+      "serving_g": 100,
+      "energy_kj": 545,
+      "protein_g": 21.2,
+      "fat_g": 5.0,
+      "carbs_g": 1.0,
+      "sugars_g": 1.0,
+      "sodium_mg": 56,
+      "source_url": "https://www.woolworths.com.au/shop/productdetails/577860"
+    }
+  ],
+  "skipped": [
+    "Primo Short Cut Bacon: primo.com.au bacon range page (https://www.primo.com.au/our-products/bacon) lists Short Cut Bacon in several sizes (175g, 200g, 500g twin, 750g, 1kg) but publishes no nutrition information panel, and search found no individual product page with one",
+    "Primo English Style Leg Ham, sliced: no primo.com.au product page found by search; the ham range page (https://www.primo.com.au/our-products/ham) returned a client error on fetch",
+    "Coles 97% Fat Free Mayonnaise: search returned no coles.com.au product page for this product (only third-party sites)",
+    "Coles Bakery Original Bagels (4 pack): search returned no coles.com.au product page for this product (only category/promotion pages and third-party sites)",
+    "Coles Frozen Stir Fry Vegetables: search returned no coles.com.au product page for the Coles own-brand product (only Birds Eye stir fry pages, a different brand)",
+    "Coles Popping Corn: search returned no coles.com.au product page for this product",
+    "Coles 5 Star Extra Lean Beef Mince (5% fat): search returned no coles.com.au product page for this product",
+    "Woolworths Panko Breadcrumbs: search returned no woolworths.com.au product page for the Woolworths own-brand panko (only other brands such as Kook-a-Krumb, Crumbed & Co, Obento, Pereg)"
+  ],
+  "notes": "Only 1 of 9 products found on the brand's own site. Woolworths Heart Smart mince energy check: 21.2x17 + 1.0x17 + 5.0x37 = 562 kJ vs 545 kJ printed (about 3% over), within tolerance. The page lists 1.0 g carbohydrate and 1.0 g sugars for plain beef mince, which is unusual for raw meat but is what the panel states. The Woolworths page title is the 500g pack. No third-party nutrition sources were used."
+}
