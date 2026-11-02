@@ -42,8 +42,14 @@ claude.ai project "CRM": `claude/pt-blueprint-handoff.md`
 - Check foreign keys and delete rules before deleting any row. Deleting a coach account
   cascades to all their clients and every client's data. All FKs to `exercises.id` cascade.
 - Code change first, database change second, never both in one irreversible step.
-- Destructive SQL (drop, revoke, alter, delete) shows Luke an approval prompt; a call that
-  returns "cancelled" ran nothing. Tell him to watch for it before sending one.
+- Destructive SQL (drop, revoke, alter, delete, update) triggers a session safety check that
+  is cancelled automatically in cloud sessions (about 0.6 s, no prompt ever reaches Luke,
+  even with the Supabase connector set to Always allow). A call that returns "cancelled"
+  ran nothing. Do not retry it. Instead: save the migration in `supabase/migrations/`, send
+  Luke the file to paste into Supabase SQL Editor and Run (the "destructive operations"
+  warning there is expected), then verify it with read-only queries and record it with
+  `insert into supabase_migrations.schema_migrations (version, name)`. Non-destructive
+  changes (create table, add column, create policy, insert) can go through apply_migration.
 
 ## Workflow
 - Read the code you are changing first. Never guess line numbers or logic.
