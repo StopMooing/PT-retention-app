@@ -5,11 +5,11 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Home, Dumbbell, Utensils, TrendingUp, MessageCircle } from 'lucide-react'
 import { supabase } from './supabase'
 import { Button, TabBar, StatusBarCover } from './ui'
-import { formatDateLabel, toLocalDateStr } from './client/dates'
+import { formatDateLabel, toLocalDateStr, addDays } from './client/dates'
 import { completedKeys, workoutName } from './client/metrics'
 import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
-  fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName, fetchDailyCheckins,
+  fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName, fetchDailyCheckins, FOOD_DAYS,
 } from './client/data'
 import { fetchUnreadCounts, unseenReplyCount, markConversationOpened } from './lib/messages'
 import { saveAiWorkout, saveAiMeal } from './client/aiSaves'
@@ -237,9 +237,15 @@ export default function ClientApp() {
     }
   }, [clientId, exerciseMap])
 
-  const refreshFoodLogs = useCallback(async () => {
+  // The last 90 days, plus the day being looked at when it's older than that.
+  const refreshFoodLogs = useCallback(async (day) => {
     if (!clientId) return
-    setFoodLogs(await fetchFoodLogs(clientId))
+    const oldest = addDays(toLocalDateStr(), -(FOOD_DAYS - 1))
+    const [recent, older] = await Promise.all([
+      fetchFoodLogs(clientId),
+      day && day < oldest ? fetchFoodLogs(clientId, { from: day, to: day }) : [],
+    ])
+    setFoodLogs([...recent, ...older])
   }, [clientId])
 
   // A done session opens its log (to edit, never to log again); others open the preview.

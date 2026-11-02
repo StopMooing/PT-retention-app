@@ -685,8 +685,9 @@ export default function ClientProfile({ user }) {
       </div>
 
       {/* Tabs */}
-      <div className="mt-5 -mx-4 md:mx-0 px-4 md:px-0 border-b border-line overflow-x-auto [scrollbar-width:none]" role="tablist">
-        <div className="flex gap-1 min-w-max">
+      {/* On a phone the tabs scroll sideways: the right edge fades so the rest show there's more. */}
+      <div className="mt-5 -mx-4 md:mx-0 px-4 md:px-0 border-b border-line overflow-x-auto [scrollbar-width:none] max-md:[mask-image:linear-gradient(to_right,black_85%,transparent)]" role="tablist">
+        <div className="flex gap-1 min-w-max max-md:pr-12">
           {TABS.map((t) => {
             const active = activeTab === t.id
             return (
@@ -694,7 +695,7 @@ export default function ClientProfile({ user }) {
                 key={t.id}
                 role="tab"
                 aria-selected={active}
-                onClick={() => setActiveTab(t.id)}
+                onClick={(e) => { setActiveTab(t.id); e.currentTarget.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' }) }}
                 className={`relative h-11 px-3 text-[15px] font-bold whitespace-nowrap transition-colors ${active ? 'text-ink' : 'text-muted hover:text-ink'}`}
               >
                 {t.label}

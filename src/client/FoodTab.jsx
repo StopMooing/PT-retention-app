@@ -166,7 +166,7 @@ export default function FoodTab({
   const [editBusy, setEditBusy] = useState(false)
 
   // Fresh food logs whenever the tab opens or the day changes.
-  useEffect(() => { refreshFoodLogs() }, [date, refreshFoodLogs])
+  useEffect(() => { refreshFoodLogs(date) }, [date, refreshFoodLogs])
 
   const dayLogs = logsForDate(foodLogs, date)
   const totals = foodTotals(dayLogs)
@@ -228,7 +228,7 @@ export default function FoodTab({
         showToast("Couldn't add that to your log. Try again.")
         return
       }
-      refreshFoodLogs()
+      refreshFoodLogs(date)
       setView('log')
       showToast(`Added to ${date === today ? 'today' : formatDateLabel(date)}`)
     } catch (e) {
@@ -325,7 +325,7 @@ export default function FoodTab({
           date={date}
           defaultMeal={addMeal}
           client={client}
-          onAdded={(row) => { setFoodLogs((prev) => [row, ...prev]); refreshFoodLogs(); showToast(`Added ${row.food_name}`) }}
+          onAdded={(row) => { setFoodLogs((prev) => [row, ...prev]); refreshFoodLogs(date); showToast(`Added ${row.food_name}`) }}
         />
       )}
       <EditIngredientSheet

@@ -51,8 +51,15 @@ export async function fetchWorkoutLogs(clientId) {
   return data ?? []
 }
 
-export async function fetchFoodLogs(clientId) {
-  const { data } = await supabase.from('food_logs').select(FOOD_LOG_SELECT).eq('client_id', clientId).order('logged_at', { ascending: false })
+// Food logs for a range of days (default: the last 90, which every screen but an old day
+// in the Nutrition tab needs). Never "everything": a busy logger passes the 1,000 row cap.
+export const FOOD_DAYS = 90
+export async function fetchFoodLogs(clientId, { from, to } = {}) {
+  const today = toLocalDateStr()
+  let q = supabase.from('food_logs').select(FOOD_LOG_SELECT).eq('client_id', clientId).gte('logged_at', from ?? addDays(today, -(FOOD_DAYS - 1)))
+  if (to) q = q.lte('logged_at', to)
+  const { data, error } = await q.order('logged_at', { ascending: false })
+  if (error) console.error('Food logs load error:', error)
   return data ?? []
 }
 

@@ -1,6 +1,8 @@
 // Shared coach-side helpers. Any number shown on more than one coach screen (status,
 // sessions, check-ins this week) is worked out here, so screens agree.
 
+import { logsForDate, foodTotals } from '../client/metrics'
+
 // Day logic is always local time (Adelaide), never toISOString().
 export function toLocalDateStr(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -131,17 +133,18 @@ export function formatMl(ml) {
 }
 
 // Food and water totals for one local day. Used by the profile Overview and Nutrition tabs.
+// The food part is the client app's own logsForDate and foodTotals, so both sides agree.
 export function dayNutrition(foodLogs, waterLogs, day = toLocalDateStr()) {
-  const food = (foodLogs ?? []).filter((f) => dayOf(f.logged_at) === day)
-  const sum = (k) => Math.round(food.reduce((s, l) => s + (parseFloat(l[k]) || 0), 0))
+  const food = logsForDate(foodLogs, day)
+  const t = foodTotals(food)
   const water = (waterLogs ?? []).filter((w) => w.logged_date === day)
   return {
     food,
     water,
-    calories: sum('calories'),
-    protein: sum('protein_g'),
-    carbs: sum('carbs_g'),
-    fats: sum('fats_g'),
+    calories: t.kcal,
+    protein: t.protein,
+    carbs: t.carbs,
+    fats: t.fats,
     waterMl: water.reduce((s, w) => s + (w.amount_ml || 0), 0),
   }
 }
