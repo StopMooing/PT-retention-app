@@ -11,3 +11,8 @@ Message body (switch the body to source/HTML and paste the whole file).
 
 Sent from no-reply@unfnshd.app through Resend (custom SMTP, set up 4 Nov 2026).
 Colours are the light-mode brand colours, written out because email apps ignore CSS variables.
+
+Links go to {{ .SiteURL }}/auth/confirm?token_hash=...&type=... (unfnshd.app), not to
+supabase.co: one site in the email reads as more trustworthy to spam filters. The app
+checks the token (App.jsx, CONFIRM_AT_LOAD): recovery opens the new password page,
+email and email_change go into the app. Site URL in Supabase must stay https://unfnshd.app.

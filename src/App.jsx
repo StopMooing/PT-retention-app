@@ -21,11 +21,37 @@ import { Mark } from './ui'
 const RECOVERY_AT_LOAD = typeof window !== 'undefined' &&
   (window.location.pathname === '/reset' || window.location.hash.includes('type=recovery'))
 
+// Links in our auth emails (docs/email-templates) point at unfnshd.app/auth/confirm with a
+// token, not at supabase.co, so email filters see one site. The app checks the token here:
+// a password reset opens the new password page, a confirmed email goes into the app.
+const CONFIRM_AT_LOAD = (() => {
+  if (typeof window === 'undefined' || window.location.pathname !== '/auth/confirm') return null
+  const q = new URLSearchParams(window.location.search)
+  const tokenHash = q.get('token_hash')
+  const type = q.get('type')
+  return tokenHash && type ? { tokenHash, type } : { failed: true }
+})()
+
 export default function App() {
   const [session, setSession] = useState(undefined)
   const [userRole, setUserRole] = useState(null)
   const [roleLoading, setRoleLoading] = useState(true)
-  const [recovering, setRecovering] = useState(RECOVERY_AT_LOAD)
+  const [recovering, setRecovering] = useState(RECOVERY_AT_LOAD || CONFIRM_AT_LOAD?.type === 'recovery')
+  // null while checking an email link, 'failed' when it was expired or already used.
+  const [confirm, setConfirm] = useState(CONFIRM_AT_LOAD ? (CONFIRM_AT_LOAD.failed ? 'failed' : 'checking') : null)
+
+  useEffect(() => {
+    if (!CONFIRM_AT_LOAD || CONFIRM_AT_LOAD.failed) return
+    supabase.auth.verifyOtp({ token_hash: CONFIRM_AT_LOAD.tokenHash, type: CONFIRM_AT_LOAD.type }).then(({ error }) => {
+      if (error) { console.error('Email link error:', error); setRecovering(false); setConfirm('failed'); return }
+      if (CONFIRM_AT_LOAD.type === 'recovery') {
+        // New password page, with the session the link just opened already in hand.
+        supabase.auth.getSession().then(({ data }) => { setSession(data.session); setConfirm(null) })
+        return
+      }
+      window.location.replace('/') // email confirmed: straight into the app
+    })
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session))
@@ -73,6 +99,19 @@ export default function App() {
       <Mark size={44} className="animate-pulse" />
     </div>
   )
+  if (confirm === 'checking') return splash
+  if (confirm === 'failed') {
+    return (
+      <div className="min-h-dvh flex items-center justify-center bg-bg text-ink px-6">
+        <div className="text-center max-w-sm w-full">
+          <Mark size={56} className="mx-auto" />
+          <p className="font-display text-[26px] mt-5">This link has expired</p>
+          <p className="text-muted mt-2">It may have been used already. Sign in, or ask for a new link from the sign-in page.</p>
+          <a href="/login" className="mt-6 h-[52px] w-full rounded-full bg-accent text-on-accent font-bold inline-flex items-center justify-center">Go to sign in</a>
+        </div>
+      </div>
+    )
+  }
   if (session === undefined || roleLoading) return splash
 
   if (recovering) {
