@@ -355,3 +355,8 @@ export function programProgress({ assignment, programWorkouts, workoutLogs, toda
 export function muscleGroups(exercises) {
   return [...new Set((exercises ?? []).map((ex) => ex.exercises?.muscle_group || ex.muscle_group).filter(Boolean))]
 }
+
+// Water in litres, the same on Home and Nutrition: nearest 50 ml, up to two decimals.
+export function fmtLitres(ml) {
+  return (Math.round((ml || 0) / 50) * 50 / 1000).toLocaleString('en-AU', { maximumFractionDigits: 2 })
+}

@@ -203,7 +203,9 @@ async function install(page, role) {
       return json(200, wantsObject ? out[0] : out)
     }
     if (req.method() === 'DELETE') {
-      const rows = new Set(filterRows()); db[table] = db[table].filter((r) => !rows.has(r))
+      const gone = filterRows(); const rows = new Set(gone); db[table] = db[table].filter((r) => !rows.has(r))
+      // Like the real API: with ?select= the deleted rows come back.
+      if (url.searchParams.get('select')) return json(200, gone.map((r) => project(db, table, r, url.searchParams.get('select'))))
       return route.fulfill({ status: 204, headers: { 'access-control-allow-origin': '*' } })
     }
     return json(200, [])

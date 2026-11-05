@@ -201,6 +201,7 @@ function NutritionHero({ totals, targets, onWorkOut }) {
 export default function FoodTab({
   client, setClient, showToast, foodLogs, setFoodLogs, refreshFoodLogs, savedMeals, setSavedMeals,
   nutritionTargets, setNutritionTargets, view, setView, addOpen, setAddOpen, onOpenAI,
+  waterByDate, setWaterFor, loadWater,
 }) {
   const today = toLocalDateStr()
   const [date, setDate] = useState(today)
@@ -340,7 +341,7 @@ export default function FoodTab({
             </Card>
           )}
 
-          <WaterCard client={client} date={date} showToast={showToast} />
+          <WaterCard client={client} date={date} showToast={showToast} logs={waterByDate[date]} setLogs={(update) => setWaterFor(date, update)} onLoad={loadWater} />
 
           <MealPlanCard client={client} />
 

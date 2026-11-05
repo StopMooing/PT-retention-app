@@ -4,22 +4,16 @@
 import { useEffect, useState } from 'react'
 import { Undo2 } from 'lucide-react'
 import { supabase } from '../supabase'
+import { fmtLitres } from './metrics'
 
-export default function WaterCard({ client, date, showToast }) {
-  const [logs, setLogs] = useState([])
+// The rows live in the client app (shared with the Home tile); this card reads them fresh
+// for its day and keeps them up to date as water is added or undone.
+export default function WaterCard({ client, date, showToast, logs: dayLogs, setLogs, onLoad }) {
   const [busy, setBusy] = useState(false)
   const target = client?.water_target_ml || 2000
+  const logs = dayLogs ?? []
 
-  useEffect(() => {
-    if (!client?.id) return
-    let cancelled = false
-    supabase.from('water_logs').select('id, amount_ml, logged_by, created_at').eq('client_id', client.id).eq('logged_date', date)
-      .then(({ data, error }) => {
-        if (error) console.error('Water load error:', error)
-        if (!cancelled) setLogs(data ?? [])
-      })
-    return () => { cancelled = true }
-  }, [client?.id, date])
+  useEffect(() => { onLoad?.(date) }, [date, onLoad])
 
   const total = logs.reduce((s, w) => s + (w.amount_ml || 0), 0)
   const mine = [...logs].filter((w) => w.logged_by === client.user_id).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
@@ -45,14 +39,13 @@ export default function WaterCard({ client, date, showToast }) {
     setLogs((prev) => prev.filter((w) => w.id !== last.id))
   }
 
-  const litres = (ml) => (Math.round(ml / 50) * 50 / 1000).toLocaleString('en-AU', { maximumFractionDigits: 2 })
   return (
     <section className="rounded-[24px] bg-surface-2 px-4 py-3.5">
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-semibold text-muted">Water</p>
           <p className="font-display text-[26px] leading-[1.1] text-ink tabular-nums">
-            {litres(total)}<span className="font-sans text-[13px] font-semibold text-muted"> of {litres(target)} L</span>
+            {fmtLitres(total)}<span className="font-sans text-[13px] font-semibold text-muted"> of {fmtLitres(target)} L</span>
           </p>
         </div>
         {mine.length > 0 && (

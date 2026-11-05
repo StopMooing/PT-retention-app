@@ -166,6 +166,13 @@ export async function fetchDailyCheckins(clientId) {
   return data ?? []
 }
 
+// Water for one day. null when it could not be read, so a blip never shows as zero.
+export async function fetchWaterLogs(clientId, date) {
+  const { data, error } = await supabase.from('water_logs').select('id, amount_ml, logged_by, created_at').eq('client_id', clientId).eq('logged_date', date)
+  if (error) { console.error('Water load error:', error); return null }
+  return data ?? []
+}
+
 export async function fetchByClient(table, clientId, orderCol) {
   const { data } = await supabase.from(table).select('*').eq('client_id', clientId).order(orderCol, { ascending: false })
   return data ?? []

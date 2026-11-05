@@ -3,14 +3,13 @@
 // a recent personal best. Coach messages and check-in replies live in Messages. Empty
 // sections are hidden. Tapping a day on the week strip opens a summary of that day, with
 // arrows to step through the days.
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Trophy, ChevronRight, ChevronLeft, Check, Pencil } from 'lucide-react'
-import { supabase } from '../supabase'
 import { Card, Button, Chip, Avatar, Sheet, Hero, Ring } from '../ui'
 import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate, formatDateLabel, addDays, daysBetween } from './dates'
 import {
   isDone, workoutName, groupByDate, nextSession, weekStreak, checkinStatus, sessionExercises,
-  logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, weekRings, plannedLine, sessionStatusLine, dailyCheckinFor, DAILY_SCALES, sessionsThisWeek,
+  logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, fmtLitres, weekRings, plannedLine, sessionStatusLine, dailyCheckinFor, DAILY_SCALES, sessionsThisWeek,
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
 import DailyCheckinSheet from './DailyCheckinSheet'
@@ -91,22 +90,6 @@ function Tile({ label, value, of, pct, onClick }) {
       </div>
     </Card>
   )
-}
-
-/* Today's water in litres, for the Home tile. Same rows as the Nutrition tab's water card. */
-function useWaterToday(clientId, date) {
-  const [ml, setMl] = useState(null)
-  useEffect(() => {
-    if (!clientId) return
-    let cancelled = false
-    supabase.from('water_logs').select('amount_ml').eq('client_id', clientId).eq('logged_date', date)
-      .then(({ data, error }) => {
-        if (error) console.error('Water load error:', error)
-        if (!cancelled) setMl((data ?? []).reduce((t, w) => t + (w.amount_ml || 0), 0))
-      })
-    return () => { cancelled = true }
-  }, [clientId, date])
-  return ml
 }
 
 /* One day: its sessions and, up to today, what was eaten. Arrows step a day either way
@@ -232,7 +215,7 @@ function DailyCard({ todays, onOpen }) {
 export default function HomeTab({
   client, checkins, setCheckins, dailyCheckins, setDailyCheckins, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
   foodLogs, nutritionTargets, personalBests, coachName,
-  onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onOpenWater, showToast,
+  onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onOpenWater, showToast, waterLogs,
 }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [dailyOpen, setDailyOpen] = useState(false)
@@ -253,7 +236,8 @@ export default function HomeTab({
   const targets = nutritionTargetsFor(client, nutritionTargets)
   const pb = latestPB(personalBests, 14, today)
   const train = sessionsThisWeek(scheduledWorkouts, completedIds, today)
-  const waterMl = useWaterToday(client.id, today)
+  // Loaded with everything else when the app opens, so the tile is there straight away.
+  const waterMl = waterLogs ? waterLogs.reduce((t, w) => t + (w.amount_ml || 0), 0) : null
   const waterTarget = client.water_target_ml || 2000
 
   // Today's workout, always: still to do, done, or a rest day pointing to the next one.
@@ -325,8 +309,8 @@ export default function HomeTab({
         {waterMl !== null && (
           <Tile
             label="Water"
-            value={(waterMl / 1000).toFixed(waterMl % 1000 === 0 ? 0 : 2).replace(/0$/, '')}
-            of={`of ${(waterTarget / 1000).toLocaleString('en-AU')} L`}
+            value={fmtLitres(waterMl)}
+            of={`of ${fmtLitres(waterTarget)} L`}
             pct={(waterMl / waterTarget) * 100}
             onClick={onOpenWater || onLogFood}
           />

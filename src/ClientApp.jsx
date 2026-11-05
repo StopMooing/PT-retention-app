@@ -10,7 +10,7 @@ import { completedKeys, workoutName, sessionsThisWeek, weekStreak } from './clie
 import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
   fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName, fetchDailyCheckins, FOOD_DAYS,
-  fetchClientRow, readClientHint, writeClientHint,
+  fetchClientRow, readClientHint, writeClientHint, fetchWaterLogs,
 } from './client/data'
 import { fetchUnreadCounts, unseenReplyCount, markConversationOpened } from './lib/messages'
 import { saveAiWorkout, saveAiMeal } from './client/aiSaves'
@@ -102,6 +102,9 @@ export default function ClientApp() {
 
   // AI helper
   const [aiMode, setAiMode] = useState(null) // 'workout' | 'nutrition'
+  // Water rows per day, shared by the Home tile and the Nutrition water card so both show
+  // the same number. Today's comes with everything else when the app opens.
+  const [waterByDate, setWaterByDate] = useState({})
   // A failed first load (no signal) is not the same as an account with no client record.
   const [loadFailed, setLoadFailed] = useState(false)
 
@@ -133,6 +136,7 @@ export default function ClientApp() {
           fetchCoachName(ptId),
           fetchDailyCheckins(id),
           ptId ? fetchUnreadCounts({ readerId: user.id, clientId: id }) : {},
+          fetchWaterLogs(id, toLocalDateStr()),
         ])
       }
       // On a return visit the client id is already known, so the rest starts loading
@@ -158,7 +162,7 @@ export default function ClientApp() {
       const hintOk = hint && hint.id === id && (hint.pt_id ?? null) === (clientRow.pt_id ?? null)
       writeClientHint(user.id, clientRow)
 
-      const [asgn, sched, logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, unread] = await (hintOk ? early : loadAll(id, clientRow.pt_id))
+      const [asgn, sched, logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, unread, water] = await (hintOk ? early : loadAll(id, clientRow.pt_id))
       setAssignment(asgn.assignment)
       setProgramWorkouts(asgn.programWorkouts)
       setAllProgramExercises(asgn.exercises)
@@ -168,6 +172,7 @@ export default function ClientApp() {
       const active = readActiveWorkout(id)
       if (active && !logs.some((l) => l.scheduled_workout_id === active.id && l.completed)) setLoggingWorkout(active)
       setDailyCheckins(daily)
+      if (water) setWaterByDate({ [toLocalDateStr()]: water })
       setUnreadMessages(unread[id] || 0)
       setUnseenReplies(clientRow.pt_id ? unseenReplyCount(ci, id) : 0)
       setOnDemand(library)
@@ -255,6 +260,15 @@ export default function ClientApp() {
       setWorkoutExercises((prev) => ({ ...prev, ...more }))
     }
   }, [clientId, exerciseMap])
+
+  const loadWater = useCallback(async (date) => {
+    if (!clientId) return
+    const rows = await fetchWaterLogs(clientId, date)
+    if (rows) setWaterByDate((prev) => ({ ...prev, [date]: rows }))
+  }, [clientId])
+  const setWaterFor = useCallback((date, update) => {
+    setWaterByDate((prev) => ({ ...prev, [date]: update(prev[date] ?? []) }))
+  }, [])
 
   // The last 90 days, plus the day being looked at when it's older than that.
   const refreshFoodLogs = useCallback(async (day) => {
@@ -452,6 +466,7 @@ export default function ClientApp() {
             onStartWorkout={beginSession}
             onOpenProfile={() => setProfileOpen(true)}
             onLogFood={() => { setFoodView('log'); setAddFoodOpen(true); goTab('food') }}
+            waterLogs={waterByDate[toLocalDateStr()]}
           />
         )}
         {tab === 'train' && (
@@ -488,6 +503,9 @@ export default function ClientApp() {
             addOpen={addFoodOpen}
             setAddOpen={setAddFoodOpen}
             onOpenAI={() => setAiMode('nutrition')}
+            waterByDate={waterByDate}
+            setWaterFor={setWaterFor}
+            loadWater={loadWater}
           />
         )}
         {tab === 'progress' && (
