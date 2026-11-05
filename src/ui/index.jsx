@@ -35,7 +35,7 @@ export function PageTitle({ title, eyebrow, action, className }) {
     <div className={cx('flex items-end justify-between gap-3', className)}>
       <div className="min-w-0">
         {eyebrow && <p className="text-sm text-muted mb-0.5">{eyebrow}</p>}
-        <h1 className="font-display text-[32px] leading-[1.05] text-ink truncate">{title}</h1>
+        <h1 className="font-display text-[34px] md:text-[40px] leading-none text-ink truncate">{title}</h1>
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

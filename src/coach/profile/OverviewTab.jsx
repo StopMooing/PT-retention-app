@@ -1,10 +1,10 @@
 // Overview: the latest check-in and reply first, then this week, weight and food.
 import { Fragment, useState } from 'react'
-import { MessageSquare, CalendarDays, Scale, Utensils, Plus, ChevronRight, Check, AlertCircle, Activity } from 'lucide-react'
-import { Button, Ring, EmptyState, Segmented, Card } from '../../ui'
+import { MessageSquare, Scale, Utensils, Plus, ChevronRight, Check, AlertCircle, Activity } from 'lucide-react'
+import { Button, Ring, EmptyState, Segmented, Card, Hero } from '../../ui'
 import { Panel, CheckinCard, LineChart, UnitInput, Bar } from './parts'
 import { startOfWeekStr, addDays, toLocalDateStr, formatDate, dayNutrition, formatMl, sessionsThisMonth, sessionsThisWeek, completedKeys, awaitingReply, dayOf, firstName, relativeDay, lastDays, feelingFlag, scoreTone, DAILY_SCORES } from '../lib'
-import { weightSeries } from '../../client/metrics'
+import { weightSeries, weekStreak } from '../../client/metrics'
 
 const PERIODS = [
   { value: '14', label: '2 wks' },
@@ -50,45 +50,55 @@ function ThisWeek({ scheduledWorkouts, workoutLogs, onOpenWorkout, onOpenTab }) 
   const extra = workoutLogs.filter((l) => l.completed && !l.scheduled_workout_id && dayOf(l.logged_at) >= start && dayOf(l.logged_at) <= end).length
   const month = sessionsThisMonth(workoutLogs)
 
+  const streak = weekStreak(workoutLogs)
+  const todays = week.find((sw) => sw.scheduled_date === today && !doneLog(sw))
+  const line = [
+    todays ? `${todays._displayName} is planned for today.` : null,
+    streak > 1 ? `${streak} weeks in a row.` : null,
+    extra > 0 ? `Plus ${extra} unscheduled.` : null,
+    `${month} ${month === 1 ? 'session' : 'sessions'} this month.`,
+  ].filter(Boolean).join(' ')
+
   return (
-    <Panel title="This week" icon={CalendarDays} action={<Button variant="ghost" size="sm" onClick={() => onOpenTab('training')}>Schedule</Button>}>
-      <div className="flex items-center gap-4">
-        <Ring value={planned ? done / planned : 0} size={64} stroke={7}>
-          <span className="font-display text-lg leading-none text-ink">{done}<span className="text-muted text-sm">/{planned}</span></span>
+    <div className="space-y-3 lg:space-y-4">
+      <Hero className="flex items-center gap-5">
+        <Ring value={planned ? done / planned : 0} size={112} stroke={12} color="var(--on-hero)" track="var(--hero-track)" dot="var(--hero-dot)">
+          <span className="font-display text-[36px] leading-none tabular-nums">{done}<span className="text-[18px] text-hero-muted">/{planned}</span></span>
         </Ring>
-        <div className="min-w-0">
-          <p className="font-bold text-ink">{planned ? `${done} of ${planned} sessions done` : 'Nothing scheduled this week'}</p>
-          <p className="text-[13px] text-muted">
-            {extra > 0 ? `Plus ${extra} unscheduled · ` : ''}{month} {month === 1 ? 'session' : 'sessions'} this month
-          </p>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-[26px] leading-none">{planned ? 'This week' : 'Nothing scheduled this week'}</p>
+          <p className="text-[14px] leading-snug text-hero-muted mt-1.5">{line}</p>
+          <button onClick={() => onOpenTab('training')} className="mt-3 h-9 px-4 rounded-full bg-hero-chip text-[13px] font-bold hover:opacity-90">Schedule</button>
         </div>
-      </div>
+      </Hero>
       {week.length > 0 && (
-        <ul className="mt-3 divide-y divide-line -mx-4 border-t border-line">
-          {week.map((sw) => {
-            const log = doneLog(sw)
-            const past = sw.scheduled_date < today
-            return (
-              <li key={sw.id}>
-                <button onClick={() => onOpenWorkout(sw, log)} className="w-full flex items-center gap-3 px-4 min-h-[56px] text-left hover:bg-surface-2 transition-colors">
-                  <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${log ? 'bg-accent text-on-accent' : sw.scheduled_date === today ? 'bg-accent-soft text-accent' : 'bg-surface-2 text-muted'}`}>
-                    {log ? <Check size={18} /> : formatDate(sw.scheduled_date, { weekday: 'short' }).slice(0, 2)}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-semibold text-ink truncate">{sw._displayName}</span>
-                    <span className="block text-[13px] text-muted">
-                      {formatDate(sw.scheduled_date, { weekday: 'long', day: 'numeric', month: 'short' })}
-                      {log ? ' · Done' : sw.scheduled_date === today ? ' · Today' : past ? ' · Not logged' : ''}
+        <Card padded={false} className="overflow-hidden">
+          <ul className="divide-y divide-line">
+            {week.map((sw) => {
+              const log = doneLog(sw)
+              const past = sw.scheduled_date < today
+              return (
+                <li key={sw.id}>
+                  <button onClick={() => onOpenWorkout(sw, log)} className="w-full flex items-center gap-3 px-4 min-h-[56px] text-left hover:bg-surface-2 transition-colors">
+                    <span className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${log ? 'bg-accent text-on-accent' : sw.scheduled_date === today ? 'bg-tan text-on-tan' : 'bg-surface-2 text-muted'}`}>
+                      {log ? <Check size={18} /> : formatDate(sw.scheduled_date, { weekday: 'short' }).slice(0, 2)}
                     </span>
-                  </span>
-                  <ChevronRight size={18} className="text-faint shrink-0" />
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold text-ink truncate">{sw._displayName}</span>
+                      <span className="block text-[13px] text-muted">
+                        {formatDate(sw.scheduled_date, { weekday: 'long', day: 'numeric', month: 'short' })}
+                        {log ? ', done' : sw.scheduled_date === today ? ', today' : past ? ', not logged' : ''}
+                      </span>
+                    </span>
+                    <ChevronRight size={18} className="text-faint shrink-0" />
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </Card>
       )}
-    </Panel>
+    </div>
   )
 }
 

@@ -28,7 +28,7 @@ function isActive(item, pathname) {
 function Badge({ count, className = '' }) {
   if (!count) return null
   return (
-    <span className={`min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-on-accent text-[11px] font-bold leading-none inline-flex items-center justify-center tabular-nums ${className}`} aria-label={`${count} unread`}>
+    <span className={`min-w-[18px] h-[18px] px-1 rounded-full bg-tan text-on-tan text-[11px] font-bold leading-none inline-flex items-center justify-center tabular-nums ${className}`} aria-label={`${count} unread`}>
       {count > 9 ? '9+' : count}
     </span>
   )
@@ -115,7 +115,7 @@ export default function CoachShell({ user }) {
   return (
     <div className="flex h-dvh bg-bg text-ink overflow-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-60 shrink-0 flex-col bg-surface border-r border-line">
+      <aside className="hidden md:flex w-60 shrink-0 flex-col bg-surface-2">
         <div className="h-16 flex items-center px-5">
           <Logo size={22} />
         </div>
@@ -127,7 +127,7 @@ export default function CoachShell({ user }) {
               <NavLink
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 h-11 px-3 rounded-full text-[15px] font-semibold transition-colors ${active ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink hover:bg-surface-2'}`}
+                className={`flex items-center gap-3 h-11 px-3 rounded-full text-[15px] font-semibold transition-colors ${active ? 'bg-hero text-on-hero' : 'text-ink hover:bg-surface'}`}
               >
                 <Icon size={20} strokeWidth={2} />
                 <span className="flex-1">{item.label}</span>
@@ -139,7 +139,7 @@ export default function CoachShell({ user }) {
         <div className="p-3 border-t border-line space-y-0.5">
           <button
             onClick={() => setSettingsOpen(true)}
-            className="w-full flex items-center gap-3 px-2 py-2 rounded-[14px] hover:bg-surface-2 text-left transition-colors"
+            className="w-full flex items-center gap-3 px-2 py-2 rounded-[14px] hover:bg-surface text-left transition-colors"
           >
             <Avatar name={name || email} size={36} />
             <span className="min-w-0 flex-1">
@@ -150,7 +150,7 @@ export default function CoachShell({ user }) {
           </button>
           <button
             onClick={signOut}
-            className="w-full flex items-center gap-3 h-10 px-3 rounded-full text-sm font-semibold text-muted hover:text-ink hover:bg-surface-2 transition-colors"
+            className="w-full flex items-center gap-3 h-10 px-3 rounded-full text-sm font-semibold text-muted hover:text-ink hover:bg-surface transition-colors"
           >
             <LogOut size={18} /> Sign out
           </button>

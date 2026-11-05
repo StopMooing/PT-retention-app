@@ -656,13 +656,13 @@ export default function ClientProfile({ user }) {
       {/* Header */}
       <div className="mt-2 flex flex-col md:flex-row md:items-start gap-4">
         <div className="flex items-start gap-4 flex-1 min-w-0">
-          <Avatar name={client.full_name} src={client.profile_photo_url} size={56} />
+          <Avatar name={client.full_name} src={client.profile_photo_url} size={64} />
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-display text-[28px] md:text-[32px] leading-[1.05] text-ink">{client.full_name}</h1>
+              <h1 className="font-display text-[32px] md:text-[40px] leading-none text-ink">{client.full_name}</h1>
               <Chip tone={STATUS[status].tone}>{STATUS[status].label}</Chip>
             </div>
-            {clientGoal && <p className="text-[15px] text-ink mt-1">{clientGoal}</p>}
+            {clientGoal && <p className="text-[15px] text-muted mt-1.5">{clientGoal}</p>}
             <p className="text-[13px] text-muted mt-0.5">
               {checkins.length ? `Checked in ${relativeDay(checkins[0].submitted_at).toLowerCase()}` : 'No check-ins yet'}
               {' · '}{week} {week === 1 ? 'session' : 'sessions'} in 7 days
@@ -720,12 +720,12 @@ export default function ClientProfile({ user }) {
               >
                 {t.label}
                 {t.id === 'messages' && unreadMessages > 0 && (
-                  <span className="ml-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-accent text-on-accent text-xs tabular-nums">{unreadMessages}</span>
+                  <span className="ml-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-tan text-on-tan text-xs tabular-nums">{unreadMessages}</span>
                 )}
                 {t.id === 'checkins' && awaiting > 0 && (
                   <span className="ml-1.5 inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-warn-soft text-warn text-xs tabular-nums">{awaiting}</span>
                 )}
-                {active && <span className="absolute left-2 right-2 -bottom-px h-[3px] rounded-full bg-accent" />}
+                {active && <span className="absolute left-2 right-2 -bottom-px h-[3px] rounded-full bg-ink" />}
               </button>
             )
           })}

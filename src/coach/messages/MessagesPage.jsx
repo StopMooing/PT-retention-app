@@ -27,14 +27,14 @@ function Row({ client, latest, unread, active, userId, onOpen }) {
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
           <span className={cx('truncate text-ink', unread ? 'font-extrabold' : 'font-bold')}>{client.full_name}</span>
-          {latest && <span className={cx('text-xs shrink-0 tabular-nums', unread ? 'text-accent font-bold' : 'text-muted')}>{messageTime(latest.created_at)}</span>}
+          {latest && <span className={cx('text-xs shrink-0 tabular-nums', unread ? 'text-ink font-bold' : 'text-muted')}>{messageTime(latest.created_at)}</span>}
         </span>
         <span className="flex items-center justify-between gap-2 mt-0.5">
           <span className={cx('text-[13px] truncate', unread ? 'text-ink font-semibold' : 'text-muted')}>
             {latest ? `${mine ? 'You: ' : ''}${latest.body}` : `Send ${firstName(client.full_name)} a message`}
           </span>
           {unread > 0 && (
-            <span className="min-w-5 h-5 px-1.5 rounded-full bg-accent text-on-accent text-[11px] font-bold inline-flex items-center justify-center shrink-0 tabular-nums" aria-label={`${unread} unread`}>
+            <span className="min-w-5 h-5 px-1.5 rounded-full bg-tan text-on-tan text-[11px] font-bold inline-flex items-center justify-center shrink-0 tabular-nums" aria-label={`${unread} unread`}>
               {unread > 9 ? '9+' : unread}
             </span>
           )}
@@ -54,7 +54,7 @@ function ThreadHeader({ client, onBack }) {
       )}
       <Avatar name={client.full_name} src={client.profile_photo_url} size={36} />
       <p className="flex-1 min-w-0 font-bold text-ink truncate">{client.full_name}</p>
-      <Link to={`/clients/${client.id}`} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-bold text-accent hover:bg-accent-soft">
+      <Link to={`/clients/${client.id}`} className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full text-sm font-bold text-ink underline-offset-2 hover:underline">
         <UserRound size={16} /> Profile
       </Link>
     </div>

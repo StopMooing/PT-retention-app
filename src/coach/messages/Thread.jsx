@@ -147,8 +147,8 @@ export default function Thread({ clientId, userId, clientName = '', onChange, cl
     return (
       <p
         className={cx(
-          'max-w-[82%] md:max-w-[70%] px-3.5 py-2 text-[15px] leading-snug whitespace-pre-wrap break-words rounded-[18px]',
-          it.mine ? 'bg-accent text-on-accent' : 'bg-surface text-ink border border-line',
+          'max-w-[82%] md:max-w-[70%] px-4 py-2.5 text-[15px] leading-[1.45] whitespace-pre-wrap break-words rounded-[20px]',
+          it.mine ? 'bg-hero text-on-hero' : 'bg-surface-2 text-ink',
           it.mine && endsRun && 'rounded-br-[6px]',
           !it.mine && endsRun && 'rounded-bl-[6px]',
         )}
