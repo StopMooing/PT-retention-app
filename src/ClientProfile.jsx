@@ -94,108 +94,102 @@ export default function ClientProfile({ user }) {
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [clientRes, checkinsRes, programRes, habitsRes, mealPlanRes, workoutRes, weightRes, dailyRes, unreadRes] = await Promise.all([
+        // Everything that does not depend on anything else is asked for at once. The few
+        // reads that need an earlier answer (a program's days, then their exercises) are
+        // chained on just that answer, so nothing waits on reads it does not need.
+        const threeMonthsAgo = new Date()
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+        const threeMonthsAhead = new Date()
+        threeMonthsAhead.setMonth(threeMonthsAhead.getMonth() + 3)
+        const ninetyDaysAgo = new Date()
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+        const thirtyDaysAgo = new Date()
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+        const habitsP = supabase.from('habits').select('*').eq('client_id', clientId).eq('is_active', true).then((r) => r)
+        const habitLogsP = habitsP.then(({ data }) => (data?.length
+          ? supabase.from('habit_logs').select('*').in('habit_id', data.map((h) => h.id)).gte('completed_date', toLocalDateStr(thirtyDaysAgo)).then((r) => r.data ?? [])
+          : null))
+        const coachIdP = user?.id ? Promise.resolve(user.id) : supabase.auth.getUser().then(({ data }) => data.user?.id)
+        const programsP = coachIdP.then((coachId) => supabase
+          .from('programs')
+          .select('id, name, description')
+          .eq('created_by', coachId)
+          .order('created_at', { ascending: false })
+          .then((r) => r.data ?? []))
+        const allPWP = programsP.then((progs) => (progs.length > 0
+          ? supabase.from('program_workouts').select('id, name, day_number, program_id').in('program_id', progs.map((p) => p.id)).order('day_number', { ascending: true }).then((r) => r.data ?? [])
+          : []))
+        const allPWExercisesP = allPWP.then((pws) => (pws.length > 0 ? fetchExercisesFor(pws.map((pw) => pw.id)) : {}))
+
+        const [clientRes, checkinsRes, programRes, habitsRes, mealPlanRes, workoutRes, weightRes, dailyRes, unreadRes,
+          ptNotesRes, pbRes, swRes, photoRes, foodRes, waterRes, habitLogs, fetchedPrograms, fetchedAllPW, allPWExercises] = await Promise.all([
           supabase.from('clients').select('*').eq('id', clientId).single(),
           supabase.from('checkins').select('*').eq('client_id', clientId).order('submitted_at', { ascending: false }),
           supabase.from('program_assignments').select('*, programs(*)').eq('client_id', clientId).eq('is_active', true).order('created_at', { ascending: false }).limit(1),
-          supabase.from('habits').select('*').eq('client_id', clientId).eq('is_active', true),
+          habitsP,
           supabase.from('meal_plans').select('*').eq('client_id', clientId).eq('is_active', true).order('created_at', { ascending: false }).limit(1),
           supabase.from('workout_logs').select('*').eq('client_id', clientId).order('logged_at', { ascending: false }).limit(200),
           supabase.from('body_weight_logs').select('*').eq('client_id', clientId).order('logged_date', { ascending: true }),
           // Coaches can only read daily check-ins (no writes). Newest 60 days is plenty here.
           supabase.from('daily_checkins').select('id, checkin_date, energy, sleep, soreness, note, created_at').eq('client_id', clientId).order('checkin_date', { ascending: false }).limit(60),
           user?.id ? fetchUnreadCounts({ readerId: user.id, clientId }) : Promise.resolve({}),
+          supabase.from('pt_notes').select('*').eq('client_id', clientId).order('created_at', { ascending: false }),
+          supabase.from('personal_bests').select('id, exercise_id, pb_type, value, achieved_at, exercises(name)').eq('client_id', clientId).order('achieved_at', { ascending: false }),
+          supabase.from('scheduled_workouts').select(SW_SELECT).eq('client_id', clientId)
+            .gte('scheduled_date', toLocalDateStr(threeMonthsAgo)).lte('scheduled_date', toLocalDateStr(threeMonthsAhead)),
+          supabase.from('progress_photos').select('id, photo_url, note, taken_date, created_at').eq('client_id', clientId).order('created_at', { ascending: false }).limit(12),
+          supabase.from('food_logs').select(FOOD_LOG_SELECT).eq('client_id', clientId).gte('logged_at', toLocalDateStr(ninetyDaysAgo)).order('logged_at', { ascending: false }),
+          supabase.from('water_logs').select('id, amount_ml, logged_date, created_at').eq('client_id', clientId).gte('logged_date', toLocalDateStr(thirtyDaysAgo)).order('logged_date', { ascending: false }),
+          habitLogsP,
+          programsP,
+          allPWP,
+          allPWExercisesP,
         ])
         setClient(clientRes.data)
         setCheckins(checkinsRes.data ?? [])
         setProgramAssignment(programRes.data?.[0] ?? null)
-        const fetchedHabits = habitsRes.data ?? []
-        setHabits(fetchedHabits)
+        setHabits(habitsRes.data ?? [])
         setMealPlan(mealPlanRes.data?.[0] ?? null)
         setWorkoutLogs(workoutRes.data ?? [])
         setWeightLogs(weightRes.data ?? [])
         setDailyCheckins(dailyRes.data ?? [])
         setUnreadMessages(unreadRes[clientId] || 0)
-
-        const { data: ptNotesData } = await supabase.from('pt_notes').select('*').eq('client_id', clientId).order('created_at', { ascending: false })
-        setSavedNotes(ptNotesData ?? [])
-
-        const { data: pbData } = await supabase
-          .from('personal_bests')
-          .select('id, exercise_id, pb_type, value, achieved_at, exercises(name)')
-          .eq('client_id', clientId)
-          .order('achieved_at', { ascending: false })
-        setPersonalBests(pbData ?? [])
-
-        const { data: { user: currentUserForFetch } } = await supabase.auth.getUser()
-        const { data: allProgramsData } = await supabase
-          .from('programs')
-          .select('id, name, description')
-          .eq('created_by', currentUserForFetch.id)
-          .order('created_at', { ascending: false })
-        const fetchedPrograms = allProgramsData ?? []
+        setSavedNotes(ptNotesRes.data ?? [])
+        setPersonalBests(pbRes.data ?? [])
         setAllPrograms(fetchedPrograms)
 
-        let fetchedAllPW = []
-        const exerciseMap = {}
-        // One request for every day's exercises (shared with the client app).
-        const loadExercises = async (pws) => Object.assign(exerciseMap, await fetchExercisesFor(pws.map((pw) => pw.id)))
+        const exerciseMap = { ...allPWExercises }
         if (fetchedPrograms.length > 0) {
-          const { data: allPWData } = await supabase
-            .from('program_workouts')
-            .select('id, name, day_number, program_id')
-            .in('program_id', fetchedPrograms.map((p) => p.id))
-            .order('day_number', { ascending: true })
-          fetchedAllPW = allPWData ?? []
           setAllProgramWorkouts(fetchedAllPW)
           setProgramWorkouts(fetchedAllPW.filter((pw) => pw.program_id === programRes.data?.[0]?.programs?.id))
-          await loadExercises(fetchedAllPW)
         }
 
-        const threeMonthsAgo = new Date()
-        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
-        const threeMonthsAhead = new Date()
-        threeMonthsAhead.setMonth(threeMonthsAhead.getMonth() + 3)
-        const { data: swData } = await supabase
-          .from('scheduled_workouts')
-          .select(SW_SELECT)
-          .eq('client_id', clientId)
-          .gte('scheduled_date', toLocalDateStr(threeMonthsAgo))
-          .lte('scheduled_date', toLocalDateStr(threeMonthsAhead))
+        const swData = swRes.data
         setScheduledWorkouts((swData ?? []).map(enrichSW))
 
         // Sessions can point at workouts outside the coach's own program list (an on-demand
         // workout the client started). Load those names and exercises too, so they read
-        // exactly like program sessions.
+        // exactly like program sessions. Both lookups run together.
         const known = new Set(fetchedAllPW.map((pw) => pw.id))
         const missing = [...new Set([...(swData ?? []), ...(workoutRes.data ?? [])].map((r) => r.program_workout_id).filter((pwId) => pwId && !known.has(pwId)))]
-        let extraPW = []
-        if (missing.length > 0) {
-          const { data: extraData } = await supabase.from('program_workouts').select('id, name, day_number, program_id').in('id', missing)
-          extraPW = extraData ?? []
-          await loadExercises(extraPW)
-        }
         const activeProgramId = programRes.data?.[0]?.programs?.id ?? programRes.data?.[0]?.program_id
-        if (activeProgramId && !fetchedPrograms.some((p) => p.id === activeProgramId)) {
-          const { data: activePW } = await supabase
-            .from('program_workouts')
-            .select('id, name, day_number, program_id')
-            .eq('program_id', activeProgramId)
-            .order('day_number', { ascending: true })
-          setProgramWorkouts(activePW ?? [])
-          await loadExercises((activePW ?? []).filter((pw) => !exerciseMap[pw.id]))
-          extraPW = [...extraPW, ...(activePW ?? [])]
+        const needActive = activeProgramId && !fetchedPrograms.some((p) => p.id === activeProgramId)
+        const [extraData, activePW] = await Promise.all([
+          missing.length > 0 ? supabase.from('program_workouts').select('id, name, day_number, program_id').in('id', missing).then((r) => r.data ?? []) : [],
+          needActive ? supabase.from('program_workouts').select('id, name, day_number, program_id').eq('program_id', activeProgramId).order('day_number', { ascending: true }).then((r) => r.data ?? []) : null,
+        ])
+        let extraPW = extraData
+        if (activePW) {
+          setProgramWorkouts(activePW)
+          extraPW = [...extraPW, ...activePW]
         }
+        const needExercises = [...new Set(extraPW.map((pw) => pw.id))].filter((id) => !exerciseMap[id])
+        if (needExercises.length > 0) Object.assign(exerciseMap, await fetchExercisesFor(needExercises))
         setWorkoutExercises(exerciseMap)
         setWorkoutNames(Object.fromEntries([...fetchedAllPW, ...extraPW].map((pw) => [pw.id, pw.name || `Day ${pw.day_number}`])))
 
-        const { data: photoData } = await supabase
-          .from('progress_photos')
-          .select('id, photo_url, note, taken_date, created_at')
-          .eq('client_id', clientId)
-          .order('created_at', { ascending: false })
-          .limit(12)
-        setProgressPhotos(photoData ?? [])
+        setProgressPhotos(photoRes.data ?? [])
 
         setClientGoal(clientRes.data?.goal ?? '')
         setClientLimitations(clientRes.data?.limitations ?? '')
@@ -204,39 +198,13 @@ export default function ClientProfile({ user }) {
         setCarbsTarget(clientRes.data?.carbs_target_g ?? '')
         setFatsTarget(clientRes.data?.fats_target_g ?? '')
 
-        const ninetyDaysAgo = new Date()
-        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
-        const { data: foodLogsData } = await supabase
-          .from('food_logs')
-          .select(FOOD_LOG_SELECT)
-          .eq('client_id', clientId)
-          .gte('logged_at', toLocalDateStr(ninetyDaysAgo))
-          .order('logged_at', { ascending: false })
-        setFoodLogs(foodLogsData ?? [])
+        setFoodLogs(foodRes.data ?? [])
 
         setWaterTarget(clientRes.data?.water_target_ml ?? 2000)
         setWaterTargetInput(String(clientRes.data?.water_target_ml ?? 2000))
+        setWaterLogs(waterRes.data ?? [])
 
-        const thirtyDaysAgoForWater = new Date()
-        thirtyDaysAgoForWater.setDate(thirtyDaysAgoForWater.getDate() - 30)
-        const { data: waterLogsData } = await supabase
-          .from('water_logs')
-          .select('id, amount_ml, logged_date, created_at')
-          .eq('client_id', clientId)
-          .gte('logged_date', toLocalDateStr(thirtyDaysAgoForWater))
-          .order('logged_date', { ascending: false })
-        setWaterLogs(waterLogsData ?? [])
-
-        if (fetchedHabits.length > 0) {
-          const thirtyDaysAgo = new Date()
-          thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-          const { data: logsData } = await supabase
-            .from('habit_logs')
-            .select('*')
-            .in('habit_id', fetchedHabits.map((h) => h.id))
-            .gte('completed_date', toLocalDateStr(thirtyDaysAgo))
-          setHabitLogs(logsData ?? [])
-        }
+        if (habitLogs) setHabitLogs(habitLogs)
       } catch (e) {
         console.error(e)
       } finally {

@@ -55,12 +55,6 @@ function clearDraft(swId) {
 
 /* ---------- Finished screen ---------- */
 
-const PB_LABELS = {
-  '1rm': { label: 'Estimated 1RM', desc: 'Heaviest estimated single rep' },
-  best_set: { label: 'Best set', desc: 'Highest weight x reps' },
-  volume: { label: 'Volume on this lift', desc: 'Total kg moved on this lift in one session' },
-}
-
 const FEEL = ['Easy', 'Steady', 'Solid', 'Hard', 'All out']
 
 /* "How did that feel?" Saves a 1 to 5 rating and an optional note onto the session that
@@ -181,12 +175,11 @@ export function WorkoutComplete({ workoutName, stats, week, streak = 0, onDone, 
         </div>
 
         {newPBs.map((pb, i) => {
-          const meta = PB_LABELS[pb.type] || { label: pb.label }
           return (
             <section key={i} className="flex items-center gap-3.5 rounded-[24px] bg-tan text-on-tan px-4 py-4">
               <Trophy size={28} className="shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold opacity-80">New personal best{meta.label ? `, ${meta.label.toLowerCase()}` : ''}</p>
+                <p className="text-[13px] font-semibold opacity-80">{pb.type === '1rm' ? 'New best estimated 1RM' : pb.type === 'volume' ? 'New best volume on this lift' : 'New personal best'}</p>
                 <p className="text-[16px] font-bold truncate">{pb.exerciseName}</p>
               </div>
               <p className="font-display text-[32px] leading-none tabular-nums shrink-0">
@@ -406,18 +399,25 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     if (nextUp) break
   }
 
+  // Editing a finished session: work every best out again from all of the client's sets
+  // for these lifts. One read for all lifts and one write, not a round trip per lift.
   async function reconcilePBsForExercises(exerciseIds) {
-    for (const exerciseId of exerciseIds) {
-      if (!exerciseId) continue
-      const { data: allSets, error } = await supabase
-        .from('workout_set_logs')
-        .select('weight_kg, reps_completed, logged_at, workout_log_id')
-        .eq('client_id', client.id)
-        .eq('exercise_id', exerciseId)
-      if (error) { console.error('PB reconcile fetch error:', error); continue }
+    const ids = [...new Set(exerciseIds.filter(Boolean))]
+    if (!ids.length) return
+    const { data: allSets, error } = await supabase
+      .from('workout_set_logs')
+      .select('exercise_id, weight_kg, reps_completed, logged_at, workout_log_id')
+      .eq('client_id', client.id)
+      .in('exercise_id', ids)
+    if (error) { console.error('PB reconcile fetch error:', error); return }
+    const setsByExercise = {}
+    for (const s of allSets ?? []) (setsByExercise[s.exercise_id] ||= []).push(s)
+    const upserts = []
+    const toDelete = {} // pb_type -> exercise ids with nothing left to count
+    for (const exerciseId of ids) {
       let best1RM = 0, best1RMAt = null, bestSet = 0, bestSetAt = null
       const volumeByLog = {}
-      for (const s of allSets ?? []) {
+      for (const s of setsByExercise[exerciseId] ?? []) {
         const weight = parseFloat(s.weight_kg) || 0
         const reps = parseFloat(s.reps_completed) || 0
         if (weight <= 0) continue
@@ -441,17 +441,16 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
         { type: 'volume', value: Math.round(bestVolume), at: bestVolumeAt },
       ]
       for (const pb of recomputed) {
-        if (pb.value > 0) {
-          const { error: upErr } = await supabase.from('personal_bests').upsert(
-            { client_id: client.id, exercise_id: exerciseId, pb_type: pb.type, value: pb.value, achieved_at: pb.at },
-            { onConflict: 'client_id,exercise_id,pb_type' },
-          )
-          if (upErr) console.error('PB reconcile upsert error:', upErr)
-        } else {
-          await supabase.from('personal_bests').delete().eq('client_id', client.id).eq('exercise_id', exerciseId).eq('pb_type', pb.type)
-        }
+        if (pb.value > 0) upserts.push({ client_id: client.id, exercise_id: exerciseId, pb_type: pb.type, value: pb.value, achieved_at: pb.at })
+        else (toDelete[pb.type] ||= []).push(exerciseId)
       }
     }
+    const writes = []
+    if (upserts.length) writes.push(supabase.from('personal_bests').upsert(upserts, { onConflict: 'client_id,exercise_id,pb_type' }))
+    for (const [type, exIds] of Object.entries(toDelete)) {
+      writes.push(supabase.from('personal_bests').delete().eq('client_id', client.id).eq('pb_type', type).in('exercise_id', exIds))
+    }
+    for (const { error: wErr } of await Promise.all(writes)) if (wErr) console.error('PB reconcile write error:', wErr)
   }
 
   // Leaving with ticked sets asks first. The sets stay in the draft either way.
@@ -475,8 +474,10 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
 
   // Personal bests for a new session. Saved for every lift, but only shown when they beat
   // a best that already existed (a first-ever session is not a list of "new" bests).
-  async function updatePBs(byExercise) {
-    const newPBs = []
+  // One read of the current bests and one write for all lifts, so finishing is quick.
+  async function updatePBs(byExercise, currentBests) {
+    // Best of each kind per lift. A lift done twice in one session counts its better effort.
+    const checks = {} // `${exerciseId}_${type}` -> { exerciseId, exerciseName, type, value, unit }
     for (const { exerciseId, exerciseName, rows } of byExercise) {
       let best1RM = 0, bestSet = 0, sessionVolume = 0
       for (const r of rows) {
@@ -487,21 +488,35 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
         if (setScore > bestSet) bestSet = setScore
         sessionVolume += setScore
       }
-      const pbChecks = []
-      if (best1RM > 0) pbChecks.push({ type: '1rm', value: Math.round(best1RM * 10) / 10, unit: 'kg' })
-      if (bestSet > 0) pbChecks.push({ type: 'best_set', value: bestSet, unit: 'pts' })
-      if (sessionVolume > 0) pbChecks.push({ type: 'volume', value: Math.round(sessionVolume), unit: 'kg' })
-      for (const check of pbChecks) {
-        const { data: existing, error } = await supabase.from('personal_bests').select('value').eq('client_id', client.id).eq('exercise_id', exerciseId).eq('pb_type', check.type).maybeSingle()
-        if (error) { console.error('PB read error:', error); continue }
-        if (existing && check.value <= existing.value) continue
-        const { error: upErr } = await supabase.from('personal_bests').upsert({ client_id: client.id, exercise_id: exerciseId, pb_type: check.type, value: check.value, achieved_at: new Date().toISOString(), scheduled_workout_id: scheduledWorkout.id }, { onConflict: 'client_id,exercise_id,pb_type' })
-        if (upErr) { console.error('PB upsert error:', upErr); continue }
-        if (existing && ['1rm', 'volume'].includes(check.type)) {
-          newPBs.push({ exerciseName, type: check.type, value: check.value, unit: check.unit, previous: existing.value })
-        }
+      const found = []
+      if (best1RM > 0) found.push({ type: '1rm', value: Math.round(best1RM * 10) / 10, unit: 'kg' })
+      if (bestSet > 0) found.push({ type: 'best_set', value: bestSet, unit: 'pts' })
+      if (sessionVolume > 0) found.push({ type: 'volume', value: Math.round(sessionVolume), unit: 'kg' })
+      for (const c of found) {
+        const key = `${exerciseId}_${c.type}`
+        if (!checks[key] || c.value > checks[key].value) checks[key] = { exerciseId, exerciseName, ...c }
       }
     }
+    const list = Object.values(checks)
+    if (!list.length) return []
+    const { data: existingRows, error } = await currentBests
+    if (error) { console.error('PB read error:', error); return [] }
+    const existing = {}
+    for (const r of existingRows ?? []) existing[`${r.exercise_id}_${r.pb_type}`] = r
+    const achievedAt = new Date().toISOString()
+    const upserts = []
+    const newPBs = []
+    for (const c of list) {
+      const prev = existing[`${c.exerciseId}_${c.type}`]
+      if (prev && c.value <= prev.value) continue
+      upserts.push({ client_id: client.id, exercise_id: c.exerciseId, pb_type: c.type, value: c.value, achieved_at: achievedAt, scheduled_workout_id: scheduledWorkout.id })
+      if (prev && ['1rm', 'volume'].includes(c.type)) {
+        newPBs.push({ exerciseName: c.exerciseName, type: c.type, value: c.value, unit: c.unit, previous: prev.value })
+      }
+    }
+    if (!upserts.length) return []
+    const { error: upErr } = await supabase.from('personal_bests').upsert(upserts, { onConflict: 'client_id,exercise_id,pb_type' })
+    if (upErr) { console.error('PB upsert error:', upErr); return [] }
     return newPBs
   }
 
@@ -526,6 +541,11 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
       byExercise.push({ exerciseId, exerciseName: ex.exercises?.name || 'Exercise', rows })
     }
     const setRows = byExercise.flatMap((e) => e.rows)
+    // The current bests are read while the session saves, not after it.
+    const liftIds = [...new Set(byExercise.map((e) => e.exerciseId))]
+    const currentBests = !isEditing && liftIds.length
+      ? supabase.from('personal_bests').select('exercise_id, pb_type, value').eq('client_id', client.id).in('exercise_id', liftIds).then((r) => r)
+      : null
     const base = { client_id: client.id, scheduled_workout_id: scheduledWorkout.id }
     let logId = existingLog?.id ?? null
 
@@ -539,24 +559,23 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
         if (readErr) throw readErr
         const existingByKey = {}
         for (const r of existingRows ?? []) existingByKey[`${r.exercise_id}_${r.set_number}`] = r.id
+        // All the writes at once rather than one after another.
         const toInsert = []
+        const writes = []
         for (const row of setRows) {
           const matchId = existingByKey[`${row.exercise_id}_${row.set_number}`]
           if (matchId) {
-            const { error: updErr } = await supabase.from('workout_set_logs')
+            writes.push(supabase.from('workout_set_logs')
               .update({ reps_completed: row.reps_completed, weight_kg: row.weight_kg })
-              .eq('id', matchId)
-            if (updErr) throw updErr
+              .eq('id', matchId))
           } else {
             toInsert.push({ ...base, ...row, logged_at: existingLog.logged_at || now, workout_log_id: existingLog.id })
           }
         }
-        if (toInsert.length > 0) {
-          const { error: insErr } = await supabase.from('workout_set_logs').insert(toInsert)
-          if (insErr) throw insErr
-        }
-        const { error: logErr } = await supabase.from('workout_logs').update({ total_volume_kg: totalVolume }).eq('id', existingLog.id)
-        if (logErr) throw logErr
+        if (toInsert.length > 0) writes.push(supabase.from('workout_set_logs').insert(toInsert))
+        writes.push(supabase.from('workout_logs').update({ total_volume_kg: totalVolume }).eq('id', existingLog.id))
+        const failed = (await Promise.all(writes)).find((r) => r.error)
+        if (failed) throw failed.error
       } else {
         // The workout log first, then its sets. If the sets fail, the log is removed again
         // so the session is not marked done without them.
@@ -582,7 +601,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     let newPBs = []
     try {
       if (isEditing) await reconcilePBsForExercises(byExercise.map((e) => e.exerciseId))
-      else newPBs = await updatePBs(byExercise)
+      else if (currentBests) newPBs = await updatePBs(byExercise, currentBests)
     } catch (e) {
       console.error('Personal bests error:', e)
     }

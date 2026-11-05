@@ -119,7 +119,18 @@ export default function Dashboard({ user }) {
     since.setDate(since.getDate() - 30)
     const today = toLocalDateStr()
 
-    const [{ data: checkinRows }, { data: logRows }, { data: swRows }, unreadCounts, latest] = await Promise.all([
+    // Each client's most recent session, asked for alongside everything else (not after):
+    // a client with no session in the 30-day window still has a last session further
+    // back, and the status rule needs it (the profile sees it too, so both screens agree).
+    const lastLogs = Promise.all(clientIds.map((id) => supabase
+      .from('workout_logs')
+      .select('client_id, logged_at, completed, scheduled_workout_id')
+      .eq('client_id', id)
+      .eq('completed', true)
+      .order('logged_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => data?.[0] ?? null)))
+    const [{ data: checkinRows }, { data: logRows }, { data: swRows }, unreadCounts, latest, lastLog] = await Promise.all([
       supabase
         .from('checkins')
         .select('id, client_id, submitted_at, training_score, energy_score, blocker, notes, coach_reply')
@@ -139,20 +150,11 @@ export default function Dashboard({ user }) {
         .lt('scheduled_date', today),
       fetchUnreadCounts({ readerId: user.id }),
       fetchLatestPerThread(clientIds),
+      lastLogs,
     ])
-    // A client with no session in the window still has a last session further back, and
-    // the status rule needs it (the profile sees it too, so both screens agree).
-    const quiet = clientIds.filter((id) => !(logRows ?? []).some((l) => l.client_id === id))
-    const older = await Promise.all(quiet.map((id) => supabase
-      .from('workout_logs')
-      .select('client_id, logged_at, completed, scheduled_workout_id')
-      .eq('client_id', id)
-      .eq('completed', true)
-      .order('logged_at', { ascending: false })
-      .limit(1)
-      .then(({ data }) => data?.[0] ?? null)))
+    const older = lastLog.filter((l) => l && !(logRows ?? []).some((r) => r.client_id === l.client_id))
     setCheckins(checkinRows ?? [])
-    setWorkoutLogs([...(logRows ?? []), ...older.filter(Boolean)])
+    setWorkoutLogs([...(logRows ?? []), ...older])
     setScheduled(swRows ?? [])
     setUnread(unreadCounts)
     setLatestMsg(latest)

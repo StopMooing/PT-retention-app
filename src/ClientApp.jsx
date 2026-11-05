@@ -10,6 +10,7 @@ import { completedKeys, workoutName, sessionsThisWeek, weekStreak } from './clie
 import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
   fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName, fetchDailyCheckins, FOOD_DAYS,
+  fetchClientRow, readClientHint, writeClientHint,
 } from './client/data'
 import { fetchUnreadCounts, unseenReplyCount, markConversationOpened } from './lib/messages'
 import { saveAiWorkout, saveAiMeal } from './client/aiSaves'
@@ -110,7 +111,37 @@ export default function ClientApp() {
       const { data: { session } } = await supabase.auth.getSession()
       const user = session?.user
       if (!user) { setLoading(false); return }
-      const { data: clientRow, error: clientError } = await supabase.from('clients').select('*').eq('user_id', user.id).maybeSingle()
+      // Everything else at once rather than one after another.
+      const loadAll = (id, ptId) => {
+        const scheduledWithExercises = fetchScheduled(id).then(async (sw) => {
+          const pwIds = [...new Set(sw.map((s) => s.program_workout_id).filter(Boolean))]
+          return { sw, ex: pwIds.length > 0 ? await fetchExercisesFor(pwIds) : {} }
+        })
+        return Promise.all([
+          fetchAssignment(id),
+          scheduledWithExercises,
+          fetchWorkoutLogs(id),
+          fetchFoodLogs(id),
+          fetchResources(ptId),
+          fetchByClient('saved_workouts', id, 'created_at'),
+          fetchByClient('saved_meals', id, 'created_at'),
+          fetchByClient('checkins', id, 'submitted_at'),
+          fetchByClient('progress_photos', id, 'taken_date'),
+          fetchWeightLogs(id),
+          fetchStrength(id),
+          fetchOnDemand(),
+          fetchCoachName(ptId),
+          fetchDailyCheckins(id),
+          ptId ? fetchUnreadCounts({ readerId: user.id, clientId: id }) : {},
+        ])
+      }
+      // On a return visit the client id is already known, so the rest starts loading
+      // alongside the client record. It is only used if the record agrees.
+      const hint = readClientHint(user.id)
+      const early = hint ? loadAll(hint.id, hint.pt_id) : null
+      if (early) early.catch(() => {}) // a failure here is handled where it is used
+
+      const { data: clientRow, error: clientError } = await fetchClientRow(user.id)
       if (clientError) { console.error('Client load error:', clientError); setLoadFailed(true); setLoading(false); return }
       if (!clientRow) { setLoading(false); return }
       // Archived by their coach: only the "coaching has ended" screen, nothing else loads.
@@ -124,29 +155,10 @@ export default function ClientApp() {
       setUserId(user.id)
       if (!clientRow.pt_id) setTab((t) => (t === 'messages' ? 'home' : t))
       const id = clientRow.id
+      const hintOk = hint && hint.id === id && (hint.pt_id ?? null) === (clientRow.pt_id ?? null)
+      writeClientHint(user.id, clientRow)
 
-      // Everything else at once rather than one after another.
-      const scheduledWithExercises = fetchScheduled(id).then(async (sw) => {
-        const pwIds = [...new Set(sw.map((s) => s.program_workout_id).filter(Boolean))]
-        return { sw, ex: pwIds.length > 0 ? await fetchExercisesFor(pwIds) : {} }
-      })
-      const [asgn, sched, logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, unread] = await Promise.all([
-        fetchAssignment(id),
-        scheduledWithExercises,
-        fetchWorkoutLogs(id),
-        fetchFoodLogs(id),
-        fetchResources(clientRow.pt_id),
-        fetchByClient('saved_workouts', id, 'created_at'),
-        fetchByClient('saved_meals', id, 'created_at'),
-        fetchByClient('checkins', id, 'submitted_at'),
-        fetchByClient('progress_photos', id, 'taken_date'),
-        fetchWeightLogs(id),
-        fetchStrength(id),
-        fetchOnDemand(),
-        fetchCoachName(clientRow.pt_id),
-        fetchDailyCheckins(id),
-        clientRow.pt_id ? fetchUnreadCounts({ readerId: user.id, clientId: id }) : {},
-      ])
+      const [asgn, sched, logs, food, res, savedW, savedM, ci, photos, weights, str, library, coach, daily, unread] = await (hintOk ? early : loadAll(id, clientRow.pt_id))
       setAssignment(asgn.assignment)
       setProgramWorkouts(asgn.programWorkouts)
       setAllProgramExercises(asgn.exercises)

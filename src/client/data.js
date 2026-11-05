@@ -86,20 +86,29 @@ export async function fetchResources(ptId) {
   return data ?? []
 }
 
-// The client's active program (if any), its days and each day's exercises.
+// The client's active program (if any), its days and each day's exercises, in one request
+// (the program, its days and their exercises come back nested) instead of three in a row.
 // assigned_by tells a coach's program apart from one the client started themselves.
 export async function fetchAssignment(clientId) {
-  const { data: assignment } = await supabase
+  const { data, error } = await supabase
     .from('program_assignments')
-    .select('id, start_date, assigned_by, programs(id, name, description)')
+    .select(`id, start_date, assigned_by, programs(id, name, description, program_workouts(id, name, day_number, workout_exercises(program_workout_id, ${EX_SELECT})))`)
     .eq('client_id', clientId)
     .eq('is_active', true)
     .maybeSingle()
-  if (!assignment?.programs) return { assignment: assignment ?? null, programWorkouts: [], exercises: {} }
-  const { data: pwData } = await supabase.from('program_workouts').select('id, name, day_number').eq('program_id', assignment.programs.id).order('day_number', { ascending: true })
-  const programWorkouts = pwData ?? []
-  const exercises = programWorkouts.length > 0 ? await fetchExercisesFor(programWorkouts.map((pw) => pw.id)) : {}
-  return { assignment, programWorkouts, exercises }
+  if (error) console.error('Program load error:', error)
+  if (!data?.programs) return { assignment: data ?? null, programWorkouts: [], exercises: {} }
+  const { program_workouts: days = [], ...program } = data.programs
+  const sorted = [...(days ?? [])].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
+  const exercises = {}
+  for (const d of sorted) {
+    exercises[d.id] = [...(d.workout_exercises ?? [])].sort((a, b) => (a.order_index ?? Infinity) - (b.order_index ?? Infinity))
+  }
+  return {
+    assignment: { ...data, programs: program },
+    programWorkouts: sorted.map(({ id, name, day_number }) => ({ id, name, day_number })),
+    exercises,
+  }
 }
 
 // The on-demand library: single workouts and multi-day programs any member can use.
@@ -160,4 +169,36 @@ export async function fetchDailyCheckins(clientId) {
 export async function fetchByClient(table, clientId, orderCol) {
   const { data } = await supabase.from(table).select('*').eq('client_id', clientId).order(orderCol, { ascending: false })
   return data ?? []
+}
+
+// The client's own record. The app shell starts this while it checks the role, so by the
+// time the client screens load it is usually already here. Used once, then forgotten, so
+// a later visit always reads fresh.
+const pendingRow = new Map()
+// A Supabase query only runs once awaited, and runs again each time: .then() here starts
+// it now and makes one result that can be awaited later.
+function queryClientRow(userId) {
+  return supabase.from('clients').select('*').eq('user_id', userId).maybeSingle().then((r) => r)
+}
+export function prefetchClientRow(userId) {
+  if (!pendingRow.has(userId)) pendingRow.set(userId, queryClientRow(userId))
+}
+export function fetchClientRow(userId) {
+  const p = pendingRow.get(userId)
+  pendingRow.delete(userId)
+  return p ?? queryClientRow(userId)
+}
+
+// The client id and coach id from the last visit, so everything else can start loading at
+// the same moment as the client record instead of after it. Checked against the record
+// before anything is used.
+const hintKey = (userId) => `unfnshd-client-${userId}`
+export function readClientHint(userId) {
+  try {
+    const h = JSON.parse(localStorage.getItem(hintKey(userId)) || 'null')
+    return h?.id ? h : null
+  } catch { return null }
+}
+export function writeClientHint(userId, row) {
+  try { localStorage.setItem(hintKey(userId), JSON.stringify({ id: row.id, pt_id: row.pt_id ?? null })) } catch { /* storage unavailable */ }
 }

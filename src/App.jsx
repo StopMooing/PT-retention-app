@@ -1,6 +1,7 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './supabase'
+import { prefetchClientRow } from './client/data'
 // Each side loads only its own code: a client never downloads the coach screens.
 const AuthPage = lazy(() => import('./AuthPage'))
 const ClaimPage = lazy(() => import('./ClaimPage'))
@@ -14,6 +15,14 @@ const CoachShell = lazy(() => import('./coach/CoachShell'))
 const Dashboard = lazy(() => import('./coach/Dashboard'))
 const MessagesPage = lazy(() => import('./coach/messages/MessagesPage'))
 const ResetPasswordPage = lazy(() => import('./ResetPasswordPage'))
+
+const roleKey = (uid) => `unfnshd-role-${uid}`
+function readRole(uid) {
+  try { return localStorage.getItem(roleKey(uid)) } catch { return null }
+}
+function writeRole(uid, role) {
+  try { if (role) localStorage.setItem(roleKey(uid), role); else localStorage.removeItem(roleKey(uid)) } catch { /* storage unavailable */ }
+}
 import { Mark } from './ui'
 
 // A password reset link lands on /reset (or on the home page with type=recovery in the
@@ -34,8 +43,8 @@ const CONFIRM_AT_LOAD = (() => {
 
 export default function App() {
   const [session, setSession] = useState(undefined)
-  const [userRole, setUserRole] = useState(null)
-  const [roleLoading, setRoleLoading] = useState(true)
+  // Whose role this is, so a role is never used for a different person (see below).
+  const [role, setRole] = useState({ uid: undefined, value: null })
   const [recovering, setRecovering] = useState(RECOVERY_AT_LOAD || CONFIRM_AT_LOAD?.type === 'recovery')
   // null while checking an email link, 'failed' when it was expired or already used.
   const [confirm, setConfirm] = useState(CONFIRM_AT_LOAD ? (CONFIRM_AT_LOAD.failed ? 'failed' : 'checking') : null)
@@ -62,37 +71,34 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // The role decides which side of the app opens. It is remembered on the phone per
+  // account, so the app opens without waiting for it; it is still checked every launch and
+  // corrected if it ever changed. Keyed on the user, not the session object: a token
+  // refresh is not a new person and must not bring the splash screen back.
+  const uid = session === undefined ? undefined : session?.user?.id ?? null
+  const knownRole = useMemo(() => (uid ? readRole(uid) : null), [uid])
   useEffect(() => {
-    if (session === undefined) return
-    // The role gate must close again on every session change. Without this the redirect
-    // below is computed from the PREVIOUS user's role, which sends a signing-in coach to
-    // the client app. `cancelled` guards against an older fetch resolving last.
+    if (!uid) return
+    // `cancelled` guards against an older fetch resolving last.
     let cancelled = false
-    setRoleLoading(true)
-    // Most people signing in are clients: fetch their screens while the role loads.
-    if (session) import('./ClientApp')
-    async function fetchRole() {
-      try {
-        // The session already holds the user, so this skips a network round trip.
-        const user = session?.user
-        if (user) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .single()
-          if (cancelled) return
-          setUserRole(data?.role ?? null)
-        } else {
-          setUserRole(null)
-        }
-      } finally {
-        if (!cancelled) setRoleLoading(false)
-      }
-    }
-    fetchRole()
+    // Most people signing in are clients: fetch their screens and their record while the
+    // role loads.
+    if (knownRole !== 'pt') { import('./ClientApp'); prefetchClientRow(uid) }
+    supabase.from('profiles').select('role').eq('id', uid).single().then(({ data, error }) => {
+      if (cancelled) return
+      if (error && knownRole) return // offline or a blip: keep the role we know
+      const value = data?.role ?? null
+      setRole({ uid, value })
+      writeRole(uid, value)
+    })
     return () => { cancelled = true }
-  }, [session])
+  }, [uid, knownRole])
+  // The role gate is closed until there is a role for the person signed in now (checked,
+  // or remembered on this phone). Without this the redirect below could use the PREVIOUS
+  // user's role and send a signing-in coach to the client app.
+  const checked = role.uid === uid
+  const userRole = checked ? role.value : knownRole
+  const roleLoading = uid === undefined || (!!uid && !checked && !knownRole)
 
   const splash = (
     <div className="min-h-dvh flex items-center justify-center bg-bg text-ink" role="status" aria-label="Loading">
