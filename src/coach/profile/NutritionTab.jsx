@@ -1,11 +1,12 @@
 // Nutrition: today against targets, target editing, water, the last week and the food log.
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Target, Droplets, CalendarCheck, TrendingUp, Utensils, BookOpen, Pencil, X, Check } from 'lucide-react'
 import { Button, Ring, Segmented, Chip } from '../../ui'
 import { Panel, UnitInput, Bar, LineChart } from './parts'
 import { dayNutrition, dayOf, daysSince, addDays, toLocalDateStr, formatDate, formatMl } from '../lib'
 import { mealItems } from '../../lib/meals'
+import { fetchClientPlan, fetchPlans } from '../../lib/mealLibrary'
 
 const PERIODS = [
   { value: '7', label: '7 days' },
@@ -24,6 +25,21 @@ function band(cal, target) {
   if (!target || !cal) return null
   if (cal >= target * 0.9 && cal <= target * 1.1) return 'hit'
   return cal < target * 0.9 ? 'under' : 'over'
+}
+
+// The on-demand meal plan the client picked for themselves in the app, if any.
+function useChosenPlan(clientId) {
+  const [chosen, setChosen] = useState(null)
+  useEffect(() => {
+    if (!clientId) return
+    let live = true
+    fetchClientPlan(clientId)
+      .then((c) => (c ? fetchPlans().then((plans) => ({ ...c, plan: plans.find((p) => p.id === c.plan_id) })) : null))
+      .then((c) => live && setChosen(c?.plan ? c : null))
+      .catch((e) => console.error('Client meal plan choice load error:', e))
+    return () => { live = false }
+  }, [clientId])
+  return chosen
 }
 
 function Today({ foodLogs, waterLogs, t }) {
@@ -210,6 +226,7 @@ function Water({ waterLogs, waterTarget, onLogWater, onDeleteWater, savingWater 
 export default function NutritionTab(props) {
   const navigate = useNavigate()
   const { foodLogs, waterLogs, tv, mealPlan } = props
+  const chosen = useChosenPlan(props.clientId)
   const [period, setPeriod] = useState('30')
   const t = {
     calories: parseInt(tv.calorieTarget) || 0,
@@ -247,8 +264,15 @@ export default function NutritionTab(props) {
           icon={BookOpen}
           action={<Button variant="ghost" size="sm" onClick={() => navigate('/nutrition')}>{mealPlan ? 'Change' : 'Assign'}</Button>}
         >
+          {chosen && (
+            <div className={mealPlan ? 'pb-3 mb-3 border-b border-line' : ''}>
+              <p className="text-[13px] font-semibold text-muted">Picked in the app on {formatDate(dayOf(chosen.started_at), { day: 'numeric', month: 'short' })}</p>
+              <p className="font-bold text-ink">{chosen.plan.name}</p>
+              <p className="text-[13px] text-muted mt-0.5 tabular-nums">About {chosen.plan.avg_calories.toLocaleString('en-AU')} kcal a day · {chosen.plan.avg_protein_g} g protein · {chosen.plan.avg_carbs_g} g carbs · {chosen.plan.avg_fats_g} g fats</p>
+            </div>
+          )}
           {!mealPlan ? (
-            <p className="text-[15px] text-muted">No meal plan assigned.</p>
+            !chosen && <p className="text-[15px] text-muted">No meal plan assigned.</p>
           ) : (
             <>
               <p className="font-bold text-ink">{mealPlan.name}</p>

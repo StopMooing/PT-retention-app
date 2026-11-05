@@ -732,6 +732,7 @@ export default function ClientProfile({ user }) {
         {activeTab === 'nutrition' && (
           <NutritionTab
             clientFirst={client.full_name.split(' ')[0]}
+            clientId={client.id}
             foodLogs={foodLogs}
             waterLogs={waterLogs}
             tv={tv}

@@ -3,6 +3,7 @@ const COACH = '00000000-0000-4000-8000-0000000000c0'
 const CLIENT_USER = '00000000-0000-4000-8000-0000000000a1'
 const CLIENT = '00000000-0000-4000-8000-00000000c1e1'
 let n = 1
+const lib = require('./meal-library.cjs')
 const id = () => `10000000-0000-4000-8000-${String(n++).padStart(12, '0')}`
 
 function day(offset) {
@@ -150,6 +151,9 @@ module.exports = {
       { id: id(), client_id: CLIENT, logged_by: CLIENT_USER, amount_ml: 750, logged_date: day(0), created_at: ts(0) },
     ],
     pt_notes: [], meal_plans: [], meals: [], meal_foods: [], meal_templates: [], meal_template_foods: [], foods: [],
+    recipes: lib.recipes, recipe_ingredients: lib.recipe_ingredients, meal_plan_library: lib.meal_plan_library, meal_plan_library_items: lib.meal_plan_library_items,
+    // NO_PLAN=1: Jane has not picked an on-demand meal plan.
+    client_meal_plans: process.env.NO_PLAN ? [] : [{ client_id: CLIENT, plan_id: lib.planId('balanced-female-maintain'), started_at: ts(-3) }],
     menu_items: [
       { id: id(), chain: "Hungry Jack's", name: 'Cheeseburger', serving_g: 119, calories: 322, protein_g: 15.8, carbs_g: 28.3, fats_g: 16 },
       { id: id(), chain: "Hungry Jack's", name: 'Chips Medium', serving_g: 108, calories: 308, protein_g: 3.8, carbs_g: 41.1, fats_g: 14.3 },

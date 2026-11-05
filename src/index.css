@@ -261,3 +261,11 @@ body {
     font-size: 16px;
   }
 }
+
+/* Sideways chip rows (Recipes filters): scroll without a visible bar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

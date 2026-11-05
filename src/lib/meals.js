@@ -42,6 +42,9 @@ export async function logMeals({ clientId, date, meals }) {
       meal_type: meal.meal_type || 'other',
       ...totals,
       logged_at: date,
+      // Set when the meal came from a recipe or a planned meal (src/lib/recipes.js).
+      ...(meal.recipe_id ? { recipe_id: meal.recipe_id } : {}),
+      ...(meal.plan_item_id ? { plan_item_id: meal.plan_item_id } : {}),
     }).select().single()
     if (error) return { added, error }
     let saved = []

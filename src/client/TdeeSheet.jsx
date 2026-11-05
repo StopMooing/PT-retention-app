@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import { Sheet, Button, Field, Segmented } from '../ui'
+import { maintenanceCalories, goalCalories, macroTargets } from '../lib/nutritionTargets'
 
 const ACTIVITY = [
   ['1.2', 'Mostly sitting, little exercise'],
@@ -25,21 +26,18 @@ export default function TdeeSheet({ open, onClose, client, onSaved }) {
     const act = parseFloat(inputs.activity)
     if (!age || !h || !w) { setError('Fill in your age, height and weight first.'); return }
     setError(null)
-    const bmr = inputs.gender === 'male' ? 10 * w + 6.25 * h - 5 * age + 5 : 10 * w + 6.25 * h - 5 * age - 161
-    const maintenance = Math.round(bmr * act)
+    const maintenance = maintenanceCalories({ sex: inputs.gender, weightKg: w, heightCm: h, age, activity: act })
     // Fat-loss options never go below a safe floor (1,200 kcal women, 1,500 men); one
     // that would is left out rather than offered.
     const floor = inputs.gender === 'male' ? 1500 : 1200
     const safe = (kcal) => (kcal >= floor ? kcal : null)
-    setResult({ maintenance, fatLoss: safe(maintenance - 500), aggressiveLoss: safe(maintenance - 750), muscleGain: maintenance + 300 })
+    setResult({ maintenance, fatLoss: safe(goalCalories(maintenance, 'cut')), aggressiveLoss: safe(maintenance - 750), muscleGain: goalCalories(maintenance, 'bulk') })
   }
 
   async function handleSetGoal(calories) {
     setError(null)
     try {
-      const protein = Math.round((calories * 0.30) / 4)
-      const carbs = Math.round((calories * 0.40) / 4)
-      const fats = Math.round((calories * 0.30) / 9)
+      const { protein, carbs, fats } = macroTargets(calories)
       const { error } = await supabase
         .from('clients')
         .update({ calorie_target: calories, protein_target_g: protein, carbs_target_g: carbs, fats_target_g: fats })
