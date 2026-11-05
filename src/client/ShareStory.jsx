@@ -1,13 +1,13 @@
-// "Share your PB": draws a 1080 x 1920 story card (emerald, cream type, the open ring with
-// its tan dot) on a canvas, previews it, and hands it to the phone's share sheet or saves
+// "Share your PB": draws a 1080 x 1920 story card (onyx, ivory type, the open ring with
+// its champagne dot) on a canvas, previews it, and hands it to the phone's share sheet or saves
 // it. Only the lift and the weight are on it: never body weight or photos.
 import { useEffect, useState } from 'react'
 import { Share2, Download } from 'lucide-react'
 import { Sheet, Button } from '../ui'
 
-const EMERALD = '#0B2B24'
-const CREAM = '#F4EFE6'
-const TAN = '#D6B98C'
+const ONYX = '#1C1A17'
+const IVORY = '#F7F2EA'
+const CHAMPAGNE = '#E6D3B3'
 
 // The open ring, like the logo: 320 degrees, gap at the top right, dot in the gap.
 function drawRing(ctx, cx, cy, r, width, color, alpha, dotR) {
@@ -22,7 +22,7 @@ function drawRing(ctx, cx, cy, r, width, color, alpha, dotR) {
   ctx.stroke()
   ctx.restore()
   const a = (-45 * Math.PI) / 180
-  ctx.fillStyle = TAN
+  ctx.fillStyle = CHAMPAGNE
   ctx.beginPath()
   ctx.arc(cx + r * Math.cos(a), cy + r * Math.sin(a), dotR, 0, Math.PI * 2)
   ctx.fill()
@@ -56,11 +56,11 @@ async function drawPBStory({ exerciseName, value, unit, previous }) {
   const display = "'Baloo 2', 'Arial Rounded MT Bold', sans-serif"
   const body = "'Inter Variable', Inter, system-ui, sans-serif"
 
-  ctx.fillStyle = EMERALD
+  ctx.fillStyle = ONYX
   ctx.fillRect(0, 0, W, H)
-  drawRing(ctx, W + 40, 860, 520, 150, CREAM, 0.12, 80)
+  drawRing(ctx, W + 40, 860, 520, 150, IVORY, 0.12, 80)
 
-  ctx.fillStyle = CREAM
+  ctx.fillStyle = IVORY
   ctx.textBaseline = 'alphabetic'
   ctx.font = `800 300px ${display}`
   ctx.fillText('New', 64, 330)
@@ -80,16 +80,16 @@ async function drawPBStory({ exerciseName, value, unit, previous }) {
     const chip = up > 0 ? `Up ${up} ${unit} since last time` : `Up from ${previous} ${unit}`
     ctx.font = `700 40px ${body}`
     const cw = ctx.measureText(chip).width + 64
-    ctx.fillStyle = TAN
+    ctx.fillStyle = CHAMPAGNE
     roundRect(ctx, 72, 1590, cw, 76, 38)
     ctx.fill()
-    ctx.fillStyle = EMERALD
+    ctx.fillStyle = ONYX
     ctx.fillText(chip, 104, 1642)
   }
 
   // Footer: the logo, small, bottom left.
-  drawRing(ctx, 112, 1800, 30, 14, CREAM, 1, 9)
-  ctx.fillStyle = CREAM
+  drawRing(ctx, 112, 1800, 30, 14, IVORY, 1, 9)
+  ctx.fillStyle = IVORY
   ctx.font = `800 54px ${display}`
   ctx.fillText('UNFNSHD', 168, 1822)
 

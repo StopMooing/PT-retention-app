@@ -327,7 +327,7 @@ export function TabBar({ items, className }) {
       className={cx('fixed bottom-0 inset-x-0 z-30 px-3 pointer-events-none', className)}
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
     >
-      <div className="max-w-[480px] mx-auto pointer-events-auto flex gap-1 p-1.5 rounded-[30px] bg-surface/95 backdrop-blur-xl border border-line shadow-[0_8px_28px_rgba(11,43,36,0.14)]">
+      <div className="max-w-[480px] mx-auto pointer-events-auto flex gap-1 p-1.5 rounded-[30px] bg-surface/95 backdrop-blur-xl border border-line shadow-[0_8px_28px_var(--shadow)]">
         {items.map(({ key, label, icon: Icon, active, badge, onClick }) => (
           <button
             key={key}
@@ -336,7 +336,7 @@ export function TabBar({ items, className }) {
             aria-label={badge > 0 ? `${label}, ${badge} unread` : undefined}
             className={cx(
               'relative flex-1 min-w-0 h-14 rounded-[24px] flex flex-col items-center justify-center gap-0.5 transition-colors',
-              active ? 'bg-hero text-on-hero' : 'text-muted hover:text-ink',
+              active ? 'bg-accent text-on-accent' : 'text-muted hover:text-ink',
             )}
           >
             <span className="relative">

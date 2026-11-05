@@ -124,7 +124,7 @@ export default function MessagesTab({ clientId, userId, coachName }) {
       <div className="fixed inset-x-0 z-20" style={{ bottom: 'var(--tabbar-space)' }}>
         <div className="max-w-[480px] mx-auto px-4 pb-2">
           {sendError && <p role="alert" className="text-[13px] font-semibold text-bad mb-1.5">{sendError}</p>}
-          <div className="flex items-end gap-2 rounded-[28px] bg-surface border border-line-strong pl-1.5 pr-1.5 py-1.5 shadow-[0_8px_24px_rgba(11,43,36,0.10)]">
+          <div className="flex items-end gap-2 rounded-[28px] bg-surface border border-line-strong pl-1.5 pr-1.5 py-1.5 shadow-[0_8px_24px_var(--shadow)]">
             <textarea
               rows={1}
               maxLength={4000}

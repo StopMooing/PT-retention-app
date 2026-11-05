@@ -10,83 +10,85 @@
    UNFNSHD colours. Defined once per mode. Screens use the semantic names below
    (bg-surface, text-ink, text-muted, border-line, bg-accent, ...), never raw hex.
    ------------------------------------------------------------------------------------ */
-/* Emerald Day (light, default) and Emerald Club (dark). See docs/brand.md. */
+/* Champagne (light, default) and Champagne Night (dark). See docs/brand.md. */
 :root {
   /* Room the floating tab bar takes at the bottom of a phone screen (TabBar in src/ui). */
   --tabbar-space: calc(max(env(safe-area-inset-bottom), 12px) + 76px);
   color-scheme: light;
-  --bg: #F4EFE6;
+  --bg: #F7F2EA;
   --surface: #FFFFFF;
-  --surface-2: #EBE4D6;
-  --ink: #0B2B24;
-  --muted: #4A5A53;
-  --faint: #7C877F;
-  --line: #E3DACA;
-  --line-strong: #D9CFBC;
-  --accent: #0B2B24;
-  --accent-strong: #134A3C;
-  --on-accent: #F4EFE6;
-  --accent-soft: #E2EEE8;
-  --good: #1F6B4F;
+  --surface-2: #EFE7DA;
+  --ink: #1C1A17;
+  --muted: #5C564D;
+  --faint: #8A8377;
+  --line: #E8DFD0;
+  --line-strong: #DCD1BE;
+  --accent: #1C1A17;
+  --accent-strong: #34302A;
+  --on-accent: #F7F2EA;
+  --accent-soft: #F1E7D6;
+  --good: #3F6B4F;
   --warn: #6B4A12;
   --warn-soft: #F3E6CF;
   --bad: #8A2E1C;
   --bad-soft: #F6DDD5;
-  /* the big block at the top of a screen: emerald in light, cream in dark */
-  --hero: #0B2B24;
-  --on-hero: #F4EFE6;
-  --hero-muted: #B9CAC2;
-  --hero-track: rgba(244, 239, 230, 0.16);
-  --hero-chip: rgba(244, 239, 230, 0.14);
-  --hero-dot: #D6B98C;
-  /* tan: wins, PBs, avatars, the dot in every ring */
-  --tan: #D6B98C;
-  --on-tan: #0B2B24;
-  --dot: #D6B98C;
-  --sage: #7FB8A4;
+  /* the big block at the top of a screen: onyx in light, smoke in dark */
+  --hero: #1C1A17;
+  --on-hero: #F7F2EA;
+  --hero-muted: #B8B0A3;
+  --hero-track: rgba(247, 242, 234, 0.16);
+  --hero-chip: rgba(247, 242, 234, 0.12);
+  --hero-dot: #E6D3B3;
+  /* champagne: wins, PBs, avatars, the dot in every ring */
+  --tan: #E6D3B3;
+  --on-tan: #1C1A17;
+  --dot: #C9AE7E;
+  --sage: #8C7A5B;
   /* progress ring stroke on cards */
-  --ring: #0B2B24;
+  --ring: #1C1A17;
   /* macro colours: same meaning on every screen */
   --protein: #3B6FD8;
   --carbs: #B07A0A;
   --fats: #C24E33;
-  --kcal: #0B2B24;
+  --kcal: #1C1A17;
+  --shadow: rgba(28, 26, 23, 0.12);
 }
 
 [data-theme=dark] {
   color-scheme: dark;
-  --bg: #0B2B24;
-  --surface: #123A31;
-  --surface-2: #0F332B;
-  --ink: #F4EFE6;
-  --muted: #B3C4BB;
-  --faint: #8AA398;
-  --line: #1B4639;
-  --line-strong: #2A5A4B;
-  --accent: #D6B98C;
-  --accent-strong: #E3CBA4;
-  --on-accent: #0B2B24;
-  --accent-soft: #1B4639;
-  --good: #7FB8A4;
+  --bg: #141311;
+  --surface: #1F1D1A;
+  --surface-2: #191816;
+  --ink: #F7F2EA;
+  --muted: #B5ADA0;
+  --faint: #8A8377;
+  --line: #2E2B27;
+  --line-strong: #3A3631;
+  --accent: #E6D3B3;
+  --accent-strong: #F0E2C8;
+  --on-accent: #141311;
+  --accent-soft: #2E2A24;
+  --good: #9CCBAE;
   --warn: #F1D9A8;
   --warn-soft: #4A3A1E;
   --bad: #F5C6B8;
   --bad-soft: #4F2A22;
-  --hero: #F4EFE6;
-  --on-hero: #0B2B24;
-  --hero-muted: #3F5049;
-  --hero-track: rgba(11, 43, 36, 0.12);
-  --hero-chip: rgba(11, 43, 36, 0.08);
-  --hero-dot: #B08A4F;
-  --tan: #D6B98C;
-  --on-tan: #0B2B24;
-  --dot: #D6B98C;
-  --sage: #7FB8A4;
-  --ring: #D6B98C;
+  --hero: #2A2723;
+  --on-hero: #F7F2EA;
+  --hero-muted: #B5ADA0;
+  --hero-track: rgba(247, 242, 234, 0.14);
+  --hero-chip: rgba(247, 242, 234, 0.10);
+  --hero-dot: #E6D3B3;
+  --tan: #E6D3B3;
+  --on-tan: #141311;
+  --dot: #E6D3B3;
+  --sage: #A8957A;
+  --ring: #E6D3B3;
   --protein: #8FB0F2;
   --carbs: #E8C25A;
   --fats: #EF9A82;
-  --kcal: #D6B98C;
+  --kcal: #E6D3B3;
+  --shadow: rgba(0, 0, 0, 0.4);
 }
 
 @theme inline {
@@ -134,14 +136,14 @@
 :root {
   --color-white: var(--surface);
   --color-black: var(--ink);
-  --color-gray-50: #F4EFE6;  --color-gray-100: #EBE4D6; --color-gray-200: #E3DACA;
-  --color-gray-300: #D9CFBC; --color-gray-400: #9AA39C; --color-gray-500: #6E7A73;
-  --color-gray-600: #4A5A53; --color-gray-700: #324540; --color-gray-800: #1C362F;
-  --color-gray-900: #0B2B24; --color-gray-950: #071D18;
-  --color-green-50: #EEF5F1;  --color-green-100: #E2EEE8; --color-green-200: #C5DDD1;
-  --color-green-300: #9CC4B1; --color-green-400: #7FB8A4; --color-green-500: #3E8A6E;
-  --color-green-600: #1F5A47; --color-green-700: #134A3C; --color-green-800: #0F3A30;
-  --color-green-900: #0B2B24;
+  --color-gray-50: #F7F2EA;  --color-gray-100: #EFE7DA; --color-gray-200: #E8DFD0;
+  --color-gray-300: #DCD1BE; --color-gray-400: #A39B8E; --color-gray-500: #7A7366;
+  --color-gray-600: #5C564D; --color-gray-700: #3E3A34; --color-gray-800: #2A2723;
+  --color-gray-900: #1C1A17; --color-gray-950: #100F0D;
+  --color-green-50: #F8F3EA;  --color-green-100: #F1E7D6; --color-green-200: #E6D3B3;
+  --color-green-300: #D6BE94; --color-green-400: #C2A672; --color-green-500: #8C7A5B;
+  --color-green-600: #5E523D; --color-green-700: #3E3A34; --color-green-800: #2A2723;
+  --color-green-900: #1C1A17;
 }
 :root {
   --color-emerald-50: var(--color-green-50);   --color-emerald-100: var(--color-green-100);
@@ -161,14 +163,14 @@
   --color-neutral-800: var(--color-gray-800); --color-neutral-900: var(--color-gray-900);
 }
 [data-theme=dark] {
-  --color-gray-50: #0F332B;  --color-gray-100: #123A31; --color-gray-200: #1B4639;
-  --color-gray-300: #2A5A4B; --color-gray-400: #5E7A6F; --color-gray-500: #8AA398;
-  --color-gray-600: #B3C4BB; --color-gray-700: #CFDAD3; --color-gray-800: #E6E9E2;
-  --color-gray-900: #F4EFE6; --color-gray-950: #FFFFFF;
-  --color-green-50: #123A31;  --color-green-100: #1B4639; --color-green-200: #24563F;
-  --color-green-300: #3F7462; --color-green-400: #6FA893; --color-green-500: #7FB8A4;
-  --color-green-600: #9CC9B6; --color-green-700: #B9DACB; --color-green-800: #D3E9DF;
-  --color-green-900: #EAF5EF;
+  --color-gray-50: #191816;  --color-gray-100: #1F1D1A; --color-gray-200: #2E2B27;
+  --color-gray-300: #3A3631; --color-gray-400: #6B655C; --color-gray-500: #8A8377;
+  --color-gray-600: #B5ADA0; --color-gray-700: #D3CCC0; --color-gray-800: #E8E2D7;
+  --color-gray-900: #F7F2EA; --color-gray-950: #FFFFFF;
+  --color-green-50: #1F1D1A;  --color-green-100: #2E2A24; --color-green-200: #3A342A;
+  --color-green-300: #5E523D; --color-green-400: #8C7A5B; --color-green-500: #C2A672;
+  --color-green-600: #D6BE94; --color-green-700: #E6D3B3; --color-green-800: #F0E2C8;
+  --color-green-900: #F8F3EA;
 }
 /* Other hues: soft tints become dark tints, dark text shades become light. */
 [data-theme=dark] {
@@ -181,60 +183,60 @@
   --h-pink: oklch(65.6% 0.241 354.308); --h-rose: oklch(64.5% 0.246 16.439);
 }
 [data-theme=dark] {
-  --color-red-50: color-mix(in oklab, var(--h-red) 14%, #123A31);
-  --color-red-100: color-mix(in oklab, var(--h-red) 22%, #123A31);
-  --color-red-200: color-mix(in oklab, var(--h-red) 34%, #123A31);
+  --color-red-50: color-mix(in oklab, var(--h-red) 14%, #1F1D1A);
+  --color-red-100: color-mix(in oklab, var(--h-red) 22%, #1F1D1A);
+  --color-red-200: color-mix(in oklab, var(--h-red) 34%, #1F1D1A);
   --color-red-600: color-mix(in oklab, var(--h-red) 80%, white);
   --color-red-700: color-mix(in oklab, var(--h-red) 65%, white);
   --color-red-800: color-mix(in oklab, var(--h-red) 55%, white);
-  --color-orange-50: color-mix(in oklab, var(--h-orange) 14%, #123A31);
-  --color-orange-100: color-mix(in oklab, var(--h-orange) 22%, #123A31);
-  --color-orange-200: color-mix(in oklab, var(--h-orange) 34%, #123A31);
+  --color-orange-50: color-mix(in oklab, var(--h-orange) 14%, #1F1D1A);
+  --color-orange-100: color-mix(in oklab, var(--h-orange) 22%, #1F1D1A);
+  --color-orange-200: color-mix(in oklab, var(--h-orange) 34%, #1F1D1A);
   --color-orange-600: color-mix(in oklab, var(--h-orange) 80%, white);
   --color-orange-700: color-mix(in oklab, var(--h-orange) 65%, white);
   --color-orange-800: color-mix(in oklab, var(--h-orange) 55%, white);
-  --color-amber-50: color-mix(in oklab, var(--h-amber) 14%, #123A31);
-  --color-amber-100: color-mix(in oklab, var(--h-amber) 22%, #123A31);
-  --color-amber-200: color-mix(in oklab, var(--h-amber) 34%, #123A31);
+  --color-amber-50: color-mix(in oklab, var(--h-amber) 14%, #1F1D1A);
+  --color-amber-100: color-mix(in oklab, var(--h-amber) 22%, #1F1D1A);
+  --color-amber-200: color-mix(in oklab, var(--h-amber) 34%, #1F1D1A);
   --color-amber-600: color-mix(in oklab, var(--h-amber) 80%, white);
   --color-amber-700: color-mix(in oklab, var(--h-amber) 65%, white);
   --color-amber-800: color-mix(in oklab, var(--h-amber) 55%, white);
-  --color-yellow-50: color-mix(in oklab, var(--h-yellow) 14%, #123A31);
-  --color-yellow-100: color-mix(in oklab, var(--h-yellow) 22%, #123A31);
-  --color-yellow-200: color-mix(in oklab, var(--h-yellow) 34%, #123A31);
+  --color-yellow-50: color-mix(in oklab, var(--h-yellow) 14%, #1F1D1A);
+  --color-yellow-100: color-mix(in oklab, var(--h-yellow) 22%, #1F1D1A);
+  --color-yellow-200: color-mix(in oklab, var(--h-yellow) 34%, #1F1D1A);
   --color-yellow-700: color-mix(in oklab, var(--h-yellow) 65%, white);
   --color-yellow-800: color-mix(in oklab, var(--h-yellow) 55%, white);
-  --color-blue-50: color-mix(in oklab, var(--h-blue) 14%, #123A31);
-  --color-blue-100: color-mix(in oklab, var(--h-blue) 22%, #123A31);
-  --color-blue-200: color-mix(in oklab, var(--h-blue) 34%, #123A31);
+  --color-blue-50: color-mix(in oklab, var(--h-blue) 14%, #1F1D1A);
+  --color-blue-100: color-mix(in oklab, var(--h-blue) 22%, #1F1D1A);
+  --color-blue-200: color-mix(in oklab, var(--h-blue) 34%, #1F1D1A);
   --color-blue-600: color-mix(in oklab, var(--h-blue) 80%, white);
   --color-blue-700: color-mix(in oklab, var(--h-blue) 65%, white);
   --color-blue-800: color-mix(in oklab, var(--h-blue) 55%, white);
-  --color-indigo-50: color-mix(in oklab, var(--h-indigo) 14%, #123A31);
-  --color-indigo-100: color-mix(in oklab, var(--h-indigo) 22%, #123A31);
+  --color-indigo-50: color-mix(in oklab, var(--h-indigo) 14%, #1F1D1A);
+  --color-indigo-100: color-mix(in oklab, var(--h-indigo) 22%, #1F1D1A);
   --color-indigo-700: color-mix(in oklab, var(--h-indigo) 60%, white);
-  --color-purple-50: color-mix(in oklab, var(--h-purple) 14%, #123A31);
-  --color-purple-100: color-mix(in oklab, var(--h-purple) 22%, #123A31);
+  --color-purple-50: color-mix(in oklab, var(--h-purple) 14%, #1F1D1A);
+  --color-purple-100: color-mix(in oklab, var(--h-purple) 22%, #1F1D1A);
   --color-purple-700: color-mix(in oklab, var(--h-purple) 60%, white);
-  --color-violet-50: color-mix(in oklab, var(--h-violet) 14%, #123A31);
-  --color-violet-100: color-mix(in oklab, var(--h-violet) 22%, #123A31);
+  --color-violet-50: color-mix(in oklab, var(--h-violet) 14%, #1F1D1A);
+  --color-violet-100: color-mix(in oklab, var(--h-violet) 22%, #1F1D1A);
   --color-violet-700: color-mix(in oklab, var(--h-violet) 60%, white);
-  --color-pink-50: color-mix(in oklab, var(--h-pink) 14%, #123A31);
-  --color-pink-100: color-mix(in oklab, var(--h-pink) 22%, #123A31);
+  --color-pink-50: color-mix(in oklab, var(--h-pink) 14%, #1F1D1A);
+  --color-pink-100: color-mix(in oklab, var(--h-pink) 22%, #1F1D1A);
   --color-pink-700: color-mix(in oklab, var(--h-pink) 60%, white);
-  --color-rose-50: color-mix(in oklab, var(--h-rose) 14%, #123A31);
-  --color-rose-100: color-mix(in oklab, var(--h-rose) 22%, #123A31);
+  --color-rose-50: color-mix(in oklab, var(--h-rose) 14%, #1F1D1A);
+  --color-rose-100: color-mix(in oklab, var(--h-rose) 22%, #1F1D1A);
   --color-rose-700: color-mix(in oklab, var(--h-rose) 60%, white);
-  --color-sky-50: color-mix(in oklab, var(--h-sky) 14%, #123A31);
-  --color-sky-100: color-mix(in oklab, var(--h-sky) 22%, #123A31);
+  --color-sky-50: color-mix(in oklab, var(--h-sky) 14%, #1F1D1A);
+  --color-sky-100: color-mix(in oklab, var(--h-sky) 22%, #1F1D1A);
   --color-sky-700: color-mix(in oklab, var(--h-sky) 60%, white);
-  --color-teal-50: color-mix(in oklab, var(--h-teal) 14%, #123A31);
-  --color-teal-100: color-mix(in oklab, var(--h-teal) 22%, #123A31);
+  --color-teal-50: color-mix(in oklab, var(--h-teal) 14%, #1F1D1A);
+  --color-teal-100: color-mix(in oklab, var(--h-teal) 22%, #1F1D1A);
   --color-teal-700: color-mix(in oklab, var(--h-teal) 60%, white);
-  --color-cyan-50: color-mix(in oklab, var(--h-cyan) 14%, #123A31);
-  --color-cyan-100: color-mix(in oklab, var(--h-cyan) 22%, #123A31);
-  --color-lime-50: color-mix(in oklab, var(--h-lime) 14%, #123A31);
-  --color-lime-100: color-mix(in oklab, var(--h-lime) 22%, #123A31);
+  --color-cyan-50: color-mix(in oklab, var(--h-cyan) 14%, #1F1D1A);
+  --color-cyan-100: color-mix(in oklab, var(--h-cyan) 22%, #1F1D1A);
+  --color-lime-50: color-mix(in oklab, var(--h-lime) 14%, #1F1D1A);
+  --color-lime-100: color-mix(in oklab, var(--h-lime) 22%, #1F1D1A);
 }
 
 html {

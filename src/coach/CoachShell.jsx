@@ -127,7 +127,7 @@ export default function CoachShell({ user }) {
               <NavLink
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 h-11 px-3 rounded-full text-[15px] font-semibold transition-colors ${active ? 'bg-hero text-on-hero' : 'text-ink hover:bg-surface'}`}
+                className={`flex items-center gap-3 h-11 px-3 rounded-full text-[15px] font-semibold transition-colors ${active ? 'bg-accent text-on-accent' : 'text-ink hover:bg-surface'}`}
               >
                 <Icon size={20} strokeWidth={2} />
                 <span className="flex-1">{item.label}</span>
