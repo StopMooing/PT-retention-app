@@ -157,7 +157,7 @@ export function WorkoutComplete({ workoutName, stats, onDone, coachName, hasCoac
 
         {newPBs.length > 0 && (
           <div>
-            <h2 className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2.5 px-1">New personal bests</h2>
+            <h2 className="text-[13px] font-semibold text-muted mb-2.5 px-1">New personal bests</h2>
             <Card padded={false} className="divide-y divide-line">
               {newPBs.map((pb, i) => {
                 const meta = PB_LABELS[pb.type] || { label: pb.label, desc: '' }
@@ -632,7 +632,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {isCustom && aiParseError ? (
           <Card>
-            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2">Workout plan</p>
+            <p className="text-[13px] font-semibold text-muted mb-2">Workout plan</p>
             <pre className="text-[15px] text-ink leading-relaxed whitespace-pre-wrap font-sans">{customContent}</pre>
           </Card>
         ) : isCustom && aiExercises === null ? (
@@ -661,7 +661,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                   {muscle && <Chip className="mt-0.5">{muscle}</Chip>}
                 </div>
 
-                {loggable(ex) && <div className="grid grid-cols-[28px_1fr_64px_56px_40px] gap-2 items-center px-3 pb-1 text-[11px] font-bold uppercase tracking-[0.06em] text-faint">
+                {loggable(ex) && <div className="grid grid-cols-[28px_1fr_64px_56px_40px] gap-2 items-center px-3 pb-1 text-[11px] font-semibold text-faint">
                   <span className="text-center">Set</span>
                   <span>Previous</span>
                   <span className="text-center">kg</span>

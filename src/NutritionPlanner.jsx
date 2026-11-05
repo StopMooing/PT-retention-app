@@ -689,7 +689,7 @@ export default function NutritionPlanner() {
                 <Card key={meal.id} padded={false} className="overflow-hidden">
                   <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-accent">{mealTimeLabel(meal.meal_time)}</p>
+                      <p className="text-[13px] font-semibold text-accent">{mealTimeLabel(meal.meal_time)}</p>
                       <h2 className="text-[17px] font-bold text-ink truncate">{meal.name}</h2>
                     </div>
                     {foods.length > 0 && (

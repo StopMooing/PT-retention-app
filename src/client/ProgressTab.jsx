@@ -293,7 +293,7 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
         <section>
           <SectionLabel>Strength</SectionLabel>
           <Card padded={false} className="divide-y divide-line">
-            <div className="grid grid-cols-[1fr_72px_72px] gap-2 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.06em] text-faint">
+            <div className="grid grid-cols-[1fr_72px_72px] gap-2 px-4 py-2 text-[11px] font-semibold text-faint">
               <span>Lift</span><span className="text-right">Heaviest</span><span className="text-right">Est. 1RM</span>
             </div>
             {shownLifts.map((l) => (

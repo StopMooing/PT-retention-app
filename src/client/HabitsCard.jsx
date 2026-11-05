@@ -52,7 +52,7 @@ export default function HabitsCard({ client, showToast }) {
   return (
     <Card padded={false}>
       <div className="flex items-center justify-between px-4 pt-3">
-        <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted">Habits</p>
+        <p className="text-[13px] font-semibold text-muted">Habits</p>
         <p className="text-[13px] font-bold text-muted tabular-nums">{doneToday} of {habits.length} today</p>
       </div>
       <ul className="divide-y divide-line">

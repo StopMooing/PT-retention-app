@@ -965,7 +965,7 @@ export default function ProgramBuilder({ user }) {
                 <Card key={day.id} padded={false} className="overflow-hidden">
                   <div className="px-4 pt-4 pb-3 flex items-end justify-between gap-3">
                     <div className="min-w-0">
-                      {!single && <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-accent">Day {day.day_number}</p>}
+                      {!single && <p className="text-[13px] font-semibold text-accent">Day {day.day_number}</p>}
                       <h2 className="text-[17px] font-bold text-ink truncate">{single ? 'Exercises' : day.name}</h2>
                     </div>
                     {!single && (

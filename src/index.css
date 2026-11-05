@@ -37,6 +37,8 @@
   --on-hero: #F4EFE6;
   --hero-muted: #B9CAC2;
   --hero-track: rgba(244, 239, 230, 0.16);
+  --hero-chip: rgba(244, 239, 230, 0.14);
+  --hero-dot: #D6B98C;
   /* tan: wins, PBs, avatars, the dot in every ring */
   --tan: #D6B98C;
   --on-tan: #0B2B24;
@@ -74,6 +76,8 @@
   --on-hero: #0B2B24;
   --hero-muted: #3F5049;
   --hero-track: rgba(11, 43, 36, 0.12);
+  --hero-chip: rgba(11, 43, 36, 0.08);
+  --hero-dot: #B08A4F;
   --tan: #D6B98C;
   --on-tan: #0B2B24;
   --dot: #D6B98C;

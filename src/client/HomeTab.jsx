@@ -3,121 +3,110 @@
 // a recent personal best. Coach messages and check-in replies live in Messages. Empty
 // sections are hidden. Tapping a day on the week strip opens a summary of that day, with
 // arrows to step through the days.
-import { useState } from 'react'
-import { Flame, Trophy, ChevronRight, ChevronLeft, Check, Plus, Pencil } from 'lucide-react'
-import { Card, Button, Chip, Avatar, Sheet } from '../ui'
+import { useEffect, useState } from 'react'
+import { Trophy, ChevronRight, ChevronLeft, Check, Pencil } from 'lucide-react'
+import { supabase } from '../supabase'
+import { Card, Button, Chip, Avatar, Sheet, Hero, Ring } from '../ui'
 import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate, formatDateLabel, addDays, daysBetween } from './dates'
 import {
   isDone, workoutName, groupByDate, nextSession, weekStreak, checkinStatus, sessionExercises,
-  logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, weekRings, plannedLine, sessionStatusLine, dailyCheckinFor, DAILY_SCALES,
+  logsForDate, foodTotals, nutritionTargetsFor, latestPB, fmtKg, weekRings, plannedLine, sessionStatusLine, dailyCheckinFor, DAILY_SCALES, sessionsThisWeek,
 } from './metrics'
 import CheckinSheet from './CheckinSheet'
 import DailyCheckinSheet from './DailyCheckinSheet'
 import HabitsCard from './HabitsCard'
 import { NutritionSummary, DoneDot } from './common'
 
+const greetWord = () => getGreeting().replace('Good ', '').replace(/^./, (c) => c.toUpperCase())
+
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 const cx = (...c) => c.filter(Boolean).join(' ')
 
-// One shade of the accent per ring, so the rings and their labels match. Tracks are a
-// faint wash of the same shade.
-const SHADES = {
-  train: 'var(--accent)',
-  fuel: 'color-mix(in srgb, var(--accent) 66%, var(--bg))',
-  recover: 'color-mix(in srgb, var(--accent) 42%, var(--bg))',
-}
-const trackOf = (c) => `color-mix(in srgb, ${c} 16%, var(--surface-2))`
+/* "Thursday 5 November" */
+const longDate = (d) => parseDay(d).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
 
-/* The week rings: the logo's open ring, one lane each for Train, Fuel and Recover, round ends, a gap at
-   the top right with the accent dot in it. Never closes: we aren't done. */
-const GAP = 50 // degrees left open
-const GAP_AT = -60 // centre of the gap, degrees from 3 o'clock (clockwise)
-function WeekRing({ parts, complete, size = 152, stroke = 12, pitch = 16 }) {
-  const c0 = size / 2
-  const sweep = 360 - GAP
-  const startAt = GAP_AT + GAP / 2
-  const outerR = (size - stroke) / 2
-  const dotA = (GAP_AT * Math.PI) / 180
+/* The emerald block at the top (cream in dark mode): this week's sessions as an open ring,
+   what's next, the streak, and the week day by day. Tapping a day opens it. */
+function WeekHero({ week, train, nextName, streak, today, byDate, completedIds, onPickDay }) {
+  const left = Math.max(0, train.scheduled - train.done)
+  let line
+  if (train.scheduled === 0) line = week.parts[0]?.label || 'No sessions this week.'
+  else if (left === 0) line = 'All done. The ring stays open, there is always next week.'
+  else line = `${left === 1 ? 'One' : left} to go.${nextName ? ` ${nextName} is ready when you are.` : ''}`
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} aria-hidden="true">
-        {parts.map((p, i) => {
-          const r = outerR - i * pitch
-          const c = 2 * Math.PI * r
-          const arc = (c * sweep) / 360
-          const color = SHADES[p.key]
-          return (
-            <g key={p.key} transform={`rotate(${startAt} ${c0} ${c0})`}>
-              <circle cx={c0} cy={c0} r={r} fill="none" stroke={trackOf(color)} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${arc} ${c}`} />
-              {p.value > 0 && (
-                <circle
-                  cx={c0} cy={c0} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
-                  strokeDasharray={`${arc * Math.min(1, p.value)} ${c}`} style={{ transition: 'stroke-dasharray 500ms ease' }}
-                />
-              )}
-            </g>
-          )
-        })}
-        <circle cx={c0 + outerR * Math.cos(dotA)} cy={c0 + outerR * Math.sin(dotA)} r={stroke * 0.55} fill="var(--accent)" />
-      </svg>
-      {complete && (
-        <span className="absolute inset-0 flex items-center justify-center text-accent">
-          <Check size={34} strokeWidth={3} />
-        </span>
-      )}
-    </div>
-  )
-}
-
-function WeekHero({ week, today, byDate, completedIds, onPickDay }) {
-  const headline = week.complete ? 'Week done. Keep moving.' : week.started ? "You're on your way." : "Fresh week. Let's get moving."
-  return (
-    <Card padded={false}>
-      <div className="px-4 pt-4">
-        <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted">This week</p>
-        <p className="font-display text-[24px] leading-tight text-ink mt-0.5">{headline}</p>
+    <Hero className="space-y-[18px]">
+      <div className="flex items-center gap-[18px]">
+        <Ring
+          value={train.scheduled ? Math.min(1, train.done / train.scheduled) : 0}
+          size={120} stroke={12} color="var(--on-hero)" track="var(--hero-track)" dot="var(--hero-dot)"
+        >
+          <span className="font-display text-[40px] leading-[0.9] tabular-nums">{Math.min(train.done, train.scheduled || train.done)}</span>
+          {train.scheduled > 0 && <span className="text-[12px] font-semibold text-hero-muted">of {train.scheduled}</span>}
+        </Ring>
+        <div className="min-w-0">
+          <p className="font-display text-[24px] leading-[1.05]">This week</p>
+          <p className="text-[15px] leading-[1.45] text-hero-muted mt-1.5">{line}</p>
+          {streak > 0 && (
+            <p className="inline-flex items-center h-7 px-2.5 mt-2.5 rounded-full text-[12px] font-bold" style={{ backgroundColor: 'var(--hero-chip)' }}>
+              {streak} {streak === 1 ? 'week' : 'weeks'} in a row
+            </p>
+          )}
+        </div>
       </div>
-      <div className="flex items-center gap-4 px-4 pt-3 pb-4">
-        <WeekRing parts={week.parts} complete={week.complete} />
-        <ul className="flex-1 min-w-0 space-y-3">
-          {week.parts.map((p) => (
-            <li key={p.key} className="flex items-start gap-2.5">
-              <span className="w-3 h-3 rounded-full shrink-0 mt-[5px]" style={{ backgroundColor: SHADES[p.key] }} />
-              <div className="min-w-0">
-                <p className="text-[15px] font-bold text-ink leading-snug flex items-center gap-1">
-                  {p.name}
-                  {p.done && <Check size={15} strokeWidth={3} className="text-accent shrink-0" />}
-                </p>
-                <p className="text-[13px] text-muted leading-snug">{p.label}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-      {/* Day by day: tick for a finished session, dot for one still to come. */}
-      <div className="grid grid-cols-7 border-t border-line px-2 py-2">
+      <div className="grid grid-cols-7 gap-1.5">
         {weekDays(today).map((d, i) => {
           const sessions = byDate[d] ?? []
           const anyDone = sessions.some((sw) => isDone(sw, completedIds))
           const isTodayD = d === today
           return (
-            <button key={d} onClick={() => onPickDay(d)} className="flex flex-col items-center gap-1 py-1 rounded-[14px] hover:bg-surface-2" aria-label={formatShortDate(d)}>
-              <span className={cx('text-[11px] font-bold', isTodayD ? 'text-accent' : 'text-faint')}>{DAY_LETTERS[i]}</span>
+            <button key={d} onClick={() => onPickDay(d)} className="flex flex-col items-center gap-1.5 rounded-[14px]" aria-label={formatShortDate(d)}>
+              <span className="text-[11px] font-semibold text-hero-muted">{DAY_LETTERS[i]}</span>
               <span
                 className={cx(
-                  'w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold tabular-nums',
-                  anyDone ? 'bg-accent text-on-accent' : isTodayD ? 'ring-2 ring-inset ring-accent text-ink' : 'text-ink',
+                  'w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold tabular-nums border-2',
+                  anyDone ? 'bg-on-hero text-hero border-transparent' : isTodayD ? 'border-[var(--on-hero)]' : 'border-[var(--hero-track)] text-hero-muted',
                 )}
               >
                 {anyDone ? <Check size={15} strokeWidth={3.5} /> : parseDay(d).getDate()}
               </span>
-              <span className={cx('w-1 h-1 rounded-full', !anyDone && sessions.length > 0 ? 'bg-muted' : 'bg-transparent')} />
+              <span className={cx('w-1 h-1 rounded-full', !anyDone && sessions.length > 0 ? 'bg-hero-muted' : 'bg-transparent')} />
             </button>
           )
         })}
       </div>
+    </Hero>
+  )
+}
+
+/* A small tile: label, big number with its target, and a bar. */
+function Tile({ label, value, of, pct, onClick }) {
+  return (
+    <Card as="button" onClick={onClick} className="flex flex-col gap-2.5">
+      <p className="text-[13px] font-semibold text-muted">{label}</p>
+      <p className="font-display text-[26px] leading-none text-ink tabular-nums">
+        {value}{of && <span className="font-sans text-[13px] font-semibold text-muted"> {of}</span>}
+      </p>
+      <div className="h-2 rounded-full bg-surface-2 overflow-hidden">
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, pct))}%`, backgroundColor: 'var(--ring)' }} />
+      </div>
     </Card>
   )
+}
+
+/* Today's water in litres, for the Home tile. Same rows as the Nutrition tab's water card. */
+function useWaterToday(clientId, date) {
+  const [ml, setMl] = useState(null)
+  useEffect(() => {
+    if (!clientId) return
+    let cancelled = false
+    supabase.from('water_logs').select('amount_ml').eq('client_id', clientId).eq('logged_date', date)
+      .then(({ data, error }) => {
+        if (error) console.error('Water load error:', error)
+        if (!cancelled) setMl((data ?? []).reduce((t, w) => t + (w.amount_ml || 0), 0))
+      })
+    return () => { cancelled = true }
+  }, [clientId, date])
+  return ml
 }
 
 /* One day: its sessions and, up to today, what was eaten. Arrows step a day either way
@@ -145,7 +134,7 @@ function DaySheet({ date, setDate, today, byDate, completedIds, workoutLogs, wor
       <div className="space-y-5">
         {sessions.length > 0 && (
           <section>
-            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2">Training</p>
+            <p className="text-[13px] font-semibold text-muted mb-2">Training</p>
             <div className="rounded-[16px] border border-line divide-y divide-line">
               {sessions.map((sw) => {
                 const done = isDone(sw, completedIds)
@@ -179,7 +168,7 @@ function DaySheet({ date, setDate, today, byDate, completedIds, workoutLogs, wor
         )}
         {showFood && (
           <section>
-            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2">Food</p>
+            <p className="text-[13px] font-semibold text-muted mb-2">Food</p>
             <NutritionSummary compact totals={totals} targets={targets} />
           </section>
         )}
@@ -191,22 +180,22 @@ function DaySheet({ date, setDate, today, byDate, completedIds, workoutLogs, wor
   )
 }
 
-/* A card with an eyebrow, a title, a line under it and an action on the right. */
+/* A card with a small label, a big title, a line under it and an action on the right. */
 function NextThing({ todo }) {
   const inner = (
     <>
       {todo.avatar}
       <div className="flex-1 min-w-0">
-        {todo.eyebrow && <p className="text-[13px] font-bold text-muted truncate">{todo.eyebrow}</p>}
-        <p className="text-[19px] font-bold text-ink leading-snug truncate">{todo.title}</p>
-        {todo.body && <div className="text-[13px] text-muted mt-0.5">{todo.body}</div>}
+        {todo.eyebrow && <p className="text-[13px] font-semibold text-muted truncate">{todo.eyebrow}</p>}
+        <p className="font-display text-[26px] leading-none text-ink truncate mt-0.5">{todo.title}</p>
+        {todo.body && <div className="text-[14px] text-muted mt-1">{todo.body}</div>}
       </div>
       {todo.action}
     </>
   )
   return todo.onClick
-    ? <Card as="button" onClick={todo.onClick} className="flex items-center gap-3">{inner}</Card>
-    : <Card className="flex items-center gap-3">{inner}</Card>
+    ? <Card as="button" onClick={todo.onClick} className="flex items-center gap-3.5 !pl-5">{inner}</Card>
+    : <Card className="flex items-center gap-3.5 !pl-5">{inner}</Card>
 }
 
 /* Today's daily check-in: a prompt until it's done, then the three scores as chips.
@@ -241,9 +230,9 @@ function DailyCard({ todays, onOpen }) {
 }
 
 export default function HomeTab({
-  client, checkins, setCheckins, dailyCheckins, setDailyCheckins, assignment, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
+  client, checkins, setCheckins, dailyCheckins, setDailyCheckins, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
   foodLogs, nutritionTargets, personalBests, coachName,
-  onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, showToast,
+  onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onOpenWater, showToast,
 }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [dailyOpen, setDailyOpen] = useState(false)
@@ -263,6 +252,9 @@ export default function HomeTab({
   const totals = foodTotals(logsForDate(foodLogs, today))
   const targets = nutritionTargetsFor(client, nutritionTargets)
   const pb = latestPB(personalBests, 14, today)
+  const train = sessionsThisWeek(scheduledWorkouts, completedIds, today)
+  const waterMl = useWaterToday(client.id, today)
+  const waterTarget = client.water_target_ml || 2000
 
   // Today's workout, always: still to do, done, or a rest day pointing to the next one.
   let todayCard
@@ -298,65 +290,73 @@ export default function HomeTab({
   const checkinCard = status.due ? {
     eyebrow: 'Weekly check-in',
     title: 'Your week in review',
-    body: <span><span className="font-bold text-accent">Due today.</span> {hasCoach ? `Tell ${coachName || 'your coach'} how it went.` : 'A quick look back.'}</span>,
+    body: <span><span className="font-bold text-ink">Due today.</span> {hasCoach ? `Tell ${coachName || 'your coach'} how it went.` : 'A quick look back.'}</span>,
     action: <Button onClick={() => setCheckinOpen(true)}>Check in</Button>,
   } : null
 
   return (
-    <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-7">
-      {/* Greeting */}
-      <header className="flex items-start justify-between gap-3">
+    <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-3.5">
+      {/* Date and greeting */}
+      <header className="flex items-start justify-between gap-3 px-1 pb-0.5">
         <div className="min-w-0">
-          <p className="text-[15px] text-muted">{getGreeting()}</p>
-          <h1 className="font-display text-[34px] leading-[1.05] text-ink truncate">{firstName}</h1>
-          <div className="flex flex-wrap items-center gap-1.5 mt-2">
-            {streak > 0 && (
-              <Chip tone="accent"><Flame size={13} /> {streak} week streak</Chip>
-            )}
-            {assignment?.programs?.name && <Chip>{assignment.programs.name}</Chip>}
-          </div>
+          <p className="text-[14px] font-semibold text-muted">{longDate(today)}</p>
+          <h1 className="font-display text-[34px] leading-none text-ink mt-1">{greetWord()}, {firstName}.</h1>
         </div>
         <button onClick={onOpenProfile} aria-label="Profile and settings" className="rounded-full shrink-0 ring-offset-2 ring-offset-bg focus-visible:ring-2 ring-accent">
-          <Avatar name={client.full_name} src={client.profile_photo_url} size={46} />
+          <Avatar name={client.full_name} src={client.profile_photo_url} size={44} />
         </button>
       </header>
 
-      <div className="space-y-3">
-        <WeekHero week={week} today={today} byDate={byDate} completedIds={completedIds} onPickDay={setDayOpen} />
+      <WeekHero
+        week={week} train={train} streak={streak} today={today} byDate={byDate} completedIds={completedIds} onPickDay={setDayOpen}
+        nextName={todayLeft[0] ? workoutName(todayLeft[0]) : next ? workoutName(next) : null}
+      />
 
-        <NextThing todo={todayCard} />
-        {checkinCard && <NextThing todo={checkinCard} />}
-        <DailyCard todays={todaysDaily} onOpen={() => setDailyOpen(true)} />
-        <HabitsCard client={client} showToast={showToast} />
+      <NextThing todo={todayCard} />
 
-        {/* Today's food */}
-        <Card padded={false}>
-          <div className="flex items-center justify-between px-4 pt-3">
-            <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted">Today's food</p>
-            <Button variant="ghost" size="sm" className="text-accent -mr-2" onClick={onLogFood}><Plus size={16} /> Log food</Button>
-          </div>
-          <div className="px-4 pt-1 pb-4">
-            <NutritionSummary compact totals={totals} targets={targets} />
-          </div>
-        </Card>
-
-        {/* Recent personal best */}
-        {pb && (
-          <Card className="flex items-center gap-3">
-            <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
-              <Trophy size={21} />
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-muted">New personal best · {formatShortDate(toLocalDateStr(new Date(pb.achieved_at)))}</p>
-              <p className="text-[17px] font-bold text-ink truncate">{pb.exercises?.name || 'Exercise'}</p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="font-display text-[26px] leading-none text-ink tabular-nums">{fmtKg(pb.value)}<span className="font-sans text-xs font-bold text-muted ml-0.5">kg</span></p>
-              <p className="text-[11px] text-muted mt-1">est. 1RM</p>
-            </div>
-          </Card>
+      <div className="grid grid-cols-2 gap-3">
+        <Tile
+          label="Calories today"
+          value={totals.kcal.toLocaleString('en-AU')}
+          of={targets.kcal > 0 ? `of ${targets.kcal.toLocaleString('en-AU')}` : 'kcal'}
+          pct={targets.kcal > 0 ? (totals.kcal / targets.kcal) * 100 : 0}
+          onClick={onLogFood}
+        />
+        {waterMl !== null && (
+          <Tile
+            label="Water"
+            value={(waterMl / 1000).toFixed(waterMl % 1000 === 0 ? 0 : 2).replace(/0$/, '')}
+            of={`of ${(waterTarget / 1000).toLocaleString('en-AU')} L`}
+            pct={(waterMl / waterTarget) * 100}
+            onClick={onOpenWater || onLogFood}
+          />
         )}
       </div>
+
+      {checkinCard ? <NextThing todo={checkinCard} /> : hasCoach && status.nextDate && (
+        <div className="rounded-[24px] bg-surface-2 px-5 py-3.5">
+          <p className="text-[15px] font-bold text-ink">Weekly check-in with {coachName || 'your coach'}</p>
+          <p className="text-[13px] text-muted mt-0.5">Due {status.daysToNext === 1 ? 'tomorrow' : weekdayName(status.nextDate)}, takes about two minutes</p>
+        </div>
+      )}
+
+      <DailyCard todays={todaysDaily} onOpen={() => setDailyOpen(true)} />
+      <HabitsCard client={client} showToast={showToast} />
+
+      {/* Recent personal best: tan, the colour for wins */}
+      {pb && (
+        <div className="rounded-[24px] bg-tan text-on-tan px-[18px] py-4 flex items-center gap-3.5">
+          <Trophy size={28} className="shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-bold">New personal best, {formatShortDate(toLocalDateStr(new Date(pb.achieved_at)))}</p>
+            <p className="text-[16px] font-bold truncate">{pb.exercises?.name || 'Exercise'}</p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="font-display text-[30px] leading-none tabular-nums">{fmtKg(pb.value)}<span className="font-sans text-xs font-bold ml-0.5">kg</span></p>
+            <p className="text-[11px] font-semibold mt-1">est. 1RM</p>
+          </div>
+        </div>
+      )}
 
       <DaySheet
         date={dayOpen}

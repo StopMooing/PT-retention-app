@@ -401,7 +401,7 @@ export default function Dashboard({ user }) {
             )
           ) : (
             <>
-              <div className="hidden md:grid grid-cols-[minmax(0,1fr)_120px_130px_110px_120px_20px] gap-4 px-4 h-10 items-center border-b border-line text-xs font-bold uppercase tracking-[0.06em] text-muted">
+              <div className="hidden md:grid grid-cols-[minmax(0,1fr)_120px_130px_110px_120px_20px] gap-4 px-4 h-10 items-center border-b border-line text-xs font-semibold text-muted">
                 <span>Client</span><span>Status</span><span>Last check-in</span><span className="text-right">Sessions (7 days)</span><span /><span />
               </div>
               <ul className="divide-y divide-line">

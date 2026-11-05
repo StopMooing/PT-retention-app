@@ -7,7 +7,7 @@ import {
   ChevronRight, MoreHorizontal, Plus, Sparkles, CalendarPlus, Check, Dumbbell, Bookmark, Play,
 } from 'lucide-react'
 import { supabase } from '../supabase'
-import { PageTitle, Card, Button, Segmented, Sheet, SectionLabel, Chip } from '../ui'
+import { Card, Button, Segmented, Sheet, SectionLabel, Chip, Hero } from '../ui'
 import { toLocalDateStr, formatShortDate, addDays, mondayOf, weekDays, weekLabel, shortDayLabel, dayMonth, parseDay } from './dates'
 import { SCHEDULE_WINDOW } from './data'
 import {
@@ -193,6 +193,33 @@ function ProgramHeader({ assignment, progress, coachProgram, busy, onStop }) {
         </div>
       )}
     </Card>
+  )
+}
+
+/* The emerald block on Workouts: the program, who set it, and a bar per week (done,
+   this week in tan, still to come). Tapping it opens Programs. */
+function ProgramHero({ assignment, progress, coachProgram, onOpen }) {
+  const weeks = progress.weeks || 0
+  const current = progress.week || 0
+  return (
+    <Hero as="button" onClick={onOpen} className="w-full text-left !py-[18px]">
+      <p className="text-[13px] font-semibold text-hero-muted">{coachProgram ? 'Set by your coach' : 'Started by you'}</p>
+      <p className="font-display text-[28px] leading-none mt-0.5">{assignment.programs?.name}</p>
+      {weeks > 0 && (
+        <div className="mt-3.5 grid gap-1" style={{ gridTemplateColumns: `repeat(${weeks}, minmax(0, 1fr))` }}>
+          {Array.from({ length: weeks }, (_, i) => (
+            <span
+              key={i}
+              className="h-2 rounded-full"
+              style={{ backgroundColor: i + 1 < current ? 'var(--on-hero)' : i + 1 === current ? 'var(--tan)' : 'var(--hero-track)' }}
+            />
+          ))}
+        </div>
+      )}
+      <p className="text-[13px] font-semibold text-hero-muted mt-2 tabular-nums">
+        {progress.upcoming ? `Starts ${shortDayLabel(progress.start)}` : progress.week ? `Week ${progress.week} of ${progress.weeks}` : `${progress.done} of ${plural(progress.total, 'session')} done`}
+      </p>
+    </Hero>
   )
 }
 
@@ -479,28 +506,26 @@ export default function TrainTab({
   }
 
   return (
-    <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-5">
-      <PageTitle
-        title="Training"
-        action={
-          <button onClick={onBuildWorkout} aria-label="Build a workout with AI" className="w-11 h-11 rounded-full bg-surface border border-line-strong text-accent flex items-center justify-center hover:bg-surface-2">
-            <Sparkles size={20} />
-          </button>
-        }
-      />
-
-      {hasPrograms && (
-        <Segmented
-          options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
-          value={tab}
-          onChange={setView}
-        />
-      )}
+    <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-4">
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h1 className="font-display text-[40px] leading-none text-ink">Training</h1>
+        {hasPrograms && (
+          <Segmented
+            className="shrink-0"
+            options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
+            value={tab}
+            onChange={setView}
+          />
+        )}
+      </div>
 
       {tab === 'workouts' && (
         <div className="space-y-7">
           {/* A week at a time: back into what was done, forward into what's planned */}
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {assignment && progress && (
+              <ProgramHero assignment={assignment} progress={progress} coachProgram={coachProgram} onOpen={() => setView('programs')} />
+            )}
             <StepNav
               label={weekLabel(weekStart, today)}
               onPrev={() => setWeekStart(addDays(weekStart, -7))}
@@ -511,26 +536,25 @@ export default function TrainTab({
               nextLabel="Next week"
             />
             {weekSessions.length > 0 ? (
-              <Card padded={false} className="divide-y divide-line overflow-hidden">
-                {weekSessions.map((sw) => {
+              <Card padded={false} className="overflow-hidden">
+                {weekSessions.map((sw, i) => {
                   const done = isDone(sw, completedIds)
                   const isToday = sw.scheduled_date === today
                   const line = sessionStatusLine(sw, { completedIds, workoutLogs, exMap, today })
+                  const day = parseDay(sw.scheduled_date)
                   return (
-                    <div key={sw.id} className={cx('flex items-center gap-1 pr-2', isToday && 'bg-accent-soft')}>
-                      <Row onClick={() => onOpenWorkout(sw)} className="flex-1 min-w-0 pr-1">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[15px] font-bold text-ink truncate">
-                            <span className={isToday ? 'text-accent' : 'text-muted'}>{shortDayLabel(sw.scheduled_date, today)}</span> · {workoutName(sw)}
-                          </p>
-                          {line && <p className="text-[13px] text-muted truncate">{line}</p>}
-                        </div>
-                        {done ? (
-                          <Check size={20} strokeWidth={3} className="text-accent shrink-0" aria-label="Done" />
-                        ) : sw.scheduled_date > today ? (
-                          <ChevronRight size={18} className="text-faint shrink-0" />
-                        ) : null}
-                      </Row>
+                    <div key={sw.id} className={cx('flex items-center gap-1 pr-2', i > 0 && 'border-t border-line')}>
+                      <button onClick={() => onOpenWorkout(sw)} className="flex-1 min-w-0 text-left flex items-center gap-3.5 pl-4 pr-1 py-3.5 min-h-[68px]">
+                        <span className="w-10 shrink-0 text-center">
+                          <span className={cx('block text-[12px] font-semibold', isToday ? 'text-ink' : 'text-muted')}>{isToday ? 'Today' : day.toLocaleDateString('en-AU', { weekday: 'short' })}</span>
+                          <span className="block font-display text-[22px] leading-none text-ink tabular-nums">{day.getDate()}</span>
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-[16px] font-bold text-ink truncate">{workoutName(sw)}</span>
+                          {line && <span className="block text-[13px] text-muted truncate mt-0.5">{line}</span>}
+                        </span>
+                        {done && <span className="h-8 px-3 rounded-full inline-flex items-center text-[13px] font-bold bg-accent-soft text-ink shrink-0">Done</span>}
+                      </button>
                       {!done && isToday && <Button size="sm" onClick={() => onOpenWorkout(sw)}>Start</Button>}
                       <button onClick={() => setDetailSw(sw)} aria-label="Workout options" className="w-10 h-10 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 shrink-0">
                         <MoreHorizontal size={20} />
@@ -559,16 +583,7 @@ export default function TrainTab({
               <ItemList items={savedItems} onOpen={setPreviewItem} />
             </section>
           )}
-          {onDemandItems.length + savedItems.length === 0 && (
-            <Card onClick={onBuildWorkout} as="button" className="flex items-center gap-3">
-              <span className="w-10 h-10 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Sparkles size={20} /></span>
-              <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-bold text-ink">Build a workout with AI</p>
-                <p className="text-[13px] text-muted">Describe what you want and save it here.</p>
-              </div>
-              <ChevronRight size={18} className="text-faint shrink-0" />
-            </Card>
-          )}
+          <Button variant="secondary" size="lg" block onClick={onBuildWorkout} className="!bg-transparent"><Sparkles size={18} /> Build a workout with AI</Button>
         </div>
       )}
 
@@ -698,7 +713,7 @@ export default function TrainTab({
             </div>
             {pickerGroups.map(([label, list]) => (
               <div key={label}>
-                <p className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted mb-2">{label}</p>
+                <p className="text-[13px] font-semibold text-muted mb-2">{label}</p>
                 <div className="rounded-[16px] border border-line divide-y divide-line overflow-hidden">
                   {list.map((it) => {
                     const on = pickerSelected?.key === it.key
