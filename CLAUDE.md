@@ -59,13 +59,16 @@ claude.ai project "CRM": `claude/pt-blueprint-handoff.md`
   and confirm the production deployment is READY.
 - Stop and explain when something does not match what you expected, before editing.
 
-## Brand (UNFNSHD)
-- Logo: an open ring (about 80% closed, dot in the gap) beside "UNFNSHD" in Baloo 2, 800,
-  uppercase. Meaning: "we aren't done, we can still work and move".
-- Light mode (default): bg #F3F1EC, text #121212, accent #2E6B57, secondary #55534E,
-  borders #CFCBC2. Dark mode: bg #121212, text #F3F1EC, accent #7FD1A8 (button text
-  #0B2A1E), surfaces #1E1E1E, borders #3A3A3A. Client can switch in settings; first launch
-  follows the phone. Define colours once per mode (CSS variables), never per screen.
+## Brand (UNFNSHD), full detail in `docs/brand.md`
+- Logo: an open ring (dot in the gap, tan) beside "UNFNSHD" in Baloo 2, 800, uppercase.
+  Meaning: "we aren't done, we can still work and move". Every progress ring in the app is
+  drawn open like the logo (`Ring` in src/ui).
+- Emerald Day (light, default): bg #F4EFE6, cards #FFFFFF, text and buttons #0B2B24,
+  secondary #4A5A53, tan #D6B98C for wins. Emerald Club (dark): bg #0B2B24, cards #123A31,
+  text #F4EFE6, buttons tan #D6B98C with #0B2B24 text. Hero blocks swap: emerald in light,
+  cream in dark. Body font Inter, display Baloo 2. Client can switch in settings; first
+  launch follows the phone. Define colours once per mode (CSS variables), never per screen.
+- Target layouts: the "UNFNSHD app in Emerald" Design canvas.
 - Never yellow on black (the competitor CNDTND's look).
 
 ## Design and screenshots

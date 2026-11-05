@@ -17,7 +17,7 @@ export function getThemeChoice() {
 function apply(choice) {
   const mode = choice === 'system' ? (media().matches ? 'dark' : 'light') : choice
   document.documentElement.setAttribute('data-theme', mode)
-  document.querySelector('meta[name=theme-color]')?.setAttribute('content', mode === 'dark' ? '#121212' : '#F3F1EC')
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', mode === 'dark' ? '#0B2B24' : '#F4EFE6')
   return mode
 }
 

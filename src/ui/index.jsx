@@ -8,14 +8,14 @@ import { useTheme } from '../theme'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 
-/* The open ring. Ink ring, accent dot in the gap. */
+/* The open ring. Ink ring, tan dot in the gap (docs/brand.md). */
 export function Mark({ size = 28, className }) {
   return (
     <svg width={size} height={size} viewBox="0 0 240 240" aria-hidden="true" className={className}>
       <g transform="rotate(-30 120 120)">
         <circle cx="120" cy="120" r="80" fill="none" stroke="currentColor" strokeWidth="26" strokeLinecap="round" strokeDasharray="400 102.65" />
       </g>
-      <circle cx="160" cy="50.7" r="15" fill="var(--accent)" />
+      <circle cx="160" cy="50.7" r="15" fill="var(--dot)" />
     </svg>
   )
 }
@@ -46,7 +46,7 @@ export function PageTitle({ title, eyebrow, action, className }) {
 export function SectionLabel({ children, action, className }) {
   return (
     <div className={cx('flex items-center justify-between mb-2.5 px-1', className)}>
-      <h2 className="text-[13px] font-bold uppercase tracking-[0.08em] text-muted">{children}</h2>
+      <h2 className="text-[13px] font-semibold text-muted">{children}</h2>
       {action}
     </div>
   )
@@ -57,7 +57,7 @@ export function Card({ as: Tag = 'div', className, children, padded = true, ...r
   return (
     <Tag
       className={cx(
-        'bg-surface rounded-[20px] border border-line',
+        'bg-surface rounded-[24px]',
         padded && 'p-4',
         interactive && 'text-left w-full cursor-pointer transition-transform active:scale-[0.99]',
         className,
@@ -107,24 +107,40 @@ export function Chip({ tone = 'neutral', className, children }) {
   )
 }
 
-/* Progress ring. value 0..1. Round line ends, like the logo. */
-export function Ring({ value = 0, size = 64, stroke = 7, color = 'var(--accent)', track = 'var(--surface-2)', children, className }) {
-  const r = (size - stroke) / 2
+/* Progress ring, drawn like the logo: an open arc (320 of 360 degrees, gap at the top
+   right) with a tan dot in the gap. Even at 100% the ring stays open. value 0..1. */
+export function Ring({ value = 0, size = 64, stroke = 7, color = 'var(--ring)', track = 'var(--surface-2)', dot = 'var(--dot)', children, className }) {
+  const r = (size - stroke) / 2 - 1
   const c = 2 * Math.PI * r
+  const arc = (c * 320) / 360
   const v = Math.max(0, Math.min(1, value || 0))
+  const mid = size / 2
+  const a = (-45 * Math.PI) / 180
   return (
     <div className={cx('relative inline-flex items-center justify-center shrink-0', className)} style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" aria-hidden="true">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
-        {v > 0 && (
-          <circle
-            cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
-            strokeDasharray={`${c * v} ${c}`} style={{ transition: 'stroke-dasharray 400ms ease' }}
-          />
-        )}
+      <svg width={size} height={size} aria-hidden="true">
+        <g transform={`rotate(-25 ${mid} ${mid})`}>
+          <circle cx={mid} cy={mid} r={r} fill="none" stroke={track} strokeWidth={stroke} strokeLinecap="round" strokeDasharray={`${arc} ${c}`} />
+          {v > 0 && (
+            <circle
+              cx={mid} cy={mid} r={r} fill="none" stroke={color} strokeWidth={stroke} strokeLinecap="round"
+              strokeDasharray={`${arc * v} ${c}`} style={{ transition: 'stroke-dasharray 400ms ease' }}
+            />
+          )}
+        </g>
+        <circle cx={mid + r * Math.cos(a)} cy={mid + r * Math.sin(a)} r={Math.max(2, stroke * 0.6)} fill={dot} />
       </svg>
       {children && <div className="absolute inset-0 flex flex-col items-center justify-center text-center">{children}</div>}
     </div>
+  )
+}
+
+/* The big block at the top of a screen: emerald in light mode, cream in dark. */
+export function Hero({ as: Tag = 'section', className, children, ...rest }) {
+  return (
+    <Tag className={cx('rounded-[28px] p-5 bg-hero text-on-hero', className)} {...rest}>
+      {children}
+    </Tag>
   )
 }
 
@@ -142,7 +158,7 @@ export function Segmented({ options, value, onChange, className }) {
             onClick={() => onChange(o.value)}
             className={cx(
               'flex-1 h-9 px-3 rounded-full text-sm font-bold whitespace-nowrap transition-colors',
-              active ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink',
+              active ? 'bg-accent text-on-accent' : 'text-muted hover:text-ink',
             )}
           >
             {o.label}
@@ -173,7 +189,7 @@ export function Avatar({ name = '', src, size = 40, className }) {
     <img src={src} alt="" className={cx('rounded-full object-cover shrink-0', className)} style={{ width: size, height: size }} />
   ) : (
     <span
-      className={cx('rounded-full bg-accent-soft text-accent font-bold inline-flex items-center justify-center shrink-0', className)}
+      className={cx('rounded-full bg-tan text-on-tan font-bold inline-flex items-center justify-center shrink-0', className)}
       style={{ width: size, height: size, fontSize: size * 0.38 }}
     >
       {initials}
@@ -311,7 +327,7 @@ export function TabBar({ items, className }) {
       className={cx('fixed bottom-0 inset-x-0 z-30 px-3 pointer-events-none', className)}
       style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 12px)' }}
     >
-      <div className="max-w-[480px] mx-auto pointer-events-auto flex gap-1 p-1.5 rounded-[30px] bg-surface/95 backdrop-blur-xl border border-line shadow-[0_8px_28px_rgba(0,0,0,0.14)]">
+      <div className="max-w-[480px] mx-auto pointer-events-auto flex gap-1 p-1.5 rounded-[30px] bg-surface/95 backdrop-blur-xl border border-line shadow-[0_8px_28px_rgba(11,43,36,0.14)]">
         {items.map(({ key, label, icon: Icon, active, badge, onClick }) => (
           <button
             key={key}
@@ -320,13 +336,13 @@ export function TabBar({ items, className }) {
             aria-label={badge > 0 ? `${label}, ${badge} unread` : undefined}
             className={cx(
               'relative flex-1 min-w-0 h-14 rounded-[24px] flex flex-col items-center justify-center gap-0.5 transition-colors',
-              active ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink',
+              active ? 'bg-hero text-on-hero' : 'text-muted hover:text-ink',
             )}
           >
             <span className="relative">
               <Icon size={22} strokeWidth={active ? 2.4 : 2} />
               {badge > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-accent text-on-accent text-[11px] font-bold leading-[18px] text-center tabular-nums ring-2 ring-surface">
+                <span className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] px-1 rounded-full bg-tan text-on-tan text-[11px] font-bold leading-[18px] text-center tabular-nums ring-2 ring-surface">
                   {badge > 9 ? '9+' : badge}
                 </span>
               )}
