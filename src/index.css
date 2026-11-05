@@ -114,6 +114,8 @@
   --color-hero: var(--hero);
   --color-on-hero: var(--on-hero);
   --color-hero-muted: var(--hero-muted);
+  --color-hero-chip: var(--hero-chip);
+  --color-hero-track: var(--hero-track);
   --color-tan: var(--tan);
   --color-on-tan: var(--on-tan);
   --color-sage: var(--sage);

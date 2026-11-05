@@ -65,10 +65,10 @@ export default function MessagesTab({ clientId, userId, coachName }) {
   const today = toLocalDateStr()
   return (
     <div className="min-h-[calc(100vh-128px)] flex flex-col">
-      <header className="sticky top-0 z-20 bg-bg border-b border-line px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 flex items-center gap-3">
-        <CoachAvatar name={coachName} size={44} />
+      <header className="sticky top-0 z-20 bg-bg border-b border-line px-5 pt-[max(env(safe-area-inset-top),20px)] pb-3 flex items-center gap-3">
+        <CoachAvatar name={coachName} size={48} />
         <div className="min-w-0">
-          <h1 className="text-[19px] font-bold text-ink leading-tight truncate">{coachName || 'Your coach'}</h1>
+          <h1 className="font-display text-[28px] text-ink leading-none truncate">{coachName || 'Your coach'}</h1>
           <p className="text-[13px] text-muted">Your coach</p>
         </div>
       </header>
@@ -88,7 +88,7 @@ export default function MessagesTab({ clientId, userId, coachName }) {
           <div className="space-y-5">
             {byDay(items).map((g) => (
               <section key={g.day} className="space-y-1.5">
-                <p className="text-center text-[12px] font-bold text-faint py-1">{chatDayLabel(g.day, today)}</p>
+                <p className="text-center text-[12px] font-semibold text-muted py-1">{chatDayLabel(g.day, today)}</p>
                 {g.items.map((it, i) => {
                   const next = g.items[i + 1]
                   const showTime = !next || next.mine !== it.mine || isCard(it) || isCard(next)
@@ -101,8 +101,8 @@ export default function MessagesTab({ clientId, userId, coachName }) {
                       ) : (
                         <p
                           className={cx(
-                            'max-w-[80%] px-3.5 py-2.5 text-[15px] leading-snug whitespace-pre-wrap break-words rounded-[20px]',
-                            it.mine ? 'bg-accent text-on-accent rounded-br-[6px]' : 'bg-surface text-ink border border-line rounded-bl-[6px]',
+                            'max-w-[80%] px-4 py-3 text-[15px] leading-[1.45] whitespace-pre-wrap break-words rounded-[22px]',
+                            it.mine ? 'bg-hero text-on-hero rounded-br-[6px]' : 'bg-surface text-ink rounded-bl-[6px]',
                           )}
                         >
                           {it.kind === 'reply' && <ReplyLabel />}
@@ -121,10 +121,10 @@ export default function MessagesTab({ clientId, userId, coachName }) {
       </div>
 
       {/* Composer, just above the tab bar. */}
-      <div className="fixed inset-x-0 z-20 bg-bg border-t border-line" style={{ bottom: 'var(--tabbar-space)' }}>
-        <div className="max-w-[480px] mx-auto px-4 py-2.5">
+      <div className="fixed inset-x-0 z-20" style={{ bottom: 'var(--tabbar-space)' }}>
+        <div className="max-w-[480px] mx-auto px-4 pb-2">
           {sendError && <p role="alert" className="text-[13px] font-semibold text-bad mb-1.5">{sendError}</p>}
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-2 rounded-[28px] bg-surface border border-line-strong pl-1.5 pr-1.5 py-1.5 shadow-[0_8px_24px_rgba(11,43,36,0.10)]">
             <textarea
               rows={1}
               maxLength={4000}
@@ -133,7 +133,7 @@ export default function MessagesTab({ clientId, userId, coachName }) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={onKeyDown}
-              className="flex-1 min-h-[44px] max-h-32 rounded-[22px] border border-line-strong bg-surface text-ink placeholder:text-faint px-4 py-2.5 text-[15px] outline-none focus:border-accent resize-none field-sizing-content"
+              className="flex-1 min-h-[44px] max-h-32 bg-transparent text-ink placeholder:text-faint px-3 py-2.5 text-[16px] outline-none resize-none field-sizing-content"
             />
             <button
               onClick={submit}

@@ -4,13 +4,13 @@ import { useNavigate } from 'react-router-dom'
 import { Search, ChevronRight, Plus, Link2, Check, MessageSquare, MessageCircle, Users } from 'lucide-react'
 import { supabase } from '../supabase'
 import { fetchUnreadCounts, fetchLatestPerThread } from '../lib/messages'
-import { PageTitle, SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, EmptyState, Mark } from '../ui'
+import { SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, EmptyState, Mark, Hero } from '../ui'
 import { clientStatus, STATUS, relativeDay, sessionsLast7, checkinsThisWeek, checkinNote, firstName, messageTime, toLocalDateStr, addDays, awaitingReply, lastActivity, missedInARow, daysSince } from './lib'
 import { useMessageEvent, READ, INCOMING } from './messages/events'
 
 function greeting() {
   const h = new Date().getHours()
-  return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+  return h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening'
 }
 
 // A client who has not claimed an account needs their invite link. Once they have one
@@ -82,7 +82,7 @@ function AddClientSheet({ open, onClose, onSave }) {
 
 function Scores({ ci }) {
   return (
-    <span className="text-[13px] text-muted tabular-nums whitespace-nowrap">
+    <span className="text-[13px] text-hero-muted tabular-nums whitespace-nowrap">
       Training {ci.training_score ?? '-'}/5 · Energy {ci.energy_score ?? '-'}/5
     </span>
   )
@@ -255,108 +255,108 @@ export default function Dashboard({ user }) {
     <div className="pb-8">
       <AddClientSheet open={showAdd} onClose={() => setShowAdd(false)} onSave={handleAddClient} />
 
-      <PageTitle
-        eyebrow={coachFirst ? `${greeting()}, ${coachFirst}` : greeting()}
-        title="Clients"
-        action={
-          <Button onClick={() => setShowAdd(true)} size="md" className="max-sm:h-10 max-sm:px-4">
-            <Plus size={18} /> <span className="max-sm:hidden">Add client</span><span className="sm:hidden">Add</span>
-          </Button>
-        }
-      />
-
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-3 mt-5">
-        {[
-          { label: 'Clients', value: active.length },
-          { label: 'Check-ins this week', short: 'This week', value: checkinsThisWeek(checkins) },
-          { label: 'Awaiting reply', short: 'To reply', value: awaitingCount, warn: awaitingCount > 0 },
-        ].map((s) => (
-          <Card key={s.label} className="!p-3.5 md:!p-4">
-            <p className="text-[13px] text-muted truncate">
-              {s.short ? <><span className="md:hidden">{s.short}</span><span className="max-md:hidden">{s.label}</span></> : s.label}
-            </p>
-            <p className={`font-display text-[28px] leading-tight tabular-nums ${s.warn ? 'text-warn' : 'text-ink'}`}>{s.value}</p>
-          </Card>
-        ))}
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[14px] font-semibold text-muted">{new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1 className="font-display text-[clamp(34px,8vw,44px)] leading-none text-ink mt-1">{greeting()}{coachFirst ? `, ${coachFirst}` : ''}.</h1>
+        </div>
+        <Button onClick={() => setShowAdd(true)} size="md" className="shrink-0 max-sm:h-10 max-sm:px-4">
+          <Plus size={18} /> <span className="max-sm:hidden">Add client</span><span className="sm:hidden">Add</span>
+        </Button>
       </div>
 
-      {/* Needs you */}
-      <section className="mt-7">
-        <SectionLabel action={needsCount > 0 && <span className="text-[13px] font-bold text-muted">{needsCount}</span>}>Needs you</SectionLabel>
-        {needsCount === 0 ? (
-          <Card>
-            <div className="flex items-center gap-3">
-              <span className="w-10 h-10 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Check size={20} /></span>
-              <div>
-                <p className="font-bold text-ink">All caught up</p>
-                <p className="text-[13px] text-muted">Every check-in and message has a reply, and everyone is showing up.</p>
-              </div>
-            </div>
-          </Card>
-        ) : (
-          <Card padded={false} className="divide-y divide-line overflow-hidden">
-            {replyItems.map((item) => {
-              const c = item.client
-              const ci = item.ci
-              const note = ci ? checkinNote(ci) : ''
-              return (
-                <div key={item.id} className="flex items-center gap-3 px-4 py-3.5">
+      <div className="grid grid-cols-1 gap-4 mt-6 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
+        {/* Needs you */}
+        <Hero className="min-w-0 !px-5 md:!px-6">
+          <p className="font-display text-[clamp(24px,5vw,30px)] leading-none">
+            {needsCount === 0 ? 'All caught up' : needsCount === 1 ? '1 client needs you' : `${needsCount} clients need you`}
+          </p>
+          {needsCount === 0 ? (
+            <p className="text-[14px] text-hero-muted mt-2">Every check-in and message has a reply, and everyone is showing up.</p>
+          ) : (
+            <div className="mt-3 divide-y divide-hero-track">
+              {replyItems.map((item) => {
+                const c = item.client
+                const ci = item.ci
+                const note = ci ? checkinNote(ci) : ''
+                return (
+                  <div key={item.id} className="flex items-center gap-3 py-3">
+                    <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
+                    <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/clients/${c.id}`)}>
+                      <p className="flex flex-wrap items-baseline gap-x-2 min-w-0">
+                        <span className="font-bold">{c.full_name}</span>
+                        {item.at && <span className="text-[13px] text-hero-muted whitespace-nowrap">{ci && item.at === ci.submitted_at ? relativeDay(item.at) : messageTime(item.at)}</span>}
+                      </p>
+                      {ci && (
+                        <span className="flex items-center gap-2 flex-wrap">
+                          <Scores ci={ci} />
+                          {c.status !== 'Engaged' && <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>}
+                        </span>
+                      )}
+                      {item.count > 0 && (
+                        <span className="flex items-center gap-1.5 text-[13px] font-bold">
+                          <MessageCircle size={14} /> {item.count === 1 ? 'New message' : `${item.count} new messages`}
+                        </span>
+                      )}
+                      {(item.preview || note) && <p className="text-[14px] text-hero-muted truncate mt-0.5">"{item.preview || note}"</p>}
+                    </button>
+                    <button
+                      onClick={() => navigate(`/messages/${c.id}`, ci ? { state: { replyCheckin: ci.id } } : undefined)}
+                      aria-label={`Reply to ${c.full_name}`}
+                      className="h-[38px] max-sm:w-[38px] sm:px-4 rounded-full bg-on-hero text-hero text-[13px] font-bold flex items-center justify-center gap-1.5 shrink-0 hover:opacity-90"
+                    >
+                      <MessageSquare size={15} /> <span className="max-sm:hidden">Reply</span>
+                    </button>
+                  </div>
+                )
+              })}
+              {slipping.map((c) => (
+                <button key={c.id} onClick={() => navigate(`/clients/${c.id}`)} className="w-full flex items-center gap-3 py-3 text-left">
+                  <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="font-bold truncate">{c.full_name}</span>
+                      <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>
+                    </span>
+                    <span className="block text-[14px] text-hero-muted">
+                      {c.status === 'Drifting' && c.missed >= 2 && daysSince(c.lastActive) < 7
+                        ? `Last ${c.missed} planned sessions not logged`
+                        : `Last active ${relativeDay(c.lastActive).toLowerCase()}`}
+                    </span>
+                  </span>
+                  <ChevronRight size={20} className="text-hero-muted shrink-0" />
+                </button>
+              ))}
+              {notStarted.map((c) => (
+                <div key={c.id} className="flex items-center gap-3 py-3">
                   <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
                   <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/clients/${c.id}`)}>
-                    <p className="flex items-center gap-2 min-w-0">
-                      <span className="font-bold text-ink truncate">{c.full_name}</span>
-                      {item.at && <span className="text-[13px] text-muted whitespace-nowrap">{ci && item.at === ci.submitted_at ? relativeDay(item.at) : messageTime(item.at)}</span>}
-                    </p>
-                    {ci && (
-                      <span className="flex items-center gap-2 flex-wrap">
-                        <Scores ci={ci} />
-                        {c.status !== 'Engaged' && <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>}
-                      </span>
-                    )}
-                    {item.count > 0 && (
-                      <span className="flex items-center gap-1.5 text-[13px] text-accent font-bold">
-                        <MessageCircle size={14} /> {item.count === 1 ? 'New message' : `${item.count} new messages`}
-                      </span>
-                    )}
-                    {(item.preview || note) && <p className="text-[13px] text-ink truncate mt-0.5">"{item.preview || note}"</p>}
+                    <span className="block font-bold truncate">{c.full_name}</span>
+                    <span className="block text-[14px] text-hero-muted">Has not set up their account yet</span>
                   </button>
-                  <Button variant="soft" size="sm" onClick={() => navigate(`/messages/${c.id}`, ci ? { state: { replyCheckin: ci.id } } : undefined)}>
-                    <MessageSquare size={16} /> Reply
-                  </Button>
+                  <InviteButton client={c} compact />
                 </div>
-              )
-            })}
-            {slipping.map((c) => (
-              <button key={c.id} onClick={() => navigate(`/clients/${c.id}`)} className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2 transition-colors">
-                <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="font-bold text-ink truncate">{c.full_name}</span>
-                    <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>
-                  </span>
-                  <span className="block text-[13px] text-muted">
-                    {c.status === 'Drifting' && c.missed >= 2 && daysSince(c.lastActive) < 7
-                      ? `Last ${c.missed} planned sessions not logged`
-                      : `Last active ${relativeDay(c.lastActive).toLowerCase()}`}
-                  </span>
-                </span>
-                <ChevronRight size={20} className="text-faint shrink-0" />
-              </button>
-            ))}
-            {notStarted.map((c) => (
-              <div key={c.id} className="flex items-center gap-3 px-4 py-3.5">
-                <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
-                <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/clients/${c.id}`)}>
-                  <span className="block font-bold text-ink truncate">{c.full_name}</span>
-                  <span className="block text-[13px] text-muted">Has not set up their account yet</span>
-                </button>
-                <InviteButton client={c} compact />
-              </div>
-            ))}
-          </Card>
-        )}
-      </section>
+              ))}
+            </div>
+          )}
+        </Hero>
+
+        {/* Summary */}
+        <Card className="!py-2 !px-5 grid grid-cols-3 lg:grid-cols-1 gap-x-4">
+          {[
+            { label: 'Clients', value: active.length },
+            { label: 'Check-ins this week', short: 'This week', value: checkinsThisWeek(checkins) },
+            { label: 'Awaiting reply', short: 'To reply', value: awaitingCount },
+          ].map((s, i) => (
+            <div key={s.label} className={`py-2.5 lg:flex lg:items-baseline lg:justify-between ${i > 0 ? 'lg:border-t lg:border-line' : ''}`}>
+              <p className="text-[13px] lg:text-[14px] font-semibold text-muted truncate">
+                {s.short ? <><span className="lg:hidden">{s.short}</span><span className="max-lg:hidden">{s.label}</span></> : s.label}
+              </p>
+              <p className="font-display text-[30px] lg:text-[36px] leading-none tabular-nums text-ink mt-1 lg:mt-0">{s.value}</p>
+            </div>
+          ))}
+        </Card>
+      </div>
 
       {/* All clients */}
       <section className="mt-7">
@@ -453,7 +453,7 @@ export default function Dashboard({ user }) {
           )}
         </Card>
         {(archived.length > 0 || showArchived) && (
-          <button onClick={() => setShowArchived((v) => !v)} className="mt-3 px-1 text-[13px] font-bold text-accent hover:underline">
+          <button onClick={() => setShowArchived((v) => !v)} className="mt-3 px-1 text-[13px] font-semibold text-ink underline underline-offset-2">
             {showArchived ? 'Back to current clients' : `Archived clients (${archived.length})`}
           </button>
         )}

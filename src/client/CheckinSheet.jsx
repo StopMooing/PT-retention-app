@@ -15,7 +15,7 @@ export function Scale({ label, low, high, value, onChange }) {
             onClick={() => onChange(n)}
             aria-pressed={value === n}
             aria-label={`${label} ${n} of 5`}
-            className={`flex-1 h-12 rounded-full text-[17px] font-bold tabular-nums transition-colors ${value === n ? 'bg-accent text-on-accent' : 'bg-surface-2 text-ink hover:bg-line'}`}
+            className={`flex-1 h-12 rounded-[14px] border text-[17px] font-bold tabular-nums transition-colors ${value === n ? 'bg-ink text-bg border-ink' : 'border-line-strong text-ink hover:bg-surface-2'}`}
           >
             {n}
           </button>

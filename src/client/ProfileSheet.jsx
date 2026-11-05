@@ -44,9 +44,9 @@ export default function ProfileSheet({ open, onClose, client, setClient, hasReso
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
           <div className="min-w-0">
-            <p className="text-[19px] font-bold text-ink truncate">{client.full_name}</p>
+            <p className="font-display text-[26px] leading-tight text-ink truncate">{client.full_name}</p>
             {client.email && <p className="text-[13px] text-muted truncate">{client.email}</p>}
-            <button onClick={() => fileRef.current?.click()} className="text-[13px] font-bold text-accent mt-1">{uploading ? 'Uploading...' : 'Change photo'}</button>
+            <button onClick={() => fileRef.current?.click()} className="text-[13px] font-semibold text-ink underline underline-offset-2 mt-1">{uploading ? 'Uploading...' : 'Change photo'}</button>
           </div>
         </div>
         {error && <p role="alert" className="text-[13px] font-semibold text-bad -mt-3">{error}</p>}
@@ -57,8 +57,8 @@ export default function ProfileSheet({ open, onClose, client, setClient, hasReso
         </div>
 
         {hasResources && (
-          <button onClick={onOpenResources} className="w-full flex items-center gap-3 px-4 py-3 rounded-[16px] border border-line hover:bg-surface-2 text-left">
-            <span className="w-9 h-9 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><BookOpen size={18} /></span>
+          <button onClick={onOpenResources} className="w-full flex items-center gap-3 px-4 py-3 rounded-[20px] bg-surface-2 hover:brightness-95 text-left">
+            <span className="w-9 h-9 rounded-full bg-tan text-on-tan flex items-center justify-center shrink-0"><BookOpen size={18} /></span>
             <span className="flex-1 min-w-0">
               <span className="block text-[15px] font-bold text-ink">Resources</span>
               <span className="block text-[13px] text-muted">Guides and reading from your coach</span>

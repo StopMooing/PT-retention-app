@@ -307,7 +307,7 @@ export function Field({ label, hint, className, inputClassName, id, ...rest }) {
       <input
         id={id}
         className={cx(
-          'h-12 px-4 rounded-[14px] border border-line-strong bg-surface text-ink placeholder:text-faint outline-none transition-colors focus:border-accent',
+          'h-[52px] px-4 rounded-[16px] border border-line-strong bg-surface text-ink text-[16px] placeholder:text-faint outline-none transition-colors focus:border-accent',
           inputClassName,
         )}
         {...rest}

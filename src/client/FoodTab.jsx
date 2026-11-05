@@ -3,13 +3,12 @@
 // A meal with ingredients (from the AI or a saved meal) opens to show them; each amount
 // can be changed or the ingredient removed, and the meal's totals follow.
 import { useState, useEffect } from 'react'
-import { Plus, X, Sparkles, Calculator, ChevronDown } from 'lucide-react'
+import { Plus, X, Sparkles, Calculator, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { supabase } from '../supabase'
-import { PageTitle, Card, Button, Segmented, SectionLabel, Sheet, Field } from '../ui'
-import { toLocalDateStr, formatDateLabel } from './dates'
+import { Card, Button, Segmented, Sheet, Field, Hero } from '../ui'
+import { toLocalDateStr, formatDateLabel, formatShortDate, addDays } from './dates'
 import { logsForDate, foodTotals, nutritionTargetsFor } from './metrics'
 import { MEAL_ORDER, capitalise, parseSavedMealContent } from './foods'
-import { NutritionSummary, DayNav } from './common'
 import AddFoodSheet from './AddFoodSheet'
 import { mealItems, logMeals, updateMealItem, restoreMeal } from '../lib/meals'
 import MealPlanCard from './MealPlanCard'
@@ -155,6 +154,50 @@ function SavedMeals({ savedMeals, onAddItems, onDelete }) {
   )
 }
 
+// The big block at the top: calories to go (or eaten, with no target) and the three macros.
+function NutritionHero({ totals, targets, onWorkOut }) {
+  const has = targets.kcal > 0
+  const left = targets.kcal - totals.kcal
+  const n = (v) => Math.round(v).toLocaleString('en-AU')
+  const macros = [
+    { name: 'Protein', v: totals.protein, t: targets.protein },
+    { name: 'Carbs', v: totals.carbs, t: targets.carbs },
+    { name: 'Fats', v: totals.fats, t: targets.fats },
+  ]
+  const most = Math.max(1, ...macros.map((m) => m.v))
+  return (
+    <Hero>
+      <p className="font-display text-[clamp(36px,11vw,44px)] leading-[0.95] tabular-nums">
+        {!has ? `${n(totals.kcal)} kcal eaten` : left >= 0 ? `${n(left)} kcal to go` : `${n(-left)} kcal over`}
+      </p>
+      {has ? (
+        <p className="text-[14px] text-hero-muted mt-1 tabular-nums">{n(totals.kcal)} of {n(targets.kcal)} kcal eaten</p>
+      ) : (
+        <p className="text-[14px] text-hero-muted mt-1">
+          No daily target yet. Your coach can set one, or{' '}
+          <button onClick={onWorkOut} className="font-semibold text-on-hero underline underline-offset-2">work yours out</button>.
+        </p>
+      )}
+      <div className="mt-3.5 space-y-2.5">
+        {macros.map((m) => {
+          const pct = m.t > 0 ? Math.min(1, m.v / m.t) : m.v / most
+          return (
+            <div key={m.name}>
+              <div className="flex justify-between text-[13px] font-semibold">
+                <span>{m.name}</span>
+                <span className="text-hero-muted tabular-nums">{m.t > 0 ? `${n(m.v)} of ${n(m.t)} g` : `${n(m.v)} g`}</span>
+              </div>
+              <div className="mt-1.5 h-2 rounded-full bg-hero-track overflow-hidden">
+                <div className="h-full rounded-full bg-on-hero transition-all" style={{ width: `${pct * 100}%` }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </Hero>
+  )
+}
+
 export default function FoodTab({
   client, setClient, showToast, foodLogs, setFoodLogs, refreshFoodLogs, savedMeals, setSavedMeals,
   nutritionTargets, setNutritionTargets, view, setView, addOpen, setAddOpen, onOpenAI,
@@ -173,7 +216,6 @@ export default function FoodTab({
   const totals = foodTotals(dayLogs)
   const targets = nutritionTargetsFor(client, nutritionTargets)
   const meals = MEAL_ORDER.map((type) => ({ type, items: dayLogs.filter((f) => (MEAL_ORDER.includes(f.meal_type?.toLowerCase()) ? f.meal_type.toLowerCase() : 'other') === type) })).filter((m) => m.items.length > 0)
-  const kcalLeft = targets.kcal - totals.kcal
 
   // One tap removes it; the toast offers Undo for a few seconds, which puts the same
   // values back as a new row.
@@ -257,9 +299,14 @@ export default function FoodTab({
 
   return (
     <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-5">
-      <PageTitle title="Nutrition" action={<Button variant="secondary" size="sm" onClick={onOpenAI}><Sparkles size={16} /> Ideas</Button>} />
-
-      <DayNav date={date} onChange={setDate} max={today} />
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h1 className="font-display text-[40px] leading-none text-ink">Nutrition</h1>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setDate(addDays(date, -1))} aria-label="Previous day" className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface-2"><ChevronLeft size={20} /></button>
+          <span className="text-[15px] font-bold text-ink min-w-[64px] text-center">{date === today ? 'Today' : formatShortDate(date)}</span>
+          <button onClick={() => { const n = addDays(date, 1); if (n <= today) setDate(n) }} disabled={date >= today} aria-label="Next day" className="w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface-2 disabled:opacity-30"><ChevronRight size={20} /></button>
+        </div>
+      </div>
 
       {savedMeals.length > 0 && (
         <Segmented value={view} onChange={setView} options={[{ value: 'log', label: 'Food log' }, { value: 'saved', label: 'Saved meals' }]} />
@@ -269,51 +316,39 @@ export default function FoodTab({
         <SavedMeals savedMeals={savedMeals} onAddItems={handleAddMealItemsToLog} onDelete={handleDeleteSavedMeal} />
       ) : (
         <div className="space-y-3">
-          <MealPlanCard client={client} />
-          <Card>
-            <NutritionSummary totals={totals} targets={targets} />
-          </Card>
-          {targets.kcal > 0 ? (
-            <p className="text-[13px] text-muted text-center tabular-nums">
-              {kcalLeft >= 0 ? `${kcalLeft.toLocaleString('en-AU')} kcal to go` : `${(-kcalLeft).toLocaleString('en-AU')} kcal above target`}
-            </p>
-          ) : (
-            <p className="text-[13px] text-muted text-center">
-              No daily target yet. Your coach can set one, or{' '}
-              <button onClick={() => setTdeeOpen(true)} className="font-bold text-accent underline underline-offset-2">work yours out</button>.
-            </p>
-          )}
+          <NutritionHero totals={totals} targets={targets} onWorkOut={() => setTdeeOpen(true)} />
 
           <Button size="lg" block onClick={() => openAdd(null)}><Plus size={20} /> Log food</Button>
 
+          {meals.length > 0 && (
+            <Card padded={false} className="divide-y divide-line overflow-hidden">
+              {meals.map(({ type, items }) => {
+                const t = foodTotals(items)
+                return (
+                  <div key={type} className="divide-y divide-line">
+                    <div className="flex items-center gap-2 pl-4 pr-2 pt-3 pb-1.5">
+                      <p className="flex-1 text-[13px] font-semibold text-muted">{capitalise(type)}</p>
+                      <span className="text-[13px] font-bold text-ink tabular-nums">{t.kcal.toLocaleString('en-AU')} kcal</span>
+                      <button onClick={() => openAdd(type)} aria-label={`Add to ${type}`} className="w-8 h-8 rounded-full flex items-center justify-center text-ink hover:bg-surface-2"><Plus size={18} /></button>
+                    </div>
+                    {items.map((f) => (
+                      <FoodRow key={f.id} food={f} onDelete={handleDeleteFood} onEditItem={(food, item) => setEditTarget({ food, item })} />
+                    ))}
+                  </div>
+                )
+              })}
+            </Card>
+          )}
+
           <WaterCard client={client} date={date} showToast={showToast} />
 
-          {meals.map(({ type, items }) => {
-            const t = foodTotals(items)
-            return (
-              <section key={type} className="pt-4">
-                <SectionLabel
-                  action={
-                    <span className="flex items-center gap-1">
-                      <span className="text-[13px] font-bold text-muted tabular-nums">{t.kcal} kcal</span>
-                      <button onClick={() => openAdd(type)} aria-label={`Add to ${type}`} className="w-8 h-8 rounded-full flex items-center justify-center text-accent hover:bg-surface-2"><Plus size={18} /></button>
-                    </span>
-                  }
-                >
-                  {capitalise(type)}
-                </SectionLabel>
-                <Card padded={false} className="divide-y divide-line">
-                  {items.map((f) => (
-                    <FoodRow key={f.id} food={f} onDelete={handleDeleteFood} onEditItem={(food, item) => setEditTarget({ food, item })} />
-                  ))}
-                </Card>
-              </section>
-            )
-          })}
+          <MealPlanCard client={client} />
+
+          <Button variant="secondary" size="lg" block onClick={onOpenAI} className="!bg-transparent"><Sparkles size={18} /> Meal ideas with AI</Button>
 
           {/* Only when the coach hasn't set targets: theirs come first. */}
-          {!client.calorie_target && (
-            <div className="pt-4 flex justify-center">
+          {!client.calorie_target && targets.kcal > 0 && (
+            <div className="flex justify-center">
               <Button variant="ghost" size="sm" onClick={() => setTdeeOpen(true)} className="text-muted">
                 <Calculator size={16} /> Work out my calorie target
               </Button>

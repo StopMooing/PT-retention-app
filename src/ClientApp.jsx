@@ -6,7 +6,7 @@ import { Home, Dumbbell, Utensils, TrendingUp, MessageCircle } from 'lucide-reac
 import { supabase } from './supabase'
 import { Button, TabBar, StatusBarCover } from './ui'
 import { formatDateLabel, toLocalDateStr, addDays } from './client/dates'
-import { completedKeys, workoutName } from './client/metrics'
+import { completedKeys, workoutName, sessionsThisWeek, weekStreak } from './client/metrics'
 import {
   fetchScheduled, fetchExercisesFor, fetchWorkoutLogs, fetchFoodLogs, fetchWeightLogs,
   fetchStrength, fetchResources, fetchByClient, fetchAssignment, fetchOnDemand, fetchCoachName, fetchDailyCheckins, FOOD_DAYS,
@@ -387,6 +387,8 @@ export default function ClientApp() {
       <WorkoutComplete
         workoutName={workoutCompleteData.workoutName}
         stats={workoutCompleteData}
+        week={sessionsThisWeek(scheduledWorkouts, completedIds)}
+        streak={weekStreak(workoutLogs)}
         coachName={coachName}
         hasCoach={!!client.pt_id}
         onDone={() => { setWorkoutCompleteData(null); setLoggingWorkout(null); goTab('home') }}
@@ -486,6 +488,8 @@ export default function ClientApp() {
             strength={strength}
             progressPhotos={progressPhotos}
             setProgressPhotos={setProgressPhotos}
+            scheduledWorkouts={scheduledWorkouts}
+            completedIds={completedIds}
           />
         )}
         {tab === 'messages' && client.pt_id && (

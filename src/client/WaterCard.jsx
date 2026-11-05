@@ -2,11 +2,8 @@
 // (clients.water_target_ml), quick add buttons and undo of the last add. The coach sees
 // the same water_logs rows on the client's Nutrition tab.
 import { useEffect, useState } from 'react'
-import { Droplet, Undo2 } from 'lucide-react'
+import { Undo2 } from 'lucide-react'
 import { supabase } from '../supabase'
-import { Card, Button } from '../ui'
-
-const fmt = (ml) => (ml >= 1000 ? `${(ml / 1000).toFixed(1)} L` : `${ml} ml`)
 
 export default function WaterCard({ client, date, showToast }) {
   const [logs, setLogs] = useState([])
@@ -48,29 +45,27 @@ export default function WaterCard({ client, date, showToast }) {
     setLogs((prev) => prev.filter((w) => w.id !== last.id))
   }
 
-  const pct = Math.min(1, total / target)
+  const litres = (ml) => (Math.round(ml / 50) * 50 / 1000).toLocaleString('en-AU', { maximumFractionDigits: 2 })
   return (
-    <Card>
+    <section className="rounded-[24px] bg-surface-2 px-4 py-3.5">
       <div className="flex items-center gap-3">
-        <span className="w-10 h-10 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Droplet size={20} /></span>
         <div className="flex-1 min-w-0">
-          <p className="text-[15px] font-bold text-ink">Water</p>
-          <p className="text-[13px] text-muted tabular-nums">{fmt(total)} of {fmt(target)}</p>
+          <p className="text-[13px] font-semibold text-muted">Water</p>
+          <p className="font-display text-[26px] leading-[1.1] text-ink tabular-nums">
+            {litres(total)}<span className="font-sans text-[13px] font-semibold text-muted"> of {litres(target)} L</span>
+          </p>
         </div>
         {mine.length > 0 && (
-          <button onClick={undo} disabled={busy} aria-label="Undo last water" className="w-10 h-10 rounded-full flex items-center justify-center text-muted hover:bg-surface-2">
+          <button onClick={undo} disabled={busy} aria-label="Undo last water" className="w-10 h-10 rounded-full flex items-center justify-center text-muted hover:bg-surface">
             <Undo2 size={18} />
           </button>
         )}
       </div>
-      <div className="h-2 rounded-full bg-surface-2 mt-3 overflow-hidden">
-        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct * 100}%` }} />
-      </div>
-      <div className="grid grid-cols-3 gap-2 mt-3">
+      <div className="grid grid-cols-3 gap-2 mt-2.5">
         {[250, 500, 750].map((ml) => (
-          <Button key={ml} variant="soft" size="sm" onClick={() => add(ml)} disabled={busy}>+{ml} ml</Button>
+          <button key={ml} onClick={() => add(ml)} disabled={busy} className="h-10 rounded-full bg-surface text-ink text-[14px] font-semibold tabular-nums disabled:opacity-50">+{ml} ml</button>
         ))}
       </div>
-    </Card>
+    </section>
   )
 }

@@ -3,11 +3,11 @@
 import { useState, useRef } from 'react'
 import { ChevronDown, X, Camera, MessageCircle, Trash2 } from 'lucide-react'
 import { supabase } from '../supabase'
-import { PageTitle, Card, Button, Segmented, SectionLabel, Stat, PhotoViewer } from '../ui'
+import { Card, Button, SectionLabel, PhotoViewer, Hero, Ring } from '../ui'
 import { photoPath, usePhotoUrls, PHOTO_BUCKET } from '../lib/photos'
 import { toLocalDateStr, addDays, formatShortDate, parseDay } from './dates'
 import {
-  weightSeries, currentWeight, weightAverage7, weightForDay, plural, sessionsLast7, sessionsTotal, bestWeekStreak, weekStreak, liftBests, fmtKg,
+  weightSeries, currentWeight, weightAverage7, weightForDay, plural, sessionsTotal, bestWeekStreak, weekStreak, liftBests, fmtKg, sessionsThisWeek,
 } from './metrics'
 import WeightChart from './WeightChart'
 import SessionsList from './SessionsList'
@@ -67,28 +67,47 @@ function WeightCard({ client, weightLogs, setWeightLogs }) {
     }
   }
 
+  const first = series[0]
+  const last = series[series.length - 1]
+  const change = series.length >= 2 ? Math.round((last.avg - first.avg) * 10) / 10 : 0
+  const PERIODS = [{ value: '30', label: '30 days' }, { value: '90', label: '90 days' }, { value: 'all', label: 'All' }]
+
   return (
-    <section>
-      <SectionLabel>Body weight</SectionLabel>
-      <Card padded={false}>
-        <div className="p-4 space-y-4">
-          {current !== null && (
-            <div className="grid grid-cols-2 gap-3">
-              <Stat label="Latest" value={fmtKg(current)} unit="kg" />
-              {avg !== null && <Stat label="7-day average" value={fmtKg(avg)} unit="kg" />}
+    <section className="space-y-3">
+      {current !== null && (
+        <Hero>
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-hero-muted">{avg !== null ? 'Body weight, 7 day average' : 'Body weight'}</p>
+              <p className="font-display text-[48px] leading-none tabular-nums mt-1">{fmtKg(avg ?? current)}<span className="text-[20px]"> kg</span></p>
             </div>
-          )}
+            {change !== 0 && (
+              <p className="text-[13px] font-semibold text-right text-hero-muted mb-1.5">
+                {change < 0 ? 'Down' : 'Up'} {fmtKg(Math.abs(change))} kg<br />since {formatShortDate(first.date)}
+              </p>
+            )}
+          </div>
           {all.length >= 2 && (
             <>
-              <Segmented value={period} onChange={setPeriod} options={[{ value: '30', label: '30 days' }, { value: '90', label: '90 days' }, { value: 'all', label: 'All' }]} />
-              {series.length >= 2 ? <WeightChart series={series} /> : <p className="text-[13px] text-muted">Only one weigh-in here. Try a longer range.</p>}
+              <div className="flex gap-1.5 mt-3" role="radiogroup" aria-label="Range">
+                {PERIODS.map((o) => (
+                  <button key={o.value} role="radio" aria-checked={period === o.value} onClick={() => setPeriod(o.value)} className={`h-8 px-3 rounded-full text-[13px] font-semibold ${period === o.value ? 'bg-on-hero text-hero' : 'bg-hero-chip'}`}>{o.label}</button>
+                ))}
+              </div>
+              <div className="mt-2">
+                {series.length >= 2 ? <WeightChart series={series} onHero /> : <p className="text-[13px] text-hero-muted py-3">Only one weigh-in here. Try a longer range.</p>}
+              </div>
             </>
           )}
-
+        </Hero>
+      )}
+      <Card padded={false}>
+        <div className="p-4 space-y-3">
+          {current === null && <p className="text-[15px] font-semibold text-ink">Body weight</p>}
           {todayEntry && !updating ? (
             <div className="flex items-center gap-2 text-[15px]">
               <span className="text-ink">Logged <b>{todayEntry.weight_kg} kg</b> today.</span>
-              <button onClick={() => { setInput(String(todayEntry.weight_kg)); setUpdating(true) }} className="text-accent font-bold ml-auto">Update</button>
+              <button onClick={() => { setInput(String(todayEntry.weight_kg)); setUpdating(true) }} className="text-ink underline underline-offset-2 font-semibold ml-auto">Update</button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
@@ -250,7 +269,7 @@ function PhotosCard({ client, progressPhotos, setProgressPhotos }) {
   )
 }
 
-export default function ProgressTab({ client, weightLogs, setWeightLogs, workoutLogs, checkins, strength, progressPhotos, setProgressPhotos }) {
+export default function ProgressTab({ client, weightLogs, setWeightLogs, workoutLogs, checkins, strength, progressPhotos, setProgressPhotos, scheduledWorkouts, completedIds }) {
   const [showAllLifts, setShowAllLifts] = useState(false)
   const [showAllCheckins, setShowAllCheckins] = useState(false)
   const lifts = liftBests(strength.heavySets, strength.personalBests)
@@ -258,59 +277,56 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
   const shownCheckins = showAllCheckins ? checkins : checkins.slice(0, 4)
   const best = bestWeekStreak(workoutLogs)
   const streak = weekStreak(workoutLogs)
-  const week = sessionsLast7(workoutLogs)
   const total = sessionsTotal(workoutLogs)
-  // Only tiles with something to celebrate. No zeros: a quiet week shows the total
-  // instead, and the streak only appears once there is one.
-  const tiles = [
-    week > 0
-      ? { label: 'Last 7 days', value: week, hint: week === 1 ? 'session' : 'sessions' }
-      : total > 0 && { label: 'All time', value: total, hint: total === 1 ? 'session' : 'sessions' },
-    checkins.length > 0 && { label: 'Check-ins', value: checkins.length, hint: 'weekly' },
-    streak > 0
-      ? { label: 'Streak', value: streak, hint: `${streak === 1 ? 'week' : 'weeks'} in a row${best > streak ? `, best ${best}` : ''}` }
-      : best > 1 && { label: 'Best streak', value: best, hint: 'weeks in a row' },
-  ].filter(Boolean)
+  const train = sessionsThisWeek(scheduledWorkouts, completedIds)
+  // Only what there is to celebrate: no zeros, the streak only once there is one.
+  const showingUp = [
+    streak > 0 && `${plural(streak, 'week')} in a row${best > streak ? `, best ${best}` : ''}.`,
+    train.scheduled > 0 && `${train.done} of ${train.scheduled} this week.`,
+  ].filter(Boolean).join(' ')
 
   return (
-    <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-7">
-      <PageTitle title="Progress" />
+    <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-5">
+      <h1 className="font-display text-[40px] leading-none text-ink px-1">Progress</h1>
 
       <WeightCard client={client} weightLogs={weightLogs} setWeightLogs={setWeightLogs} />
 
-      {tiles.length > 0 && (
-        <section>
-          <SectionLabel>Showing up</SectionLabel>
-          <Card className="grid gap-3" style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}>
-            {tiles.map((t) => <Stat key={t.label} label={t.label} value={t.value} hint={t.hint} />)}
-          </Card>
-        </section>
+      {total > 0 && (
+        <Card className="flex items-center gap-4">
+          <Ring value={train.scheduled > 0 ? train.done / train.scheduled : 1} size={76} stroke={9} />
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-muted">Showing up</p>
+            <p className="font-display text-[30px] leading-tight text-ink tabular-nums">{plural(total, 'session')}</p>
+            {showingUp && <p className="text-[13px] text-muted mt-0.5">{showingUp}</p>}
+          </div>
+        </Card>
       )}
-
-      <SessionsList client={client} />
 
       {lifts.length > 0 && (
         <section>
-          <SectionLabel>Strength</SectionLabel>
-          <Card padded={false} className="divide-y divide-line">
-            <div className="grid grid-cols-[1fr_72px_72px] gap-2 px-4 py-2 text-[11px] font-semibold text-faint">
-              <span>Lift</span><span className="text-right">Heaviest</span><span className="text-right">Est. 1RM</span>
-            </div>
-            {shownLifts.map((l) => (
-              <div key={l.exerciseId} className="grid grid-cols-[1fr_72px_72px] gap-2 items-center px-4 py-3">
-                <span className="text-[15px] font-bold text-ink truncate">{l.name}</span>
-                <span className="text-right text-[15px] text-ink tabular-nums">{l.bestKg > 0 ? `${fmtKg(l.bestKg)} kg` : ''}</span>
-                <span className="text-right text-[15px] font-bold text-accent tabular-nums">{l.e1rm > 0 ? `${fmtKg(l.e1rm)} kg` : ''}</span>
-              </div>
-            ))}
+          <Card padded={false} className="px-4 py-1.5">
+            <p className="text-[13px] font-semibold text-muted pt-2.5 pb-1">Best lifts</p>
+            {shownLifts.map((l) => {
+              const top = l.e1rm > 0 ? l.e1rm : l.bestKg
+              return (
+                <div key={l.exerciseId} className="flex items-center gap-2.5 py-2.5 border-t border-line">
+                  <span className="flex-1 min-w-0 text-[15px] font-semibold text-ink truncate">{l.name}</span>
+                  {l.e1rm > 0 && l.bestKg > 0 && <span className="text-[12px] font-semibold text-muted shrink-0">Heaviest {fmtKg(l.bestKg)} kg</span>}
+                  <span className="font-display text-[22px] leading-none text-ink tabular-nums shrink-0">{top > 0 ? fmtKg(top) : ''}<span className="text-[13px]"> kg</span></span>
+                </div>
+              )
+            })}
+            {lifts.some((l) => l.e1rm > 0) && <p className="text-[12px] text-faint pb-2.5">Big number: estimated one rep max.</p>}
           </Card>
           {lifts.length > 6 && (
-            <button onClick={() => setShowAllLifts((v) => !v)} className="w-full text-center text-[13px] font-bold text-accent pt-2.5">
+            <button onClick={() => setShowAllLifts((v) => !v)} className="w-full text-center text-[13px] font-semibold text-ink underline underline-offset-2 pt-2.5">
               {showAllLifts ? 'Show fewer' : `Show all ${plural(lifts.length, 'lift')}`}
             </button>
           )}
         </section>
       )}
+
+      <SessionsList client={client} />
 
       <PhotosCard client={client} progressPhotos={progressPhotos} setProgressPhotos={setProgressPhotos} />
 

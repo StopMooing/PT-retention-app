@@ -7,8 +7,13 @@ const W = 340
 const H = 168
 const PAD = { top: 12, right: 36, bottom: 24, left: 4 }
 
-export default function WeightChart({ series }) {
+// onHero: drawn inside the hero block, so it uses the hero colours.
+const PLAIN = { grid: 'var(--line)', text: 'var(--muted)', line: 'var(--accent)', area: 'var(--accent)', dot: 'var(--faint)', picked: 'var(--ink)' }
+const HERO = { grid: 'var(--hero-track)', text: 'var(--hero-muted)', line: 'var(--on-hero)', area: 'var(--on-hero)', dot: 'var(--hero-muted)', picked: 'var(--hero-dot)' }
+
+export default function WeightChart({ series, onHero }) {
   const [picked, setPicked] = useState(null)
+  const C = onHero ? HERO : PLAIN
   if (series.length < 2) return null
 
   const t0 = parseDay(series[0].date).getTime()
@@ -30,28 +35,28 @@ export default function WeightChart({ series }) {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto block" role="img" aria-label="Body weight chart with 7-day average">
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke="var(--line)" strokeWidth="1" />
-            <text x={W - PAD.right + 6} y={y(t) + 4} fontSize="11" fill="var(--muted)">{Math.round(t * 10) / 10}</text>
+            <line x1={PAD.left} x2={W - PAD.right} y1={y(t)} y2={y(t)} stroke={C.grid} strokeWidth="1" />
+            <text x={W - PAD.right + 6} y={y(t) + 4} fontSize="11" fill={C.text}>{Math.round(t * 10) / 10}</text>
           </g>
         ))}
-        <path d={area} fill="var(--accent)" fillOpacity="0.08" />
+        <path d={area} fill={C.area} fillOpacity="0.08" />
         {series.map((p, i) => (
-          <circle key={p.date} cx={x(p.date)} cy={y(p.weight)} r={picked === i ? 4.5 : 2.5} fill={picked === i ? 'var(--ink)' : 'var(--faint)'} />
+          <circle key={p.date} cx={x(p.date)} cy={y(p.weight)} r={picked === i ? 4.5 : 2.5} fill={picked === i ? C.picked : C.dot} />
         ))}
-        <path d={line} fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={line} fill="none" stroke={C.line} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
         {series.map((p, i) => (
           <circle key={`hit${p.date}`} cx={x(p.date)} cy={y(p.weight)} r="11" fill="transparent" onClick={() => setPicked(picked === i ? null : i)} style={{ cursor: 'pointer' }} />
         ))}
-        <text x={PAD.left} y={H - 6} fontSize="11" fill="var(--muted)">{label(series[0].date)}</text>
-        <text x={W - PAD.right} y={H - 6} fontSize="11" fill="var(--muted)" textAnchor="end">{label(series[series.length - 1].date)}</text>
+        <text x={PAD.left} y={H - 6} fontSize="11" fill={C.text}>{label(series[0].date)}</text>
+        <text x={W - PAD.right} y={H - 6} fontSize="11" fill={C.text} textAnchor="end">{label(series[series.length - 1].date)}</text>
       </svg>
-      <div className="flex items-center justify-between gap-3 mt-1 text-xs text-muted min-h-[18px]">
+      <div className={`flex items-center justify-between gap-3 mt-1 text-xs min-h-[18px] ${onHero ? 'text-hero-muted' : 'text-muted'}`}>
         {sel ? (
-          <span className="text-ink font-bold">{sel.weight} kg on {formatShortDate(sel.date)} <span className="text-muted font-semibold">(average {sel.avg} kg)</span></span>
+          <span className={`font-bold ${onHero ? 'text-on-hero' : 'text-ink'}`}>{sel.weight} kg on {formatShortDate(sel.date)} <span className={`font-semibold ${onHero ? 'text-hero-muted' : 'text-muted'}`}>(average {sel.avg} kg)</span></span>
         ) : (
           <>
-            <span className="flex items-center gap-1.5"><span className="w-4 h-[3px] rounded-full bg-accent" /> 7-day average</span>
-            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-faint" /> Weigh-ins</span>
+            <span className="flex items-center gap-1.5"><span className="w-4 h-[3px] rounded-full" style={{ backgroundColor: C.line }} /> 7-day average</span>
+            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: C.dot }} /> Weigh-ins</span>
           </>
         )}
       </div>

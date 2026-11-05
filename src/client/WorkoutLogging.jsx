@@ -4,10 +4,11 @@
 // session updates it in place. AI workouts have their exercise names matched with
 // resolve_exercise_ids. Ticked sets are kept as a draft on the phone until saved.
 import { useState, useEffect } from 'react'
-import { Check, Trophy, Timer, SkipForward } from 'lucide-react'
+import { Check, Trophy, Timer, SkipForward, Share2, X } from 'lucide-react'
 import { supabase } from '../supabase'
-import { Button, Card, Chip, Mark, Sheet } from '../ui'
-import { Overlay, BackHeader, Loading } from './common'
+import { Button, Card, Chip, Sheet, Hero, Ring } from '../ui'
+import { ShareSheet } from './ShareStory'
+import { Overlay, Loading } from './common'
 import { toLocalDateStr } from './dates'
 import { workoutKey, workoutName as nameOf, plural } from './metrics'
 
@@ -83,110 +84,127 @@ function SessionFeel({ logId, coachName, hasCoach }) {
 
   if (state === 'saved') {
     return (
-      <Card className="flex items-center gap-3">
+      <div className="flex items-center gap-3 rounded-[20px] bg-surface px-4 py-3.5">
         <span className="w-9 h-9 rounded-full bg-accent text-on-accent flex items-center justify-center shrink-0"><Check size={18} strokeWidth={3} /></span>
-        <p className="text-[15px] font-bold text-ink">{hasCoach ? `Thanks, ${who} will see this.` : 'Thanks, saved with this session.'}</p>
-      </Card>
+        <p className="text-[15px] font-semibold text-ink">{hasCoach ? `Thanks, ${who} will see this.` : 'Thanks, saved with this session.'}</p>
+      </div>
     )
   }
   return (
-    <Card>
-      <p className="text-[17px] font-bold text-ink">How did that feel?</p>
-      <div className="grid grid-cols-5 gap-1.5 mt-3" role="radiogroup" aria-label="How did that feel?">
+    <div>
+      <p className="text-[15px] font-semibold text-ink">How did that feel?</p>
+      <div className="grid grid-cols-5 gap-1.5 mt-2.5" role="radiogroup" aria-label="How did that feel?">
         {FEEL.map((label, i) => {
           const n = i + 1
           const on = rating === n
           return (
             <button
               key={label}
+              type="button"
               role="radio"
               aria-checked={on}
               onClick={() => setRating(on ? 0 : n)}
-              className={cx('h-14 rounded-[14px] flex flex-col items-center justify-center transition-colors', on ? 'bg-accent text-on-accent' : 'bg-surface-2 text-ink hover:bg-line')}
+              className={cx('h-11 rounded-[14px] border text-[13px] font-semibold whitespace-nowrap transition-colors', on ? 'bg-ink text-bg border-ink' : 'border-line-strong text-ink hover:bg-surface-2')}
             >
-              <span className="text-[17px] font-bold leading-none tabular-nums">{n}</span>
-              <span className={cx('text-[11px] font-bold mt-1 whitespace-nowrap', on ? 'text-on-accent' : 'text-muted')}>{label}</span>
+              {label}
             </button>
           )
         })}
       </div>
-      <textarea
-        rows={2}
-        maxLength={1000}
-        placeholder={hasCoach ? `Anything for ${who}? Optional.` : 'Any notes? Optional.'}
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        className="mt-3 w-full rounded-[14px] border border-line-strong bg-surface text-ink placeholder:text-faint px-4 py-3 outline-none focus:border-accent resize-none"
-      />
+      {(rating > 0 || note) && (
+        <textarea
+          rows={2}
+          maxLength={1000}
+          placeholder={hasCoach ? `Anything for ${who}? Optional.` : 'Any notes? Optional.'}
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          className="mt-2.5 w-full rounded-[14px] border border-line-strong bg-surface text-ink placeholder:text-faint px-4 py-3 outline-none focus:border-accent resize-none"
+        />
+      )}
       {state === 'error' && <p role="alert" className="text-[13px] font-semibold text-bad mt-2">Couldn't save that. Your session is still saved.</p>}
       {(rating > 0 || note.trim()) && (
-        <Button variant="soft" block className="mt-3" onClick={save} disabled={state === 'saving'}>
+        <Button variant="soft" block className="mt-2.5" onClick={save} disabled={state === 'saving'}>
           {state === 'saving' ? 'Saving...' : 'Save'}
         </Button>
       )}
-    </Card>
+    </div>
   )
 }
 
-export function WorkoutComplete({ workoutName, stats, onDone, coachName, hasCoach }) {
+// "6,240" kg reads better as "6.2t" once it passes a tonne.
+function fmtLifted(kg) {
+  const v = Math.round(kg)
+  return v >= 1000 ? { value: `${(v / 1000).toFixed(1).replace(/\.0$/, '')}t`, label: 'lifted' } : { value: v.toLocaleString('en-AU'), label: 'kg lifted' }
+}
+
+function weekLine(week, streak) {
+  const left = week.scheduled - week.done
+  const streakBit = streak > 1 ? `That makes ${streak} weeks in a row. ` : ''
+  if (week.scheduled > 0 && left > 0) return `${streakBit}${left === 1 ? 'One more' : `${left} more`} this week and the week is yours.`
+  return `${streakBit}The ring stays open, there is always next week.`
+}
+
+export function WorkoutComplete({ workoutName, stats, week, streak = 0, onDone, coachName, hasCoach }) {
   const { newPBs = [], totalVolume = 0, setsCompleted = 0, exerciseCount = 0, logId = null } = stats || {}
+  const [sharing, setSharing] = useState(null)
+  const lifted = totalVolume > 0 ? fmtLifted(totalVolume) : null
   const tiles = [
-    { label: setsCompleted === 1 ? 'Set' : 'Sets', value: setsCompleted },
-    { label: exerciseCount === 1 ? 'Exercise' : 'Exercises', value: exerciseCount },
-    totalVolume > 0 ? { label: 'kg moved', value: Math.round(totalVolume).toLocaleString('en-AU') } : null,
+    { label: setsCompleted === 1 ? 'set ticked' : 'sets ticked', value: setsCompleted },
+    { label: exerciseCount === 1 ? 'exercise' : 'exercises', value: exerciseCount },
+    lifted,
   ].filter(Boolean)
+  const wk = week && week.scheduled > 0 ? week : null
+  const firstPB = newPBs[0]
   return (
     <Overlay z="z-50">
-      <div className="flex-1 overflow-y-auto px-4 pt-16 pb-6 space-y-6">
-        <div className="text-center">
-          <span className="inline-flex w-20 h-20 rounded-full bg-accent-soft text-ink items-center justify-center mb-4">
-            <Mark size={44} />
-          </span>
-          <h1 className="font-display text-[32px] leading-tight text-ink">Session completed</h1>
-          <p className="text-muted mt-1">{workoutName}. That's another one in the bank.</p>
+      <div className="flex-1 overflow-y-auto px-5 pt-14 pb-6 space-y-5">
+        <div>
+          <p className="text-[14px] font-semibold text-muted">{workoutName}</p>
+          <h1 className="font-display text-[clamp(56px,17vw,76px)] leading-[0.86] tracking-[-1px] text-ink mt-2">Done.<br />Not finished.</h1>
         </div>
 
-        <Card className={`grid divide-x divide-line ${tiles.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`} padded={false}>
+        <Hero className="flex items-center gap-4">
+          <Ring value={wk ? wk.done / wk.scheduled : 1} size={84} stroke={10} color="var(--on-hero)" track="var(--hero-track)" dot="var(--hero-dot)" />
+          <div className="min-w-0">
+            <p className="font-display text-[26px] leading-tight">{wk ? `${wk.done} of ${wk.scheduled} this week` : 'Another one in the bank'}</p>
+            <p className="text-[14px] leading-snug text-hero-muted mt-0.5">{weekLine(wk || { scheduled: 0, done: 0 }, streak)}</p>
+          </div>
+        </Hero>
+
+        <div className={`grid gap-3 ${tiles.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {tiles.map((t) => (
-            <div key={t.label} className="py-4 text-center">
-              <p className="font-display text-[28px] leading-none text-ink tabular-nums">{t.value}</p>
-              <p className="text-xs text-muted mt-1.5">{t.label}</p>
+            <div key={t.label} className="border-l-2 border-line-strong pl-3">
+              <p className="font-display text-[30px] leading-none text-ink tabular-nums">{t.value}</p>
+              <p className="text-[13px] text-muted mt-1">{t.label}</p>
             </div>
           ))}
-        </Card>
+        </div>
 
-        {newPBs.length > 0 && (
-          <div>
-            <h2 className="text-[13px] font-semibold text-muted mb-2.5 px-1">New personal bests</h2>
-            <Card padded={false} className="divide-y divide-line">
-              {newPBs.map((pb, i) => {
-                const meta = PB_LABELS[pb.type] || { label: pb.label, desc: '' }
-                return (
-                  <div key={i} className="flex items-center gap-3 px-4 py-3.5">
-                    <span className="w-10 h-10 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
-                      <Trophy size={20} />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[15px] font-bold text-ink truncate">{pb.exerciseName}</p>
-                      <p className="text-[13px] text-muted">
-                        {meta.label} · up from {pb.previous} {pb.unit}
-                      </p>
-                    </div>
-                    <p className="font-display text-[24px] text-accent tabular-nums shrink-0">
-                      {pb.value}<span className="font-sans text-xs font-bold text-muted ml-0.5">{pb.unit}</span>
-                    </p>
-                  </div>
-                )
-              })}
-            </Card>
-          </div>
-        )}
+        {newPBs.map((pb, i) => {
+          const meta = PB_LABELS[pb.type] || { label: pb.label }
+          return (
+            <section key={i} className="flex items-center gap-3.5 rounded-[24px] bg-tan text-on-tan px-4 py-4">
+              <Trophy size={28} className="shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-semibold opacity-80">New personal best{meta.label ? `, ${meta.label.toLowerCase()}` : ''}</p>
+                <p className="text-[16px] font-bold truncate">{pb.exerciseName}</p>
+              </div>
+              <p className="font-display text-[32px] leading-none tabular-nums shrink-0">
+                {pb.value}<span className="text-[16px]"> {pb.unit}</span>
+              </p>
+            </section>
+          )
+        })}
 
         <SessionFeel logId={logId} coachName={coachName} hasCoach={hasCoach} />
       </div>
-      <div className="shrink-0 border-t border-line px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
-        <Button size="lg" block onClick={onDone}>Back to home</Button>
+      <div className="shrink-0 px-5 pt-3 pb-[max(env(safe-area-inset-bottom),16px)] space-y-2.5">
+        {firstPB && (
+          <Button size="lg" block onClick={() => setSharing(firstPB)}><Share2 size={18} /> Share to my story</Button>
+        )}
+        <Button size="lg" block variant={firstPB ? 'secondary' : 'primary'} onClick={onDone}>Back to home</Button>
       </div>
+      <ShareSheet pb={sharing} onClose={() => setSharing(null)} />
     </Overlay>
   )
 }
@@ -378,7 +396,6 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
   const totalSetsCount = loggableExercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)
   const doneSetsCount = loggableExercises.reduce((sum, ex) => sum + Object.values(setData[ex.id] || {}).filter((s) => s.done).length, 0)
   const allDone = hasSetTracking && totalSetsCount > 0 && doneSetsCount >= totalSetsCount
-  const progressPct = totalSetsCount > 0 ? Math.round((doneSetsCount / totalSetsCount) * 100) : 0
 
   // The first set not ticked yet, so the screen can say what is next.
   let nextUp = null
@@ -597,6 +614,15 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName, logId: log.id })
   }
 
+  const exDoneOf = (ex) => loggable(ex) && Array.from({ length: ex.sets || 0 }, (_, i) => setData[ex.id]?.[i + 1]?.done).every(Boolean)
+  const segExercises = hasSetTracking ? trackedExercises.filter(loggable) : EMPTY
+  const currentIdx = nextUp ? segExercises.findIndex((ex) => ex.id === nextUp.ex.id) : -1
+  const subline = existingLog?.id
+    ? 'Editing this session'
+    : currentIdx >= 0
+      ? `Exercise ${currentIdx + 1} of ${segExercises.length}`
+      : segExercises.length > 0 && allDone ? 'Every set ticked' : 'Workout'
+
   const inputCls = (done) => cx(
     'w-full h-10 rounded-[12px] text-center text-[15px] font-bold tabular-nums outline-none transition-colors',
     done ? 'bg-transparent border border-transparent text-ink' : 'bg-bg border border-line-strong text-ink placeholder:text-faint placeholder:font-semibold focus:border-accent',
@@ -604,28 +630,42 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
 
   return (
     <Overlay>
-      <BackHeader
-        onBack={handleBack}
-        eyebrow={hasSetTracking && totalSetsCount > 0 ? `${doneSetsCount} of ${plural(totalSetsCount, 'set')}` : existingLog?.id ? 'Editing' : 'Workout'}
-        title={workoutName}
-      >
-        {hasSetTracking && totalSetsCount > 0 && (
-          <div className="h-1.5 rounded-full bg-surface-2 mt-3 overflow-hidden">
-            <div className="h-full rounded-full bg-accent transition-all duration-300" style={{ width: `${progressPct}%` }} />
+      <div className="shrink-0 bg-bg px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3">
+        <div className="flex items-center gap-3">
+          <button onClick={handleBack} aria-label="Close workout" className="w-11 h-11 rounded-full border border-line-strong flex items-center justify-center text-ink hover:bg-surface-2 shrink-0">
+            <X size={20} />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-[15px] font-bold text-ink truncate leading-tight">{workoutName}</h1>
+            <p className="text-[13px] text-muted truncate">{subline}</p>
+          </div>
+          {hasSetTracking && totalSetsCount > 0 && (
+            <p className="font-display text-[26px] leading-none text-ink tabular-nums shrink-0" aria-label={`${doneSetsCount} of ${plural(totalSetsCount, 'set')} done`}>
+              {doneSetsCount}<span className="text-[16px] text-muted">/{totalSetsCount}</span>
+            </p>
+          )}
+        </div>
+        {segExercises.length > 0 && (
+          <div className="grid gap-1 mt-3" style={{ gridTemplateColumns: `repeat(${segExercises.length}, minmax(0, 1fr))` }} aria-hidden="true">
+            {segExercises.map((ex) => (
+              <span key={ex.id} className={cx('h-1.5 rounded-full transition-colors', exDoneOf(ex) ? 'bg-ink' : nextUp?.ex.id === ex.id ? 'bg-tan' : 'bg-surface-2')} />
+            ))}
           </div>
         )}
-      </BackHeader>
+      </div>
 
       {restTimer !== null && (
-        <div className="shrink-0 bg-accent text-on-accent px-4 py-2.5 flex items-center gap-3">
-          <Timer size={20} className="shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="font-display text-[24px] leading-none tabular-nums">{fmtTime(restTimer)}</p>
-            {nextUp && <p className="text-[13px] font-semibold truncate mt-0.5 opacity-90">Next: {nextUp.ex.exercises?.name || 'Exercise'}, set {nextUp.set}</p>}
+        <div className="shrink-0 px-4 pb-2">
+          <div className="flex items-center gap-2.5 rounded-full bg-surface-2 text-ink pl-4 pr-1.5 py-1.5">
+            <Timer size={18} className="shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-bold leading-tight">Rest <span className="tabular-nums">{fmtTime(restTimer)}</span></p>
+              {nextUp && <p className="text-[12px] text-muted truncate">Next: {nextUp.ex.exercises?.name || 'Exercise'}, set {nextUp.set}</p>}
+            </div>
+            <button onClick={skipRest} className="h-9 px-3.5 rounded-full bg-surface text-ink text-[13px] font-bold flex items-center gap-1.5 shrink-0">
+              <SkipForward size={15} /> Skip rest
+            </button>
           </div>
-          <button onClick={skipRest} className="h-9 px-3.5 rounded-full text-sm font-bold flex items-center gap-1.5 shrink-0" style={{ backgroundColor: 'rgba(0,0,0,0.12)' }}>
-            <SkipForward size={16} /> Skip
-          </button>
         </div>
       )}
 
@@ -644,10 +684,21 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
             const exSetData = setData[rowKey] || {}
             const prevSets = previousSets[exerciseId] || []
             const muscle = ex.exercises?.muscle_group
-            const exDone = loggable(ex) && Array.from({ length: ex.sets || 0 }, (_, i) => exSetData[i + 1]?.done).every(Boolean)
+            const exDone = exDoneOf(ex)
+            const isCurrent = nextUp?.ex.id === rowKey
+            const last = prevSets[0]
             return (
-              <Card key={rowKey} padded={false} className="overflow-hidden">
-                <div className="px-4 pt-3.5 pb-2.5 flex items-start gap-3">
+              <div key={rowKey} className="space-y-3">
+              {isCurrent && (
+                <Hero>
+                  <p className="font-display text-[30px] leading-[1.05]">{ex.exercises?.name || 'Exercise'}</p>
+                  <p className="text-[15px] font-semibold mt-1.5">{ex.sets} {ex.sets === 1 ? 'set' : 'sets'} of {ex.reps}{ex.rest_seconds ? `, ${ex.rest_seconds}s rest` : ''}</p>
+                  {last && <p className="text-[14px] text-hero-muted mt-0.5">Last time {last.weight_kg > 0 ? `${last.weight_kg} kg for ${last.reps}` : plural(last.reps, 'rep')}</p>}
+                  {ex.notes && <p className="mt-3.5 rounded-[16px] bg-hero-chip px-3.5 py-3 text-[14px] leading-snug">{ex.notes}</p>}
+                </Hero>
+              )}
+              <Card padded={false} className="overflow-hidden">
+                {!isCurrent && <div className="px-4 pt-3.5 pb-2.5 flex items-start gap-3">
                   <span className={cx('w-7 h-7 rounded-full text-[13px] font-bold flex items-center justify-center shrink-0 mt-0.5', exDone ? 'bg-accent text-on-accent' : 'bg-surface-2 text-muted')}>
                     {exDone ? <Check size={15} strokeWidth={3} /> : idx + 1}
                   </span>
@@ -659,7 +710,8 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                     {ex.notes && <p className="text-[13px] text-muted italic mt-1">{ex.notes}</p>}
                   </div>
                   {muscle && <Chip className="mt-0.5">{muscle}</Chip>}
-                </div>
+                </div>}
+                {isCurrent && <div className="h-2" />}
 
                 {loggable(ex) && <div className="grid grid-cols-[28px_1fr_64px_56px_40px] gap-2 items-center px-3 pb-1 text-[11px] font-semibold text-faint">
                   <span className="text-center">Set</span>
@@ -714,20 +766,21 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                 })}
                 <div className="h-2" />
               </Card>
+              </div>
             )
           })
         )}
       </div>
 
       {planOnly ? (
-        <div className="shrink-0 border-t border-line bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
+        <div className="shrink-0 bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
           {saveError && <p role="alert" className="text-[13px] font-semibold text-bad text-center mb-2.5">{saveError}</p>}
           <Button size="lg" block onClick={handleCompleteCustom} disabled={completing}>
             {completing ? 'Saving...' : 'Mark as done'}
           </Button>
         </div>
       ) : hasSetTracking && trackedExercises.length > 0 && (
-        <div className="shrink-0 border-t border-line bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
+        <div className="shrink-0 bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
           {saveError && <p role="alert" className="text-[13px] font-semibold text-bad text-center mb-2.5">{saveError}</p>}
           <Button size="lg" block onClick={handleComplete} disabled={!allDone || completing}>
             {completing ? 'Saving your session...' : allDone ? 'Finish workout' : `Tick ${plural(totalSetsCount - doneSetsCount, 'more set', 'more sets')} to finish`}

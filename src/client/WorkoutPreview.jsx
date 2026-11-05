@@ -81,7 +81,7 @@ export default function WorkoutPreview({ eyebrow, title, exercises = [], customC
         ) : null}
       </div>
       {footer && (
-        <div className="shrink-0 border-t border-line bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">{footer}</div>
+        <div className="shrink-0 bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">{footer}</div>
       )}
     </Overlay>
   )
