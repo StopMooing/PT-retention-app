@@ -13,13 +13,9 @@ const DIETS = [
   { id: 'pescatarian', label: 'Pescatarian' },
 ]
 
-// Pescatarian also takes every vegetarian recipe; vegetarian takes every vegan one.
-function fitsDiet(r, diet) {
-  const d = r.diets ?? []
-  if (diet === 'all') return true
-  if (diet === 'pescatarian') return d.includes('pescatarian') || d.includes('vegetarian')
-  return d.includes(diet)
-}
+// Each recipe's diets come from its ingredients (tools/meal-library), so a vegan recipe is
+// also vegetarian and pescatarian.
+const fitsDiet = (r, diet) => diet === 'all' || (r.diets ?? []).includes(diet)
 
 function Pill({ active, onClick, children }) {
   return (

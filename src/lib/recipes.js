@@ -119,9 +119,9 @@ export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
 
 export const PLAN_FAMILIES = {
   balanced: { name: 'Everyday balanced', blurb: 'Familiar Aussie food: chicken, lean beef, eggs, oats, rice and plenty of veg.' },
-  budget: { name: 'Quick and budget', blurb: 'Cheap staples and pantry meals, most ready in under 20 minutes.' },
+  budget: { name: 'Quick and budget', blurb: 'Cheap staples and pantry meals. Quick breakfasts, lunches and snacks, and one-pan or one-tray dinners.' },
   mediterranean: { name: 'Mediterranean', blurb: 'Olive oil, Greek yoghurt, chicken, lamb, legumes, wholegrains and salads.' },
-  vegetarian: { name: 'Vegetarian', blurb: 'No meat or fish. Eggs, dairy, beans, lentils and halloumi carry the protein.' },
+  vegetarian: { name: 'Vegetarian', blurb: 'No meat or fish. Eggs, dairy, beans, lentils, paneer and halloumi carry the protein.' },
   vegan: { name: 'Vegan', blurb: 'Fully plant based. Tofu, lentils, chickpeas, edamame and soy milk.' },
   pescatarian: { name: 'Pescatarian', blurb: 'No meat. Salmon, prawns, tuna and white fish, plus eggs and dairy.' },
 }

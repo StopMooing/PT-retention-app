@@ -17,10 +17,14 @@ function load() {
   const foodsById = Object.fromEntries(Object.values(require('../meal-library/foods.json')).map(([id, ...m]) => [id, m]))
   const recipes = []
   const recipe_ingredients = []
-  for (const f of files.filter((x) => /_meal_library_recipes_\d\.sql$/.test(x)).sort()) {
+  // The latest full refresh if there is one, otherwise the first seed.
+  const refresh = files.filter((x) => /_meal_library_refresh\.sql$/.test(x)).sort().pop()
+  const sources = refresh ? [refresh] : files.filter((x) => /_meal_library_recipes_\d\.sql$/.test(x)).sort()
+  for (const f of sources) {
     const lines = fs.readFileSync(path.join(MIG, f), 'utf8').split('\n')
-    const ids = JSON.parse(lines[1].slice(lines[1].indexOf("'") + 1, lines[1].lastIndexOf("'")))
-    for (const r of jsonIn(lines[2])) {
+    const idLine = lines.find((l) => l.startsWith('with f(ids)'))
+    const ids = JSON.parse(idLine.slice(idLine.indexOf("'") + 1, idLine.lastIndexOf("'")))
+    for (const r of jsonIn(lines.find((l) => l.startsWith('d(r) as')))) {
       const rid = uuid(r.k)
       recipes.push({ id: rid, slug: r.k, family: r.f, day_type: r.d, meal_type: r.m, name: r.n, description: r.ds, prep_minutes: r.pr, cook_minutes: r.ck, steps: r.st, tip: r.tp, diets: r.dt, calories: r.c, protein_g: r.p, carbs_g: r.cb, fats_g: r.ft, position: r.ps })
       r.i.forEach((e, pos) => {
@@ -31,8 +35,8 @@ function load() {
       })
     }
   }
-  const planFile = files.find((x) => /_meal_library_plans\.sql$/.test(x))
-  const plans = jsonIn(fs.readFileSync(path.join(MIG, planFile), 'utf8').split('\n')[1])
+  const planFile = refresh || files.find((x) => /_meal_library_plans\.sql$/.test(x))
+  const plans = jsonIn(fs.readFileSync(path.join(MIG, planFile), 'utf8').split('\n').find((l) => l.startsWith('with d(p, ord)')))
   const meal_plan_library = plans.map((p, i) => ({
     id: uuid(p.s), slug: p.s, family: p.f, family_name: p.fn, sex: p.x, goal: p.g, name: p.n, description: p.ds,
     ref_weight_kg: p.w, ref_height_cm: p.h, ref_age: p.a, activity_factor: p.af, maintenance_calories: p.mc,

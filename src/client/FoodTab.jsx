@@ -380,7 +380,8 @@ export default function FoodTab({
     setRecipeOpen({ recipe: m.recipe, servings: m.servings, meal: m.item.meal_type, planItemId: planItemFor(m) })
   }
 
-  // Starting a plan with no daily target yet makes the plan's numbers the target.
+  // Starting a plan with no daily target yet makes the plan's daily average the target, so
+  // ticking off every meal lands on it.
   async function handleStartPlan(plan) {
     setPlanBusy(true)
     const { choice: next, error } = await startPlan(client.id, plan.id)
@@ -392,7 +393,7 @@ export default function FoodTab({
     }
     let setTargets = false
     if (!client.calorie_target) {
-      const t = { calories: plan.target_calories, protein: plan.target_protein_g, carbs: plan.target_carbs_g, fats: plan.target_fats_g }
+      const t = { calories: plan.avg_calories, protein: plan.avg_protein_g, carbs: plan.avg_carbs_g, fats: plan.avg_fats_g }
       const { error: tErr } = await supabase.from('clients')
         .update({ calorie_target: t.calories, protein_target_g: t.protein, carbs_target_g: t.carbs, fats_target_g: t.fats })
         .eq('id', client.id)
