@@ -1,5 +1,5 @@
-// Calorie calculator (Mifflin-St Jeor). "Use this" saves the calorie and macro targets on
-// the client row, exactly as before.
+// Calorie calculator (Mifflin-St Jeor). "Use" saves the calorie and macro targets on the
+// client row. Always available from Nutrition, since bodies and so targets keep changing.
 import { useState } from 'react'
 import { supabase } from '../supabase'
 import { Sheet, Button, Field, Segmented } from '../ui'
@@ -13,7 +13,7 @@ const ACTIVITY = [
   ['1.9', 'Physical job plus training'],
 ]
 
-export default function TdeeSheet({ open, onClose, client, onSaved }) {
+export default function TdeeSheet({ open, onClose, client, currentKcal, onSaved }) {
   const [inputs, setInputs] = useState({ age: '', gender: 'male', heightCm: '', weightKg: '', activity: '1.55' })
   const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
@@ -55,6 +55,9 @@ export default function TdeeSheet({ open, onClose, client, onSaved }) {
   return (
     <Sheet open={open} onClose={() => { setResult(null); setError(null); onClose() }} title="Calorie calculator">
       <div className="space-y-4">
+        {currentKcal > 0 && (
+          <p className="text-[14px] text-muted -mt-1 tabular-nums">Your daily target is {Math.round(currentKcal).toLocaleString('en-AU')} kcal now. Picking a new number below replaces it.</p>
+        )}
         <Segmented value={inputs.gender} onChange={(g) => setInputs((p) => ({ ...p, gender: g }))} options={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]} />
         <div className="grid grid-cols-3 gap-3">
           <Field label="Age" inputMode="numeric" value={inputs.age} onChange={set('age')} />

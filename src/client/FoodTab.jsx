@@ -473,6 +473,8 @@ export default function FoodTab({
           choice={choice}
           startSex={(myPlan || closestPlan(library.plans, targets.kcal))?.sex}
           startGoal={(myPlan || closestPlan(library.plans, targets.kcal))?.goal}
+          targetKcal={targets.kcal}
+          onWorkOut={() => setTdeeOpen(true)}
           busy={planBusy}
           onStart={handleStartPlan}
           onStop={handleStopPlan}
@@ -524,16 +526,11 @@ export default function FoodTab({
 
           <MealPlanCard client={client} />
 
-          <Button variant="secondary" size="lg" block onClick={onOpenAI} className="!bg-transparent"><Sparkles size={18} /> Meal ideas with AI</Button>
-
-          {/* Only when the coach hasn't set targets: theirs come first. */}
-          {!client.calorie_target && targets.kcal > 0 && (
-            <div className="flex justify-center">
-              <Button variant="ghost" size="sm" onClick={() => setTdeeOpen(true)} className="text-muted">
-                <Calculator size={16} /> Work out my calorie target
-              </Button>
-            </div>
-          )}
+          {/* Always here: bodies change, so targets do too. */}
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="secondary" size="lg" onClick={onOpenAI} className="!bg-transparent !px-2 whitespace-nowrap"><Sparkles size={18} /> AI meal ideas</Button>
+            <Button variant="secondary" size="lg" onClick={() => setTdeeOpen(true)} className="!bg-transparent !px-2 whitespace-nowrap"><Calculator size={18} /> Calories</Button>
+          </div>
         </div>
       )}
 
@@ -571,6 +568,7 @@ export default function FoodTab({
         open={tdeeOpen}
         onClose={() => setTdeeOpen(false)}
         client={client}
+        currentKcal={targets.kcal}
         onSaved={(t) => {
           setNutritionTargets(t)
           setClient((prev) => ({ ...prev, calorie_target: t.calories, protein_target_g: t.protein, carbs_target_g: t.carbs, fats_target_g: t.fats }))

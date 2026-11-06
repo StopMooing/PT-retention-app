@@ -3,10 +3,10 @@
 // Tue, Thu and Sat are the same, and Sunday is its own day. Starting a plan puts each
 // day's meals on the food log, ready to tick off.
 import { useEffect, useState } from 'react'
-import { ChevronRight, Check } from 'lucide-react'
+import { ChevronRight, Check, Calculator } from 'lucide-react'
 import { Card, Button, Segmented, Sheet, Chip } from '../ui'
 import { DAY_TYPES, GOALS, PLAN_FAMILIES, REFERENCE, formatServes, planDayType } from '../lib/recipes'
-import { fetchPlanItems, planDay } from '../lib/mealLibrary'
+import { fetchPlanItems, planDay, closestPlan } from '../lib/mealLibrary'
 import { toLocalDateStr } from './dates'
 import { capitalise } from './foods'
 
@@ -88,7 +88,7 @@ function PlanSheet({ plan, recipes, isMine, onClose, onStart, onStop, onOpenReci
   )
 }
 
-export default function PlansView({ plans, recipes, choice, startSex, startGoal, onStart, onStop, onOpenRecipe, busy }) {
+export default function PlansView({ plans, recipes, choice, startSex, startGoal, targetKcal, onWorkOut, onStart, onStop, onOpenRecipe, busy }) {
   const [sex, setSex] = useState(startSex || 'male')
   const [goal, setGoal] = useState(startGoal || 'maintain')
   const [openId, setOpenId] = useState(null)
@@ -140,6 +140,31 @@ export default function PlansView({ plans, recipes, choice, startSex, startGoal,
           </Card>
         )
       })}
+
+      {/* For anyone who is not the average size: their own number, then the nearest plan. */}
+      <Card>
+        <p className="text-[17px] font-bold text-ink">Not the average size?</p>
+        {targetKcal > 0 ? (() => {
+          const near = closestPlan(plans, targetKcal)
+          const showing = near && near.sex === sex && near.goal === goal
+          return (
+            <>
+              <p className="text-[15px] text-muted mt-1 tabular-nums">
+                Your daily target is {n(targetKcal)} kcal. The closest plans are {capitalise(near.sex).toLowerCase()}, {GOALS[near.goal].name.toLowerCase()}, at about {n(near.avg_calories)} kcal. Change the serves on any meal to fine-tune.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {!showing && <Button size="sm" onClick={() => { setSex(near.sex); setGoal(near.goal) }}>Show those plans</Button>}
+                <Button variant="secondary" size="sm" onClick={onWorkOut}><Calculator size={16} /> Recalculate</Button>
+              </div>
+            </>
+          )
+        })() : (
+          <>
+            <p className="text-[15px] text-muted mt-1">Work out your own daily calories, and we'll point you to the plans that fit best.</p>
+            <Button variant="secondary" size="sm" className="mt-3" onClick={onWorkOut}><Calculator size={16} /> Work out my calories</Button>
+          </>
+        )}
+      </Card>
 
       {open && (
         <PlanSheet
