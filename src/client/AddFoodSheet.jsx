@@ -1,13 +1,16 @@
 // Add food to the log: search (AFCD, common foods, Open Food Facts), scan a barcode, pick
 // a serving size, or type the numbers in by hand. Saves one food_logs row, as before.
 // A scanned product nobody has added yet can be entered once from the label; it is then
-// saved to the shared product list for everyone.
+// saved to the shared product list for everyone. With the search box empty it offers the
+// day before's meal (one tap copies it, ingredients and all) and recent foods.
 import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
-import { Search, ScanBarcode } from 'lucide-react'
+import { Search, ScanBarcode, Copy, History } from 'lucide-react'
 import { supabase } from '../supabase'
 import { Sheet, Button, Field } from '../ui'
 import { searchFoods, MEAL_ORDER, capitalise } from './foods'
 import { lookupBarcode, saveBarcodeProduct } from './barcode'
+import { FOOD_LOG_SELECT, mealItems, copyLogs } from '../lib/meals'
+import { addDays, toLocalDateStr } from './dates'
 
 const BarcodeScanner = lazy(() => import('./BarcodeScanner'))
 const EMPTY_PRODUCT = { name: '', brand: '', serving: '', calories: '', protein: '', carbs: '', fats: '' }
@@ -26,6 +29,8 @@ function mealForNow() {
 
 // Mount it only while open, so each time it starts clean on the meal it was opened for.
 export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdded }) {
+  const [history, setHistory] = useState(null) // the last 30 days of this client's logs
+  const [copying, setCopying] = useState(false)
   const [foodInput, setFoodInput] = useState(() => ({ ...EMPTY_INPUT, meal_type: defaultMeal || mealForNow() }))
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
@@ -44,6 +49,61 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
   const timer = useRef(null)
 
   useEffect(() => () => clearTimeout(timer.current), [])
+
+  // Recent foods and the day before's meals come from one read of the last 30 days.
+  useEffect(() => {
+    let live = true
+    supabase.from('food_logs').select(FOOD_LOG_SELECT).eq('client_id', client.id)
+      .gte('logged_at', addDays(date, -30)).lte('logged_at', date)
+      .order('created_at', { ascending: false }).limit(300)
+      .then(({ data, error: e }) => { if (live) { if (e) console.error('Recent foods error:', e); setHistory(data ?? []) } })
+    return () => { live = false }
+  }, [client.id, date])
+
+  const dayBefore = addDays(date, -1)
+  const meal = foodInput.meal_type
+  const yesterdays = (history ?? []).filter((f) => f.logged_at === dayBefore && (f.meal_type || 'other').toLowerCase() === meal)
+  const yesterdayKcal = Math.round(yesterdays.reduce((t, f) => t + (Number(f.calories) || 0), 0))
+  // Single foods (not whole meals), newest first, each name once.
+  const recent = []
+  for (const f of history ?? []) {
+    if (recent.length >= 8) break
+    if (mealItems(f).length > 0 || f.recipe_id || !f.food_name) continue
+    if (recent.some((r) => r.food_name.toLowerCase() === f.food_name.toLowerCase())) continue
+    recent.push(f)
+  }
+
+  async function copyYesterday() {
+    setCopying(true)
+    setError(null)
+    const { added, error: e } = await copyLogs([...yesterdays].reverse(), { date, mealType: meal })
+    setCopying(false)
+    for (const row of added) onAdded(row, { quiet: true })
+    if (e) { console.error('Copy meal error:', e); setError("Couldn't copy all of it. Check your log and try again."); return }
+    onAdded(null, { copied: added.length, meal })
+    onClose()
+  }
+
+  // A recent food fills in the same amount as last time; the serving can still change.
+  function pickRecent(f) {
+    const g = Number(f.serving_size_g) || 0
+    const serves = Number(f.servings) || 1
+    const macros = { calories: Number(f.calories) || 0, protein: Number(f.protein_g) || 0, carbs: Number(f.carbs_g) || 0, fats: Number(f.fats_g) || 0 }
+    const per = (k) => Object.fromEntries(Object.entries(macros).map(([n, v]) => [n, v * k]))
+    if (serves !== 1 || (g === 0 && f.servings > 1)) {
+      pick({ name: f.food_name, perServe: true, servingG: g || null, ...per(1 / serves) }, serves)
+    } else if (g > 0) {
+      pick({ name: f.food_name, ...per(100 / g) }, g)
+    } else {
+      setBase(null)
+      setPerServe(false)
+      setFoodInput((x) => ({ ...x, name: f.food_name, calories: String(Math.round(macros.calories)), protein: String(macros.protein), carbs: String(macros.carbs), fats: String(macros.fats) }))
+      setQuery(f.food_name)
+      setResults([])
+    }
+    setBarcode(f.barcode || null)
+  }
+  const showStarters = !query && !newProduct && !base && history
 
   function onQuery(value) {
     setQuery(value)
@@ -227,6 +287,33 @@ export default function AddFoodSheet({ onClose, date, defaultMeal, client, onAdd
               <Button className="flex-1" disabled={savingProduct || !newProduct.name.trim() || newProduct.calories === ''} onClick={handleSaveProduct}>
                 {savingProduct ? 'Saving...' : 'Save product'}
               </Button>
+            </div>
+          </div>
+        )}
+
+        {showStarters && yesterdays.length > 0 && (
+          <button onClick={copyYesterday} disabled={copying} className="w-full flex items-center gap-3 rounded-[16px] bg-accent-soft px-4 py-3 text-left disabled:opacity-60">
+            <Copy size={20} className="text-ink shrink-0" />
+            <span className="flex-1 min-w-0">
+              <span className="block text-[15px] font-bold text-ink">{copying ? 'Copying...' : `Same ${meal === 'other' ? 'foods' : meal} as ${dayBefore === addDays(toLocalDateStr(), -1) ? 'yesterday' : 'the day before'}`}</span>
+              <span className="block text-[13px] text-muted truncate">{yesterdays.map((f) => f.food_name).join(', ')} · {yesterdayKcal} kcal</span>
+            </span>
+          </button>
+        )}
+
+        {showStarters && recent.length > 0 && (
+          <div>
+            <p className="text-[13px] font-semibold text-muted px-1 mb-1.5 flex items-center gap-1.5"><History size={14} /> Recent</p>
+            <div className="rounded-[16px] border border-line divide-y divide-line overflow-hidden">
+              {recent.map((f) => (
+                <button key={f.id} type="button" onClick={() => pickRecent(f)} className="w-full text-left px-4 py-3 hover:bg-surface-2">
+                  <p className="text-[15px] font-bold text-ink truncate">{f.food_name}</p>
+                  <p className="text-[13px] text-muted truncate tabular-nums">
+                    {Math.round(f.calories || 0)} kcal · P {Math.round(f.protein_g || 0)} · C {Math.round(f.carbs_g || 0)} · F {Math.round(f.fats_g || 0)}
+                    <span className="text-faint">{Number(f.servings) > 1 ? ` · ${f.servings} serves` : f.serving_size_g ? ` · ${Math.round(f.serving_size_g)} g` : ''}</span>
+                  </p>
+                </button>
+              ))}
             </div>
           </div>
         )}

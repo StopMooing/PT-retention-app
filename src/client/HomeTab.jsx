@@ -4,7 +4,7 @@
 // sections are hidden. Tapping a day on the week strip opens a summary of that day, with
 // arrows to step through the days.
 import { useState } from 'react'
-import { Trophy, ChevronRight, ChevronLeft, Check, Pencil } from 'lucide-react'
+import { Trophy, ChevronRight, ChevronLeft, Check, Pencil, BookOpen } from 'lucide-react'
 import { Card, Button, Chip, Avatar, Sheet, Hero, Ring } from '../ui'
 import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate, formatDateLabel, addDays, daysBetween } from './dates'
 import {
@@ -216,6 +216,7 @@ export default function HomeTab({
   client, checkins, setCheckins, dailyCheckins, setDailyCheckins, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
   foodLogs, nutritionTargets, personalBests, coachName,
   onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onOpenWater, showToast, waterLogs,
+  resourceCount = 0, onOpenResources,
 }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [dailyOpen, setDailyOpen] = useState(false)
@@ -326,6 +327,18 @@ export default function HomeTab({
 
       <DailyCard todays={todaysDaily} onOpen={() => setDailyOpen(true)} />
       <HabitsCard client={client} showToast={showToast} />
+
+      {/* What the coach has shared (guides, videos, PDFs): only once there is something. */}
+      {resourceCount > 0 && onOpenResources && (
+        <Card as="button" onClick={onOpenResources} className="w-full flex items-center gap-3.5 text-left">
+          <BookOpen size={24} className="text-ink shrink-0" />
+          <span className="flex-1 min-w-0">
+            <span className="block text-[15px] font-bold text-ink">From {coachName || 'your coach'}</span>
+            <span className="block text-[13px] text-muted">{resourceCount} {resourceCount === 1 ? 'guide or resource' : 'guides and resources'}</span>
+          </span>
+          <ChevronRight size={18} className="text-faint shrink-0" />
+        </Card>
+      )}
 
       {/* Recent personal best: tan, the colour for wins */}
       {pb && (

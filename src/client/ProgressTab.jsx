@@ -20,6 +20,9 @@ function WeightCard({ client, weightLogs, setWeightLogs }) {
   const [showHistory, setShowHistory] = useState(false)
   const [error, setError] = useState(null)
   const today = toLocalDateStr()
+  // Weigh-ins can be logged for an earlier day (forgot yesterday), up to 30 days back.
+  const [logDate, setLogDate] = useState(today)
+  const [pickDay, setPickDay] = useState(false)
 
   const all = weightSeries(weightLogs)
   const from = period === 'all' ? '' : addDays(today, -parseInt(period, 10))
@@ -38,16 +41,18 @@ function WeightCard({ client, weightLogs, setWeightLogs }) {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       const mine = weightLogs
-        .filter((x) => x.logged_date === today && x.logged_by === user.id)
+        .filter((x) => x.logged_date === logDate && x.logged_by === user.id)
         .sort((a, b) => (String(a.created_at ?? '') < String(b.created_at ?? '') ? 1 : -1))[0]
       const cols = 'id, weight_kg, logged_date, logged_by, created_at'
       const { data, error: err } = mine
         ? await supabase.from('body_weight_logs').update({ weight_kg: w }).eq('id', mine.id).select(cols).single()
-        : await supabase.from('body_weight_logs').insert({ client_id: client.id, logged_by: user.id, weight_kg: w, logged_date: today }).select(cols).single()
+        : await supabase.from('body_weight_logs').insert({ client_id: client.id, logged_by: user.id, weight_kg: w, logged_date: logDate }).select(cols).single()
       if (err) throw err
-      setWeightLogs((prev) => (mine ? prev.map((x) => (x.id === mine.id ? { ...x, ...data } : x)) : [data, ...prev]))
+      setWeightLogs((prev) => (mine ? prev.map((x) => (x.id === mine.id ? { ...x, ...data } : x)) : [data, ...prev]).sort((a, b) => (a.logged_date < b.logged_date ? 1 : -1)))
       setInput('')
       setUpdating(false)
+      setLogDate(today)
+      setPickDay(false)
     } catch (e) {
       console.error('Log weight error:', e)
       setError("Couldn't save your weight. Try again.")
@@ -80,6 +85,9 @@ function WeightCard({ client, weightLogs, setWeightLogs }) {
             <div className="min-w-0">
               <p className="text-[13px] font-semibold text-hero-muted">{avg !== null ? 'Body weight, 7 day average' : 'Body weight'}</p>
               <p className="font-display text-[48px] leading-none tabular-nums mt-1">{fmtKg(avg ?? current)}<span className="text-[20px]"> kg</span></p>
+              {avg !== null && weightLogs[0] && (
+                <p className="text-[13px] text-hero-muted mt-1.5 tabular-nums">Latest {fmtKg(weightLogs[0].weight_kg)} kg, {weightLogs[0].logged_date === today ? 'today' : formatShortDate(weightLogs[0].logged_date)}</p>
+              )}
             </div>
             {change !== 0 && (
               <p className="text-[13px] font-semibold text-right text-hero-muted mb-1.5">
@@ -104,24 +112,43 @@ function WeightCard({ client, weightLogs, setWeightLogs }) {
       <Card padded={false}>
         <div className="p-4 space-y-3">
           {current === null && <p className="text-[15px] font-semibold text-ink">Body weight</p>}
-          {todayEntry && !updating ? (
+          {todayEntry && !updating && !pickDay ? (
             <div className="flex items-center gap-2 text-[15px]">
               <span className="text-ink">Logged <b>{todayEntry.weight_kg} kg</b> today.</span>
               <button onClick={() => { setInput(String(todayEntry.weight_kg)); setUpdating(true) }} className="text-ink underline underline-offset-2 font-semibold ml-auto">Update</button>
             </div>
           ) : (
+            <>
+            {pickDay && (
+              <label className="flex items-center gap-2 text-[15px] text-ink">
+                <span className="font-semibold">Day</span>
+                <input
+                  type="date" value={logDate} min={addDays(today, -30)} max={today}
+                  onChange={(e) => { const d = e.target.value; if (d && d <= today && d >= addDays(today, -30)) { setLogDate(d); const had = weightForDay(weightLogs, d); setInput(had ? String(had.weight_kg) : '') } }}
+                  className="h-10 px-3 rounded-[12px] border border-line-strong bg-surface text-ink outline-none focus:border-accent"
+                />
+              </label>
+            )}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
-                  type="text" inputMode="decimal" placeholder="Today's weight"
+                  type="text" inputMode="decimal" placeholder={logDate === today ? "Today's weight" : `Weight on ${formatShortDate(logDate)}`}
                   value={input} onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleLogWeight() }}
                   className="w-full h-12 pl-4 pr-10 rounded-[14px] border border-line-strong bg-surface text-ink placeholder:text-faint outline-none focus:border-accent tabular-nums"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted text-sm">kg</span>
               </div>
-              <Button onClick={handleLogWeight} disabled={saving || !input}>{saving ? 'Saving' : todayEntry ? 'Update' : 'Log'}</Button>
+              <Button onClick={handleLogWeight} disabled={saving || !input}>{saving ? 'Saving' : weightForDay(weightLogs, logDate) ? 'Update' : 'Log'}</Button>
             </div>
+            </>
+          )}
+          {!pickDay ? (
+            <button onClick={() => { setPickDay(true); setLogDate(addDays(today, -1)); const had = weightForDay(weightLogs, addDays(today, -1)); setInput(had ? String(had.weight_kg) : '') }} className="text-[13px] font-semibold text-muted underline underline-offset-2">
+              Missed a day? Log an earlier weigh-in
+            </button>
+          ) : (
+            <button onClick={() => { setPickDay(false); setLogDate(today); setInput('') }} className="text-[13px] font-semibold text-muted underline underline-offset-2">Back to today</button>
           )}
           {error && <p role="alert" className="text-[13px] font-semibold text-bad">{error}</p>}
         </div>
@@ -281,7 +308,7 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
   const train = sessionsThisWeek(scheduledWorkouts, completedIds)
   // Only what there is to celebrate: no zeros, the streak only once there is one.
   const showingUp = [
-    streak > 0 && `${plural(streak, 'week')} in a row${best > streak ? `, best ${best}` : ''}.`,
+    streak > 0 ? `${plural(streak, 'week')} in a row${best > streak ? `, best ${best}` : ''}.` : best > 1 && `Best run: ${best} weeks in a row.`,
     train.scheduled > 0 && `${train.done} of ${train.scheduled} this week.`,
   ].filter(Boolean).join(' ')
 

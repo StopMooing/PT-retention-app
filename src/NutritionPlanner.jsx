@@ -4,6 +4,7 @@ import { supabase } from "./supabase";
 import { PageTitle, SectionLabel, Card, Button, Chip, Ring, Segmented, Sheet, EmptyState, Field } from "./ui";
 import { Loading, Toast, BackLink, Select, MiniField, SearchBox, FilterChips, ConfirmRemove } from "./tools/kit";
 import { useToast } from "./tools/useToast";
+import { searchFoods } from "./client/foods";
 
 const MEAL_TIMES = ["Breakfast", "Morning Snack", "Lunch", "Afternoon Snack", "Dinner", "Evening Snack", "Pre-Workout", "Post-Workout"];
 const MEAL_TIME_LABEL = {
@@ -233,24 +234,30 @@ export default function NutritionPlanner() {
   }, [showMealModal]);
 
   // ── Debounced food search (adding to a meal) ──
+  // The same search clients log with (Australian food database, takeaway menus, brands),
+  // so a plan's numbers match what the client logs. Everything here is per 100 g; a
+  // takeaway item counts per serve, so it is converted with its serve weight.
   useEffect(() => {
     if (!foodQuery || foodQuery.length < 2) { setFoodResults([]); return; }
     const t = setTimeout(async () => {
       setFoodLoading(true);
       try {
-        const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(foodQuery)}&search_simple=1&action=process&json=1&page_size=8&fields=product_name,brands,nutriments,serving_size,code`);
-        const json = await res.json();
-        const parsed = (json.products || [])
-          .filter(p => p.product_name && typeof p.nutriments?.["energy-kcal_100g"] === "number")
-          .map(p => ({
-            food_name: p.product_name,
-            brand: p.brands || "",
-            calories: p.nutriments["energy-kcal_100g"] || 0,
-            protein_g: p.nutriments["proteins_100g"] || 0,
-            carbs_g: p.nutriments["carbohydrates_100g"] || 0,
-            fats_g: p.nutriments["fat_100g"] || 0,
-            open_food_facts_id: p.code || "",
-          }));
+        const found = await searchFoods(foodQuery);
+        const parsed = found
+          .filter(r => !r.perServe || r.servingG > 0)
+          .map(r => {
+            const k = r.perServe ? 100 / r.servingG : 1;
+            return {
+              food_name: r.name,
+              brand: r.brand || "",
+              calories: r.calories * k,
+              protein_g: r.protein * k,
+              carbs_g: r.carbs * k,
+              fats_g: r.fats * k,
+              open_food_facts_id: "",
+              serve_g: r.perServe ? r.servingG : null,
+            };
+          });
         setFoodResults(parsed);
       } catch (err) { console.error("food search:", err); }
       finally { setFoodLoading(false); }
@@ -265,19 +272,22 @@ export default function NutritionPlanner() {
       setDbLoading(true);
       setDbSearched(true);
       try {
-        const res = await fetch(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(dbQuery)}&search_simple=1&action=process&json=1&page_size=12&fields=product_name,brands,nutriments,serving_size,image_small_url,code`);
-        const json = await res.json();
-        const parsed = (json.products || [])
-          .filter(p => p.product_name && typeof p.nutriments?.["energy-kcal_100g"] === "number")
-          .map(p => ({
-            code: p.code || p.product_name,
-            food_name: p.product_name,
-            brand: p.brands || "",
-            calories: p.nutriments["energy-kcal_100g"] || 0,
-            protein_g: p.nutriments["proteins_100g"] || 0,
-            carbs_g: p.nutriments["carbohydrates_100g"] || 0,
-            fats_g: p.nutriments["fat_100g"] || 0,
-          }));
+        // Same database clients log with; per 100 g (takeaway serves converted by weight).
+        const found = await searchFoods(dbQuery);
+        const parsed = found
+          .filter(r => !r.perServe || r.servingG > 0)
+          .map((r, i) => {
+            const k = r.perServe ? 100 / r.servingG : 1;
+            return {
+              code: `${r.name}-${i}`,
+              food_name: r.name,
+              brand: r.brand || "",
+              calories: r.calories * k,
+              protein_g: r.protein * k,
+              carbs_g: r.carbs * k,
+              fats_g: r.fats * k,
+            };
+          });
         setDbResults(parsed);
       } catch (err) { console.error("db food search:", err); }
       finally { setDbLoading(false); }
@@ -524,7 +534,7 @@ export default function NutritionPlanner() {
                 <li key={r.open_food_facts_id || i}>
                   <button
                     type="button"
-                    onClick={() => { setSelectedFood(r); setServingSize(100); }}
+                    onClick={() => { setSelectedFood(r); setServingSize(r.serve_g ? Math.round(r.serve_g) : 100); }}
                     className="w-full min-h-[56px] px-1 py-2 flex items-center justify-between gap-3 text-left hover:bg-surface-2 rounded-xl"
                   >
                     <span className="min-w-0">

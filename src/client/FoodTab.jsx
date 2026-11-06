@@ -540,7 +540,12 @@ export default function FoodTab({
           date={date}
           defaultMeal={addMeal}
           client={client}
-          onAdded={(row) => { setFoodLogs((prev) => [row, ...prev]); refreshFoodLogs(date); showToast(`Added ${row.food_name}`) }}
+          onAdded={(row, opts = {}) => {
+            if (row) setFoodLogs((prev) => [row, ...prev])
+            if (opts.quiet) return
+            refreshFoodLogs(date)
+            showToast(opts.copied ? `Copied ${opts.copied} ${opts.copied === 1 ? 'item' : 'items'} to ${opts.meal === 'other' ? 'your log' : opts.meal}` : `Added ${row.food_name}`)
+          }}
         />
       )}
       {recipeOpen && (

@@ -98,6 +98,21 @@ export async function updateMealItem(log, item, grams) {
   return { log: { ...data, food_log_items: next }, error: null }
 }
 
+// Copies logged foods (ingredients included) to another day and meal, for "Copy
+// yesterday's breakfast". A copied planned meal does not tick off the new day's plan.
+export async function copyLogs(logs, { date, mealType }) {
+  const added = []
+  for (const log of logs) {
+    const row = { ...log, logged_at: date, meal_type: mealType ?? log.meal_type, plan_item_id: null }
+    delete row.id
+    delete row.created_at
+    const { log: saved, error } = await restoreMeal(row)
+    if (error) return { added, error }
+    added.push(saved)
+  }
+  return { added, error: null }
+}
+
 // Puts a removed meal back (Undo), ingredients included.
 export async function restoreMeal(log) {
   const row = { ...log }

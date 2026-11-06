@@ -4,10 +4,11 @@
 // session updates it in place. AI workouts have their exercise names matched with
 // resolve_exercise_ids. Ticked sets are kept as a draft on the phone until saved.
 import { useState, useEffect } from 'react'
-import { Check, Trophy, Timer, SkipForward, Share2, X } from 'lucide-react'
+import { Check, Trophy, Timer, SkipForward, Share2, X, Plus, Minus, Info } from 'lucide-react'
 import { supabase } from '../supabase'
 import { Button, Card, Chip, Sheet, Hero, Ring } from '../ui'
 import { ShareSheet } from './ShareStory'
+import ExerciseInfoSheet from './ExerciseInfoSheet'
 import { Overlay, Loading } from './common'
 import { toLocalDateStr } from './dates'
 import { workoutKey, workoutName as nameOf, plural } from './metrics'
@@ -30,6 +31,12 @@ function repsFor(set, ex) {
 // An exercise can only be logged when it is in the exercise library (an AI workout can
 // name one that isn't). Those show as plan only.
 const loggable = (ex) => !!(ex.exercise_id || ex.exercises?.id)
+// Sets on screen for an exercise: the plan's sets, or more if the client added some (or
+// saved more last time, when editing).
+function setsOf(ex, exSets) {
+  const extra = Object.keys(exSets || {}).map(Number).filter((n) => n > 0)
+  return Math.max(ex.sets || 0, extra.length ? Math.max(...extra) : 0)
+}
 function weightFor(set) {
   return Math.min(500, Math.max(0, parseFloat(set?.weight) || 0))
 }
@@ -179,8 +186,9 @@ export function WorkoutComplete({ workoutName, stats, week, streak = 0, onDone, 
             <section key={i} className="flex items-center gap-3.5 rounded-[24px] bg-tan text-on-tan px-4 py-4">
               <Trophy size={28} className="shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold opacity-80">{pb.type === '1rm' ? 'New best estimated 1RM' : pb.type === 'volume' ? 'New best volume on this lift' : 'New personal best'}</p>
+                <p className="text-[13px] font-semibold opacity-80">{pb.type === '1rm' ? 'New best estimated 1RM' : pb.type === 'volume' ? 'New best volume on this lift' : pb.type === 'best_set' ? 'New best set' : 'New personal best'}</p>
                 <p className="text-[16px] font-bold truncate">{pb.exerciseName}</p>
+                {pb.previous > 0 && <p className="text-[13px] font-semibold opacity-80 tabular-nums">Up from {pb.previous} {pb.unit}</p>}
               </div>
               <p className="font-display text-[32px] leading-none tabular-nums shrink-0">
                 {pb.value}<span className="text-[16px]"> {pb.unit}</span>
@@ -214,6 +222,8 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
   const [completing, setCompleting] = useState(false)
   const [saveError, setSaveError] = useState(null)
   const [confirmLeave, setConfirmLeave] = useState(false)
+  const [confirmFinish, setConfirmFinish] = useState(false)
+  const [infoFor, setInfoFor] = useState(null) // an exercises row: { id, name, muscle_group }
   const [previousSets, setPreviousSets] = useState({})
   const [restTimer, setRestTimer] = useState(null)
   const [restInterval, setRestInterval] = useState(null)
@@ -374,6 +384,21 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     }))
   }
 
+  // An extra set beyond the plan, and taking one back off (only an added, unticked one).
+  function addSet(ex) {
+    const n = setsOf(ex, setData[ex.id]) + 1
+    setSetData((prev) => ({ ...prev, [ex.id]: { ...(prev[ex.id] || {}), [n]: {} } }))
+  }
+  function removeSet(ex) {
+    const n = setsOf(ex, setData[ex.id])
+    if (n <= (ex.sets || 0) || setData[ex.id]?.[n]?.done) return
+    setSetData((prev) => {
+      const next = { ...(prev[ex.id] || {}) }
+      delete next[n]
+      return { ...prev, [ex.id]: next }
+    })
+  }
+
   // Ticking a set with empty boxes copies last session's numbers in.
   function markSetDone(ex, setNumber, restSeconds) {
     const rowKey = ex.id
@@ -386,14 +411,14 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     if (restSeconds) startRestTimer(restSeconds)
   }
 
-  const totalSetsCount = loggableExercises.reduce((sum, ex) => sum + (ex.sets || 0), 0)
+  const totalSetsCount = loggableExercises.reduce((sum, ex) => sum + setsOf(ex, setData[ex.id]), 0)
   const doneSetsCount = loggableExercises.reduce((sum, ex) => sum + Object.values(setData[ex.id] || {}).filter((s) => s.done).length, 0)
   const allDone = hasSetTracking && totalSetsCount > 0 && doneSetsCount >= totalSetsCount
 
   // The first set not ticked yet, so the screen can say what is next.
   let nextUp = null
   for (const ex of loggableExercises) {
-    for (let s = 1; s <= (ex.sets || 0); s++) {
+    for (let s = 1; s <= setsOf(ex, setData[ex.id]); s++) {
       if (!setData[ex.id]?.[s]?.done) { nextUp = { ex, set: s }; break }
     }
     if (nextUp) break
@@ -532,13 +557,15 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
       if (!exerciseId) continue
       const exSets = setData[ex.id] || {}
       const rows = []
-      for (let s = 1; s <= (ex.sets || 0); s++) {
+      // Only ticked sets are saved: a set the client skipped never counts.
+      for (let s = 1; s <= setsOf(ex, exSets); s++) {
+        if (!exSets[s]?.done) continue
         const reps = repsFor(exSets[s], ex)
         const weight = weightFor(exSets[s])
         totalVolume += reps * weight
         rows.push({ exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight })
       }
-      byExercise.push({ exerciseId, exerciseName: ex.exercises?.name || 'Exercise', rows })
+      if (rows.length) byExercise.push({ exerciseId, exerciseName: ex.exercises?.name || 'Exercise', rows })
     }
     const setRows = byExercise.flatMap((e) => e.rows)
     // The current bests are read while the session saves, not after it.
@@ -633,7 +660,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     onComplete?.(workoutKey(scheduledWorkout.program_workout_id, scheduledWorkout.id, scheduledWorkout.scheduled_date), { newPBs: [], totalVolume: 0, setsCompleted: 0, exerciseCount: 0, workoutName, logId: log.id })
   }
 
-  const exDoneOf = (ex) => loggable(ex) && Array.from({ length: ex.sets || 0 }, (_, i) => setData[ex.id]?.[i + 1]?.done).every(Boolean)
+  const exDoneOf = (ex) => loggable(ex) && Array.from({ length: setsOf(ex, setData[ex.id]) }, (_, i) => setData[ex.id]?.[i + 1]?.done).every(Boolean)
   const segExercises = hasSetTracking ? trackedExercises.filter(loggable) : EMPTY
   const currentIdx = nextUp ? segExercises.findIndex((ex) => ex.id === nextUp.ex.id) : -1
   const subline = existingLog?.id
@@ -710,7 +737,10 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
               <div key={rowKey} className="space-y-3">
               {isCurrent && (
                 <Hero>
-                  <p className="font-display text-[30px] leading-[1.05]">{ex.exercises?.name || 'Exercise'}</p>
+                  <button onClick={() => ex.exercises?.id && setInfoFor(ex.exercises)} className="text-left font-display text-[30px] leading-[1.05] inline-flex items-start gap-2" aria-label={`How to do ${ex.exercises?.name || 'this exercise'}`}>
+                    <span>{ex.exercises?.name || 'Exercise'}</span>
+                    {ex.exercises?.id && <Info size={20} className="shrink-0 mt-2 opacity-70" />}
+                  </button>
                   <p className="text-[15px] font-semibold mt-1.5">{ex.sets} {ex.sets === 1 ? 'set' : 'sets'} of {ex.reps}{ex.rest_seconds ? `, ${ex.rest_seconds}s rest` : ''}</p>
                   {last && <p className="text-[14px] text-hero-muted mt-0.5">Last time {last.weight_kg > 0 ? `${last.weight_kg} kg for ${last.reps}` : plural(last.reps, 'rep')}</p>}
                   {ex.notes && <p className="mt-3.5 rounded-[16px] bg-hero-chip px-3.5 py-3 text-[14px] leading-snug">{ex.notes}</p>}
@@ -722,7 +752,10 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                     {exDone ? <Check size={15} strokeWidth={3} /> : idx + 1}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[17px] font-bold text-ink leading-snug">{ex.exercises?.name || 'Exercise'}</p>
+                    <button onClick={() => ex.exercises?.id && setInfoFor(ex.exercises)} className="text-left text-[17px] font-bold text-ink leading-snug inline-flex items-start gap-1.5">
+                      <span>{ex.exercises?.name || 'Exercise'}</span>
+                      {ex.exercises?.id && <Info size={15} className="shrink-0 mt-1 text-muted" />}
+                    </button>
                     <p className="text-[13px] text-muted mt-0.5">
                       {ex.sets} x {ex.reps}{ex.rest_seconds ? ` · ${ex.rest_seconds}s rest` : ''}
                     </p>
@@ -743,7 +776,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                 {!loggable(ex) && (
                   <p className="px-4 pb-3 text-[13px] text-muted">Not in the exercise library yet, so this one isn't tracked.</p>
                 )}
-                {loggable(ex) && Array.from({ length: ex.sets || 0 }, (_, i) => {
+                {loggable(ex) && Array.from({ length: setsOf(ex, exSetData) }, (_, i) => {
                   const setNum = i + 1
                   const setInfo = exSetData[setNum] || {}
                   const isDone = !!setInfo.done
@@ -783,7 +816,19 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                     </div>
                   )
                 })}
-                <div className="h-2" />
+                {loggable(ex) && (
+                  <div className="flex items-center gap-2 px-3 pt-1.5 pb-2">
+                    <button onClick={() => addSet(ex)} className="h-9 px-3.5 rounded-full bg-surface-2 text-ink text-[13px] font-bold inline-flex items-center gap-1.5">
+                      <Plus size={15} /> Add set
+                    </button>
+                    {setsOf(ex, exSetData) > (ex.sets || 0) && !exSetData[setsOf(ex, exSetData)]?.done && (
+                      <button onClick={() => removeSet(ex)} className="h-9 px-3.5 rounded-full text-muted text-[13px] font-bold inline-flex items-center gap-1.5 hover:bg-surface-2">
+                        <Minus size={15} /> Remove set
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="h-1" />
               </Card>
               </div>
             )
@@ -801,8 +846,8 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
       ) : hasSetTracking && trackedExercises.length > 0 && (
         <div className="shrink-0 bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
           {saveError && <p role="alert" className="text-[13px] font-semibold text-bad text-center mb-2.5">{saveError}</p>}
-          <Button size="lg" block onClick={handleComplete} disabled={!allDone || completing}>
-            {completing ? 'Saving your session...' : allDone ? 'Finish workout' : `Tick ${plural(totalSetsCount - doneSetsCount, 'more set', 'more sets')} to finish`}
+          <Button size="lg" block onClick={() => (allDone ? handleComplete() : setConfirmFinish(true))} disabled={doneSetsCount === 0 || completing}>
+            {completing ? 'Saving your session...' : doneSetsCount === 0 ? 'Tick a set to start' : allDone ? 'Finish workout' : `Finish workout (${doneSetsCount} of ${totalSetsCount} sets)`}
           </Button>
         </div>
       )}
@@ -820,6 +865,21 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
       >
         <p className="text-[15px] text-muted">Your ticked sets will be kept for when you come back.</p>
       </Sheet>
+
+      <Sheet
+        open={confirmFinish}
+        onClose={() => setConfirmFinish(false)}
+        title="Finish now?"
+        footer={
+          <div className="flex gap-2.5">
+            <Button variant="secondary" size="lg" className="flex-1" onClick={() => setConfirmFinish(false)}>Keep going</Button>
+            <Button size="lg" className="flex-1" onClick={() => { setConfirmFinish(false); handleComplete() }}>Finish</Button>
+          </div>
+        }
+      >
+        <p className="text-[15px] text-muted">{plural(totalSetsCount - doneSetsCount, 'set')} not ticked. Only the sets you ticked are saved, so your history stays true to what you did.</p>
+      </Sheet>
+      {infoFor && <ExerciseInfoSheet exercise={infoFor} onClose={() => setInfoFor(null)} />}
     </Overlay>
   )
 }

@@ -467,6 +467,8 @@ export default function ClientApp() {
             onOpenProfile={() => setProfileOpen(true)}
             onLogFood={() => { setFoodView('log'); setAddFoodOpen(true); goTab('food') }}
             waterLogs={waterByDate[toLocalDateStr()]}
+            resourceCount={resources.length}
+            onOpenResources={() => setResourcesOpen(true)}
           />
         )}
         {tab === 'train' && (

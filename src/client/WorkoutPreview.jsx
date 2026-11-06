@@ -1,6 +1,9 @@
 // Look at a workout before starting it: exercises, muscles, time. Also used for a program
 // day (with "Add to calendar" instead of "Start").
+import { useState } from 'react'
+import { Info } from 'lucide-react'
 import { Chip, Card } from '../ui'
+import ExerciseInfoSheet from './ExerciseInfoSheet'
 import { Overlay, BackHeader } from './common'
 import { estMinutes, totalSets, plural } from './metrics'
 import { parseAiJson } from './foods'
@@ -18,17 +21,21 @@ function StatsRow({ items }) {
   )
 }
 
-function ExerciseRow({ idx, name, muscle, detail, notes }) {
+function ExerciseRow({ idx, name, muscle, detail, notes, onInfo }) {
+  const Tag = onInfo ? 'button' : 'div'
   return (
-    <div className="flex items-start gap-3 px-4 py-3.5">
+    <Tag onClick={onInfo} className="w-full text-left flex items-start gap-3 px-4 py-3.5">
       <span className="w-7 h-7 rounded-full bg-surface-2 text-muted text-[13px] font-bold flex items-center justify-center shrink-0 mt-0.5 tabular-nums">{idx + 1}</span>
       <div className="flex-1 min-w-0">
-        <p className="text-[15px] font-bold text-ink">{name}</p>
+        <p className="text-[15px] font-bold text-ink inline-flex items-start gap-1.5">
+          <span>{name}</span>
+          {onInfo && <Info size={14} className="shrink-0 mt-1 text-muted" aria-label="How to do it" />}
+        </p>
         <p className="text-[13px] text-muted mt-0.5">{detail}</p>
         {notes && <p className="text-[13px] text-muted mt-1 italic">{notes}</p>}
       </div>
       {muscle && <Chip className="mt-0.5">{muscle}</Chip>}
-    </div>
+    </Tag>
   )
 }
 
@@ -40,6 +47,7 @@ export default function WorkoutPreview({ eyebrow, title, exercises = [], customC
   const aiExercises = parsed?.title && Array.isArray(parsed?.exercises) ? parsed.exercises : null
   const list = customContent ? aiExercises ?? [] : exercises
   const muscles = customContent ? [] : [...new Set(exercises.map((ex) => ex.exercises?.muscle_group).filter(Boolean))]
+  const [infoFor, setInfoFor] = useState(null)
 
   return (
     <Overlay>
@@ -71,6 +79,7 @@ export default function WorkoutPreview({ eyebrow, title, exercises = [], customC
                 muscle={ex.exercises?.muscle_group}
                 detail={detailFor(ex)}
                 notes={ex.notes}
+                onInfo={ex.exercises?.id ? () => setInfoFor(ex.exercises) : undefined}
               />
             ))}
           </Card>
@@ -83,6 +92,7 @@ export default function WorkoutPreview({ eyebrow, title, exercises = [], customC
       {footer && (
         <div className="shrink-0 bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">{footer}</div>
       )}
+      {infoFor && <ExerciseInfoSheet exercise={infoFor} onClose={() => setInfoFor(null)} />}
     </Overlay>
   )
 }

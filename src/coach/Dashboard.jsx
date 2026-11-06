@@ -344,9 +344,11 @@ export default function Dashboard({ user }) {
         </Hero>
 
         {/* Summary */}
-        <Card className="!py-2 !px-5 grid grid-cols-3 lg:grid-cols-1 gap-x-4">
+        <Card className="!py-2 !px-5 grid grid-cols-4 lg:grid-cols-1 gap-x-3">
           {[
             { label: 'Clients', value: active.length },
+            // Share of current clients showing up: the number a retention business lives by.
+            ...(active.length > 0 ? [{ label: 'Engaged', value: `${Math.round((active.filter((c) => c.status === 'Engaged').length / active.length) * 100)}%` }] : []),
             { label: 'Check-ins this week', short: 'This week', value: checkinsThisWeek(checkins) },
             { label: 'Awaiting reply', short: 'To reply', value: awaitingCount },
           ].map((s, i) => (
