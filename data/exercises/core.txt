@@ -1,0 +1,273 @@
+## Plank | Core | bodyweight | bodyweight
+how: Rest on your forearms and toes with your elbows under your shoulders.
+how: Hold your body in a straight line from head to heels.
+how: Breathe steadily until the time is up.
+cue: Squeeze your glutes and brace your stomach.
+cue: Hips level, not high or sagging.
+cue: Drop to your knees if your form slips.
+
+## Weighted Plank | Core | plate | strength
+how: Get into a forearm plank and have a partner place a plate across your upper back.
+how: Hold a straight line from head to heels.
+how: Have the plate removed before you come down.
+cue: Plate sits on your upper back, not your lower back.
+cue: Brace hard.
+cue: Shorter holds, more weight.
+
+## Side Plank | Core | bodyweight | bodyweight
+how: Lie on your side and prop yourself up on one forearm, elbow under your shoulder.
+how: Lift your hips so your body is straight from head to feet.
+how: Hold, then switch sides.
+cue: Hips up and forward.
+cue: Stack your feet or stagger them for balance.
+cue: Bend your knees to make it easier.
+
+## Copenhagen Plank | Core | bodyweight | strength
+how: Lie on your side with your top leg resting on a bench and your forearm on the floor.
+how: Lift your hips and bottom leg so your body is straight.
+how: Hold, then switch sides.
+cue: Rest the knee on the bench to make it easier.
+cue: Squeeze your top leg into the bench.
+cue: Short holds to start.
+
+## Plank Hip Dip | Core | bodyweight | bodyweight
+how: Start in a forearm plank.
+how: Rotate your hips to dip one side towards the floor, then the other.
+how: Keep alternating.
+cue: Shoulders stay still.
+cue: Controlled, not fast.
+cue: Small dips are fine.
+
+## Plank with Reach | Core | bodyweight | bodyweight
+how: Start in a high plank on your hands.
+how: Reach one arm forward without letting your hips move.
+how: Return it and switch arms.
+cue: Feet wide for balance.
+cue: Hips stay square.
+cue: Slow reaches.
+
+## Stir The Pot | Core | bodyweight | bodyweight
+how: Rest your forearms on a stability ball in a plank position.
+how: Draw small circles with your elbows.
+how: Change direction halfway.
+cue: Hips do not move.
+cue: Small circles.
+cue: Breathe.
+
+## Dead Bug | Core | bodyweight | bodyweight
+how: Lie on your back with arms straight up and knees bent over your hips.
+how: Slowly lower one arm overhead and the opposite leg towards the floor.
+how: Return and switch sides.
+cue: Lower back stays pressed into the floor.
+cue: Move slowly.
+cue: Breathe out as you reach.
+
+## Bird Dog | Core | bodyweight | bodyweight
+how: Start on your hands and knees.
+how: Reach one arm forward and the opposite leg back until both are straight.
+how: Return and switch sides.
+cue: Back stays flat, like a table.
+cue: Do not rotate your hips.
+cue: Pause when stretched out.
+
+## Hollow Body Hold | Core | bodyweight | bodyweight
+how: Lie on your back and lift your shoulders and legs off the floor.
+how: Reach your arms past your head and hold.
+how: Keep your lower back pressed into the floor.
+cue: Bend your knees to make it easier.
+cue: Lower back never lifts.
+cue: Short holds, good shape.
+
+## Crunch | Core | bodyweight | bodyweight
+how: Lie on your back with knees bent and hands lightly behind your head.
+how: Curl your shoulders off the floor towards your hips.
+how: Lower slowly.
+cue: Do not pull on your neck.
+cue: Breathe out as you curl.
+cue: Small, controlled movement.
+
+## Cable Crunch | Core | cable | strength
+how: Kneel facing a high pulley holding a rope beside your head.
+how: Curl your ribs down towards your hips.
+how: Return slowly.
+cue: Hips stay still.
+cue: Round your back on purpose.
+cue: Hands stay by your head.
+
+## Reverse Crunch | Core | bodyweight | bodyweight
+how: Lie on your back with knees bent over your hips.
+how: Curl your hips off the floor towards your chest.
+how: Lower slowly.
+cue: Use your stomach, not momentum.
+cue: Small lift.
+cue: Slow down.
+
+## Bicycle Crunch | Core | bodyweight | bodyweight
+how: Lie on your back with hands behind your head and legs lifted.
+how: Bring one elbow towards the opposite knee as the other leg straightens.
+how: Switch sides in a pedalling motion.
+cue: Rotate through your ribs.
+cue: Slow beats fast.
+cue: Lower back down.
+
+## Sit Up | Core | bodyweight | bodyweight
+how: Lie on your back with knees bent and feet flat.
+how: Sit all the way up.
+how: Lower slowly back down.
+cue: Arms crossed or reaching forward.
+cue: Lower under control.
+cue: Anchor your feet if needed.
+
+## Decline Sit Up | Core | bodyweight | bodyweight
+how: Hook your feet into a decline bench and lie back.
+how: Sit up until your chest is near your thighs.
+how: Lower slowly.
+cue: Control the way down.
+cue: Hold a plate to progress.
+cue: Do not yank your neck.
+
+## GHD Sit Up | Core | machine | strength
+how: Sit on the GHD with your feet locked in and thighs on the pad.
+how: Lower back until you are level with the floor or slightly below.
+how: Sit back up.
+cue: Build up slowly, it is very demanding.
+cue: Control the way back.
+cue: Short range first.
+
+## V-Up | Core | bodyweight | bodyweight
+how: Lie on your back with arms overhead and legs straight.
+how: Lift your arms and legs at the same time to meet over your hips.
+how: Lower slowly.
+cue: Bend your knees to make it easier.
+cue: Reach for your toes.
+cue: Control the way down.
+
+## Lying Leg Raise | Core | bodyweight | bodyweight | was Leg Raise (Lying)
+how: Lie on your back with legs straight and hands under your hips.
+how: Lift your legs until they point at the ceiling.
+how: Lower them slowly without touching the floor.
+cue: Lower back stays down.
+cue: Bend your knees to make it easier.
+cue: Slow on the way down.
+
+## Hanging Knee Raise | Core | bodyweight | bodyweight
+how: Hang from a bar with straight arms.
+how: Lift your knees up towards your chest.
+how: Lower slowly.
+cue: No swinging.
+cue: Curl your hips up at the top.
+cue: Control the way down.
+
+## Hanging Leg Raise | Core | bodyweight | bodyweight
+how: Hang from a bar with straight arms.
+how: Lift your straight legs until they are level with your hips or higher.
+how: Lower slowly.
+cue: Start with knee raises.
+cue: No swinging.
+cue: Tilt your hips up at the top.
+
+## Flutter Kick | Core | bodyweight | bodyweight
+how: Lie on your back with legs straight and lifted a few centimetres.
+how: Kick your legs up and down in small fast movements.
+how: Keep going for the time.
+cue: Lower back pressed down.
+cue: Small kicks.
+cue: Hands under your hips helps.
+
+## Scissor Kick | Core | bodyweight | bodyweight
+how: Lie on your back with legs straight and lifted.
+how: Cross one leg over the other, then switch, like scissors.
+how: Keep going for the time.
+cue: Lower back down.
+cue: Controlled crosses.
+cue: Breathe.
+
+## Russian Twist | Core | bodyweight | bodyweight
+how: Sit leaning back slightly with knees bent and feet on or off the floor.
+how: Rotate your chest to one side, then the other.
+how: Hold a weight to make it harder.
+cue: Turn your shoulders, not just your arms.
+cue: Tall chest.
+cue: Slow and controlled.
+
+## Mountain Climber | Core | bodyweight | bodyweight
+how: Start in a high plank on your hands.
+how: Drive one knee towards your chest, then switch legs quickly.
+how: Keep alternating for the time.
+cue: Hips stay low.
+cue: Hands under shoulders.
+cue: Steady pace before speed.
+
+## Ab Wheel Rollout | Core | bodyweight | bodyweight
+how: Kneel holding an ab wheel under your shoulders.
+how: Roll forward as far as you can while keeping your back flat.
+how: Pull the wheel back to your knees.
+cue: Brace hard, do not let your back sag.
+cue: Short rollouts first.
+cue: Squeeze your glutes.
+
+## Dragon Flag | Core | bodyweight | bodyweight
+how: Lie on a bench holding it behind your head.
+how: Lift your body so only your upper back touches the bench, body straight.
+how: Lower slowly without bending at the hips.
+cue: Very advanced, build up with tucked legs.
+cue: Straight line from shoulders to feet.
+cue: Lowering is the hard part.
+
+## L-Sit | Core | bodyweight | bodyweight
+how: Support yourself on parallettes or a dip bar with straight arms.
+how: Lift your legs straight out in front to hip height.
+how: Hold.
+cue: Tuck your knees to make it easier.
+cue: Push the floor away.
+cue: Short holds.
+
+## Pallof Press (Cable) | Core | cable | strength | was Pallof Press
+how: Stand side on to a cable at chest height holding the handle at your chest.
+how: Press it straight out in front and resist the pull to turn.
+how: Bring it back to your chest, then switch sides.
+cue: Do not let the cable twist you.
+cue: Hips and shoulders square.
+cue: Pause with arms straight.
+
+## Cable Woodchop (High to Low) | Core | cable | accessory | aka woodchop
+how: Stand side on to a high pulley holding the handle with both hands.
+how: Pull it down and across your body towards the opposite knee, turning your chest.
+how: Return slowly, then switch sides.
+cue: Turn through your trunk.
+cue: Pivot your back foot.
+cue: Arms stay fairly straight.
+
+## merge Woodchop (Cable) > Cable Woodchop (High to Low)
+
+## Cable Woodchop (Low to High) | Core | cable | accessory
+how: Stand side on to a low pulley holding the handle with both hands.
+how: Pull it up and across your body to above the opposite shoulder.
+how: Return slowly, then switch sides.
+cue: Turn your chest with the handle.
+cue: Drive from your hips.
+cue: Controlled return.
+
+## Landmine Rotation | Core | landmine | strength
+how: Hold the end of a landmine bar overhead with straight arms.
+how: Rotate it down to one hip, then up and over to the other.
+how: Keep alternating.
+cue: Pivot your feet.
+cue: Arms stay straight.
+cue: Control it, do not let it swing.
+
+## Toe Touch | Core | bodyweight | bodyweight
+how: Lie on your back with your legs straight up.
+how: Reach your hands up towards your toes, lifting your shoulders.
+how: Lower slowly.
+cue: Legs stay vertical.
+cue: Breathe out as you reach.
+cue: Small range.
+
+## Windmill (Kettlebell) | Core | kettlebell | strength | was Windmill
+how: Hold a kettlebell overhead in one hand, feet turned slightly away from it.
+how: Push your hip out and slide your free hand down your leg, eyes on the kettlebell.
+how: Return to standing, then switch sides.
+cue: Overhead arm stays locked.
+cue: Hips push out to the side.
+cue: Light weight.

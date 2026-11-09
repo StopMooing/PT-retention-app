@@ -1,0 +1,175 @@
+## Treadmill Run | Cardio | machine | cardio
+how: Start walking to warm up, then build to your running pace.
+how: Run tall with relaxed arms and quick, light steps.
+how: Walk for a few minutes at the end to cool down.
+cue: Do not hold the handrails.
+cue: Land under your hips, not out in front.
+cue: Pick a pace you could talk at for easy runs.
+
+## Treadmill Walk (Incline) | Cardio | machine | cardio
+how: Set the treadmill to a steady walking speed.
+how: Raise the incline until it feels like a solid uphill walk.
+how: Walk for the set time without holding the rails.
+cue: Hands off the rails.
+cue: Tall posture.
+cue: Breathe through your nose if you can.
+
+## HIIT Treadmill | Cardio | machine | cardio
+how: Warm up for 5 minutes.
+how: Alternate fast running intervals with walking or easy jogging recovery.
+how: Cool down with a few minutes of walking.
+cue: Step onto the side rails to change speed safely.
+cue: Hard means hard, easy means easy.
+cue: Count your intervals.
+
+## Sprints | Cardio | bodyweight | cardio
+how: Warm up well with easy running and drills.
+how: Sprint hard for the set distance.
+how: Walk back and rest fully before the next one.
+cue: Full rest between sprints.
+cue: Drive your arms.
+cue: Stay relaxed at top speed.
+
+## Hill Sprint | Cardio | bodyweight | cardio
+how: Find a steady hill and warm up well.
+how: Sprint up the hill for the set time or distance.
+how: Walk back down to recover.
+cue: Lean slightly into the hill.
+cue: Short powerful steps.
+cue: Walk down, rest, repeat.
+
+## Stationary Bike | Cardio | machine | cardio
+how: Set the seat so your knee is slightly bent at the bottom of the pedal stroke.
+how: Ride at a steady pace for the set time.
+how: Ease off for the last few minutes.
+cue: Seat height matters.
+cue: Smooth pedal strokes.
+cue: Upright posture.
+
+## Cycling Intervals | Cardio | machine | cardio
+how: Warm up on the bike for 5 minutes.
+how: Alternate hard efforts with easy recovery pedalling.
+how: Cool down for a few minutes.
+cue: Raise the resistance for hard efforts.
+cue: Stay seated unless told otherwise.
+cue: Count your intervals.
+
+## Cycle Ergometer Test | Cardio | machine | cardio
+how: Warm up on the bike.
+how: Ride the test distance or time as hard as you can sustain.
+how: Record your result and cool down.
+cue: Same bike and settings each test.
+cue: Pace it evenly.
+cue: Write down the result.
+
+## Echo Bike | Cardio | machine | cardio | aka assault bike, air bike
+how: Sit on the bike and push and pull the handles while you pedal.
+how: Work at the set intensity for the time or calories.
+how: Ease off to recover.
+cue: Arms and legs together.
+cue: Hard efforts are short.
+cue: Breathe out hard.
+
+## Rowing Machine | Cardio | machine | cardio
+how: Strap your feet in and hold the handle with straight arms.
+how: Push with your legs, lean back slightly, then pull the handle to your lower ribs.
+how: Return arms first, then lean forward, then bend your knees.
+cue: Legs, body, arms. Then arms, body, legs.
+cue: Most of the power comes from your legs.
+cue: Smooth and long strokes.
+
+## Rowing Sprint | Cardio | machine | power | was Row Machine Sprint
+how: Set up on the rower as normal.
+how: Row as hard as you can for the set time or distance.
+how: Rest fully before the next effort.
+cue: Hard leg drive.
+cue: Keep good form when tired.
+cue: Full rest between sprints.
+
+## Ski Erg | Cardio | machine | cardio
+how: Stand facing the machine holding a handle in each hand above your head.
+how: Pull down by hinging at your hips and bending your knees slightly.
+how: Return tall and repeat.
+cue: Use your body, not just your arms.
+cue: Hips back as you pull.
+cue: Steady rhythm.
+
+## Stair Climber | Cardio | machine | cardio
+how: Step onto the machine and pick a steady speed.
+how: Climb with your whole foot on each step.
+how: Keep going for the set time.
+cue: Hands off the rails.
+cue: Tall posture.
+cue: Steady pace.
+
+## Elliptical | Cardio | machine | cardio
+how: Step on and hold the moving handles.
+how: Move at a steady pace, pushing and pulling with your arms.
+how: Keep going for the set time.
+cue: Upright posture.
+cue: Use the arms too.
+cue: Steady effort.
+
+## Versa Climber | Cardio | machine | cardio
+how: Strap your feet in and hold the handles.
+how: Climb with opposite arm and leg moving together.
+how: Keep a steady pace for the time.
+cue: Long strokes.
+cue: Stay upright.
+cue: Breathe steadily.
+
+## Swimming Laps | Cardio | bodyweight | cardio
+how: Warm up with a few easy laps.
+how: Swim at the set pace for the time or distance.
+how: Cool down with easy laps.
+cue: Long, relaxed strokes.
+cue: Breathe out underwater.
+cue: Rest at the wall if needed.
+
+## Jump Rope (Steady State) | Cardio | bodyweight | warmup
+how: Hold the handles at hip height and swing the rope with your wrists.
+how: Jump just high enough to clear the rope.
+how: Keep a steady rhythm for the time.
+cue: Small jumps.
+cue: Turn with your wrists, not your arms.
+cue: Land on the balls of your feet.
+
+## Jump Rope (Interval) | Cardio | bodyweight | cardio
+how: Skip fast for the work interval.
+how: Rest or skip easily for the recovery.
+how: Repeat for the set rounds.
+cue: Fast feet.
+cue: Small jumps.
+cue: Count your rounds.
+
+## Jumping Jacks | Cardio | bodyweight | warmup
+how: Stand with feet together and arms by your sides.
+how: Jump your feet out as your arms go overhead.
+how: Jump back in and repeat.
+cue: Light on your feet.
+cue: Steady rhythm.
+cue: Step out instead of jumping to make it easier.
+
+## High Knees | Cardio | bodyweight | warmup
+how: Run on the spot.
+how: Drive your knees up to hip height.
+how: Pump your arms.
+cue: Quick feet.
+cue: Stay tall.
+cue: Land softly.
+
+## Butt Kicks | Cardio | bodyweight | warmup
+how: Run on the spot.
+how: Kick your heels up towards your glutes.
+how: Keep a quick rhythm.
+cue: Stay tall.
+cue: Light feet.
+cue: Arms move naturally.
+
+## Wall Calf Stretch and Raise | Legs | bodyweight | cooldown
+how: Face a wall with your hands on it and one foot back, heel down.
+how: Lean in to stretch the back calf, then rise onto your toes and lower.
+how: Switch legs.
+cue: Back heel stays down in the stretch.
+cue: Slow raises.
+cue: Breathe.

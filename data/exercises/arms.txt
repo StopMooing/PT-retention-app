@@ -1,0 +1,431 @@
+## Bicep Curl (Barbell) | Biceps | barbell | strength | was Barbell Bicep Curl | aka barbell curl
+how: Stand holding the bar with an underhand grip, hands shoulder width apart.
+how: Curl the bar up towards your shoulders, keeping your elbows by your sides.
+how: Lower slowly until your arms are straight.
+cue: Elbows stay pinned to your sides.
+cue: No swinging your hips.
+cue: Full stretch at the bottom.
+
+## Bicep Curl (EZ Bar) | Biceps | barbell | strength | was EZ Bar Curl | aka ez bar curl
+how: Stand holding the angled grips of an EZ bar with your palms facing up.
+how: Curl the bar towards your shoulders.
+how: Lower slowly to straight arms.
+cue: Easier on the wrists than a straight bar.
+cue: Elbows stay still.
+cue: Squeeze at the top.
+
+## Bicep Curl (Dumbbell) | Biceps | dumbbell | strength | was Dumbbell Bicep Curl | aka dumbbell curl
+how: Stand holding a dumbbell in each hand, palms facing forward.
+how: Curl both dumbbells up towards your shoulders.
+how: Lower slowly until your arms are straight.
+cue: Turn your pinky up slightly at the top.
+cue: Elbows stay by your sides.
+cue: Lower for two to three seconds.
+
+## Alternating Bicep Curl (Dumbbell) | Biceps | dumbbell | strength | was Alternating Dumbbell Curl
+how: Stand holding a dumbbell in each hand at your sides.
+how: Curl one dumbbell up, then lower it as you curl the other.
+how: Keep alternating for the set.
+cue: Count each arm as one rep.
+cue: Body stays still.
+cue: Full range each side.
+
+## Seated Bicep Curl (Dumbbell) | Biceps | dumbbell | strength | was Seated Dumbbell Curl
+how: Sit on the end of a bench with a dumbbell in each hand.
+how: Curl the dumbbells up towards your shoulders.
+how: Lower slowly to straight arms.
+cue: Sitting stops you swinging.
+cue: Back tall.
+cue: Squeeze at the top.
+
+## Incline Curl (Dumbbell) | Biceps | dumbbell | strength | was Incline Dumbbell Curl
+how: Sit back on a bench set to about 45 degrees with your arms hanging straight down.
+how: Curl the dumbbells up without moving your upper arms forward.
+how: Lower slowly to a full stretch.
+cue: Let your arms hang behind your body.
+cue: Elbows stay pointing at the floor.
+cue: Big stretch at the bottom.
+
+## Spider Curl (Dumbbell) | Biceps | dumbbell | strength | was Spider Curl
+how: Lie chest down on an incline bench with your arms hanging straight down.
+how: Curl the dumbbells up, keeping your upper arms vertical.
+how: Lower slowly.
+cue: Upper arms do not swing forward.
+cue: Squeeze hard at the top.
+cue: Light weight, strict reps.
+
+## Concentration Curl (Dumbbell) | Biceps | dumbbell | strength | was Concentration Curl
+how: Sit on a bench, lean forward and rest the back of your upper arm against your inner thigh.
+how: Curl the dumbbell towards your shoulder.
+how: Lower slowly, then switch arms.
+cue: Arm stays fixed against your thigh.
+cue: Turn your pinky up at the top.
+cue: Slow on the way down.
+
+## Concentration Curl (Cable) | Biceps | cable | strength | was Cable Concentration Curl
+how: Sit or kneel by a low pulley and rest your upper arm against your thigh, holding the handle.
+how: Curl the handle towards your shoulder.
+how: Lower slowly, then switch arms.
+cue: Keep your upper arm still.
+cue: Tension stays on at the bottom.
+cue: Squeeze at the top.
+
+## Drag Curl (Barbell) | Biceps | barbell | strength | was Drag Curl
+how: Stand holding the bar against your thighs.
+how: Curl it up by pulling your elbows back so the bar drags up your body.
+how: Lower the same way.
+cue: The bar stays touching your body.
+cue: Elbows travel behind you.
+cue: Use less weight than a normal curl.
+
+## 21s (Barbell) | Biceps | barbell | strength | was 21s Curl | aka 21s curl
+how: Do 7 curls from straight arms to halfway up.
+how: Do 7 curls from halfway up to the top.
+how: Finish with 7 full curls without resting.
+cue: Use a lighter bar than usual.
+cue: All 21 reps without stopping.
+cue: Keep your elbows still.
+
+## Zottman Curl (Dumbbell) | Biceps | dumbbell | strength | was Zottman Curl
+how: Curl the dumbbells up with your palms facing up.
+how: At the top, turn your palms to face down.
+how: Lower slowly with palms down, then turn them back up at the bottom.
+cue: Slow on the palms down lowering.
+cue: Works biceps and forearms.
+cue: Elbows stay by your sides.
+
+## Hammer Curl (Dumbbell) | Biceps | dumbbell | strength | was Hammer Curl | aka hammer curl
+how: Stand holding the dumbbells at your sides with palms facing each other.
+how: Curl them up towards your shoulders, palms still facing in.
+how: Lower slowly.
+cue: Thumbs point up the whole time.
+cue: Elbows stay by your sides.
+cue: No swinging.
+
+## Seated Hammer Curl (Dumbbell) | Biceps | dumbbell | strength
+how: Sit on the end of a bench holding the dumbbells with palms facing each other.
+how: Curl them up towards your shoulders.
+how: Lower slowly to straight arms.
+cue: Back tall, no lean.
+cue: Thumbs up throughout.
+cue: Control every lowering.
+
+## Alternating Hammer Curl (Dumbbell) | Biceps | dumbbell | strength | was Alternating Hammer Curl
+how: Stand with dumbbells at your sides, palms facing in.
+how: Curl one side up with thumbs up, lower it, then curl the other.
+how: Keep alternating.
+cue: Count each arm as one rep.
+cue: Body stays still.
+cue: Full range both sides.
+
+## Cross Body Hammer Curl (Dumbbell) | Biceps | dumbbell | strength | was Cross Body Hammer Curl
+how: Stand with dumbbells at your sides, palms facing in.
+how: Curl one dumbbell up and across your body towards the opposite shoulder.
+how: Lower slowly and switch sides.
+cue: Thumb leads across your chest.
+cue: Elbow stays close to your body.
+cue: Slow on the way down.
+
+## Hammer Curl (Cable) | Biceps | cable | strength | was Cable Hammer Curl
+how: Stand facing a low pulley holding a rope with palms facing each other.
+how: Curl the rope up towards your shoulders.
+how: Lower slowly.
+cue: Elbows pinned to your sides.
+cue: Constant tension.
+cue: Squeeze at the top.
+
+## Bicep Curl (Cable) | Biceps | cable | strength | was Cable Bicep Curl | aka cable curl
+how: Stand facing a low pulley holding a straight bar with an underhand grip.
+how: Curl the bar towards your shoulders.
+how: Lower slowly to straight arms.
+cue: Elbows stay still.
+cue: Tension stays on at the bottom.
+cue: Stand tall.
+
+## Bicep Curl (Cable and Band) | Biceps | cable | accessory | was Cable Curl with Resistance Band
+how: Attach a band to the cable handle or bar so both add resistance.
+how: Curl up towards your shoulders, fighting the band as it stretches.
+how: Lower slowly.
+cue: The top is the hardest part, squeeze it.
+cue: Elbows stay by your sides.
+cue: Control the way down.
+
+## Single Arm Curl (Cable) | Biceps | cable | strength | was Single Arm Cable Curl
+how: Stand side on or facing a low pulley holding one handle.
+how: Curl the handle towards your shoulder.
+how: Lower slowly, then switch arms.
+cue: Turn your pinky up at the top.
+cue: Upper arm stays still.
+cue: Same reps both sides.
+
+## Overhead Curl (Cable) | Biceps | cable | strength | was Overhead Cable Curl
+how: Stand between two high pulleys holding a handle in each hand, arms out at shoulder height.
+how: Curl your hands towards your ears.
+how: Straighten your arms slowly.
+cue: Upper arms stay level.
+cue: Squeeze like a double biceps pose.
+cue: Light weight.
+
+## Bayesian Curl (Cable) | Biceps | cable | strength | was Bayesian Curl
+how: Stand facing away from a low pulley holding the handle with your arm stretched behind you.
+how: Curl the handle forward and up, keeping your elbow behind your body.
+how: Lower slowly back into the stretch.
+cue: Take a small step forward for tension.
+cue: Elbow stays back.
+cue: Feel the stretch at the bottom.
+
+## Bicep Curl (Band) | Biceps | band | accessory | was Resistance Band Bicep Curl
+how: Stand on the middle of a band holding an end in each hand.
+how: Curl your hands up towards your shoulders.
+how: Lower slowly.
+cue: Shorten the band to make it harder.
+cue: Elbows stay by your sides.
+cue: Squeeze at the top.
+
+## Bicep Curl (Machine) | Biceps | machine | strength | was Machine Bicep Curl
+how: Set the seat so your upper arms rest on the pad and your elbows line up with the machine's pivot.
+how: Curl the handles up.
+how: Lower slowly to straight arms.
+cue: Elbows line up with the pivot.
+cue: Full range.
+cue: Slow lowering.
+
+## Bicep Curl (TRX) | Biceps | trx | accessory | was TRX Bicep Curl
+how: Face the anchor holding the handles with palms up and lean back with straight arms.
+how: Curl your hands towards your forehead, pulling your body up.
+how: Lower slowly back to straight arms.
+cue: Elbows stay at shoulder height.
+cue: Body stays straight.
+cue: Walk your feet forward to make it harder.
+
+## Preacher Curl (Barbell) | Biceps | barbell | strength
+how: Sit at a preacher bench with the backs of your upper arms on the pad and hold the bar underhand.
+how: Curl the bar up towards your shoulders.
+how: Lower slowly until your arms are almost straight.
+cue: Armpits snug against the pad.
+cue: Do not drop the bar at the bottom.
+cue: Squeeze at the top.
+
+## Preacher Curl (EZ Bar) | Biceps | barbell | strength | was EZ Bar Preacher Curl
+how: Sit at a preacher bench holding an EZ bar on the angled grips.
+how: Curl it towards your shoulders.
+how: Lower slowly until your arms are almost straight.
+cue: Upper arms flat on the pad.
+cue: Slow at the bottom.
+cue: No bouncing.
+
+## Preacher Curl (Dumbbell) | Biceps | dumbbell | strength
+how: Rest the back of one upper arm on a preacher pad holding a dumbbell.
+how: Curl it towards your shoulder.
+how: Lower slowly, then switch arms.
+cue: Arm stays flat on the pad.
+cue: Control the stretch.
+cue: Turn your pinky up at the top.
+
+## Preacher Curl (Machine) | Biceps | machine | accessory | was Machine Preacher Curl
+how: Sit with your upper arms on the pad and grip the handles.
+how: Curl the handles up.
+how: Lower slowly.
+cue: Elbows line up with the pivot.
+cue: Slow lowering.
+cue: Full squeeze at the top.
+
+## Reverse Curl (Barbell) | Biceps | barbell | strength
+how: Stand holding the bar with an overhand grip, hands shoulder width.
+how: Curl the bar up towards your shoulders, knuckles leading.
+how: Lower slowly.
+cue: Wrists stay straight.
+cue: Elbows by your sides.
+cue: Light weight, works your forearms.
+
+## Reverse Curl (EZ Bar) | Biceps | barbell | strength
+how: Stand holding an EZ bar overhand on the angled grips.
+how: Curl it towards your shoulders.
+how: Lower slowly.
+cue: Easier on the wrists than a straight bar.
+cue: Knuckles lead.
+cue: No swinging.
+
+## Reverse Curl (Dumbbell) | Biceps | dumbbell | accessory | was Dumbbell Reverse Curl
+how: Stand holding the dumbbells with palms facing back.
+how: Curl them up with palms facing down.
+how: Lower slowly.
+cue: Wrists straight.
+cue: Elbows stay still.
+cue: Forearms do a lot of this.
+
+## Tricep Pushdown (Rope) | Triceps | cable | strength
+how: Stand facing a high pulley holding a rope, elbows by your sides and bent to 90 degrees.
+how: Push the rope down until your arms are straight, pulling the ends apart at the bottom.
+how: Let it rise slowly back to the start.
+cue: Elbows stay glued to your sides.
+cue: Split the rope at the bottom.
+cue: Do not let your shoulders roll forward.
+
+## Tricep Pushdown (Straight Bar) | Triceps | cable | strength
+how: Stand facing a high pulley holding a straight bar overhand.
+how: Push the bar down until your arms are straight.
+how: Let it rise slowly to about chest height.
+cue: Elbows pinned to your sides.
+cue: Lean forward just a little.
+cue: Squeeze at the bottom.
+
+## Reverse Grip Tricep Pushdown (Cable) | Triceps | cable | strength | was Reverse Grip Pushdown
+how: Stand facing a high pulley holding a straight bar with an underhand grip.
+how: Push the bar down until your arms are straight.
+how: Return slowly.
+cue: Lighter than an overhand pushdown.
+cue: Elbows stay still.
+cue: Wrists straight.
+
+## Single Arm Tricep Pushdown (Cable) | Triceps | cable | strength | was Single Arm Pushdown
+how: Stand at a high pulley holding a single handle.
+how: Push it down until your arm is straight.
+how: Return slowly, then switch arms.
+cue: Elbow by your side.
+cue: Body stays square.
+cue: Full lockout.
+
+## Tricep Pushdown (Band) | Triceps | band | accessory | was Resistance Band Pushdown
+how: Anchor a band high and hold an end in each hand with elbows bent by your sides.
+how: Push your hands down until your arms are straight.
+how: Return slowly.
+cue: Elbows stay still.
+cue: Squeeze at the bottom.
+cue: Step back for more tension.
+
+## Overhead Tricep Extension (Dumbbell) | Triceps | dumbbell | strength
+how: Stand or sit holding one dumbbell overhead with both hands under the top plate.
+how: Lower it behind your head by bending your elbows.
+how: Straighten your arms to press it back up.
+cue: Elbows point forward, not out.
+cue: Big stretch at the bottom.
+cue: Ribs down, do not arch.
+
+## Seated Overhead Tricep Extension (Dumbbell) | Triceps | dumbbell | strength
+how: Sit on an upright bench holding one dumbbell overhead with both hands.
+how: Lower it behind your head.
+how: Press it back up until your arms are straight.
+cue: Back against the pad.
+cue: Elbows stay narrow.
+cue: Slow into the stretch.
+
+## Overhead Tricep Extension (Barbell) | Triceps | barbell | strength
+how: Stand or sit holding a bar or EZ bar overhead with a narrow grip.
+how: Lower it behind your head by bending your elbows.
+how: Straighten your arms to press it back up.
+cue: Elbows stay pointing up.
+cue: Keep your trunk braced.
+cue: Light and controlled.
+
+## Overhead Tricep Extension (Cable) | Triceps | cable | strength
+how: Face away from a pulley set at head height, holding a rope behind your head.
+how: Step forward and straighten your arms out in front and up.
+how: Let your hands come back behind your head slowly.
+cue: Elbows stay high and still.
+cue: Stagger your stance.
+cue: Feel the stretch behind your head.
+
+## Single Arm Overhead Tricep Extension (Cable) | Triceps | cable | strength | was Cable Overhead Single Arm Extension
+how: Face away from a low pulley holding the handle behind your head.
+how: Straighten your arm overhead.
+how: Lower slowly, then switch arms.
+cue: Elbow points up.
+cue: Keep your trunk still.
+cue: Full stretch each rep.
+
+## Skull Crusher (Barbell) | Triceps | barbell | strength
+how: Lie on a flat bench holding the bar over your chest with straight arms.
+how: Bend your elbows to lower the bar towards your forehead.
+how: Straighten your arms to press it back up.
+cue: Upper arms stay still.
+cue: Lower to just behind your head for more stretch.
+cue: Control it, it is near your face.
+
+## Skull Crusher (EZ Bar) | Triceps | barbell | strength
+how: Lie on a flat bench holding an EZ bar on the angled grips over your chest.
+how: Bend your elbows to lower the bar towards your forehead.
+how: Press it back up.
+cue: Easier on the wrists.
+cue: Elbows point to the ceiling.
+cue: Slow on the way down.
+
+## Skull Crusher (Dumbbell) | Triceps | dumbbell | strength
+how: Lie on a flat bench holding the dumbbells over your chest, palms facing in.
+how: Bend your elbows to lower them beside your head.
+how: Straighten your arms to press back up.
+cue: Upper arms stay still.
+cue: Palms face each other.
+cue: Control every rep.
+
+## JM Press (Barbell) | Triceps | barbell | strength | was JM Press
+how: Lie on a bench holding the bar with a close grip over your chest.
+how: Lower the bar towards your chin by letting your elbows bend and travel forward.
+how: Press back up to straight arms.
+cue: A mix of a close grip press and a skull crusher.
+cue: Start light to learn the path.
+cue: Elbows stay tucked.
+
+## Tate Press (Dumbbell) | Triceps | dumbbell | strength | was Tate Press
+how: Lie on a bench holding the dumbbells over your chest with palms facing your feet.
+how: Bend your elbows out to the sides to lower the dumbbells to your chest.
+how: Press back up to straight arms.
+cue: Elbows point out to the sides.
+cue: The dumbbells touch your chest.
+cue: Light weight.
+
+## California Press (Barbell) | Triceps | barbell | strength | was California Press
+how: Lie on a bench with a close grip on the bar.
+how: Lower the bar towards your lower chest, letting your elbows flare a little as it gets close.
+how: Press back up.
+cue: Halfway between a close grip press and a skull crusher.
+cue: Smooth bar path.
+cue: Light to start.
+
+## Tricep Kickback (Dumbbell) | Triceps | dumbbell | strength | was Kickback (Dumbbell)
+how: Hinge forward with a flat back, upper arm along your side and elbow bent.
+how: Straighten your arm back until it is in line with your body.
+how: Return slowly.
+cue: Upper arm stays still and high.
+cue: Squeeze at full lockout.
+cue: Light weight.
+
+## Tricep Kickback (Cable) | Triceps | cable | strength | was Kickback (Cable)
+how: Hinge forward facing a low pulley, holding the handle with your elbow by your side.
+how: Straighten your arm back until it is in line with your body.
+how: Return slowly, then switch arms.
+cue: Elbow stays fixed.
+cue: Constant tension.
+cue: Pause at the end.
+
+## Tricep Extension (TRX) | Triceps | trx | accessory | was TRX Tricep Extension
+how: Face away from the anchor holding the handles above your head, leaning forward.
+how: Bend your elbows to lower your head between your hands.
+how: Straighten your arms to push back up.
+cue: Body stays straight.
+cue: Elbows stay narrow.
+cue: Walk your feet back to make it harder.
+
+## Tricep Dip (Parallel Bars) | Triceps | bodyweight | bodyweight | aka dips
+how: Support yourself on parallel bars with straight arms and your body upright.
+how: Lower until your elbows are bent to about 90 degrees.
+how: Press back up to straight arms.
+cue: Stay upright to work the triceps.
+cue: Elbows travel back.
+cue: Use an assisted machine or band if needed.
+
+## Tricep Dip (Machine) | Triceps | machine | strength | was Machine Tricep Dip
+how: Sit in the machine and grip the handles at your sides.
+how: Press down until your arms are straight.
+how: Return slowly.
+cue: Shoulders down.
+cue: Elbows travel straight back.
+cue: Full lockout.
+
+## Bench Dip | Triceps | bodyweight | bodyweight
+how: Sit on the edge of a bench, hands beside your hips, and slide off with legs out in front.
+how: Lower your body by bending your elbows to about 90 degrees.
+how: Press back up.
+cue: Keep your back close to the bench.
+cue: Bend your knees to make it easier.
+cue: Do not go too deep.

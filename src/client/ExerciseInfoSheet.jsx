@@ -1,5 +1,5 @@
-// How to do an exercise: the coach's own video if they added one (Exercises page), else a
-// drawing of the movement, then the library's instructions and coaching cues, and a link
+// How to do an exercise: the coach's own video if they added one (Exercises page), then
+// the library's instructions and coaching cues (stored on the exercise), and a link
 // to watch it done. Opened by tapping an exercise in a workout or its preview. Everything
 // loads only when someone opens it.
 import { useEffect, useState } from 'react'
@@ -17,13 +17,13 @@ export default function ExerciseInfoSheet({ exercise, onClose }) {
     if (!id) return
     let live = true
     Promise.all([
-      supabase.from('exercises').select('instructions, equipment').eq('id', id).maybeSingle(),
+      supabase.from('exercises').select('*').eq('id', id).maybeSingle(),
       import('../tools/coachingTips'),
       fetchExerciseVideo(id),
     ])
       .then(([{ data }, mod, video]) => {
         if (!live) return
-        const tips = mod.getCoachingTips(exercise.name, exercise.muscle_group) || []
+        const tips = data?.cues?.length ? data.cues : mod.getCoachingTips(exercise.name, exercise.muscle_group) || []
         setInfo({ instructions: data?.instructions || '', equipment: data?.equipment || '', tips, video })
       })
       .catch((e) => { console.error('Exercise info load error:', e); if (live) setInfo({ instructions: '', equipment: '', tips: [], video: null }) })

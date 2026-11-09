@@ -1,0 +1,215 @@
+## Deadlift (Barbell) | Legs | barbell | strength | was Deadlift (Conventional) | aka conventional deadlift
+how: Stand with the bar over the middle of your feet and grip it just outside your legs.
+how: Drop your hips, flatten your back, brace, then push the floor away to stand up with the bar close to your legs.
+how: Lower it by pushing your hips back, then bending your knees once it passes them.
+cue: Bar stays touching your legs.
+cue: Chest up, back flat before you pull.
+cue: Finish by squeezing your glutes, not leaning back.
+
+## Sumo Deadlift (Barbell) | Legs | barbell | strength | was Deadlift (Sumo)
+how: Stand with a wide stance, toes out, and grip the bar inside your knees.
+how: Push your knees out, flatten your back and stand up with the bar.
+how: Lower it back to the floor under control.
+cue: Knees out over your toes.
+cue: Hips close to the bar.
+cue: Push the floor apart.
+
+## Deadlift (Trap Bar) | Legs | trap_bar | strength | was Trap Bar Deadlift | aka hex bar deadlift
+how: Stand in the middle of the trap bar and grip the handles.
+how: Brace, flatten your back and stand up by pushing through your feet.
+how: Lower the bar back down under control.
+cue: Easier on the back than a straight bar.
+cue: Sit a little deeper than a normal deadlift.
+cue: Stand tall at the top.
+
+## Romanian Deadlift (Barbell) | Glutes | barbell | strength | aka RDL
+how: Stand holding the bar at your thighs with soft knees.
+how: Push your hips back and slide the bar down your legs until you feel a stretch in your hamstrings.
+how: Drive your hips forward to stand back up.
+cue: Hips back, not down.
+cue: Bar stays close to your legs.
+cue: Stop when your back wants to round.
+
+## Romanian Deadlift (Dumbbell) | Glutes | dumbbell | strength
+how: Stand holding the dumbbells in front of your thighs with soft knees.
+how: Push your hips back and lower the dumbbells down the front of your legs.
+how: Squeeze your glutes to stand back up.
+cue: Flat back.
+cue: Feel the stretch in your hamstrings.
+cue: Dumbbells stay close to your legs.
+
+## Single Leg Romanian Deadlift | Glutes | dumbbell | strength | aka single leg RDL
+how: Stand on one leg holding a dumbbell in the opposite hand.
+how: Hinge forward as your free leg reaches back, until your body is close to level with the floor.
+how: Return to standing, then switch sides.
+cue: Hips stay square to the floor.
+cue: Soft knee on the standing leg.
+cue: Hold something for balance at first.
+
+## Stiff Leg Deadlift (Barbell) | Legs | barbell | strength | was Stiff Leg Deadlift
+how: Stand holding the bar with your knees nearly straight.
+how: Hinge forward lowering the bar towards your feet.
+how: Stand back up by driving your hips forward.
+cue: Knees only slightly bent.
+cue: Flat back.
+cue: Light weight, big stretch.
+
+## Kettlebell Swing | Glutes | kettlebell | power
+how: Stand with feet shoulder width and the kettlebell a step in front of you.
+how: Hike it back between your legs, then snap your hips forward to swing it to chest height.
+how: Let it fall back between your legs and go straight into the next swing.
+cue: It is a hip snap, not a squat or an arm lift.
+cue: Arms stay relaxed.
+cue: Squeeze your glutes at the top.
+
+## Cable Pull Through | Glutes | cable | strength
+how: Face away from a low pulley holding a rope between your legs.
+how: Hinge back letting the rope pull your hands through your legs.
+how: Drive your hips forward to stand tall.
+cue: Hips back, chest forward.
+cue: Squeeze your glutes at the top.
+cue: Arms just hold on.
+
+## Hip Thrust (Barbell) | Glutes | barbell | strength | aka hip thrust
+how: Sit with your upper back against a bench and a padded bar over your hips.
+how: Plant your feet so your shins will be vertical at the top, then drive your hips up.
+how: Lower your hips slowly.
+cue: Chin tucked, eyes forward.
+cue: Squeeze your glutes hard for a second at the top.
+cue: Ribs down, no arching.
+
+## Hip Thrust (Dumbbell) | Glutes | dumbbell | strength
+how: Sit against a bench with a dumbbell held on your hips.
+how: Drive your hips up until your body is straight from knees to shoulders.
+how: Lower slowly.
+cue: Push through your heels.
+cue: Pause at the top.
+cue: Keep your chin tucked.
+
+## Hip Thrust (Smith Machine) | Glutes | machine | strength | was Smith Machine Hip Thrust
+how: Set a bench beside the Smith machine and sit with the bar over your hips.
+how: Drive your hips up and unhook the bar.
+how: Lower and raise your hips for the set, then re-hook.
+cue: Pad on the bar.
+cue: Shins vertical at the top.
+cue: Squeeze and pause.
+
+## Hip Thrust (Band) | Glutes | band | accessory | was Banded Hip Thrust
+how: Sit against a bench with a band across your hips held down by your hands or a rig.
+how: Drive your hips up against the band.
+how: Lower slowly.
+cue: Band tight across the hip crease.
+cue: Pause at the top.
+cue: High reps work well.
+
+## Sumo Hip Thrust (Barbell) | Glutes | barbell | strength | was Sumo Stance Hip Thrust
+how: Set up like a hip thrust with your feet wide and toes out.
+how: Drive your hips up, pushing your knees out.
+how: Lower slowly.
+cue: Knees follow your toes.
+cue: Squeeze at the top.
+cue: Chin tucked.
+
+## American Hip Thrust (Barbell) | Glutes | barbell | strength | was American Hip Thrust
+how: Set up with the bench lower on your back, just below the shoulder blades, bar on your hips.
+how: Tuck your pelvis and roll your hips up until your thighs are level.
+how: Lower slowly.
+cue: Tilt your hips under at the top.
+cue: Shorter range, more squeeze.
+cue: Chin tucked.
+
+## Single Leg Hip Thrust | Glutes | bodyweight | bodyweight
+how: Sit against a bench with one foot planted and the other leg lifted.
+how: Drive your hips up through the planted foot.
+how: Lower slowly, then switch legs.
+cue: Hips stay level.
+cue: Push through the heel.
+cue: Pause at the top.
+
+## Glute Bridge | Glutes | bodyweight | bodyweight
+how: Lie on your back with knees bent and feet flat near your glutes.
+how: Push through your heels to lift your hips until your body is straight from knees to shoulders.
+how: Lower slowly.
+cue: Squeeze your glutes at the top.
+cue: Ribs down.
+cue: Add a weight on your hips to progress.
+
+## Single Leg Glute Bridge | Glutes | bodyweight | bodyweight
+how: Lie on your back with one foot planted and the other leg straight up or out.
+how: Lift your hips through the planted foot.
+how: Lower slowly, then switch.
+cue: Hips stay level.
+cue: Push through the heel.
+cue: Pause at the top.
+
+## Frog Pump | Glutes | bodyweight | bodyweight
+how: Lie on your back with the soles of your feet together and knees falling out.
+how: Squeeze your glutes to lift your hips.
+how: Lower and repeat quickly.
+cue: High reps.
+cue: Squeeze hard each rep.
+cue: Keep your lower back relaxed.
+
+## Glute Kickback (Cable) | Glutes | cable | strength | was Cable Kickback | aka cable glute kickback
+how: Attach an ankle strap to a low pulley and face the machine, holding on for support.
+how: Kick your leg back and slightly up, squeezing your glute.
+how: Return slowly, then switch legs.
+cue: Hinge forward a little.
+cue: Do not arch your lower back.
+cue: Pause at the top.
+
+## Glute Kickback (Machine) | Glutes | machine | strength | was Glute Kickback Machine
+how: Set up on the machine with your foot on the platform or pad.
+how: Push back until your hip is straight.
+how: Return slowly, then switch legs.
+cue: Squeeze at full extension.
+cue: Keep your back flat.
+cue: Slow return.
+
+## Donkey Kick | Glutes | bodyweight | bodyweight
+how: Start on your hands and knees.
+how: Keeping your knee bent, lift one foot towards the ceiling.
+how: Lower slowly, then switch sides.
+cue: Do not arch your back.
+cue: Squeeze at the top.
+cue: Add an ankle weight or band to progress.
+
+## Fire Hydrant | Glutes | bodyweight | bodyweight
+how: Start on your hands and knees.
+how: Lift one knee out to the side, keeping it bent.
+how: Lower slowly, then switch sides.
+cue: Hips stay level.
+cue: Small, controlled range.
+cue: Add a band above the knees to progress.
+
+## Clamshell | Glutes | bodyweight | bodyweight
+how: Lie on your side with knees bent and feet together.
+how: Open your top knee while keeping your feet touching.
+how: Close slowly.
+cue: Hips stacked, do not roll back.
+cue: Add a band above the knees.
+cue: Slow and controlled.
+
+## Hip Abduction (Machine) | Glutes | machine | strength
+how: Sit with the pads on the outside of your knees.
+how: Push your legs apart as far as you can.
+how: Return slowly.
+cue: Lean slightly forward for more glutes.
+cue: Pause when your legs are open.
+cue: Slow on the way back.
+
+## Standing Hip Abduction (Band) | Glutes | band | accessory | was Banded Hip Abduction Standing
+how: Stand with a band around your ankles or above your knees, holding something for balance.
+how: Lift one leg out to the side.
+how: Lower slowly, then switch.
+cue: Stand tall, no leaning.
+cue: Toes point forward.
+cue: Small range is fine.
+
+## Lying Hip Abduction (Band) | Glutes | band | accessory | was Hip Abduction with Band (Lying)
+how: Lie on your side with a band above your knees and legs straight.
+how: Lift your top leg up.
+how: Lower slowly.
+cue: Hips stacked.
+cue: Lead with your heel.
+cue: Slow and controlled.

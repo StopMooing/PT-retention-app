@@ -1,0 +1,455 @@
+## Back Squat (Barbell) | Legs | barbell | strength | was Back Squat | aka back squat, squat
+how: Set the bar on your upper back, feet about shoulder width and toes slightly out.
+how: Brace, then sit down and back until your hips are at least level with your knees.
+how: Drive up through your whole foot to stand tall.
+cue: Big breath in and brace before each rep.
+cue: Knees travel out over your toes.
+cue: Chest up, push the floor away.
+
+## Pause Back Squat (Barbell) | Legs | barbell | strength | was Pause Squat | aka pause squat
+how: Squat down exactly like a back squat.
+how: Hold the bottom position for two to three seconds without relaxing.
+how: Drive up to stand.
+cue: Stay tight in the pause.
+cue: Count the pause out loud in your head.
+cue: Use less weight than your normal squat.
+
+## Front Squat (Barbell) | Legs | barbell | strength | was Front Squat
+how: Rest the bar on the front of your shoulders with your elbows high.
+how: Squat down keeping your chest tall until your hips are below your knees.
+how: Stand back up, leading with your elbows.
+cue: Elbows up the whole time.
+cue: Sit straight down between your heels.
+cue: Fingertips on the bar is fine.
+
+## Squat (Smith Machine) | Legs | machine | strength | was Smith Machine Squat
+how: Set the bar on your upper back with your feet slightly in front of the bar.
+how: Unhook and squat down until your hips are level with your knees.
+how: Drive up to stand and re-hook at the end.
+cue: Feet a little forward.
+cue: Knees follow your toes.
+cue: Control the bottom.
+
+## Goblet Squat (Dumbbell) | Legs | dumbbell | strength | was Goblet Squat | aka goblet squat, kettlebell goblet squat
+how: Hold one dumbbell or kettlebell against your chest with both hands.
+how: Squat down between your heels, elbows travelling inside your knees.
+how: Stand back up tall.
+cue: Weight stays touching your chest.
+cue: Sit down, not back.
+cue: Great for learning to squat.
+
+## Squat (Dumbbell) | Legs | dumbbell | strength | was Dumbbell Squat
+how: Stand holding a dumbbell at each side.
+how: Squat down until your hips are level with your knees.
+how: Stand back up through your whole foot.
+cue: Arms hang straight.
+cue: Chest up.
+cue: Knees out over toes.
+
+## Squat (Bodyweight) | Legs | bodyweight | bodyweight | was Bodyweight Squat | aka air squat
+how: Stand with feet about shoulder width apart.
+how: Sit down and back as low as you comfortably can, arms reaching forward.
+how: Stand back up.
+cue: Heels stay down.
+cue: Chest stays up.
+cue: Squat to a box or bench to start.
+
+## Squat (Band) | Legs | band | accessory | was Banded Squat
+how: Stand on a band and loop the other end behind your neck or hold it at your shoulders.
+how: Squat down until your hips are level with your knees.
+how: Stand up against the band.
+cue: Band gets harder near the top, drive through it.
+cue: Knees out.
+cue: Stand all the way up.
+
+## Sumo Squat (Dumbbell) | Legs | dumbbell | strength | was Sumo Squat
+how: Stand with feet wide and toes turned out, holding one dumbbell between your legs.
+how: Squat straight down, pushing your knees out.
+how: Stand back up, squeezing your glutes.
+cue: Knees follow your toes.
+cue: Chest tall.
+cue: The weight hangs straight down.
+
+## Overhead Squat (Barbell) | Legs | barbell | strength | was Overhead Squat
+how: Hold the bar overhead with a wide grip and locked arms.
+how: Squat down while keeping the bar over the middle of your feet.
+how: Stand back up.
+cue: Push the bar up hard the whole time.
+cue: Start with a broomstick or empty bar.
+cue: Chest up.
+
+## Zercher Squat (Barbell) | Legs | barbell | strength | was Zercher Squat
+how: Hold the bar in the crook of your elbows, hands together.
+how: Squat down keeping your chest tall.
+how: Stand back up.
+cue: Use a pad or towel on your arms.
+cue: Elbows stay up.
+cue: Brace hard.
+
+## Front Rack Squat (Kettlebell) | Legs | kettlebell | strength | was Kettlebell Front Rack Squat
+how: Hold one or two kettlebells in the rack position against your chest.
+how: Squat down until your hips are below your knees.
+how: Stand back up.
+cue: Elbows tucked in.
+cue: Wrists straight.
+cue: Chest tall.
+
+## Cyclist Squat (Dumbbell) | Legs | dumbbell | strength | was Cyclist Squat | aka heels elevated squat
+how: Stand with your heels raised on a wedge or plate, feet close together, holding the dumbbells.
+how: Squat straight down letting your knees travel well forward.
+how: Stand back up.
+cue: Torso stays upright.
+cue: Knees go forward over your toes.
+cue: Great for quads.
+
+## Spanish Squat (Band) | Legs | band | strength | was Spanish Squat
+how: Loop a heavy band around a rack and behind your knees, then step back until it is tight.
+how: Sit back and down with your shins vertical.
+how: Stand back up.
+cue: Shins stay upright.
+cue: Lean back into the band.
+cue: Kind on sore knees.
+
+## Sissy Squat | Legs | bodyweight | bodyweight
+how: Stand holding something for balance and rise onto your toes.
+how: Bend your knees forward and lean back, keeping a straight line from knees to head.
+how: Return to standing.
+cue: Hips stay forward.
+cue: Small range first.
+cue: Slow and controlled.
+
+## Jump Squat | Legs | bodyweight | power
+how: Stand with feet shoulder width apart.
+how: Squat down a little, then jump as high as you can.
+how: Land softly and go straight into the next rep.
+cue: Land quietly on soft knees.
+cue: Arms help you jump.
+cue: Quality over speed.
+
+## Wall Sit | Legs | bodyweight | bodyweight
+how: Lean your back against a wall and slide down until your knees are at 90 degrees.
+how: Hold with your feet flat and knees over your ankles.
+how: Stand back up when the time is done.
+cue: Back flat on the wall.
+cue: Thighs level with the floor.
+cue: Breathe steadily.
+
+## Belt Squat (Machine) | Legs | machine | strength | was Belt Squat
+how: Attach the belt around your hips and stand on the platform.
+how: Squat down until your hips are level with your knees.
+how: Stand back up.
+cue: Torso stays upright.
+cue: No load on your back.
+cue: Knees out.
+
+## Hack Squat (Machine) | Legs | machine | strength
+how: Stand on the platform with your back and shoulders against the pads.
+how: Release the safeties and squat down until your knees are past 90 degrees.
+how: Drive back up without locking your knees hard.
+cue: Feet lower on the plate for more quads.
+cue: Back stays on the pad.
+cue: Control the bottom.
+
+## Hack Squat (Barbell) | Legs | barbell | strength
+how: Stand with the bar on the floor behind your heels and grip it.
+how: Stand up with the bar behind your legs.
+how: Squat back down to touch the bar to the floor.
+cue: Chest up.
+cue: Bar stays close to your legs.
+cue: Light to start.
+
+## Pendulum Squat (Machine) | Legs | machine | strength | was Pendulum Squat
+how: Stand on the platform with your back on the pad and shoulders under the pads.
+how: Squat down as deep as you can control.
+how: Drive back up.
+cue: Full depth.
+cue: Back on the pad.
+cue: Smooth reps.
+
+## Leg Press | Legs | machine | strength
+how: Sit with your back flat on the pad and feet shoulder width on the platform.
+how: Release the safeties and lower the platform until your knees are at about 90 degrees.
+how: Press back up without locking your knees.
+cue: Lower back stays on the pad.
+cue: Knees follow your toes.
+cue: Do not lock out hard.
+
+## Leg Press (Narrow Stance) | Legs | machine | strength
+how: Set your feet close together in the middle of the platform.
+how: Lower until your knees are bent to about 90 degrees.
+how: Press back up.
+cue: More quads.
+cue: Hips stay down.
+cue: Smooth tempo.
+
+## Leg Press (Wide Stance) | Legs | machine | strength
+how: Set your feet wide and high on the platform, toes turned out.
+how: Lower until your knees are bent to about 90 degrees.
+how: Press back up.
+cue: More glutes and inner thighs.
+cue: Knees push out.
+cue: Lower back on the pad.
+
+## Single Leg Leg Press | Legs | machine | strength
+how: Put one foot in the middle of the platform.
+how: Lower until your knee is bent to about 90 degrees.
+how: Press back up, then switch legs.
+cue: Use less weight than two legs.
+cue: Hips stay level.
+cue: Same reps each side.
+
+## Leg Extension (Machine) | Legs | machine | strength | was Leg Extension | aka leg extension
+how: Sit with the pad on the front of your lower shins and your knees lined up with the machine's pivot.
+how: Straighten your legs until your knees are locked.
+how: Lower slowly.
+cue: Squeeze your quads at the top.
+cue: Hold the handles and stay seated.
+cue: Slow on the way down.
+
+## Single Leg Extension (Machine) | Legs | machine | accessory | was Single Leg Extension
+how: Sit in the leg extension with one leg under the pad.
+how: Straighten that leg.
+how: Lower slowly, then switch legs.
+cue: Pause at the top.
+cue: Same weight both sides.
+cue: No kicking.
+
+## Lying Leg Curl (Machine) | Legs | machine | strength | was Leg Curl (Lying) | aka leg curl
+how: Lie face down with the pad just above your heels.
+how: Curl your heels towards your glutes.
+how: Lower slowly.
+cue: Hips stay pressed into the pad.
+cue: Squeeze at the top.
+cue: Slow lowering.
+
+## Seated Leg Curl (Machine) | Legs | machine | strength | was Leg Curl (Seated)
+how: Sit with the pad behind your lower calves and the thigh pad snug on your legs.
+how: Pull your heels down and back under the seat.
+how: Return slowly.
+cue: Sit tall against the back pad.
+cue: Squeeze at the bottom.
+cue: Control the way back up.
+
+## Nordic Curl | Legs | bodyweight | bodyweight
+how: Kneel with your ankles held down by a partner or pad.
+how: Lower your body forward as slowly as you can, keeping a straight line from knees to head.
+how: Catch yourself with your hands and push back up.
+cue: Lower as slowly as you can.
+cue: Hips stay straight.
+cue: Use a band to help at first.
+
+## Glute Ham Raise | Legs | machine | strength
+how: Set up on the machine with your feet locked in and knees just behind the pad.
+how: Lower your body until it is level with the floor.
+how: Curl yourself back up using your hamstrings.
+cue: Hips stay straight.
+cue: Pull with your heels.
+cue: Use your hands to help at first.
+
+## Hip Adduction (Machine) | Legs | machine | strength
+how: Sit with the pads on the inside of your knees.
+how: Squeeze your legs together.
+how: Open them slowly.
+cue: Sit tall.
+cue: Pause when the pads meet.
+cue: Slow on the way out.
+
+## Reverse Lunge | Legs | bodyweight | bodyweight | aka lunge
+how: Stand tall, then step one foot back and lower until both knees are bent to about 90 degrees.
+how: Push through your front foot to step back to standing.
+how: Alternate legs or do all reps on one side.
+cue: Front knee stays over the ankle.
+cue: Back knee lowers towards the floor.
+cue: Hold dumbbells to make it harder.
+
+## Walking Lunge | Legs | bodyweight | bodyweight | was Lunge (Walking)
+how: Step forward and lower until both knees are bent to about 90 degrees.
+how: Push through your front foot and bring your back foot through into the next step.
+how: Keep walking for the set.
+cue: Tall chest.
+cue: Long enough steps that your front knee stays behind your toes.
+cue: Hold dumbbells for more load.
+
+## Stationary Lunge | Legs | bodyweight | bodyweight | was Lunge (Stationary)
+how: Stand in a split stance with one foot forward and one back.
+how: Lower straight down until both knees are bent to about 90 degrees.
+how: Stand back up without moving your feet, then switch legs after the set.
+cue: Straight up and down.
+cue: Weight in the front heel.
+cue: Back knee gently towards the floor.
+
+## Lateral Lunge | Legs | bodyweight | bodyweight
+how: Stand with feet together, then take a big step out to one side.
+how: Sit your hips back over the stepping leg, keeping the other leg straight.
+how: Push back to the start and repeat or alternate.
+cue: Toes point forward.
+cue: Chest up, hips back.
+cue: Heel stays down.
+
+## Curtsy Lunge | Legs | bodyweight | bodyweight
+how: Stand tall, then step one foot behind and across the other.
+how: Lower until your front knee is bent to about 90 degrees.
+how: Return to standing and switch sides.
+cue: Hips stay square.
+cue: Front knee tracks over toes.
+cue: Slow and controlled.
+
+## Bulgarian Split Squat | Legs | dumbbell | strength | aka split squat, rear foot elevated split squat
+how: Stand in front of a bench and rest the top of your back foot on it.
+how: Lower straight down until your front thigh is about level with the floor.
+how: Drive through your front foot to stand back up, then switch legs.
+cue: Most of your weight on the front leg.
+cue: Lean slightly forward for more glutes.
+cue: Hold dumbbells when bodyweight gets easy.
+
+## Split Squat (Barbell) | Legs | barbell | strength | was Romanian Split Squat | aka romanian split squat
+how: Set the bar on your upper back and stand in a long split stance.
+how: Lower straight down until your back knee nearly touches the floor.
+how: Stand back up, then switch legs after the set.
+cue: Wide stance for balance.
+cue: Torso tall.
+cue: Front foot flat.
+
+## Step Up | Legs | bodyweight | bodyweight
+how: Stand facing a box or bench and place one whole foot on top.
+how: Drive through that foot to stand up on the box.
+how: Step down slowly with the other leg and repeat.
+cue: Push through the top foot, not the bottom one.
+cue: Box height about knee level.
+cue: Hold dumbbells to make it harder.
+
+## Step Up with Knee Drive | Glutes | bodyweight | bodyweight
+how: Step up onto a box with one foot.
+how: As you stand up, drive the other knee up to hip height.
+how: Step back down slowly and repeat.
+cue: Stand tall at the top.
+cue: Control the step down.
+cue: Use your arms like running.
+
+## Box Step Down | Legs | bodyweight | bodyweight
+how: Stand on a low box on one leg.
+how: Slowly lower the other heel towards the floor by bending your standing knee.
+how: Tap the heel down lightly and stand back up.
+cue: Knee stays over your toes.
+cue: Slow on the way down.
+cue: Hips stay level.
+
+## Poliquin Step Up | Legs | bodyweight | accessory
+how: Stand on a low step with your heel raised on a small wedge.
+how: Lower the other foot towards the floor, letting your knee travel forward.
+how: Straighten back up.
+cue: Small range.
+cue: Knee goes forward over the toes.
+cue: Great for the knees and quads.
+
+## Standing Calf Raise | Legs | bodyweight | bodyweight | aka calf raise
+how: Stand with the balls of your feet on a step and heels hanging off.
+how: Rise up onto your toes as high as you can.
+how: Lower your heels below the step slowly.
+cue: Pause at the top.
+cue: Full stretch at the bottom.
+cue: Hold a dumbbell to make it harder.
+
+## Standing Calf Raise (Machine) | Legs | machine | strength
+how: Stand under the shoulder pads with the balls of your feet on the platform.
+how: Rise up onto your toes as high as you can.
+how: Lower slowly until your heels drop below the platform.
+cue: Knees straight but not locked.
+cue: Pause at the top.
+cue: Slow stretch at the bottom.
+
+## Seated Calf Raise (Machine) | Legs | machine | strength | was Seated Calf Raise | aka seated calf raise
+how: Sit with the pad on your lower thighs and the balls of your feet on the platform.
+how: Lift your heels as high as you can.
+how: Lower slowly into a full stretch.
+cue: Works the lower calf.
+cue: Pause at the top.
+cue: Full range every rep.
+
+## Single Leg Calf Raise | Legs | bodyweight | bodyweight
+how: Stand on one foot on a step, holding something for balance.
+how: Rise up onto your toes.
+how: Lower slowly below the step, then switch legs.
+cue: Full range.
+cue: Same reps each side.
+cue: Hold a dumbbell when it gets easy.
+
+## Calf Raise (Smith Machine) | Legs | machine | strength | was Smith Machine Calf Raise
+how: Stand under the Smith bar with the balls of your feet on a plate or step.
+how: Rise onto your toes.
+how: Lower slowly.
+cue: Stand tall.
+cue: Pause at the top.
+cue: Full stretch.
+
+## Calf Raise (Band) | Legs | band | accessory | was Resistance Band Calf Raise
+how: Sit with legs straight and loop a band around the balls of your feet.
+how: Point your toes away against the band.
+how: Return slowly.
+cue: Slow and full range.
+cue: Shorten the band for more tension.
+cue: Good for warm ups.
+
+## Leg Press Calf Raise | Legs | machine | strength
+how: Sit in the leg press with only the balls of your feet on the bottom edge of the platform.
+how: Push the platform away by pointing your toes.
+how: Return slowly.
+cue: Knees stay straight.
+cue: Keep the safeties close.
+cue: Full stretch.
+
+## Hack Squat Calf Raise (Machine) | Legs | machine | strength | was Hack Squat Calf Raise
+how: Stand in the hack squat facing the pads with the balls of your feet on the platform edge.
+how: Rise onto your toes.
+how: Lower slowly.
+cue: Knees straight.
+cue: Pause at the top.
+cue: Full stretch.
+
+## Donkey Calf Raise | Legs | machine | strength
+how: Lean forward with your hips under the pad or a partner, balls of your feet on a step.
+how: Rise up onto your toes.
+how: Lower slowly into a stretch.
+cue: Hips stay over your feet.
+cue: Big stretch at the bottom.
+cue: Pause at the top.
+
+## Calf Raise with Pause | Legs | bodyweight | bodyweight
+how: Stand on a step and rise onto your toes.
+how: Hold the top for two seconds.
+how: Lower slowly and pause at the bottom too.
+cue: No bouncing.
+cue: Count the pauses.
+cue: Add a dumbbell when easy.
+
+## Eccentric Calf Raise | Legs | bodyweight | bodyweight
+how: Rise up onto your toes using both feet.
+how: Shift onto one foot and lower slowly for three to five seconds.
+how: Go back to both feet to rise again.
+cue: Slow is the point.
+cue: Great for achilles health.
+cue: Alternate legs.
+
+## Tibialis Raise | Legs | bodyweight | bodyweight
+how: Lean your back against a wall with your heels about a foot in front of you.
+how: Lift your toes towards your shins as high as you can.
+how: Lower slowly.
+cue: Heels stay down.
+cue: Move further from the wall to make it harder.
+cue: Good for shins and knees.
+
+## Box Jump (Calf Focus) | Legs | bodyweight | power | was Box Jump Calf Focus
+how: Stand close to a low box.
+how: Jump onto it using mainly your ankles, keeping your knees fairly straight.
+how: Step down and repeat.
+cue: Quick, springy jumps.
+cue: Land on the balls of your feet.
+cue: Low box only.
+
+## Farmers Walk on Toes | Legs | dumbbell | strength | was Farmer Walk on Toes
+how: Hold a dumbbell in each hand and rise onto your toes.
+how: Walk forward staying on your toes.
+how: Keep going for the distance or time.
+cue: Stay high on your toes.
+cue: Short quick steps.
+cue: Tall posture.

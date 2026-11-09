@@ -1,0 +1,5217 @@
+[
+{
+"id": "38b14568-9ae4-4ada-a15c-b62d6877ce41",
+"name": "21s Curl",
+"mg": "Biceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"twenty ones",
+"21s"
+],
+"ins": "Perform 7 partial reps bottom half, 7 partial reps top half, then 7 fu"
+},
+{
+"id": "d068a08a-5142-4405-acca-a46879c66f5e",
+"name": "45 Degree Back Extension",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"back extension",
+"45 back extension"
+],
+"ins": "Lie face down on back extension bench at 45 degrees. Lower torso, rais"
+},
+{
+"id": "dbc505dc-29e9-43ab-9c40-f61ca5df4652",
+"name": "Ab Wheel Rollout",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 15,
+"upb": 0,
+"um": 0,
+"al": [
+"rollout",
+"ab wheel"
+],
+"ins": "Kneel holding ab wheel. Roll forward stretching out, pull back in usin"
+},
+{
+"id": "b0824938-1505-4187-992a-ce9bf154e724",
+"name": "Alternating Dumbbell Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"alt curl",
+"alternating curl"
+],
+"ins": "Stand holding dumbbells at sides. Curl one dumbbell at a time, supinat"
+},
+{
+"id": "6026398e-06f7-4ce9-bd8e-40d1a85b80a5",
+"name": "Alternating Hammer Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"alternating hammer"
+],
+"ins": "Hold dumbbells with neutral grip. Curl one arm at a time with neutral "
+},
+{
+"id": "c1573a1b-6265-4a7b-acb6-eb3189a42317",
+"name": "American Hip Thrust",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"american thrust"
+],
+"ins": "Hip thrust with posterior pelvic tilt held at top. Different glute fib"
+},
+{
+"id": "2aec7c6d-5962-4d3a-896b-34e60c03cabf",
+"name": "Arnold Press",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 24,
+"upb": 6,
+"um": 0,
+"al": [
+"arnold"
+],
+"ins": "Start with dumbbells at chin palms facing you. Press up while rotating"
+},
+{
+"id": "20aa15d3-411b-4619-af25-78bc5a574f95",
+"name": "Assisted Pull Up (Machine)",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 12,
+"upb": 3,
+"um": 0,
+"al": [],
+"ins": "Use assisted pull up machine, kneel on pad. Pull up to bar. Counter we"
+},
+{
+"id": "fc69fa1b-5854-4ac5-8762-4680147ba03b",
+"name": "Back Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 8,
+"ul": 91,
+"upb": 24,
+"um": 0,
+"al": [
+"high bar squat",
+"low bar squat",
+"BB squat",
+"barbell squat",
+"squat"
+],
+"ins": "Bar on upper traps, feet shoulder-width. Squat until thighs parallel t"
+},
+{
+"id": "2deeb5ee-86cc-42e2-b183-f093c634abbf",
+"name": "Band Pull Apart",
+"mg": "Back",
+"eq": "band",
+"cat": "warmup",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"pull apart",
+"band pull-apart"
+],
+"ins": "Hold band in front at shoulder height with straight arms. Pull band ap"
+},
+{
+"id": "31ea2733-5e98-4f50-8749-07e0925597c7",
+"name": "Banded Hip Abduction Standing",
+"mg": "Glutes",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand with band above knees, hold support. Kick one leg out to side ag"
+},
+{
+"id": "bd7f84b9-31e8-4852-b390-57b337e19fdd",
+"name": "Banded Hip Thrust",
+"mg": "Glutes",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"band hip thrust"
+],
+"ins": "Perform hip thrust with resistance band across hips. Band adds accommo"
+},
+{
+"id": "db5e8e25-dd61-43a2-abd0-5bc2128aec00",
+"name": "Banded Squat",
+"mg": "Legs",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Place resistance band above knees. Perform squat pushing knees out aga"
+},
+{
+"id": "350f0b1f-d809-424a-ad4d-45a8e9d660dc",
+"name": "Barbell Bench Press",
+"mg": "Chest",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 8,
+"ul": 136,
+"upb": 24,
+"um": 0,
+"al": [
+"chest press barbell",
+"BB bench",
+"flat bench",
+"bench press"
+],
+"ins": "Lie on flat bench, grip bar slightly wider than shoulder-width. Lower "
+},
+{
+"id": "8724af43-0aca-478b-945a-38c71c745cad",
+"name": "Barbell Bicep Curl",
+"mg": "Biceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 17,
+"upb": 6,
+"um": 0,
+"al": [
+"straight bar curl",
+"BB curl",
+"barbell curl"
+],
+"ins": "Stand with feet shoulder-width apart, grip barbell with underhand grip"
+},
+{
+"id": "ad18d252-c44b-40c4-9c91-2e4fe4bcee33",
+"name": "Barbell Complex",
+"mg": "Full Body",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Series of barbell exercises performed back to back without resting the"
+},
+{
+"id": "9d8fe29f-bc26-4b00-81c3-ff3a00416a35",
+"name": "Barbell Front Raise",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold barbell at thighs overhand. Raise to shoulder height, lower slowl"
+},
+{
+"id": "d91f5d54-acb2-443a-b16f-88dfb84b1361",
+"name": "Barbell Overhead Press",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 4,
+"ul": 87,
+"upb": 15,
+"um": 0,
+"al": [
+"strict press",
+"standing press",
+"shoulder press barbell",
+"OHP",
+"overhead press"
+],
+"ins": "Stand or sit, grip bar just outside shoulders. Press overhead to full "
+},
+{
+"id": "fddeebb0-3822-492e-90b0-a3ac42a6877e",
+"name": "Barbell Pull Over",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on bench, hold barbell above chest with wide grip. Lower behind he"
+},
+{
+"id": "725495fe-015e-44c4-baba-656a8bb4712b",
+"name": "Barbell Row (Bent Over)",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 5,
+"ul": 91,
+"upb": 21,
+"um": 0,
+"al": [
+"pronated barbell row",
+"overhand barbell row",
+"bent over barbell row",
+"BB row",
+"barbell row",
+"bent over row"
+],
+"ins": "Hinge forward to 45 degrees, grip bar overhand. Row bar to lower abdom"
+},
+{
+"id": "97f2805a-ecb3-44be-9126-c8d322ce7839",
+"name": "Battle Ropes",
+"mg": "Full Body",
+"eq": "functional",
+"cat": "cardio",
+"g": true,
+"uw": 3,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"ropes",
+"battle rope"
+],
+"ins": "Hold heavy ropes, create wave patterns. Various patterns for different"
+},
+{
+"id": "7c1ff01f-b6d2-4099-9738-061b6b3ceb1a",
+"name": "Bayesian Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 12,
+"upb": 3,
+"um": 0,
+"al": [
+"cable incline curl"
+],
+"ins": "Stand facing away from low cable pulley, hold handle behind hip. Step "
+},
+{
+"id": "12d544ad-437f-4cdc-b50e-1b1a18c13ef3",
+"name": "Bear Crawl",
+"mg": "Full Body",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hands and feet on floor, hips low. Crawl forward and back moving oppos"
+},
+{
+"id": "a2e573da-2fe6-4949-b4ad-58e05b92910c",
+"name": "Belt Squat",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "07015d0e-6144-4865-8b18-b4326e9c3815",
+"name": "Bench Dip",
+"mg": "Triceps",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"chair dip"
+],
+"ins": "Place hands on bench behind you, feet on floor or elevated. Lower hips"
+},
+{
+"id": "d5f03299-953a-471a-b2f7-1e16c2850ecf",
+"name": "Bent Over Rear Delt Fly",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"rear delt raise",
+"bent over fly",
+"reverse fly",
+"rear delt fly"
+],
+"ins": "Hinge forward 45-90 degrees, hold dumbbells hanging. Raise arms out to"
+},
+{
+"id": "cd5b984b-08e6-4702-9f25-0a7f63a940ba",
+"name": "Bicycle Crunch",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"air bicycle",
+"bicycle"
+],
+"ins": "Lie on back, hands behind head. Bring opposite elbow to knee while ext"
+},
+{
+"id": "33ed50e4-51f4-42f0-9b57-82402d0d1426",
+"name": "Bird Dog",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"bird dogs"
+],
+"ins": "On hands and knees. Extend opposite arm and leg simultaneously, return"
+},
+{
+"id": "43837f3d-08b6-4d14-9c95-90c6ac449f49",
+"name": "Bodyweight Squat",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand with feet shoulder width apart, toes slightly out. Sit your hips"
+},
+{
+"id": "44d5cefd-26a9-47d0-944a-b71812c4df40",
+"name": "Box Jump",
+"mg": "Full Body",
+"eq": "bodyweight",
+"cat": "power",
+"g": true,
+"uw": 1,
+"ul": 16,
+"upb": 0,
+"um": 0,
+"al": [
+"box jumps"
+],
+"ins": "Stand before plyo box. Load hips, explode up landing softly on box. St"
+},
+{
+"id": "6235329a-fd15-4e69-9d9d-3b1e4aaa057a",
+"name": "Box Jump Calf Focus",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Perform box jumps using primarily calf and ankle extension. Plyometric"
+},
+{
+"id": "150656e4-4814-4c63-91e8-d1bdf00c0bd6",
+"name": "Box Step Down",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand on box, slowly lower one foot to floor controlling with standing"
+},
+{
+"id": "956a47ad-a3a4-4ba9-9cae-b169ff066318",
+"name": "Bradford Press",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Alternate pressing barbell over and behind head. Each overhead and beh"
+},
+{
+"id": "0d5c3772-4ab8-40a3-952b-8a9f342dfc43",
+"name": "Broad Jump",
+"mg": "Full Body",
+"eq": "bodyweight",
+"cat": "power",
+"g": true,
+"uw": 1,
+"ul": 16,
+"upb": 0,
+"um": 0,
+"al": [
+"standing broad jump"
+],
+"ins": "Two foot takeoff jumping for maximum horizontal distance. Land softly."
+},
+{
+"id": "cf198b69-85c3-4b87-a0bb-c6a37975e12a",
+"name": "Bulgarian Split Squat",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 6,
+"ul": 60,
+"upb": 21,
+"um": 0,
+"al": [
+"RFESS",
+"rear foot elevated split squat",
+"split squat",
+"BSS"
+],
+"ins": "Rear foot elevated on bench, front foot forward. Lower rear knee towar"
+},
+{
+"id": "8a79e74c-1eff-443b-a79b-52b24864717f",
+"name": "Burpee",
+"mg": "Full Body",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 2,
+"ul": 9,
+"upb": 0,
+"um": 0,
+"al": [
+"burpees"
+],
+"ins": "Drop to floor in push up position, perform push up, jump feet to hands"
+},
+{
+"id": "1c4ec577-6d41-4dea-bb3c-a2546a94ced1",
+"name": "Bus Driver",
+"mg": "Shoulders",
+"eq": "plate",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold plate in front at shoulder height. Rotate plate 180 degrees alter"
+},
+{
+"id": "3f8b07db-627e-4fd9-9512-1aff8cb30ab3",
+"name": "Butt Kicks",
+"mg": "Cardio",
+"eq": "bodyweight",
+"cat": "warmup",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Jog in place kicking heels to glutes alternately. Hamstring activation"
+},
+{
+"id": "dd347a13-614f-4c81-abae-10b35b84b5cb",
+"name": "Cable Bicep Curl",
+"mg": "Biceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"cable curl"
+],
+"ins": "Stand at cable machine with low pulley, attach straight bar. Curl bar "
+},
+{
+"id": "0b45e6ab-295a-4450-a019-30c5a0f7cb16",
+"name": "Cable Chest Fly (High to Low)",
+"mg": "Chest",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"high cable fly",
+"high to low fly"
+],
+"ins": "Set cables high, hold handles, step forward. Sweep arms down and toget"
+},
+{
+"id": "73b834d8-99e3-4d57-ae55-2d0ec94b0446",
+"name": "Cable Chest Fly (Low to High)",
+"mg": "Chest",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"low cable fly",
+"low to high fly"
+],
+"ins": "Set cables low, hold handles, step forward. Sweep arms up and together"
+},
+{
+"id": "7ebe0401-baea-441f-b403-26ff7329cb1b",
+"name": "Cable Chest Fly (Mid)",
+"mg": "Chest",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 24,
+"upb": 6,
+"um": 0,
+"al": [
+"cable crossover",
+"cable fly"
+],
+"ins": "Set cables at chest height, hold handles, step forward. Sweep arms tog"
+},
+{
+"id": "f2b67c83-4c44-46d0-b32c-dda3ec4eac26",
+"name": "Cable Concentration Curl",
+"mg": "Biceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Kneel beside low cable pulley, brace elbow on inner thigh. Curl handle"
+},
+{
+"id": "3ed18797-d50c-4593-9643-624d3aca0fcf",
+"name": "Cable Crossover",
+"mg": "Chest",
+"eq": "cable",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "8b348788-ead1-48c6-aba6-f4934b0ae7a1",
+"name": "Cable Crunch",
+"mg": "Core",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 15,
+"upb": 6,
+"um": 0,
+"al": [
+"kneeling cable crunch"
+],
+"ins": "Kneel at high cable pulley with rope. Pull rope down crunching abs tow"
+},
+{
+"id": "226fec88-2a83-40d6-b0d5-519af531c8d8",
+"name": "Cable Curl with Resistance Band",
+"mg": "Biceps",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Loop resistance band around anchor, hold with underhand grip. Curl to "
+},
+{
+"id": "f8d6c390-bf4b-441a-ba23-6aa335620510",
+"name": "Cable Front Raise",
+"mg": "Shoulders",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand facing away from low cable, hold handle. Raise arm to shoulder h"
+},
+{
+"id": "72c6eeff-0db4-4098-b430-0f44e35fd544",
+"name": "Cable Hammer Curl",
+"mg": "Biceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Attach rope to low cable pulley. Hold rope with neutral grip, curl up "
+},
+{
+"id": "cfd78a34-219a-4a78-a2f6-a2e8b81413d3",
+"name": "Cable Kickback",
+"mg": "Glutes",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 18,
+"upb": 6,
+"um": 0,
+"al": [
+"cable glute kickback",
+"glute kickback"
+],
+"ins": "Attach ankle strap to low cable, face machine. Kick leg back squeezing"
+},
+{
+"id": "411bce2c-c354-4ff6-8355-0df94c2c56f9",
+"name": "Cable Lateral Raise",
+"mg": "Shoulders",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 4,
+"ul": 60,
+"upb": 15,
+"um": 0,
+"al": [
+"cable side raise"
+],
+"ins": "Stand side-on to low cable, hold handle across body. Raise arm out to "
+},
+{
+"id": "c60d7621-8864-46a8-9d3e-cd95f3afd741",
+"name": "Cable Overhead Single Arm Extension",
+"mg": "Triceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold single cable handle overhead, face away from stack. Extend arm fo"
+},
+{
+"id": "55fd2fc5-bccd-4ef0-964f-802e97eb9b1f",
+"name": "Cable Pull Over",
+"mg": "Back",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand at high cable, hold bar with straight arms. Pull bar down and ba"
+},
+{
+"id": "5fbddfcd-0741-4910-ab02-9068015863fa",
+"name": "Cable Pull Through",
+"mg": "Glutes",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand facing away from low cable, rope between legs. Hinge forward the"
+},
+{
+"id": "db28097e-c3ba-4a3b-86d9-41a720d8cc3d",
+"name": "Cable Rear Delt Fly",
+"mg": "Shoulders",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"cable reverse fly"
+],
+"ins": "Stand at cable with both cables set high, cross handles. Pull arms bac"
+},
+{
+"id": "3ebcaea4-a0e1-4415-bbcb-8c898cd3317b",
+"name": "Cable Row with Rotation",
+"mg": "Back",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Sit at cable, row handle and rotate torso. Adds rotational element for"
+},
+{
+"id": "985240bc-fa45-4868-ad22-1ec524f20c17",
+"name": "Cable Woodchop (High to Low)",
+"mg": "Core",
+"eq": "cable",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "fcfe75dd-ed10-43bb-b01a-108979ba8b35",
+"name": "Cable Woodchop (Low to High)",
+"mg": "Core",
+"eq": "cable",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "f9852915-08dd-498b-8347-3e62a1e6e985",
+"name": "Cable Y Raise",
+"mg": "Shoulders",
+"eq": "cable",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "553ed0a1-54da-460b-8cc0-ac9eb0d83b01",
+"name": "Calf Raise with Pause",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Perform standing calf raise with 2 second hold at top and bottom. Elim"
+},
+{
+"id": "f1444516-f782-4129-a428-869866c0162b",
+"name": "California Press",
+"mg": "Triceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"california"
+],
+"ins": "Lie on bench, lower barbell to lower pec like a press, then extend elb"
+},
+{
+"id": "ef77a6c8-1215-472f-8418-c0a18e0e16d6",
+"name": "Chest Supported Dumbbell Row",
+"mg": "Back",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 5,
+"ul": 36,
+"upb": 15,
+"um": 0,
+"al": [
+"incline bench row",
+"chest supported row"
+],
+"ins": "Lie face down on incline bench with dumbbells hanging. Row both dumbbe"
+},
+{
+"id": "fc0411a4-3e57-4535-a258-bf9b786a2915",
+"name": "Chest Supported T-Bar Row",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 3,
+"ul": 43,
+"upb": 12,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "b3adbba8-032f-4690-a96a-f85819e428b3",
+"name": "Chin Up",
+"mg": "Back",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 12,
+"upb": 0,
+"um": 0,
+"al": [
+"underhand pull up",
+"chin-up",
+"chinup",
+"chin up (bicep focus)"
+],
+"ins": "Hang from bar with underhand grip shoulder-width. Pull chest to bar. M"
+},
+{
+"id": "342ce1e9-2915-4ba5-8e75-e8e3b36b40e8",
+"name": "Clamshell",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"clamshells"
+],
+"ins": "Lie on side with knees bent and hips stacked. Open top knee like a cla"
+},
+{
+"id": "cfaabcec-bf05-4fe8-91de-266e00e94370",
+"name": "Clean and Press",
+"mg": "Full Body",
+"eq": "barbell",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"clean and jerk"
+],
+"ins": "Clean barbell from floor to shoulders in one movement, press overhead."
+},
+{
+"id": "7a099b6b-2c6d-45fe-8c6b-ef2e97bbefcd",
+"name": "Clean Pull",
+"mg": "Full Body",
+"eq": "barbell",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "331e2d0a-df10-4219-becb-f8c91f60fe57",
+"name": "Close Grip Bench Press",
+"mg": "Triceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 30,
+"upb": 9,
+"um": 0,
+"al": [
+"CGBP",
+"close grip bench"
+],
+"ins": "Lie on flat bench, grip bar shoulder-width or narrower. Lower bar to l"
+},
+{
+"id": "511ae802-2e6e-4fe9-8fd6-e6e09a43d01e",
+"name": "Concentration Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"concentration"
+],
+"ins": "Sit on bench, brace elbow against inner thigh. Curl dumbbell up isolat"
+},
+{
+"id": "b2e12775-3a9d-4e12-a060-0dd7a0ed6489",
+"name": "Copenhagen Plank",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"adductor plank",
+"copenhagen"
+],
+"ins": ""
+},
+{
+"id": "0279d501-2e65-43dd-9566-0d4128ac5118",
+"name": "Cross Body Hammer Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"cross body curl"
+],
+"ins": "Hold dumbbells at sides with neutral grip. Curl one dumbbell across bo"
+},
+{
+"id": "50ddf561-8302-4dac-a279-cc6306ba524b",
+"name": "Crunch",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"crunches"
+],
+"ins": "Lie on back, knees bent. Curl shoulders off floor toward knees without"
+},
+{
+"id": "554eba5c-f038-48d3-a5ce-e26b45ecfb1c",
+"name": "Cuban Press",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Clean dumbbells to upright row position, rotate forearms up, press ove"
+},
+{
+"id": "a33c9b20-9548-43d1-91f7-3c73abc8af0e",
+"name": "Curtsy Lunge",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"curtsy"
+],
+"ins": "Step one leg diagonally behind other crossing legs. Lower back knee, r"
+},
+{
+"id": "a38e6409-c9dc-43be-8376-4b844cc1ed2b",
+"name": "Cycle Ergometer Test",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Standardised cycling test protocol for fitness assessment. Follow esta"
+},
+{
+"id": "04b7bf3c-9ee0-435c-83ed-b7172fb1654d",
+"name": "Cycling Intervals",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Alternate high resistance high cadence efforts with easy pedaling reco"
+},
+{
+"id": "e85c46b5-6554-44e7-adea-680014c7879c",
+"name": "Cyclist Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Heels elevated on plates or board, feet close together. Squat with ext"
+},
+{
+"id": "a107a153-671a-443d-8684-6b86d7aeb0a1",
+"name": "Dead Bug",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 6,
+"ul": 30,
+"upb": 0,
+"um": 0,
+"al": [
+"dead bugs"
+],
+"ins": "Lie on back, arms and legs in air. Lower opposite arm and leg toward f"
+},
+{
+"id": "96b57614-ab21-4940-ba7b-68364e41d565",
+"name": "Deadlift (Conventional)",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 4,
+"ul": 89,
+"upb": 18,
+"um": 0,
+"al": [
+"DL",
+"conventional deadlift",
+"deadlift"
+],
+"ins": "Stand over bar feet hip-width. Grip just outside legs. Drive floor awa"
+},
+{
+"id": "3658559d-5413-41f5-85d0-19db135bff1e",
+"name": "Deadlift (Sumo)",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"sumo DL",
+"sumo deadlift"
+],
+"ins": "Wide stance, toes pointed out, grip inside legs. Pull bar to hip level"
+},
+{
+"id": "0be337f1-f6cf-496d-b945-43b33efef996",
+"name": "Decline Barbell Bench Press",
+"mg": "Chest",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"decline press",
+"decline bench"
+],
+"ins": "Set bench to negative angle, feet secured. Lower bar to lower pec. Tar"
+},
+{
+"id": "7c3a4de5-04a5-49d1-b02c-f61fb4dfc79d",
+"name": "Decline Dumbbell Press",
+"mg": "Chest",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"decline DB press"
+],
+"ins": "Set bench to decline, hold dumbbells at chest. Press up, lower with co"
+},
+{
+"id": "8beacaa9-60b3-4e50-9ce0-99c23c411e1c",
+"name": "Decline Push Up",
+"mg": "Chest",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Feet elevated on bench, hands on floor. Lower chest toward floor, pres"
+},
+{
+"id": "cfe7f114-c0be-4cc5-8de6-c41e01f6d906",
+"name": "Decline Sit Up",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on decline bench. Perform sit up against gravity. More demanding t"
+},
+{
+"id": "f0d868b7-0232-4ffb-95ad-8150d79735a4",
+"name": "Diamond Push Up",
+"mg": "Triceps",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"triangle push up",
+"diamond pushup"
+],
+"ins": "Place hands close together forming diamond shape. Perform push up keep"
+},
+{
+"id": "30de57d6-8a0a-4a98-a712-aba71bd241a2",
+"name": "Dips (Chest Focus)",
+"mg": "Chest",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 2,
+"ul": 32,
+"upb": 0,
+"um": 0,
+"al": [
+"parallel bar dips",
+"chest dips",
+"dips"
+],
+"ins": "Lean forward on parallel bars with wider grip. Lower until shoulders b"
+},
+{
+"id": "30240637-f8d8-4f05-8143-05ae991701f5",
+"name": "Donkey Calf Raise",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hinge forward 90 degrees with weight across lower back. Raise heels. G"
+},
+{
+"id": "e77edc8f-42a0-490d-91a1-70eee7686337",
+"name": "Donkey Kick",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"donkey kicks"
+],
+"ins": "On hands and knees, kick one leg back and up squeezing glute. Hold bri"
+},
+{
+"id": "c92d00c4-c159-48da-9efa-4c0c973c798e",
+"name": "Drag Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"drag curls"
+],
+"ins": "Hold barbell at thighs. Drag bar up body keeping elbows back the entir"
+},
+{
+"id": "752fc553-cefe-4788-8689-e9b1c4aba7b4",
+"name": "Dragon Flag",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"dragon flags"
+],
+"ins": "Lie on bench, hold behind head. Raise entire body straight keeping onl"
+},
+{
+"id": "776731a6-70bc-4195-a687-f977d36c2b60",
+"name": "Dumbbell Bench Press",
+"mg": "Chest",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 7,
+"ul": 89,
+"upb": 27,
+"um": 0,
+"al": [
+"flat dumbbell press",
+"dumbbell chest press",
+"DB bench press"
+],
+"ins": "Lie on flat bench holding dumbbells at chest level. Press up and sligh"
+},
+{
+"id": "b2f788b6-e4a4-4402-90d0-83ebd8050df9",
+"name": "Dumbbell Bicep Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 33,
+"upb": 12,
+"um": 0,
+"al": [
+"DB curl",
+"dumbbell curl"
+],
+"ins": "Stand holding dumbbells at sides with palms facing forward. Curl both "
+},
+{
+"id": "b30230b1-abdf-4cf0-8876-23a96cd74338",
+"name": "Dumbbell Chest Fly",
+"mg": "Chest",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 18,
+"upb": 3,
+"um": 0,
+"al": [
+"flat fly",
+"DB fly",
+"chest fly"
+],
+"ins": "Lie on flat bench, hold dumbbells above chest with slight bend in elbo"
+},
+{
+"id": "c15ae11a-121c-459c-bc7e-a5964fd0f1e5",
+"name": "Dumbbell Complex",
+"mg": "Full Body",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Perform series of dumbbell exercises without putting weights down. Cus"
+},
+{
+"id": "4d23ab07-8e3b-4fbb-a049-4d744a5ec1b9",
+"name": "Dumbbell Floor Press (Tricep)",
+"mg": "Triceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on floor, perform close grip dumbbell press. Floor limits range re"
+},
+{
+"id": "630e5bea-8af8-40e4-93c7-f34c5889dd97",
+"name": "Dumbbell Front Raise",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"DB front raise",
+"front raise"
+],
+"ins": "Stand holding dumbbells at thighs. Raise one or both arms to shoulder "
+},
+{
+"id": "a441fa1b-9f43-4710-b471-eabef4f1474d",
+"name": "Dumbbell Lateral Raise",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 6,
+"ul": 66,
+"upb": 24,
+"um": 0,
+"al": [
+"side lateral raise",
+"DB lateral raise",
+"side raise",
+"lateral raise"
+],
+"ins": "Stand holding dumbbells at sides. Raise arms out to shoulder height le"
+},
+{
+"id": "e74039d9-2cb7-412c-9f27-e603d2aff5f0",
+"name": "Dumbbell Pull Over",
+"mg": "Back",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie across bench, hold dumbbell overhead with both hands. Lower behind"
+},
+{
+"id": "2c43b2cd-2a6d-4cdf-8f7a-9492fe0f85b3",
+"name": "Dumbbell Reverse Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "067338c4-0b2b-4b84-9114-29a360ed9cb1",
+"name": "Dumbbell Row (Single Arm)",
+"mg": "Back",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 3,
+"upb": 3,
+"um": 0,
+"al": [
+"one arm dumbbell row",
+"dumbbell row",
+"DB row",
+"one arm row",
+"single arm row"
+],
+"ins": "Place one knee and hand on bench for support. Row dumbbell to hip driv"
+},
+{
+"id": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+"name": "Dumbbell Shoulder Press",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 11,
+"ul": 93,
+"upb": 33,
+"um": 0,
+"al": [
+"seated dumbbell press",
+"dumbbell OHP",
+"DB shoulder press"
+],
+"ins": "Sit or stand holding dumbbells at shoulder height. Press overhead to f"
+},
+{
+"id": "ab62b9c6-513a-4c75-9971-9956e7a0d3b8",
+"name": "Dumbbell Squat",
+"mg": "Legs",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 3,
+"upb": 3,
+"um": 0,
+"al": [],
+"ins": "Hold dumbbells at sides or shoulders. Squat to parallel or below. Acce"
+},
+{
+"id": "45c818e9-167e-40a1-8215-aeb56ad6e074",
+"name": "Dumbbell Thruster",
+"mg": "Full Body",
+"eq": "dumbbell",
+"cat": "power",
+"g": true,
+"uw": 2,
+"ul": 12,
+"upb": 3,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "9fb22c20-4a66-4dd2-848a-968ff8571371",
+"name": "Eccentric Calf Raise",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Use both legs to raise up, lower on one leg for 5-8 seconds. Maximum e"
+},
+{
+"id": "5a3db06f-e87f-4313-a6bc-f543b14cc9bf",
+"name": "Echo Bike",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 2,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"echo",
+"air bike sprint",
+"assault bike",
+"air bike",
+"air bike intervals",
+"assault bike sprint"
+],
+"ins": "Sit on the air bike with your feet on the pedals and hands on the hand"
+},
+{
+"id": "7b0913f2-49bc-4902-a895-cde2e2c8f246",
+"name": "Elliptical",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"cross trainer"
+],
+"ins": "Use elliptical machine with natural striding motion. Low impact. Can u"
+},
+{
+"id": "85f3cce1-2071-4004-a8be-3f7b5a53aacb",
+"name": "EZ Bar Curl",
+"mg": "Biceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 3,
+"ul": 39,
+"upb": 12,
+"um": 0,
+"al": [
+"curl bar",
+"EZ curl"
+],
+"ins": "Grip EZ bar at angled grip positions, underhand. Stand tall, curl bar "
+},
+{
+"id": "b24841d2-0501-4cbb-88f5-56855b064bc9",
+"name": "EZ Bar Preacher Curl",
+"mg": "Biceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Rest upper arms on preacher bench, grip EZ bar underhand. Curl to chin"
+},
+{
+"id": "c81bc3ec-b215-40c0-b712-1a9f5edcf609",
+"name": "Face Pull",
+"mg": "Back",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 4,
+"ul": 48,
+"upb": 12,
+"um": 0,
+"al": [
+"cable face pull",
+"face pulls"
+],
+"ins": "Attach rope to high cable pulley. Pull to face level, hands beside ear"
+},
+{
+"id": "6f166b86-56f0-4eab-b768-beac33a01cb0",
+"name": "Farmer Walk on Toes",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold heavy dumbbells, walk on balls of feet. Calf and upper trap endur"
+},
+{
+"id": "3f7d5881-2fdd-4db6-b951-7731612e97dc",
+"name": "Farmers Walk",
+"mg": "Full Body",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 6,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"farmers walk",
+"farmers carry"
+],
+"ins": "Hold heavy dumbbells or kettlebells at sides. Walk for distance or tim"
+},
+{
+"id": "44c111d5-80ba-493e-ac9f-9d1b96869735",
+"name": "Fire Hydrant",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"fire hydrants"
+],
+"ins": "On hands and knees, lift one leg out to side like a dog at fire hydran"
+},
+{
+"id": "3f757435-e6e6-402c-8b49-69bbe2ba0611",
+"name": "Floor Press (Barbell)",
+"mg": "Chest",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 15,
+"upb": 3,
+"um": 0,
+"al": [
+"barbell floor press",
+"floor press"
+],
+"ins": "Lie on floor, grip barbell, press from chest. Elbows touch floor at bo"
+},
+{
+"id": "6779712e-7484-401c-aa46-1b5b281627bf",
+"name": "Floor Press (Dumbbell)",
+"mg": "Chest",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on floor with dumbbells. Press from chest level to full extension."
+},
+{
+"id": "71e253e0-3a6a-4f81-86c0-98af6b4f01d1",
+"name": "Flutter Kick",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on back, raise legs slightly. Kick alternately up and down in smal"
+},
+{
+"id": "7aca4971-6dfa-45f3-9261-14dfbd95ee5c",
+"name": "Frog Pump",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 12,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on back, soles of feet together, knees out. Pump hips up squeezing"
+},
+{
+"id": "e3f6155d-75cd-4b9c-93c7-185af9d60fd7",
+"name": "Front Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 3,
+"ul": 41,
+"upb": 12,
+"um": 0,
+"al": [
+"barbell front squat"
+],
+"ins": "Bar rests on front delts and fingers in clean grip. Squat deep keeping"
+},
+{
+"id": "e3b20797-e9d7-4236-a870-801c4ceb468b",
+"name": "GHD Sit Up",
+"mg": "Core",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "39c0fdbe-2b7f-411e-a9bb-edced9f3278a",
+"name": "Glute Bridge",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 4,
+"ul": 18,
+"upb": 0,
+"um": 0,
+"al": [
+"bridge",
+"glute bridges"
+],
+"ins": "Lie on floor with knees bent. Drive hips to ceiling squeezing glutes. "
+},
+{
+"id": "ee10c74a-017e-48b5-9a25-d4594ebbacc4",
+"name": "Glute Ham Raise",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"GHR"
+],
+"ins": "Kneel on GHD machine. Lower body forward using hamstrings as brakes, p"
+},
+{
+"id": "7dedf98a-f0e3-47bc-9942-8561c2b49d9b",
+"name": "Glute Kickback Machine",
+"mg": "Glutes",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Use dedicated glute kickback machine. Drive leg back squeezing glute a"
+},
+{
+"id": "5214f87e-c4fe-44dc-a458-29653d76f025",
+"name": "Goblet Squat",
+"mg": "Legs",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 7,
+"ul": 39,
+"upb": 18,
+"um": 0,
+"al": [
+"goblet",
+"KB goblet squat"
+],
+"ins": "Hold dumbbell or kettlebell at chest. Squat deep keeping chest up. Gre"
+},
+{
+"id": "6eb31aa4-5a4c-412f-8e92-da3a75acc74f",
+"name": "Good Morning",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 9,
+"upb": 3,
+"um": 0,
+"al": [
+"barbell good morning"
+],
+"ins": "Bar on traps, hinge forward keeping back flat until parallel to floor."
+},
+{
+"id": "c8a92995-e104-40be-852c-1f73b61d88b5",
+"name": "Hack Squat (Barbell)",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "f1d0f9a7-f9b1-4ea2-856c-66e8940c6d56",
+"name": "Hack Squat (Machine)",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 3,
+"ul": 38,
+"upb": 9,
+"um": 0,
+"al": [
+"machine hack squat",
+"hack squat"
+],
+"ins": "Lie back on hack squat machine, feet on platform. Lower until 90 degre"
+},
+{
+"id": "4673cec4-c545-4ea6-a680-95340fe5de12",
+"name": "Hack Squat Calf Raise",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Use hack squat machine with ball of foot on lower platform edge. Perfo"
+},
+{
+"id": "c6400676-287b-4575-8bae-183af63d4554",
+"name": "Hammer Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 5,
+"ul": 35,
+"upb": 15,
+"um": 0,
+"al": [
+"neutral grip curl",
+"hammer"
+],
+"ins": "Hold dumbbells with neutral grip (palms facing each other). Curl dumbb"
+},
+{
+"id": "23dc9527-d2f9-4699-bc60-950c1597dafb",
+"name": "Handstand Push Up",
+"mg": "Shoulders",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"handstand pushup",
+"HSPU"
+],
+"ins": "Kick up to handstand against wall. Lower head to floor, press back up."
+},
+{
+"id": "63b1a15c-6f5d-4e45-8a23-e5acf12f82ac",
+"name": "Hang Clean",
+"mg": "Full Body",
+"eq": "barbell",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"hang power clean"
+],
+"ins": "Starting from hip position, explosively clean barbell to shoulders. Ol"
+},
+{
+"id": "61219bb8-0c55-41b1-a6e4-19f2ecd8093d",
+"name": "Hanging Knee Raise",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 12,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hang from bar. Bring knees to chest. Easier regression of hanging leg "
+},
+{
+"id": "4d07c774-2716-4de2-ac42-06952699e0c8",
+"name": "Hanging Leg Raise",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 2,
+"ul": 30,
+"upb": 0,
+"um": 0,
+"al": [
+"toes to bar",
+"hanging knee raise"
+],
+"ins": "Hang from pull up bar. Raise legs to 90 degrees or higher. Advanced lo"
+},
+{
+"id": "779c7b40-632a-4f42-b9a0-f149ab8dd72e",
+"name": "Hex Press",
+"mg": "Chest",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"neutral grip press",
+"dumbbell hex press"
+],
+"ins": "Lie on bench holding two dumbbells pressed together. Press up keeping "
+},
+{
+"id": "8d292aaa-91b3-46fe-87be-49c5f299710c",
+"name": "High Incline Dumbbell Press",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Set bench to 70-80 degrees. Press dumbbells overhead. Incline reduces "
+},
+{
+"id": "1e525e31-4425-49d0-93e3-55576aff30dd",
+"name": "High Knees",
+"mg": "Cardio",
+"eq": "bodyweight",
+"cat": "warmup",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Run in place driving knees to hip height alternately. Arms pump in opp"
+},
+{
+"id": "aae4b4a3-d555-4ad4-975e-92f0300194cc",
+"name": "HIIT Treadmill",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"treadmill HIIT"
+],
+"ins": "Alternate between sprint intervals and walking recovery on treadmill. "
+},
+{
+"id": "8d1ec810-4ab6-478a-b0cd-a1824ec5cd8c",
+"name": "Hill Sprint",
+"mg": "Cardio",
+"eq": "bodyweight",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"hill sprints"
+],
+"ins": "Sprint up hill at maximum effort. Walk back down for recovery. Higher "
+},
+{
+"id": "6c0e4f1c-63fa-400e-9f10-a89194163090",
+"name": "Hip Abduction (Machine)",
+"mg": "Glutes",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 21,
+"upb": 6,
+"um": 0,
+"al": [
+"outer thigh machine",
+"abduction machine"
+],
+"ins": "Sit at hip abduction machine, push pads out against resistance. Target"
+},
+{
+"id": "60e215c4-12ef-448a-a0f4-f56f8f2019a1",
+"name": "Hip Abduction with Band (Lying)",
+"mg": "Glutes",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on side with band above knees. Raise top leg against band resistan"
+},
+{
+"id": "ef6fe1c8-0567-4c4f-a3e4-91672aad9340",
+"name": "Hip Adduction (Machine)",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"inner thigh machine",
+"adduction machine"
+],
+"ins": "Sit at hip adduction machine, squeeze legs together against resistance"
+},
+{
+"id": "6c9b0acc-2185-40f4-b823-0cc231546a9e",
+"name": "Hip Thrust (Barbell)",
+"mg": "Glutes",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 7,
+"ul": 91,
+"upb": 24,
+"um": 0,
+"al": [
+"BB hip thrust",
+"barbell hip thrust",
+"hip thrust"
+],
+"ins": "Shoulders on bench, bar across hips. Drive hips to ceiling squeezing g"
+},
+{
+"id": "271637ae-f5cb-4f53-8a45-8705a00a7ed3",
+"name": "Hip Thrust (Dumbbell)",
+"mg": "Glutes",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 3,
+"upb": 3,
+"um": 0,
+"al": [
+"dumbbell hip thrust",
+"DB hip thrust"
+],
+"ins": "Shoulders on bench, dumbbell on hips. Drive hips up squeezing glutes h"
+},
+{
+"id": "ab651d92-c01e-47b8-90a5-a882dec98102",
+"name": "Hollow Body Hold",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"hollow body",
+"hollow hold"
+],
+"ins": "Lie on back, press lower back to floor, arms overhead, legs raised. Ho"
+},
+{
+"id": "c80fd2d3-9162-4f3e-ba1a-9ac27c275fee",
+"name": "Hyperextension",
+"mg": "Back",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"roman chair",
+"back raise",
+"back extension"
+],
+"ins": "Lie face down on hyperextension bench, hinge at hips. Lower until 90 d"
+},
+{
+"id": "61117381-4fd6-41a5-b0b2-f00d558e0b9e",
+"name": "Incline Barbell Bench Press",
+"mg": "Chest",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 28,
+"upb": 9,
+"um": 0,
+"al": [
+"incline barbell press",
+"incline press",
+"incline bench"
+],
+"ins": "Set bench to 30-45 degrees. Lower bar to upper chest. Targets upper pe"
+},
+{
+"id": "6e196516-9742-4bbc-92a1-424ca508a28a",
+"name": "Incline Dumbbell Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 24,
+"upb": 6,
+"um": 0,
+"al": [
+"incline curl"
+],
+"ins": "Sit on incline bench set to 45-60 degrees, arms hanging straight. Curl"
+},
+{
+"id": "113e0ec8-1a57-43d4-8997-b42e30c82573",
+"name": "Incline Dumbbell Fly",
+"mg": "Chest",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"incline DB fly",
+"incline fly"
+],
+"ins": "Lie on incline bench, perform fly movement. Targets upper chest with s"
+},
+{
+"id": "e5a86efe-af6f-41ec-bc1b-e808133ac017",
+"name": "Incline Dumbbell Press",
+"mg": "Chest",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 8,
+"ul": 70,
+"upb": 27,
+"um": 0,
+"al": [
+"incline dumbbell bench",
+"incline DB press",
+"Dumbbell Incline Press"
+],
+"ins": "Set bench to 30-45 degrees. Press dumbbells up from upper chest level."
+},
+{
+"id": "e6d3b3ca-9f3b-4a74-9f33-e341cd76e6ee",
+"name": "Incline Push Up",
+"mg": "Chest",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hands elevated on bench, feet on floor. Lower chest to bench, press ba"
+},
+{
+"id": "f1b9341f-3dee-488c-8a9e-f4761b0e2ece",
+"name": "Inverted Row (Bodyweight)",
+"mg": "Back",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"horizontal pull up",
+"body row",
+"inverted row"
+],
+"ins": "Hang beneath a bar with overhand grip, body straight. Pull chest to ba"
+},
+{
+"id": "4aeff6aa-0fc4-4520-ae84-fc518946d37f",
+"name": "JM Press",
+"mg": "Triceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"JM"
+],
+"ins": "Lie on bench with barbell. Lower bar toward chin with elbows flaring s"
+},
+{
+"id": "359aabfc-14a1-465a-ba4c-cfab648fd8b9",
+"name": "Jump Rope (Interval)",
+"mg": "Cardio",
+"eq": "bodyweight",
+"cat": "warmup",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"skipping intervals"
+],
+"ins": "Alternate between max effort rope skipping and rest. High intensity in"
+},
+{
+"id": "6dd2ab13-b862-48ca-820f-97beaee2b576",
+"name": "Jump Rope (Steady State)",
+"mg": "Cardio",
+"eq": "bodyweight",
+"cat": "warmup",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"skipping",
+"jump rope"
+],
+"ins": "Continuous jump rope skipping at moderate pace. Excellent cardiovascul"
+},
+{
+"id": "29b9e118-c41e-4b84-835f-f133cc795588",
+"name": "Jump Squat",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"squat jump"
+],
+"ins": "Perform squat then explode up to jump. Land softly, immediately go int"
+},
+{
+"id": "3d180999-8823-4b2f-96d7-48026312226a",
+"name": "Jumping Jacks",
+"mg": "Cardio",
+"eq": "bodyweight",
+"cat": "warmup",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Jump feet wide while raising arms overhead. Return to start. Continuou"
+},
+{
+"id": "f8c6ab63-fd88-4d55-ac7d-f2be2ce25809",
+"name": "Kettlebell Clean",
+"mg": "Full Body",
+"eq": "kettlebell",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "1ac05a3f-4077-48e5-84f6-f94462259561",
+"name": "Kettlebell Front Rack Squat",
+"mg": "Legs",
+"eq": "kettlebell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold kettlebells in front rack position at shoulders. Squat deep. Core"
+},
+{
+"id": "60443481-9c4c-4ed3-84e7-3f790c22e42b",
+"name": "Kettlebell Snatch",
+"mg": "Full Body",
+"eq": "kettlebell",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "33174b92-8eec-4fd6-84bd-92460b6108ae",
+"name": "Kettlebell Swing",
+"mg": "Legs",
+"eq": "kettlebell",
+"cat": "strength",
+"g": true,
+"uw": 3,
+"ul": 28,
+"upb": 6,
+"um": 0,
+"al": [
+"swing",
+"KB swing"
+],
+"ins": "Hold kettlebell with both hands, hip hinge back. Drive hips forward ex"
+},
+{
+"id": "1801b27e-1862-4eae-bd74-f7145be6c524",
+"name": "Kickback (Cable)",
+"mg": "Triceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"cable kickback tricep",
+"cable tricep kickback"
+],
+"ins": "Face low cable pulley, hold handle, hinge forward. Extend arm back to "
+},
+{
+"id": "7b5250e8-277c-4923-a0ab-0a453ec1bf9a",
+"name": "Kickback (Dumbbell)",
+"mg": "Triceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"DB kickback",
+"tricep kickback"
+],
+"ins": "Hinge forward 45 degrees, upper arm parallel to floor. Extend forearm "
+},
+{
+"id": "94363b6f-0604-40ac-88f9-3227be21014b",
+"name": "L-Sit",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"l sit hold"
+],
+"ins": "Support on parallel bars or floor. Hold legs parallel to floor creatin"
+},
+{
+"id": "247f6405-a9de-4e25-a554-298d9d8790fb",
+"name": "Landmine Press",
+"mg": "Chest",
+"eq": "landmine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"landmine chest press"
+],
+"ins": "Hold barbell end at shoulder with one hand, press up and forward. Uniq"
+},
+{
+"id": "45226422-7265-4bca-86c7-cf69125e3b6b",
+"name": "Landmine Press (Single Arm)",
+"mg": "Shoulders",
+"eq": "landmine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold barbell end at shoulder, press up and forward in arc. Shoulder fr"
+},
+{
+"id": "a98417e9-be65-4c95-88cf-48754dc0a1f2",
+"name": "Landmine Rotation",
+"mg": "Core",
+"eq": "landmine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"landmine twist"
+],
+"ins": "Hold barbell end with both hands. Rotate from hip height to opposite s"
+},
+{
+"id": "207b59ad-7f72-4d44-a24e-19997c2888f3",
+"name": "Lat Pulldown (Close Grip)",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"close grip pulldown"
+],
+"ins": "Use close grip attachment on lat pulldown. Pull to chest driving elbow"
+},
+{
+"id": "e9952032-a251-4be3-855c-73c96c135104",
+"name": "Lat Pulldown (Neutral Grip)",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 4,
+"ul": 30,
+"upb": 9,
+"um": 0,
+"al": [
+"neutral pulldown"
+],
+"ins": "Use neutral grip bar on lat pulldown. Pull to chest. Comfortable wrist"
+},
+{
+"id": "3f6fea34-fb88-4e3f-8c14-a8c83aa2251a",
+"name": "Lat Pulldown (Wide Grip)",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 8,
+"ul": 69,
+"upb": 24,
+"um": 0,
+"al": [
+"wide grip pulldown",
+"pulldown",
+"lat pulldown"
+],
+"ins": "Sit at lat pulldown machine, grip bar wide overhand. Pull bar to upper"
+},
+{
+"id": "14d539ee-3f92-408a-bc98-f23dbf93f3e8",
+"name": "Lateral Lunge",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 2,
+"ul": 12,
+"upb": 0,
+"um": 0,
+"al": [
+"side lunge"
+],
+"ins": "Step wide to one side, sit into hip keeping other leg straight. Return"
+},
+{
+"id": "4f8e23d0-74dd-4613-9bde-076f27854a38",
+"name": "Leg Curl (Lying)",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 3,
+"ul": 36,
+"upb": 12,
+"um": 0,
+"al": [
+"lying leg curl",
+"hamstring curl",
+"leg curl"
+],
+"ins": "Lie face down on leg curl machine. Curl legs toward glutes, squeeze ha"
+},
+{
+"id": "64931300-0287-4ae6-b8eb-405b1a36fb69",
+"name": "Leg Curl (Seated)",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 5,
+"ul": 36,
+"upb": 18,
+"um": 0,
+"al": [
+"seated hamstring curl",
+"seated leg curl"
+],
+"ins": "Sit at seated leg curl machine. Curl legs to full flexion, return unde"
+},
+{
+"id": "25bdbb9b-d7de-44d5-beef-153e2b7c919b",
+"name": "Leg Extension",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 7,
+"ul": 54,
+"upb": 21,
+"um": 0,
+"al": [
+"knee extension",
+"quad extension"
+],
+"ins": "Sit at leg extension machine. Extend legs to full straightening, lower"
+},
+{
+"id": "6f609c0a-4cb8-419d-9727-7d0b814b09cc",
+"name": "Leg Press",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 8,
+"ul": 60,
+"upb": 21,
+"um": 0,
+"al": [
+"45 degree leg press",
+"leg press machine"
+],
+"ins": "Sit in leg press machine, feet on platform. Lower platform until 90 de"
+},
+{
+"id": "4f0686b1-5c5a-4060-8992-7f8edad976b3",
+"name": "Leg Press (Narrow Stance)",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "8dd242fc-95a2-4e7a-ad25-a5d976f31a14",
+"name": "Leg Press (Wide Stance)",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 12,
+"upb": 3,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "d2fd76e3-c576-4e47-a45c-eed5e4c603e7",
+"name": "Leg Press Calf Raise",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Use leg press machine with ball of foot on lower edge of platform. Per"
+},
+{
+"id": "5eb9b9e6-6157-4a64-80e7-25f551e36291",
+"name": "Leg Raise (Lying)",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"lying leg raise",
+"leg raise"
+],
+"ins": "Lie flat, raise straight legs to 90 degrees, lower without touching fl"
+},
+{
+"id": "f4875a14-41c9-4356-b6d9-95e8cc5cf7e6",
+"name": "Lunge (Stationary)",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"split squat lunge",
+"stationary lunge"
+],
+"ins": "Step into lunge stance, lower back knee toward floor, return to start."
+},
+{
+"id": "985a901c-c50d-474b-8c7d-a8bbe5cc552b",
+"name": "Lunge (Walking)",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"lunge",
+"walking lunge"
+],
+"ins": "Step forward into lunge, lower rear knee to floor, step forward with o"
+},
+{
+"id": "6254b4dc-183a-41a3-845d-8345b0959e6c",
+"name": "Machine Bicep Curl",
+"mg": "Biceps",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Sit at bicep curl machine, position upper arms on pad. Curl handles to"
+},
+{
+"id": "31f7d1ac-03b4-4706-bdb5-41abdb9f147a",
+"name": "Machine Chest Press",
+"mg": "Chest",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 5,
+"ul": 42,
+"upb": 15,
+"um": 0,
+"al": [
+"chest press machine"
+],
+"ins": "Sit at chest press machine, grip handles at chest level. Press forward"
+},
+{
+"id": "6e993881-febc-4275-81a4-8fd99b98544f",
+"name": "Machine Lateral Raise",
+"mg": "Shoulders",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"machine side raise"
+],
+"ins": "Sit at lateral raise machine, place forearms on pads. Raise arms to sh"
+},
+{
+"id": "f4e647d1-1ac1-4442-b9d8-f57c80661557",
+"name": "Machine Preacher Curl",
+"mg": "Biceps",
+"eq": "machine",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "86f7874a-9b57-4be6-bb75-d81761395368",
+"name": "Machine Row",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 9,
+"upb": 6,
+"um": 0,
+"al": [
+"machine chest supported row",
+"chest supported row (machine)"
+],
+"ins": "Sit at plate loaded or selectorised row machine, chest on pad. Row han"
+},
+{
+"id": "b929fdc6-3e89-4cb4-826a-9b9d8fb8519f",
+"name": "Machine Shoulder Press",
+"mg": "Shoulders",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 30,
+"upb": 9,
+"um": 0,
+"al": [
+"machine shoulder press"
+],
+"ins": ""
+},
+{
+"id": "610b6a66-df5a-477b-9cce-468f6d764425",
+"name": "Machine Tricep Dip",
+"mg": "Triceps",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Sit at assisted dip machine, grip handles. Press down to full extensio"
+},
+{
+"id": "4b3f139f-d4b7-4254-8acd-922f4a655d52",
+"name": "Man Maker",
+"mg": "Full Body",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"man makers"
+],
+"ins": "Hold dumbbells, perform push up, renegade row each side, jump feet in,"
+},
+{
+"id": "c4a897b1-d3a5-443c-9ea6-1df12ee818d9",
+"name": "Meadows Row",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"landmine meadows row"
+],
+"ins": "Stand perpendicular to landmine barbell end. Row end of bar to hip in "
+},
+{
+"id": "2558eecc-1bd0-4bde-bcf6-43bec680ed62",
+"name": "Medicine Ball Slam",
+"mg": "Full Body",
+"eq": "functional",
+"cat": "power",
+"g": true,
+"uw": 2,
+"ul": 12,
+"upb": 3,
+"um": 0,
+"al": [
+"ball slam",
+"med ball slam"
+],
+"ins": "Lift med ball overhead, slam to floor explosively. Catch on bounce or "
+},
+{
+"id": "f78d43a0-3590-4b93-b2c5-5733c3adb024",
+"name": "Medicine Ball Throw",
+"mg": "Full Body",
+"eq": "functional",
+"cat": "power",
+"g": true,
+"uw": 1,
+"ul": 16,
+"upb": 3,
+"um": 0,
+"al": [],
+"ins": "Throw medicine ball against wall with rotation. Rotational power devel"
+},
+{
+"id": "b43f8d00-4841-4f3f-9dfe-c1eb5c19cd88",
+"name": "Military Press",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"strict military press",
+"military"
+],
+"ins": "Stand with barbell at chin, narrow stance. Press strict overhead no le"
+},
+{
+"id": "626cc7df-5a58-458d-8c61-642a2c022d6e",
+"name": "Mountain Climber",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 3,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"mountain climbers"
+],
+"ins": "Push up position. Drive knees to chest alternately in running motion. "
+},
+{
+"id": "4a791519-a20a-48ff-bdab-1c53ae3493c8",
+"name": "Neutral Grip Pull Up",
+"mg": "Back",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"hammer grip pull up",
+"neutral pull up"
+],
+"ins": "Use parallel handles or neutral grip bar. Pull chin over bar. Comforta"
+},
+{
+"id": "1e9d134d-ff1c-4623-8928-2192a06934d2",
+"name": "Nordic Curl",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 2,
+"ul": 27,
+"upb": 0,
+"um": 0,
+"al": [
+"NHC",
+"nordic hamstring curl"
+],
+"ins": "Kneel with feet anchored, lean forward slowly under control. Curl body"
+},
+{
+"id": "ffb37c76-dad7-4ade-bf7a-cb1544e94910",
+"name": "Overhead Cable Curl",
+"mg": "Biceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Set cables at head height on both sides. Hold both handles, curl hands"
+},
+{
+"id": "51088e0e-67b0-43ac-9d73-5129f154c218",
+"name": "Overhead Carry",
+"mg": "Full Body",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold weight locked overhead, walk for distance. Shoulder stability and"
+},
+{
+"id": "5c845402-3998-486e-92a7-e3af9fe29528",
+"name": "Overhead Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold barbell or dowel overhead with wide grip. Squat deep keeping bar "
+},
+{
+"id": "5fc40cd5-d998-48da-aafd-b6c4637588de",
+"name": "Overhead Tricep Extension (Barbell)",
+"mg": "Triceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"barbell overhead extension"
+],
+"ins": "Hold barbell overhead with narrow grip. Lower behind head, keep upper "
+},
+{
+"id": "bca8af09-1b89-4e52-abcb-2579714ea90f",
+"name": "Overhead Tricep Extension (Cable)",
+"mg": "Triceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 27,
+"upb": 9,
+"um": 0,
+"al": [
+"cable overhead extension"
+],
+"ins": "Face away from high cable, hold rope overhead. Extend arms forward ben"
+},
+{
+"id": "13d2bf9e-bb6e-4cda-a37b-0a283ab2122c",
+"name": "Overhead Tricep Extension (Dumbbell)",
+"mg": "Triceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 5,
+"upb": 3,
+"um": 0,
+"al": [
+"DB overhead extension",
+"french press",
+"overhead extension",
+"Overhead Tricep Extension",
+"Dumbbell Tricep Overhead Extension"
+],
+"ins": "Hold one dumbbell with both hands overhead. Lower behind head bending "
+},
+{
+"id": "b31f3f21-ffba-4019-85ea-c21f731538be",
+"name": "Pallof Press",
+"mg": "Core",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 12,
+"upb": 3,
+"um": 0,
+"al": [
+"anti rotation press"
+],
+"ins": "Stand side-on to cable. Press handle out from chest, hold, return. Ant"
+},
+{
+"id": "f1a49f80-1329-4ab7-8895-7ff4ea3cb912",
+"name": "Pause Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 15,
+"upb": 3,
+"um": 0,
+"al": [
+"tempo squat"
+],
+"ins": "Perform back squat with 2-3 second pause at bottom. Eliminates stretch"
+},
+{
+"id": "ffd066fb-1b17-47b9-a6fd-61bdd3f7c933",
+"name": "Pec Deck Machine",
+"mg": "Chest",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 18,
+"upb": 6,
+"um": 0,
+"al": [
+"butterfly machine",
+"machine fly",
+"pec deck"
+],
+"ins": "Sit at pec deck, place forearms on pads. Squeeze arms together in fron"
+},
+{
+"id": "3a9ee493-b68f-4c6d-bda4-ae7a0827f575",
+"name": "Pendlay Row",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 32,
+"upb": 6,
+"um": 0,
+"al": [
+"dead stop row"
+],
+"ins": "Bar starts on floor each rep. Pull explosively from dead stop to lower"
+},
+{
+"id": "060b5fb8-dda2-477e-95da-3f547622f2a4",
+"name": "Pendulum Squat",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "521e803b-6889-45df-a5ed-6ddc534b6b75",
+"name": "Pike Push Up",
+"mg": "Shoulders",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hands on floor, hips high forming inverted V. Lower head toward floor "
+},
+{
+"id": "3dc9edee-7925-4d94-af99-a496781b7331",
+"name": "Plank",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 7,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"hover",
+"front plank"
+],
+"ins": "Forearms on floor, body in straight line from head to heels. Hold posi"
+},
+{
+"id": "d7af6de2-7ffa-420c-95f1-226b186e62f2",
+"name": "Plank Hip Dip",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "In side plank, lower hip toward floor, raise back up. Oblique dynamic "
+},
+{
+"id": "e46223b2-ed94-45e9-acc2-91b970687d49",
+"name": "Plank with Reach",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "In plank position, reach one arm forward. Hold briefly, return, switch"
+},
+{
+"id": "3d367de2-a110-45d9-8f8d-7ce148237cea",
+"name": "Plate Front Raise",
+"mg": "Shoulders",
+"eq": "plate",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold weight plate at bottom with both hands. Raise to shoulder height,"
+},
+{
+"id": "20061e57-5fc0-429d-a378-342b4c0dd18e",
+"name": "Plate Squeeze Press",
+"mg": "Chest",
+"eq": "plate",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on bench, hold weight plate with both hands pressing sides togethe"
+},
+{
+"id": "43724a79-8c39-403a-a5ad-0867f89eff38",
+"name": "Poliquin Step Up",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "106e6ec0-8a7e-4a7a-ae33-ccc515cef9ac",
+"name": "Power Clean",
+"mg": "Full Body",
+"eq": "barbell",
+"cat": "power",
+"g": true,
+"uw": 1,
+"ul": 20,
+"upb": 3,
+"um": 0,
+"al": [
+"power cleans",
+"clean"
+],
+"ins": "Pull barbell explosively from floor, drop under it catching on shoulde"
+},
+{
+"id": "0e62a26e-9588-4f9d-a171-b873081b8ee7",
+"name": "Preacher Curl (Barbell)",
+"mg": "Biceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"scott curl",
+"preacher curl"
+],
+"ins": "Rest upper arms on preacher bench pad. Grip barbell with underhand gri"
+},
+{
+"id": "06095e99-3137-4202-9c8f-f70b20eb86fc",
+"name": "Preacher Curl (Dumbbell)",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"dumbbell preacher curl"
+],
+"ins": "Rest upper arm on preacher bench pad with dumbbell. Curl to chin heigh"
+},
+{
+"id": "c8f99ffd-dc71-4cd8-8aeb-219cfbfed9bd",
+"name": "Prone Cobra",
+"mg": "Back",
+"eq": "bodyweight",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "0cef43eb-3394-42b2-aff5-cdd0696aaf56",
+"name": "Prone Y Raise",
+"mg": "Shoulders",
+"eq": "bodyweight",
+"cat": "accessory",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "4858075d-4fef-410f-89e8-356cc71357a4",
+"name": "Prowler Push",
+"mg": "Cardio",
+"eq": "sled",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Load prowler sled, drive forward. High intensity conditioning. Can var"
+},
+{
+"id": "d44727a6-559e-4a61-9007-f92f270544f1",
+"name": "Pull Up",
+"mg": "Back",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 5,
+"ul": 83,
+"upb": 0,
+"um": 0,
+"al": [
+"pronated pull up",
+"overhand pull up",
+"pull-up",
+"pullup",
+"Pull-Ups"
+],
+"ins": "Hang from bar with overhand grip slightly wider than shoulders. Pull c"
+},
+{
+"id": "1b529a87-8eab-4327-aa0a-215e0fc8e4d4",
+"name": "Push Press",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "power",
+"g": true,
+"uw": 3,
+"ul": 51,
+"upb": 9,
+"um": 0,
+"al": [
+"push press"
+],
+"ins": "Dip knees slightly then drive bar overhead using leg momentum. Allows "
+},
+{
+"id": "37374148-998f-41e7-8182-d6ab6c3e8436",
+"name": "Push Up",
+"mg": "Chest",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 2,
+"ul": 9,
+"upb": 0,
+"um": 0,
+"al": [
+"push-up",
+"press up",
+"pushup"
+],
+"ins": "Hands shoulder-width, body in straight line. Lower chest to floor, pre"
+},
+{
+"id": "47219adf-2be8-40ca-8ad9-061f3facb3fb",
+"name": "Push Up with Band",
+"mg": "Chest",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Place resistance band across upper back, hold ends in hands. Perform p"
+},
+{
+"id": "b617b892-fb96-4ae9-9749-8309a3ba66e6",
+"name": "Rack Pull",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 15,
+"upb": 3,
+"um": 0,
+"al": [
+"rack deadlift",
+"partial deadlift"
+],
+"ins": "Set barbell in rack at knee height. Pull to standing using back muscle"
+},
+{
+"id": "f3c903d9-62c9-46f4-a22d-505ae4a64c2d",
+"name": "Renegade Row",
+"mg": "Back",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 4,
+"ul": 24,
+"upb": 9,
+"um": 0,
+"al": [],
+"ins": "Push up position with dumbbells. Row one dumbbell to hip while support"
+},
+{
+"id": "7a7d954b-f2d0-4e76-8ce3-4f1665080b16",
+"name": "Resistance Band Bicep Curl",
+"mg": "Biceps",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand on resistance band, hold ends with underhand grip. Curl hands to"
+},
+{
+"id": "af287eb7-0254-4cb5-b794-674b87fddb29",
+"name": "Resistance Band Calf Raise",
+"mg": "Legs",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand on resistance band, hold handles at shoulders. Perform calf rais"
+},
+{
+"id": "73d1a135-7aa1-42b1-9745-b475a2f20a56",
+"name": "Resistance Band Chest Press",
+"mg": "Chest",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Loop band behind back, hold ends at chest. Press forward extending arm"
+},
+{
+"id": "6214f69b-5c0d-47be-8e24-9f3123bfec05",
+"name": "Resistance Band Pushdown",
+"mg": "Triceps",
+"eq": "band",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Loop band overhead, hold ends at sides of head. Push down to hips exte"
+},
+{
+"id": "934de7cc-763b-41ff-ac6e-d99ca94e6294",
+"name": "Reverse Crunch",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on back, bring knees toward chest lifting hips off floor. Lower ab"
+},
+{
+"id": "d8996d0b-20c4-474a-bb55-f23d47caf89f",
+"name": "Reverse Curl (Barbell)",
+"mg": "Biceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"reverse curl"
+],
+"ins": "Grip barbell overhand (pronated grip). Curl bar up keeping elbows fixe"
+},
+{
+"id": "8c89984c-1f57-4fff-906e-d22e46f597e1",
+"name": "Reverse Curl (EZ Bar)",
+"mg": "Biceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Grip EZ bar overhand at outer grips. Curl to chin height. Easier on wr"
+},
+{
+"id": "ead886ef-9151-4172-af8f-586940a85313",
+"name": "Reverse Grip Pushdown",
+"mg": "Triceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold cable bar with underhand (supinated) grip. Push down keeping elbo"
+},
+{
+"id": "d4e8ddfd-276a-405d-92a5-77306ee09f88",
+"name": "Reverse Hyper",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"reverse hyperextension"
+],
+"ins": "Lie face down on reverse hyper machine, swing legs back squeezing glut"
+},
+{
+"id": "143d08dd-5bbc-4f35-a690-b450650d2476",
+"name": "Reverse Lunge",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 7,
+"ul": 37,
+"upb": 15,
+"um": 0,
+"al": [
+"step back lunge"
+],
+"ins": "Step back into lunge, lower back knee, return. Less knee stress than f"
+},
+{
+"id": "f2099459-dde4-4c1d-8c24-c19b5f50d7b2",
+"name": "Reverse Pec Deck",
+"mg": "Shoulders",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 3,
+"ul": 36,
+"upb": 9,
+"um": 0,
+"al": [
+"rear delt machine",
+"reverse fly machine"
+],
+"ins": "Sit facing pec deck machine backward. Hold handles, pull arms back squ"
+},
+{
+"id": "a54227ad-380f-4f8b-b4b0-60ce169ddd8d",
+"name": "Romanian Deadlift (Barbell)",
+"mg": "Glutes",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 6,
+"ul": 68,
+"upb": 24,
+"um": 0,
+"al": [
+"barbell RDL",
+"romanian deadlift",
+"RDL"
+],
+"ins": "Hold barbell at hips, hinge forward keeping back flat, feeling hamstri"
+},
+{
+"id": "398e5eca-f767-43ed-beb9-c09ad19054e3",
+"name": "Romanian Deadlift (Dumbbell)",
+"mg": "Glutes",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 7,
+"ul": 30,
+"upb": 15,
+"um": 0,
+"al": [],
+"ins": "Hold dumbbells in front of thighs. Hinge forward with flat back feelin"
+},
+{
+"id": "87e25d69-33ac-4e31-ada6-9800d7688d57",
+"name": "Romanian Deadlift to Bent Over Row",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Perform RDL then at bottom position perform a barbell row. Combination"
+},
+{
+"id": "671c77d3-9106-4dac-9e2b-281a8b568d22",
+"name": "Romanian Split Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Standard split squat but lean torso forward more. Greater glute emphas"
+},
+{
+"id": "636a7397-5235-49c2-8d6c-29f4ea0a81c8",
+"name": "Row Machine Sprint",
+"mg": "Full Body",
+"eq": "machine",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Max effort on rowing machine. Full body pulling movement combined with"
+},
+{
+"id": "b614f70f-f629-45a2-bd85-4f0a65837e41",
+"name": "Rowing Machine",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 2,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"concept 2",
+"erg",
+"rower"
+],
+"ins": "Drive with legs first, lean back, pull handle to lower ribs. Sequence "
+},
+{
+"id": "17713f2c-bb10-4a82-b8d8-77bbdaff0582",
+"name": "Russian Twist",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"russian twists"
+],
+"ins": "Sit with knees bent feet off floor. Rotate torso side to side holding "
+},
+{
+"id": "4d285296-6853-4dd1-97bf-742788e5cba4",
+"name": "Sandbag Carry",
+"mg": "Full Body",
+"eq": "functional",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Pick up sandbag in bear hug or over shoulder. Carry for distance or ti"
+},
+{
+"id": "29f26e54-d002-4eeb-9041-b401069988a3",
+"name": "Scissor Kick",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Like flutter kick but legs cross over each other. Lower ab and hip fle"
+},
+{
+"id": "92872783-8ddd-49fc-a4f2-ceb212088c25",
+"name": "Seal Row",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie face down on elevated bench with dumbbells. Row both dumbbells sim"
+},
+{
+"id": "065d100e-e6b9-4077-9484-1414cb0f2bc7",
+"name": "Seated Barbell Press",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Sit on bench with back support, press barbell from chin to overhead. R"
+},
+{
+"id": "57df9d2f-1d2d-4a65-a5b8-a9caf86f61e4",
+"name": "Seated Cable Row (Close Grip)",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 8,
+"ul": 51,
+"upb": 21,
+"um": 0,
+"al": [
+"close grip cable row",
+"seated row",
+"cable row"
+],
+"ins": "Use close grip V-bar attachment. Row to abdomen driving elbows back. L"
+},
+{
+"id": "0705d75a-8732-494f-ac45-34fdf70d50ed",
+"name": "Seated Cable Row (Wide Grip)",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 12,
+"upb": 6,
+"um": 0,
+"al": [
+"wide cable row",
+"wide grip seated row"
+],
+"ins": "Sit at cable row machine, use wide bar. Row to abdomen driving elbows "
+},
+{
+"id": "bfe2632d-b63b-48f4-8a11-8b33fff93b08",
+"name": "Seated Calf Raise",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 4,
+"ul": 47,
+"upb": 15,
+"um": 0,
+"al": [
+"seated calf"
+],
+"ins": "Sit at seated calf raise machine, pad on lower thighs. Raise heels as "
+},
+{
+"id": "5e5165c5-9965-40cf-b0ea-14a4bd15ca44",
+"name": "Seated Dumbbell Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Sit on flat bench, hold dumbbells at sides. Curl both simultaneously o"
+},
+{
+"id": "673ddd49-9800-4243-b892-03e2d4279f2f",
+"name": "Seated Dumbbell Lateral Raise",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Sit on bench, raise dumbbells out to shoulder height. Removes momentum"
+},
+{
+"id": "dc833cce-5c1b-46ca-858d-5514d17ae8ee",
+"name": "Shrug (Barbell)",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"barbell shrug",
+"shrug"
+],
+"ins": "Hold barbell at thighs. Shrug shoulders straight up toward ears, hold "
+},
+{
+"id": "a253a20b-8c98-449c-8516-e6ac424ade44",
+"name": "Shrug (Cable)",
+"mg": "Shoulders",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold cable handles at sides, perform shrug. Constant tension from cabl"
+},
+{
+"id": "814be1de-ea1e-4632-9c5d-e1b9065b2b6e",
+"name": "Shrug (Dumbbell)",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"dumbbell shrug",
+"DB shrug"
+],
+"ins": "Hold dumbbells at sides. Shrug straight up, no rolling. Hold at top fo"
+},
+{
+"id": "8a7ed1b3-7999-458f-813d-0e67a827e6e5",
+"name": "Side Plank",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 4,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"lateral plank"
+],
+"ins": "Lie on side, forearm on floor. Raise hips to create straight line. Hol"
+},
+{
+"id": "3d64aa46-58ea-4e6f-8232-d0d11fb20b94",
+"name": "Single Arm Cable Curl",
+"mg": "Biceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand side-on to low cable pulley, hold handle underhand. Curl to shou"
+},
+{
+"id": "78272845-eaad-4301-bb5a-e9b38a0a851a",
+"name": "Single Arm Cable Press",
+"mg": "Chest",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand side-on to cable at chest height, press single handle across bod"
+},
+{
+"id": "cedfefce-bd8a-419a-8d0d-318176bcc2ef",
+"name": "Single Arm Dumbbell Press",
+"mg": "Chest",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on bench, press one dumbbell while other arm holds position. Core "
+},
+{
+"id": "8b30b703-5a06-4b6c-b97c-b3493bada16c",
+"name": "Single Arm Lat Pulldown",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 12,
+"upb": 3,
+"um": 0,
+"al": [],
+"ins": "Hold single handle, pull down to shoulder on same side. Allows greater"
+},
+{
+"id": "e5ddc78c-7078-4fb5-9761-d3539f544ef2",
+"name": "Single Arm Pushdown",
+"mg": "Triceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Stand at high cable, hold single handle with one hand. Push down keepi"
+},
+{
+"id": "d4f35d46-e4ef-4721-b747-57e775ab6ddc",
+"name": "Single Leg Calf Raise",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Balance on one leg on edge of step. Perform full range calf raise. Pro"
+},
+{
+"id": "b0cc736d-7124-4c2e-b332-bcf441176618",
+"name": "Single Leg Extension",
+"mg": "Legs",
+"eq": "machine",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "0c0f0701-1f46-4a66-9075-cfb8bb073094",
+"name": "Single Leg Glute Bridge",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"single leg bridge"
+],
+"ins": "Lie on floor, one leg extended. Drive hips up on one leg. Higher unila"
+},
+{
+"id": "01b8976d-d0b1-4ecc-9084-f4075a867f78",
+"name": "Single Leg Hip Thrust",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"single leg thrust"
+],
+"ins": "Perform hip thrust on one leg with other extended. Higher unilateral g"
+},
+{
+"id": "1b073bb0-abdd-4a27-a18d-535a0305f39f",
+"name": "Single Leg Leg Press",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Perform leg press with one foot. Allows higher unilateral loading. Add"
+},
+{
+"id": "eade1767-ee0e-48ce-b3a5-ca5ea65f8f69",
+"name": "Single Leg Romanian Deadlift",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"single leg deadlift",
+"SLRDL",
+"single leg RDL"
+],
+"ins": "Balance on one leg, hinge forward lowering dumbbell toward floor. Retu"
+},
+{
+"id": "b3be702e-d5bf-4878-a093-a5f283378a2e",
+"name": "Sissy Squat",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold support, lean back and drop hips while knee travels forward and u"
+},
+{
+"id": "4a4dd5d4-81a6-4e7e-8d51-a067662d7116",
+"name": "Sit Up",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on back knees bent. Sit all the way up to knees. Full range of mot"
+},
+{
+"id": "571d583c-08f0-44a4-aa04-0f30b2012f85",
+"name": "Ski Erg",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"ski erg"
+],
+"ins": "Pull handles down from overhead in double pole skiing motion. Upper bo"
+},
+{
+"id": "a18f21c7-7b29-4ae8-b1e3-0daa748dbb70",
+"name": "Skull Crusher (Barbell)",
+"mg": "Triceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"nosebreaker",
+"lying tricep extension",
+"skull crusher"
+],
+"ins": "Lie on bench, hold barbell above chest with arms extended. Lower bar t"
+},
+{
+"id": "9d3d0dc3-afec-4c96-b70a-e01ce846faa8",
+"name": "Skull Crusher (Dumbbell)",
+"mg": "Triceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"dumbbell skull crusher"
+],
+"ins": "Lie on bench, hold dumbbells above chest. Lower dumbbells to beside ea"
+},
+{
+"id": "6c1e0e3c-c893-492f-94e8-84fd711cbe2f",
+"name": "Skull Crusher (EZ Bar)",
+"mg": "Triceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 30,
+"upb": 9,
+"um": 0,
+"al": [
+"EZ skull crusher"
+],
+"ins": "Lie on bench, hold EZ bar above chest. Lower to forehead bending elbow"
+},
+{
+"id": "3cb868a3-a5cb-46c8-8cc4-21d54f94225c",
+"name": "Sled Pull",
+"mg": "Full Body",
+"eq": "sled",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"sled drag"
+],
+"ins": "Attach strap to sled, walk backward pulling sled. Quad and hip dominan"
+},
+{
+"id": "77f1f905-6f81-4be8-a8ee-eb00e7d29400",
+"name": "Sled Push",
+"mg": "Full Body",
+"eq": "sled",
+"cat": "strength",
+"g": true,
+"uw": 2,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"prowler"
+],
+"ins": "Load sled with weight plates. Drive forward pushing sled. Full body po"
+},
+{
+"id": "237cdf25-3cb1-435f-bb45-60e5a200b375",
+"name": "Smith Machine Bench Press",
+"mg": "Chest",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "9038f8e6-fdde-4fb9-b8ad-d760da80ddb7",
+"name": "Smith Machine Calf Raise",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Use smith machine bar across traps, stand on plates or step. Perform c"
+},
+{
+"id": "032ee22c-3201-4d75-afd4-d08cf3dc6eba",
+"name": "Smith Machine Close Grip Press",
+"mg": "Triceps",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "b7537f43-7126-4067-a606-4a3a4042c116",
+"name": "Smith Machine Hip Thrust",
+"mg": "Glutes",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "9422ae47-1993-474d-a427-90866db3cfbe",
+"name": "Smith Machine Incline Press",
+"mg": "Chest",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "011eddc8-e378-47c0-9577-8e7035e0142b",
+"name": "Smith Machine Overhead Press",
+"mg": "Shoulders",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "ad3dc073-dc7c-44b2-bcd5-bf32fada4e14",
+"name": "Smith Machine Row",
+"mg": "Back",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "1ae30972-92d7-444c-8315-ca1b76eecbb5",
+"name": "Smith Machine Squat",
+"mg": "Legs",
+"eq": "machine",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "52faa51c-6baf-4968-8426-f7d61342b2c5",
+"name": "Snatch (Barbell)",
+"mg": "Full Body",
+"eq": "barbell",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "1e4efe01-5e88-4501-b28d-26417ce0c266",
+"name": "Spanish Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Loop band around squat rack at knee height, feet shoulder-width. Sit b"
+},
+{
+"id": "2c8b7f63-f597-41b2-a43e-f750b8e0c277",
+"name": "Spider Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"spider curls"
+],
+"ins": "Lie face down on incline bench (45 degrees), arms hanging. Curl dumbbe"
+},
+{
+"id": "40aebbcd-bcb2-4b50-a634-8a22afa2015c",
+"name": "Sprints",
+"mg": "Cardio",
+"eq": "bodyweight",
+"cat": "cardio",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"running sprints",
+"sprint"
+],
+"ins": "Max effort running for short distance (10-40m). Full recovery between "
+},
+{
+"id": "083c1534-86d1-4dd8-999c-6137bba4fc8f",
+"name": "Stair Climber",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"step mill",
+"stairmaster"
+],
+"ins": "Use stair mill or step machine. Continuous stepping motion. High glute"
+},
+{
+"id": "7934f543-19a5-4a14-b0a9-8dd5777a8d08",
+"name": "Standing Calf Raise",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 5,
+"ul": 60,
+"upb": 0,
+"um": 0,
+"al": [
+"standing calf",
+"calf raise"
+],
+"ins": "Stand on edge of step or calf raise machine. Lower heels below step le"
+},
+{
+"id": "6c318bf8-2ad1-4588-ab20-a76401eb470c",
+"name": "Stationary Bike",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"spin bike",
+"bike"
+],
+"ins": "Set resistance appropriately. Maintain 80-100 RPM for cardiovascular w"
+},
+{
+"id": "30bce4d7-172b-4714-9088-9f249b729cd6",
+"name": "Step Up",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 6,
+"ul": 17,
+"upb": 9,
+"um": 0,
+"al": [
+"box step up"
+],
+"ins": "Hold dumbbells, step up onto box leading with one foot. Drive through "
+},
+{
+"id": "ca28ad70-515c-4100-9f04-03acb25a065f",
+"name": "Step Up with Knee Drive",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Step up onto box and drive opposite knee to chest at top. Glute and hi"
+},
+{
+"id": "71bef927-df79-40d6-b96b-f2786b666b0b",
+"name": "Stiff Leg Deadlift",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Similar to RDL but legs straighter and bar returns to floor each rep. "
+},
+{
+"id": "65b6c3fb-e532-4465-8da7-a3e84896f5db",
+"name": "Stir The Pot",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"stir the pot plank"
+],
+"ins": "Forearms on Swiss ball in plank position. Make circles with elbows sti"
+},
+{
+"id": "c456acd7-20c3-4f24-9518-f508544833db",
+"name": "Straight Arm Pulldown",
+"mg": "Back",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"cable straight arm pulldown"
+],
+"ins": "Stand at high cable, hold bar with straight arms. Pull bar down to hip"
+},
+{
+"id": "aa08a954-5b3c-4411-a229-cc25269de571",
+"name": "Suitcase Carry",
+"mg": "Full Body",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Carry heavy dumbbell in one hand like a suitcase. Anti-lateral flexion"
+},
+{
+"id": "a020f0ab-4b55-4cae-bab0-0205100291d3",
+"name": "Sumo Deadlift High Pull",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "power",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Sumo stance deadlift pulling bar to chin in one fluid movement. Power "
+},
+{
+"id": "b1139639-f825-4a3c-a7cb-ea8d3221eab8",
+"name": "Sumo Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"sumo"
+],
+"ins": "Wide stance with toes pointed out significantly. Squat deep. Greater a"
+},
+{
+"id": "a8a17823-09f4-4401-ade4-5a9b135a641c",
+"name": "Sumo Stance Hip Thrust",
+"mg": "Glutes",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Perform hip thrust with feet wide and toes pointed out. Greater glute "
+},
+{
+"id": "8b24bca0-3a78-43d2-8c0d-60ff753833d8",
+"name": "Superman",
+"mg": "Back",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie face down, arms extended. Lift arms, chest and legs off floor simu"
+},
+{
+"id": "d40a2b62-2449-42b3-970b-d3ead6ede62d",
+"name": "Svend Press",
+"mg": "Chest",
+"eq": "plate",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"plate press"
+],
+"ins": "Hold two plates together at chest, press straight out squeezing plates"
+},
+{
+"id": "29409d71-63a5-4099-acca-221c08fe979f",
+"name": "Swimming Laps",
+"mg": "Cardio",
+"eq": "bodyweight",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"laps",
+"swimming"
+],
+"ins": "Continuous lap swimming at moderate pace. Full body low impact cardiov"
+},
+{
+"id": "b6d61556-b9e8-43ee-a9c5-d4faa70e0ec3",
+"name": "T-Bar Row",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"landmine row",
+"tbar row",
+"t bar row"
+],
+"ins": "Straddle T-bar, grip handles, hinge forward. Row bar toward chest. Cla"
+},
+{
+"id": "b5c106b8-f9ad-4d29-969b-c7980ef1c228",
+"name": "Tate Press",
+"mg": "Triceps",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"tate"
+],
+"ins": "Lie on bench holding dumbbells above chest, elbows flared. Lower dumbb"
+},
+{
+"id": "f79581cf-109d-477c-b6c8-4975d30f2766",
+"name": "TEST halo kettlebell",
+"mg": "Shoulders",
+"eq": "band",
+"cat": "power",
+"g": false,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "8c6a3cd5-88b9-43ab-9117-50240c094019",
+"name": "Thruster",
+"mg": "Full Body",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"thrusters"
+],
+"ins": "Front squat combined with overhead press in one movement. Barbell or d"
+},
+{
+"id": "4876e6ae-4d3a-4726-8cae-18a2d77e81c3",
+"name": "Tibialis Raise",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lean against wall heels forward. Raise toes up repeatedly. Trains tibi"
+},
+{
+"id": "a4befeb3-b156-4758-b3ab-b5ddae4f3243",
+"name": "Toe Touch",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Lie on back, legs straight up. Reach hands up toward toes. Upper ab co"
+},
+{
+"id": "f4aa470b-e0ca-4566-b9ef-205bbc9b259e",
+"name": "Trap Bar Carry",
+"mg": "Full Body",
+"eq": "trap_bar",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Pick up loaded trap bar, carry for distance. Even loading, reduced lat"
+},
+{
+"id": "b6f8ba7e-ccda-4786-b25d-e7c0140ea083",
+"name": "Trap Bar Deadlift",
+"mg": "Legs",
+"eq": "trap_bar",
+"cat": "strength",
+"g": true,
+"uw": 3,
+"ul": 22,
+"upb": 6,
+"um": 0,
+"al": [
+"hex bar",
+"trap bar DL",
+"hex bar deadlift"
+],
+"ins": "Stand inside hex/trap bar, grip handles. Lift maintaining more upright"
+},
+{
+"id": "4c6d4b39-a346-4ca6-bc0d-cc26696128fe",
+"name": "Treadmill Run",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"running",
+"treadmill"
+],
+"ins": "Set treadmill to target speed and incline. Maintain running form, upri"
+},
+{
+"id": "29a3c55e-0e37-4ada-9755-d35725389cac",
+"name": "Treadmill Walk (Incline)",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 2,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Set treadmill to 8-15% incline, walking pace 4-6km/h. Challenging card"
+},
+{
+"id": "b34f10ea-6b24-44dd-9765-2922bdbef68f",
+"name": "Tricep Dip (Parallel Bars)",
+"mg": "Triceps",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"dip",
+"tricep dip"
+],
+"ins": "Support on parallel bars, keep torso upright. Lower body by bending el"
+},
+{
+"id": "1d692ec6-6258-403b-94f8-7dee306765d4",
+"name": "Tricep Pushdown (Rope)",
+"mg": "Triceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 5,
+"ul": 51,
+"upb": 21,
+"um": 0,
+"al": [
+"rope tricep pushdown",
+"rope pushdown",
+"cable tricep pushdown"
+],
+"ins": "Attach rope to high cable. Push down keeping elbows fixed, split rope "
+},
+{
+"id": "a2931f8c-6702-44ff-9edf-e7ebdd5c6ffb",
+"name": "Tricep Pushdown (Straight Bar)",
+"mg": "Triceps",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"straight bar pushdown",
+"tricep pushdown"
+],
+"ins": "Stand at high cable pulley, grip straight bar overhand. Keep elbows pi"
+},
+{
+"id": "05aa059a-abba-40c9-9212-df6c694e8f5f",
+"name": "Tricep Pushup",
+"mg": "Triceps",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Standard push up position but hands closer and elbows travel back not "
+},
+{
+"id": "615e6070-6f61-4cce-805e-86adab02dd6c",
+"name": "TRX Bicep Curl",
+"mg": "Biceps",
+"eq": "trx",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold TRX handles with underhand grip, lean back. Curl body up by bendi"
+},
+{
+"id": "2a1bac1b-8c44-43c8-a926-4e325a0c3d22",
+"name": "TRX Chest Fly",
+"mg": "Chest",
+"eq": "trx",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold TRX handles, lean forward. Lower by opening arms wide, return pul"
+},
+{
+"id": "771fc2d8-4348-4bea-ac2e-bdf36cddc69a",
+"name": "TRX Push Up",
+"mg": "Chest",
+"eq": "trx",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold TRX handles, perform push up. Instability adds core demand. Can a"
+},
+{
+"id": "4b331043-33d3-4d2f-9157-5d34f5396356",
+"name": "TRX Tricep Extension",
+"mg": "Triceps",
+"eq": "trx",
+"cat": "accessory",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Face away from TRX anchor point, hold handles overhead. Lean forward, "
+},
+{
+"id": "45c72100-eace-4e5d-a514-8833cb1c533d",
+"name": "Turkish Get Up",
+"mg": "Full Body",
+"eq": "kettlebell",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 8,
+"upb": 3,
+"um": 0,
+"al": [
+"get up",
+"TGU"
+],
+"ins": "Lie with kettlebell locked overhead. Follow precise movement sequence "
+},
+{
+"id": "60ff1bfb-9a14-4421-bb75-2e067b521608",
+"name": "Underhand Barbell Row",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"supinated barbell row",
+"reverse grip row"
+],
+"ins": "Hinge forward, grip bar underhand. Row to belly button. More bicep inv"
+},
+{
+"id": "43696dbc-21a2-4db2-9aa3-b2542c7c29c5",
+"name": "Upright Row (Barbell)",
+"mg": "Shoulders",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"barbell upright row",
+"upright row"
+],
+"ins": "Hold barbell at thighs overhand close grip. Pull bar up to chin level,"
+},
+{
+"id": "39086555-aeaf-404c-b34e-bed12c2e3a2d",
+"name": "Upright Row (Cable)",
+"mg": "Shoulders",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Attach straight bar to low cable. Pull up to chin level keeping elbows"
+},
+{
+"id": "579f8f66-308b-4755-bbac-eba1ecc9bab1",
+"name": "Upright Row (Dumbbell)",
+"mg": "Shoulders",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold dumbbells at thighs. Pull up to chin leading with elbows. Slightl"
+},
+{
+"id": "c767aa71-1bc8-4b83-b387-ebcec6b68860",
+"name": "V-Up",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"v ups"
+],
+"ins": "Lie flat. Simultaneously raise arms and legs meeting at top. Lower und"
+},
+{
+"id": "b0b85286-a9c5-42f5-9739-d9e7ce118e29",
+"name": "Versa Climber",
+"mg": "Cardio",
+"eq": "machine",
+"cat": "cardio",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"versa climber"
+],
+"ins": "Climb vertical movement machine using alternating arms and legs. Highl"
+},
+{
+"id": "52b3e3c7-478b-43e2-a995-548a3d21ed9d",
+"name": "Wall Calf Stretch and Raise",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "cooldown",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Place toes against wall, perform calf raise into the stretch. Extreme "
+},
+{
+"id": "5ab85839-7ff7-4333-b06c-7512639fffaa",
+"name": "Wall Sit",
+"mg": "Legs",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"wall squat"
+],
+"ins": "Lean against wall with 90 degree knee angle. Hold position. Isometric "
+},
+{
+"id": "cc63bfdb-a11f-44ee-8785-28e786364377",
+"name": "Weighted Plank",
+"mg": "Core",
+"eq": "bodyweight",
+"cat": "strength",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": ""
+},
+{
+"id": "b65332a6-4ff6-44da-9cf7-118a99d8340e",
+"name": "Wide Grip Pull Up",
+"mg": "Back",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"wide pull up"
+],
+"ins": "Hang with wide overhand grip. Pull chest toward bar. Wider grip emphas"
+},
+{
+"id": "a1ffb319-6281-4849-b7a3-b10909026d14",
+"name": "Wide Grip Push Up",
+"mg": "Chest",
+"eq": "bodyweight",
+"cat": "bodyweight",
+"g": true,
+"uw": 1,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hands wider than shoulder-width. Lower chest between hands, press back"
+},
+{
+"id": "aa25ae2c-392a-4a2e-b316-3276612e2b69",
+"name": "Windmill",
+"mg": "Core",
+"eq": "kettlebell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Hold kettlebell overhead one arm. Hinge to side touching other hand to"
+},
+{
+"id": "433f7010-e44c-473a-b615-3912df068ef2",
+"name": "Woodchop (Cable)",
+"mg": "Core",
+"eq": "cable",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"cable chop",
+"woodchop"
+],
+"ins": "Hold cable handle at shoulder height. Pull diagonally across body towa"
+},
+{
+"id": "8f9a851f-344f-4ddd-b4bd-09543b51ee30",
+"name": "Yates Row",
+"mg": "Back",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"underhand yates"
+],
+"ins": "Semi-upright position (around 70 degrees), underhand grip. Row to wais"
+},
+{
+"id": "16d23e50-f585-4bca-8433-f2652b3d45cf",
+"name": "Zercher Squat",
+"mg": "Legs",
+"eq": "barbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [],
+"ins": "Bar rests in crook of elbows. Squat with torso more upright. Unusual l"
+},
+{
+"id": "f0f67a8f-295d-4c05-b5fc-42fa74a7c719",
+"name": "Zottman Curl",
+"mg": "Biceps",
+"eq": "dumbbell",
+"cat": "strength",
+"g": true,
+"uw": 0,
+"ul": 0,
+"upb": 0,
+"um": 0,
+"al": [
+"zottman"
+],
+"ins": "Curl dumbbells up with supinated grip, rotate to pronated at top, lowe"
+}
+]

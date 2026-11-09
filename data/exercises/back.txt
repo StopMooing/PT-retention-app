@@ -1,0 +1,321 @@
+## Pull Up | Back | bodyweight | bodyweight
+how: Hang from a bar with an overhand grip just wider than your shoulders.
+how: Pull your chest towards the bar by driving your elbows down to your sides.
+how: Lower slowly until your arms are straight again.
+cue: Start each rep from a dead hang.
+cue: Think elbows to your back pockets.
+cue: Use a band or assisted machine to build up reps.
+
+## Chin Up | Back | bodyweight | bodyweight
+how: Hang from a bar with an underhand grip about shoulder width apart.
+how: Pull until your chin is over the bar.
+how: Lower slowly to straight arms.
+cue: Squeeze your shoulder blades down first.
+cue: Keep your legs still, no swinging.
+cue: Full stretch at the bottom.
+
+## Neutral Grip Pull Up | Back | bodyweight | bodyweight
+how: Hang from parallel handles with your palms facing each other.
+how: Pull your chest up between the handles.
+how: Lower slowly to straight arms.
+cue: Shoulders down away from your ears.
+cue: Drive your elbows to your ribs.
+cue: Control the way down.
+
+## Wide Grip Pull Up | Back | bodyweight | bodyweight
+how: Hang from a bar with an overhand grip well wider than your shoulders.
+how: Pull your upper chest towards the bar.
+how: Lower slowly to straight arms.
+cue: Lead with your chest.
+cue: Elbows pull down and out.
+cue: Do not kip or swing.
+
+## Assisted Pull Up (Machine) | Back | machine | strength
+how: Set the assistance weight, kneel or stand on the pad and grip the handles overhead.
+how: Pull your chest up towards the handles.
+how: Lower slowly until your arms are straight.
+cue: More weight on the stack means more help.
+cue: Full range every rep.
+cue: Reduce the help as you get stronger.
+
+## Lat Pulldown (Wide Grip) | Back | cable | strength
+how: Sit with your thighs under the pads and grip the bar well wider than your shoulders.
+how: Lean back slightly and pull the bar to your upper chest.
+how: Let the bar rise slowly until your arms are straight.
+cue: Pull with your elbows, not your hands.
+cue: Chest up to meet the bar.
+cue: Let your shoulders stretch up at the top.
+
+## Lat Pulldown (Close Grip) | Back | cable | strength
+how: Sit with your thighs under the pads holding a close grip handle.
+how: Pull the handle to your upper chest, elbows travelling down by your sides.
+how: Return slowly to straight arms.
+cue: Lean back just a little.
+cue: Squeeze your lats at the bottom.
+cue: Do not use your body to swing the weight.
+
+## Lat Pulldown (Neutral Grip) | Back | cable | strength
+how: Sit with your thighs under the pads holding a handle with palms facing each other.
+how: Pull the handle to your upper chest.
+how: Return slowly until your arms are straight.
+cue: Shoulders down before you pull.
+cue: Elbows drive to your ribs.
+cue: Control the way up.
+
+## Single Arm Lat Pulldown (Cable) | Back | cable | strength | was Single Arm Lat Pulldown
+how: Kneel or sit under a high pulley holding a single handle overhead.
+how: Pull the handle down to your shoulder, elbow travelling to your side.
+how: Return slowly, then switch arms.
+cue: Keep your torso still.
+cue: Feel the stretch at the top.
+cue: Same reps on both sides.
+
+## Seated Cable Row (Close Grip) | Back | cable | strength
+how: Sit at the row station with feet on the platform and a close grip handle in both hands.
+how: Sit tall and pull the handle to your stomach, squeezing your shoulder blades together.
+how: Let the handle travel forward slowly until your arms are straight.
+cue: Chest up, do not round forward.
+cue: Squeeze your shoulder blades for a second.
+cue: Your body stays still, your arms do the work.
+
+## Seated Cable Row (Wide Grip) | Back | cable | strength
+how: Sit at the row station holding a wide bar.
+how: Pull the bar to your lower chest with your elbows out to the sides.
+how: Return slowly to straight arms.
+cue: Elbows out wide.
+cue: Squeeze your upper back.
+cue: Stay tall through the whole set.
+
+## Single Arm Cable Row with Rotation | Back | cable | strength | was Cable Row with Rotation
+how: Stand side on to a cable at chest height holding the handle in the far hand.
+how: Row the handle to your ribs while turning your chest towards it.
+how: Reach back forward and rotate away, then repeat.
+cue: Turn through your upper back.
+cue: Keep your hips steady.
+cue: Smooth, not jerky.
+
+## Chest Supported Row (Machine) | Back | machine | strength | was Machine Row
+how: Set the seat so your chest rests on the pad and the handles are at arm's length.
+how: Pull the handles back towards your ribs.
+how: Return slowly to straight arms.
+cue: Keep your chest on the pad.
+cue: Squeeze your shoulder blades together.
+cue: Slow on the way back.
+
+## Bent Over Row (Barbell) | Back | barbell | strength | was Barbell Row (Bent Over)
+how: Hold the bar with an overhand grip, hinge at the hips until your torso is near 45 degrees, knees soft.
+how: Pull the bar to your lower ribs.
+how: Lower it until your arms are straight, keeping your back flat.
+cue: Brace your trunk before each rep.
+cue: Pull the bar to your belly button area.
+cue: Keep your back angle the same throughout.
+
+## Underhand Bent Over Row (Barbell) | Back | barbell | strength | was Underhand Barbell Row
+how: Hold the bar with an underhand grip and hinge forward with a flat back.
+how: Row the bar to your stomach, elbows close to your sides.
+how: Lower slowly to straight arms.
+cue: Elbows stay tucked.
+cue: Flat back, soft knees.
+cue: Squeeze your lats at the top.
+
+## Pendlay Row (Barbell) | Back | barbell | strength | was Pendlay Row
+how: Set up with the bar on the floor and your torso nearly flat, back straight.
+how: Pull the bar explosively to your lower chest.
+how: Lower it back to the floor and let it settle before the next rep.
+cue: Every rep starts from the floor.
+cue: Torso stays nearly parallel to the floor.
+cue: Fast up, controlled down.
+
+## Yates Row (Barbell) | Back | barbell | strength | was Yates Row
+how: Hold the bar with an underhand grip and lean forward only about 30 degrees.
+how: Pull the bar to your lower stomach.
+how: Lower slowly to straight arms.
+cue: Stand more upright than a normal row.
+cue: Drive your elbows back.
+cue: Do not bounce the bar off your thighs.
+
+## Seal Row (Barbell) | Back | barbell | strength | was Seal Row
+how: Lie face down on a raised flat bench with the bar on the floor under you.
+how: Pull the bar up until it touches the bench.
+how: Lower slowly to straight arms.
+cue: Keep your chest on the bench.
+cue: No body swing, all upper back.
+cue: Squeeze at the top.
+
+## Bent Over Row (Smith Machine) | Back | machine | strength | was Smith Machine Row
+how: Set the Smith bar at knee height, grip it and hinge forward with a flat back.
+how: Row the bar to your lower ribs.
+how: Lower slowly to straight arms.
+cue: Brace before every rep.
+cue: Keep your back angle fixed.
+cue: Squeeze your shoulder blades.
+
+## Bent Over Row (Dumbbell) | Back | dumbbell | strength
+how: Hold a dumbbell in each hand, hinge forward with a flat back and soft knees.
+how: Row both dumbbells to your hips.
+how: Lower slowly until your arms are straight.
+cue: Elbows travel back past your body.
+cue: Keep your neck in line with your back.
+cue: Brace your trunk the whole set.
+
+## Single Arm Row (Dumbbell) | Back | dumbbell | strength | was Dumbbell Row (Single Arm) | aka dumbbell row
+how: Put one knee and hand on a bench, back flat, dumbbell hanging in the other hand.
+how: Row the dumbbell up to your hip.
+how: Lower slowly until your arm is straight, then switch sides.
+cue: Pull towards your hip, not your chest.
+cue: Keep your shoulders level.
+cue: Feel the stretch at the bottom.
+
+## Chest Supported Row (Dumbbell) | Back | dumbbell | strength | was Chest Supported Dumbbell Row
+how: Set a bench to about 30 degrees and lie face down with a dumbbell in each hand.
+how: Row the dumbbells up until your elbows pass your body.
+how: Lower slowly to straight arms.
+cue: Chest stays on the pad.
+cue: Squeeze your shoulder blades together.
+cue: Pause at the top.
+
+## Chest Supported T-Bar Row | Back | barbell | strength
+how: Lie face down on the pad and grip the handles.
+how: Row the handles towards your chest.
+how: Lower slowly to straight arms.
+cue: Chest pressed into the pad.
+cue: Drive your elbows back.
+cue: Do not shrug.
+
+## T-Bar Row | Back | landmine | strength
+how: Straddle the bar, grip the handle and hinge forward with a flat back.
+how: Row the plates towards your chest.
+how: Lower slowly until your arms are straight.
+cue: Hips back, chest up.
+cue: Pull with your elbows.
+cue: Keep your back angle steady.
+
+## Meadows Row (Landmine) | Back | landmine | strength | was Meadows Row
+how: Stand side on to the end of a landmine bar, stagger your stance and grip the end overhand.
+how: Row the bar up, elbow flaring out and back.
+how: Lower slowly, then switch sides.
+cue: Rest your other forearm on your front knee.
+cue: Big stretch at the bottom.
+cue: Pull high towards your hip.
+
+## Renegade Row (Dumbbell) | Back | dumbbell | strength | was Renegade Row
+how: Get into a push up position with your hands on two dumbbells.
+how: Row one dumbbell to your hip while keeping your hips still.
+how: Lower it, then row the other side.
+cue: Feet wide for balance.
+cue: Hips stay square to the floor.
+cue: Slow and controlled.
+
+## Inverted Row | Back | bodyweight | bodyweight | was Inverted Row (Bodyweight)
+how: Lie under a bar set at waist height, grip it and keep your body straight with heels on the floor.
+how: Pull your chest up to the bar.
+how: Lower slowly to straight arms.
+cue: Body stays straight like a plank.
+cue: Bend your knees to make it easier.
+cue: Squeeze your shoulder blades at the top.
+
+## Romanian Deadlift to Row (Barbell) | Back | barbell | strength | was Romanian Deadlift to Bent Over Row
+how: Stand holding the bar, then push your hips back to lower it down your thighs.
+how: At the bottom of the hinge, row the bar to your stomach and lower it.
+how: Stand back up, squeezing your glutes.
+cue: Flat back in every position.
+cue: One hinge, one row, one stand.
+cue: Keep the bar close to your legs.
+
+## Straight Arm Pulldown (Cable) | Back | cable | strength | was Straight Arm Pulldown
+how: Face a high pulley holding a bar or rope with straight arms in front of you.
+how: Hinge slightly forward and sweep the bar down to your thighs.
+how: Return slowly to shoulder height.
+cue: Arms stay straight, a soft bend is fine.
+cue: Feel your lats pull, not your triceps.
+cue: Keep your trunk still.
+
+## Pullover (Dumbbell) | Back | dumbbell | strength | was Dumbbell Pull Over
+how: Lie across or along a bench holding one dumbbell over your chest with both hands.
+how: Lower it in an arc behind your head until you feel a stretch.
+how: Pull it back over your chest along the same arc.
+cue: Keep a slight bend in your elbows.
+cue: Ribs down, do not arch.
+cue: Slow into the stretch.
+
+## Pullover (Barbell) | Back | barbell | strength | was Barbell Pull Over
+how: Lie on a flat bench holding a light bar over your chest with a narrow grip.
+how: Lower it behind your head in an arc.
+how: Pull it back over your chest.
+cue: Elbows slightly bent.
+cue: Stop when you feel a strong stretch.
+cue: Keep your lower back on the bench.
+
+## Pullover (Cable) | Back | cable | strength | was Cable Pull Over
+how: Lie on a bench with your head towards a low pulley, holding a bar or rope over your face.
+how: Pull the handle over your chest towards your hips with straight arms.
+how: Return slowly overhead.
+cue: Arms nearly straight.
+cue: Squeeze your lats at the bottom.
+cue: Control the stretch.
+
+## Face Pull (Cable) | Shoulders | cable | strength | was Face Pull
+how: Set a rope at upper chest height or higher and hold the ends with your thumbs pointing back.
+how: Pull the rope towards your face, hands finishing beside your ears.
+how: Return slowly to straight arms.
+cue: Pull the rope apart as you pull back.
+cue: Elbows stay high.
+cue: Finish in a double biceps pose.
+
+## Band Pull Apart | Shoulders | band | warmup
+how: Hold a band in front of your chest with straight arms, hands shoulder width apart.
+how: Pull your hands apart until the band touches your chest.
+how: Return slowly.
+cue: Shoulders stay down.
+cue: Squeeze your shoulder blades together.
+cue: Arms stay straight.
+
+## Rack Pull (Barbell) | Back | barbell | strength | was Rack Pull
+how: Set the bar on the safeties just below your knees and grip it just outside your legs.
+how: Brace and stand up with the bar, pushing your hips forward.
+how: Lower it back to the safeties under control.
+cue: Flat back before you pull.
+cue: Push the floor away.
+cue: Lock out with your glutes, not by leaning back.
+
+## Back Extension (45 Degree) | Back | bodyweight | bodyweight | was 45 Degree Back Extension | aka hyperextension, roman chair
+how: Set the pad just below your hips on the 45 degree bench and hook your feet in.
+how: Lower your upper body forward with a flat back.
+how: Raise back up until your body is in a straight line.
+cue: Hinge at your hips.
+cue: Squeeze your glutes to come up.
+cue: Do not lean back past straight.
+
+## merge Hyperextension > 45 Degree Back Extension
+
+## Reverse Hyper | Glutes | machine | strength
+how: Lie face down on the reverse hyper with your hips at the edge and hold the handles.
+how: Swing your legs up until they are in line with your body.
+how: Lower them under control.
+cue: Lift with your glutes.
+cue: Do not swing too hard.
+cue: Pause at the top.
+
+## Superman | Back | bodyweight | bodyweight
+how: Lie face down with your arms stretched out in front of you.
+how: Lift your arms, chest and legs a few centimetres off the floor.
+how: Hold for a moment and lower slowly.
+cue: Look at the floor, not forward.
+cue: Squeeze your glutes.
+cue: Small lift, long body.
+
+## Prone Cobra | Back | bodyweight | accessory
+how: Lie face down with your arms by your sides, palms down.
+how: Lift your chest, turn your palms out and squeeze your shoulder blades together.
+how: Hold, then lower slowly.
+cue: Chin tucked, eyes to the floor.
+cue: Shoulder blades down and together.
+cue: Breathe while you hold.
+
+## Good Morning (Barbell) | Legs | barbell | strength | was Good Morning
+how: Set the bar on your upper back and stand with soft knees.
+how: Push your hips back and lower your chest until you feel a stretch in your hamstrings.
+how: Drive your hips forward to stand back up.
+cue: Flat back the whole time.
+cue: Hips back, not chest down.
+cue: Start light.

@@ -281,7 +281,7 @@ function ExerciseDetailSheet({ exercise, userId, onClose, onSave, onDelete, onVi
           <div>
             <SectionLabel>Coaching cues</SectionLabel>
             <ol className="flex flex-col gap-2.5">
-              {getCoachingTips(exercise.name, exercise.muscle_group).map((tip, i) => (
+              {(exercise.cues?.length ? exercise.cues : getCoachingTips(exercise.name, exercise.muscle_group)).map((tip, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-full bg-accent-soft text-accent text-xs font-bold flex items-center justify-center shrink-0 mt-px">
                     {i + 1}

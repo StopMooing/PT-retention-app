@@ -1,0 +1,273 @@
+## Overhead Press (Barbell) | Shoulders | barbell | strength | was Barbell Overhead Press | aka military press, OHP
+how: Stand with the bar on the front of your shoulders, hands just wider than shoulder width.
+how: Brace and press the bar straight up, moving your head back slightly so it clears your face.
+how: Finish with the bar over the middle of your head, then lower to your shoulders.
+cue: Squeeze your glutes so you do not lean back.
+cue: Head through once the bar passes your forehead.
+cue: Elbows slightly in front of the bar at the start.
+
+## merge Military Press > Barbell Overhead Press
+
+## Seated Overhead Press (Barbell) | Shoulders | barbell | strength | was Seated Barbell Press
+how: Sit on an upright bench with the bar racked just above your head.
+how: Unrack, lower the bar to the top of your chest, then press it back overhead.
+how: Re-rack after your last rep.
+cue: Back flat against the pad.
+cue: Press straight up, not forward.
+cue: Lower under control.
+
+## Seated Overhead Press (Smith Machine) | Shoulders | machine | strength | was Smith Machine Overhead Press
+how: Set an upright bench under the Smith bar so it lowers just in front of your face.
+how: Unhook, lower the bar to chin height, then press to straight arms.
+how: Twist the bar back onto the hooks after the last rep.
+cue: Line up the bench before loading.
+cue: Keep your back on the pad.
+cue: Smooth reps, no bouncing.
+
+## Push Press (Barbell) | Shoulders | barbell | power | was Push Press
+how: Stand with the bar on the front of your shoulders.
+how: Dip by bending your knees a little, then drive up hard and press the bar overhead in one movement.
+how: Lower the bar back to your shoulders, bending your knees slightly to absorb it.
+cue: Short dip, straight down.
+cue: Legs start it, arms finish it.
+cue: Lock out with the bar over your head.
+
+## Seated Shoulder Press (Dumbbell) | Shoulders | dumbbell | strength | was Dumbbell Shoulder Press | aka dumbbell shoulder press
+how: Sit on an upright bench with a dumbbell at each shoulder, palms facing forward.
+how: Press up until your arms are straight and the dumbbells are over your head.
+how: Lower slowly back to shoulder height.
+cue: Back flat on the pad.
+cue: Elbows slightly in front of your body.
+cue: Do not clash the dumbbells at the top.
+
+## Standing Shoulder Press (Dumbbell) | Shoulders | dumbbell | strength
+how: Stand tall with a dumbbell at each shoulder, palms facing forward.
+how: Brace and press both dumbbells overhead until your arms are straight.
+how: Lower slowly to your shoulders.
+cue: Squeeze your glutes and brace your stomach.
+cue: No leaning back.
+cue: Press up in a straight line.
+
+## Seated Arnold Press (Dumbbell) | Shoulders | dumbbell | strength | was Arnold Press | aka arnold press
+how: Sit on an upright bench holding the dumbbells in front of your shoulders, palms facing you.
+how: Press up while turning your palms to face forward, finishing with straight arms overhead.
+how: Reverse the turn as you lower back to the start.
+cue: One smooth turn on the way up and down.
+cue: Back stays on the pad.
+cue: Use lighter weight than a normal press.
+
+## Standing Arnold Press (Dumbbell) | Shoulders | dumbbell | strength
+how: Stand tall holding the dumbbells in front of your shoulders, palms facing you.
+how: Press up while turning your palms forward until your arms are straight overhead.
+how: Reverse the turn as you lower.
+cue: Brace so your lower back does not arch.
+cue: Turn and press at the same time.
+cue: Control the way down.
+
+## Shoulder Press (Machine) | Shoulders | machine | strength | was Machine Shoulder Press
+how: Set the seat so the handles start at shoulder height.
+how: Press the handles up until your arms are straight.
+how: Lower slowly back to shoulder height.
+cue: Back flat against the pad.
+cue: Do not shrug as you press.
+cue: Slow on the way down.
+
+## Landmine Press (Single Arm) | Shoulders | landmine | strength
+how: Stand or half kneel holding the end of a landmine bar at your shoulder.
+how: Press it up and forward until your arm is straight.
+how: Lower slowly, then switch sides.
+cue: Brace your trunk, no twisting.
+cue: Press up and away.
+cue: Let your shoulder blade move with the arm.
+
+## Bradford Press (Barbell) | Shoulders | barbell | strength | was Bradford Press
+how: Stand with the bar on the front of your shoulders.
+how: Press it just over your head and lower it behind your head to the top of your traps.
+how: Press it back over and down to the front, alternating each rep.
+cue: Only press high enough to clear your head.
+cue: Use a light weight.
+cue: Stop if your shoulders do not feel good.
+
+## Cuban Press (Barbell) | Shoulders | barbell | accessory | was Cuban Press
+how: Hold a light bar or dumbbells at your thighs and lift your elbows out to shoulder height.
+how: Rotate your forearms up so your hands are above your elbows.
+how: Press overhead, then reverse each step to lower.
+cue: Very light weight.
+cue: Elbows stay at shoulder height while you rotate.
+cue: Slow and controlled.
+
+## Handstand Push Up | Shoulders | bodyweight | bodyweight
+how: Kick up into a handstand against a wall, hands just wider than your shoulders.
+how: Lower your head towards the floor by bending your elbows.
+how: Press back up to straight arms.
+cue: Make a triangle with your hands and head.
+cue: Keep your stomach tight.
+cue: Start with pike push ups if these are too hard.
+
+## Pike Push Up | Shoulders | bodyweight | bodyweight
+how: Start in a push up position and walk your feet in so your hips are high, body like an upside down V.
+how: Bend your elbows to lower your head towards the floor between your hands.
+how: Press back up.
+cue: Hips stay high.
+cue: Head travels forward of your hands.
+cue: Elevate your feet to make it harder.
+
+## Lateral Raise (Dumbbell) | Shoulders | dumbbell | strength | was Dumbbell Lateral Raise | aka lateral raise, side raise
+how: Stand holding a dumbbell at each side with a slight bend in your elbows.
+how: Raise your arms out to the sides until your hands reach shoulder height.
+how: Lower slowly.
+cue: Lead with your elbows.
+cue: Stop at shoulder height.
+cue: No swinging, use a weight you can control.
+
+## Seated Lateral Raise (Dumbbell) | Shoulders | dumbbell | strength | was Seated Dumbbell Lateral Raise
+how: Sit on the end of a bench holding a dumbbell at each side.
+how: Raise your arms out to the sides to shoulder height.
+how: Lower slowly.
+cue: Sitting stops you using momentum.
+cue: Slight forward lean is fine.
+cue: Pinky side of the dumbbell slightly up.
+
+## Lateral Raise (Cable) | Shoulders | cable | strength | was Cable Lateral Raise
+how: Stand side on to a low pulley holding the handle in the far hand.
+how: Raise your arm out to the side to shoulder height.
+how: Lower slowly, then switch sides.
+cue: Tension stays on the whole way.
+cue: Keep your torso still.
+cue: Slight bend in the elbow.
+
+## Lateral Raise (Machine) | Shoulders | machine | strength | was Machine Lateral Raise
+how: Sit with your arms against the pads and grip the handles.
+how: Raise your arms out to the sides to shoulder height.
+how: Lower slowly.
+cue: Shoulders down, do not shrug.
+cue: Pause at the top.
+cue: Slow on the way down.
+
+## Front Raise (Dumbbell) | Shoulders | dumbbell | strength | was Dumbbell Front Raise
+how: Stand holding the dumbbells in front of your thighs.
+how: Raise them in front of you to shoulder height with a slight bend in your elbows.
+how: Lower slowly.
+cue: Stop at shoulder height.
+cue: Keep your body still.
+cue: Raise both or alternate arms.
+
+## Front Raise (Barbell) | Shoulders | barbell | strength | was Barbell Front Raise
+how: Stand holding a light bar in front of your thighs, hands shoulder width apart.
+how: Raise it in front of you to shoulder height.
+how: Lower slowly.
+cue: Arms nearly straight.
+cue: No leaning back.
+cue: Light weight, strict reps.
+
+## Front Raise (Cable) | Shoulders | cable | strength | was Cable Front Raise
+how: Stand facing away from a low pulley with the handle between your legs.
+how: Raise the handle in front of you to shoulder height.
+how: Lower slowly.
+cue: Constant tension, no rest at the bottom.
+cue: Body stays tall.
+cue: Slight bend in the elbows.
+
+## Front Raise (Plate) | Shoulders | plate | strength | was Plate Front Raise
+how: Hold a plate at the sides with both hands in front of your thighs.
+how: Raise it in front of you to eye level.
+how: Lower slowly.
+cue: Arms nearly straight.
+cue: Do not swing.
+cue: Keep your shoulders down.
+
+## Bus Driver (Plate) | Shoulders | plate | strength | was Bus Driver
+how: Hold a plate out in front of you at shoulder height with straight arms.
+how: Turn it left and right like a steering wheel.
+how: Keep your arms up for the whole set.
+cue: Arms stay at shoulder height.
+cue: Turn as far as you comfortably can.
+cue: Breathe steadily.
+
+## Upright Row (Barbell) | Shoulders | barbell | strength
+how: Stand holding the bar in front of your thighs, hands about shoulder width.
+how: Pull the bar up close to your body until your elbows reach shoulder height.
+how: Lower slowly.
+cue: Elbows lead and stay higher than your hands.
+cue: Stop at shoulder height.
+cue: Use a wider grip if your shoulders feel pinched.
+
+## Upright Row (Dumbbell) | Shoulders | dumbbell | strength
+how: Stand holding the dumbbells in front of your thighs.
+how: Pull them up close to your body until your elbows reach shoulder height.
+how: Lower slowly.
+cue: Elbows lead.
+cue: Shoulders down, not shrugged.
+cue: Controlled both ways.
+
+## Upright Row (Cable) | Shoulders | cable | strength
+how: Stand facing a low pulley holding a straight bar.
+how: Pull the bar up close to your body until your elbows reach shoulder height.
+how: Lower slowly.
+cue: Elbows lead.
+cue: Tension the whole time.
+cue: Stand tall.
+
+## Shrug (Barbell) | Shoulders | barbell | strength
+how: Stand holding the bar in front of your thighs.
+how: Lift your shoulders straight up towards your ears.
+how: Hold for a second and lower slowly.
+cue: Straight up and down, no rolling.
+cue: Arms stay straight.
+cue: Pause at the top.
+
+## Shrug (Dumbbell) | Shoulders | dumbbell | strength
+how: Stand holding a dumbbell at each side.
+how: Lift your shoulders towards your ears.
+how: Hold for a second and lower slowly.
+cue: Straight up, straight down.
+cue: Keep your chin level.
+cue: Full stretch at the bottom.
+
+## Shrug (Cable) | Shoulders | cable | strength
+how: Stand facing a low pulley holding a bar or two handles.
+how: Lift your shoulders towards your ears.
+how: Lower slowly.
+cue: Arms straight.
+cue: Pause at the top.
+cue: Constant tension.
+
+## Bent Over Reverse Fly (Dumbbell) | Shoulders | dumbbell | strength | was Bent Over Rear Delt Fly | aka rear delt fly
+how: Hinge forward with a flat back holding the dumbbells under your chest, palms facing.
+how: Raise your arms out to the sides until they are level with your body.
+how: Lower slowly.
+cue: Soft bend in the elbows.
+cue: Lead with your pinkies.
+cue: Do not squeeze your shoulder blades hard, let the rear shoulders work.
+
+## Reverse Fly (Cable) | Shoulders | cable | strength | was Cable Rear Delt Fly | aka rear delt fly
+how: Set both pulleys at shoulder height and cross the cables, holding the opposite handle in each hand.
+how: Pull your arms out and back until they line up with your shoulders.
+how: Return slowly.
+cue: Arms stay nearly straight.
+cue: Pull wide, not back.
+cue: Slow return.
+
+## Reverse Fly (Machine) | Shoulders | machine | strength | was Reverse Pec Deck | aka reverse pec deck, rear delt machine
+how: Sit facing the pad and grip the handles with your arms straight in front.
+how: Sweep your arms back until they line up with your body.
+how: Return slowly.
+cue: Chest on the pad.
+cue: Arms stay at shoulder height.
+cue: Pause when your arms are open.
+
+## Y Raise (Cable) | Shoulders | cable | accessory | was Cable Y Raise
+how: Stand between two low pulleys holding the opposite handle in each hand.
+how: Raise your arms up and out into a Y shape above your head.
+how: Lower slowly.
+cue: Thumbs point up.
+cue: Ribs down.
+cue: Light weight.
+
+## Prone Y Raise | Shoulders | bodyweight | accessory
+how: Lie face down on an incline bench with your arms hanging down.
+how: Raise your arms up and forward into a Y shape, thumbs up.
+how: Lower slowly.
+cue: Shoulders down away from your ears.
+cue: Use no weight or very light plates.
+cue: Pause at the top.

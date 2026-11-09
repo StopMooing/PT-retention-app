@@ -1,0 +1,299 @@
+## Bench Press (Barbell) | Chest | barbell | strength | was Barbell Bench Press | aka bench press
+how: Lie on a flat bench with your eyes under the bar, feet flat and shoulder blades pulled together.
+how: Grip a little wider than shoulder width, unrack, and lower the bar to your mid chest with elbows about 45 degrees from your body.
+how: Press back up until your arms are straight, finishing with the bar over your shoulders.
+cue: Pin your shoulder blades into the bench the whole set.
+cue: Touch the same spot on your chest every rep.
+cue: Push your feet into the floor as you press.
+
+## Bench Press (Dumbbell) | Chest | dumbbell | strength | was Dumbbell Bench Press
+how: Sit on a flat bench with the dumbbells on your thighs, then lie back and bring them to the sides of your chest.
+how: Press up until your arms are straight and the dumbbells are over your shoulders.
+how: Lower slowly until the dumbbells are level with your chest.
+cue: Keep your wrists stacked over your elbows.
+cue: Lower for two seconds, press with intent.
+cue: Shoulder blades back and down on the bench.
+
+## Bench Press (Smith Machine) | Chest | machine | strength | was Smith Machine Bench Press
+how: Set a flat bench so the bar lines up with your mid chest.
+how: Unhook the bar with a grip just wider than your shoulders and lower it to your chest.
+how: Press up to straight arms and twist the bar back onto the hooks at the end of the set.
+cue: Check the bar path lands on your mid chest before you start.
+cue: Keep your shoulder blades pinned back.
+cue: Control the bar down, do not let it drop.
+
+## Close Grip Bench Press (Barbell) | Triceps | barbell | strength | was Close Grip Bench Press
+how: Lie on a flat bench and grip the bar about shoulder width apart.
+how: Lower the bar to your lower chest, keeping your elbows close to your sides.
+how: Press back up until your arms lock out.
+cue: Hands shoulder width, not touching.
+cue: Elbows brush past your ribs on the way down.
+cue: Finish each rep by squeezing your triceps.
+
+## Close Grip Bench Press (Smith Machine) | Triceps | machine | strength | was Smith Machine Close Grip Press
+how: Set a flat bench under the Smith bar so it lines up with your lower chest.
+how: Grip the bar shoulder width apart, unhook it and lower it with your elbows tucked.
+how: Press back to straight arms.
+cue: Elbows in, close to your body.
+cue: Slow on the way down.
+cue: Lock out fully at the top.
+
+## Incline Bench Press (Barbell) | Chest | barbell | strength | was Incline Barbell Bench Press
+how: Set the bench to about 30 degrees and lie back with your eyes under the bar.
+how: Unrack and lower the bar to your upper chest, just below your collarbones.
+how: Press straight up until your arms lock out.
+cue: Keep the incline low, around 30 degrees.
+cue: Bar touches high on the chest.
+cue: Keep your back and hips on the bench.
+
+## Incline Bench Press (Dumbbell) | Chest | dumbbell | strength | was Incline Dumbbell Press
+how: Set the bench to about 30 degrees and sit back with a dumbbell at each shoulder.
+how: Press the dumbbells up over your upper chest until your arms are straight.
+how: Lower slowly until the dumbbells are level with your upper chest.
+cue: Elbows slightly in front of your shoulders.
+cue: Press up and slightly together.
+cue: Control the last part of every lowering.
+
+## Incline Bench Press (Smith Machine) | Chest | machine | strength | was Smith Machine Incline Press
+how: Set an incline bench at about 30 degrees under the Smith bar so it lands on your upper chest.
+how: Unhook, lower the bar to your upper chest, then press back up.
+how: Twist the bar back onto the hooks after the last rep.
+cue: Line the bench up before you load the bar.
+cue: Shoulder blades back and down.
+cue: Smooth, steady reps.
+
+## High Incline Press (Dumbbell) | Shoulders | dumbbell | strength | was High Incline Dumbbell Press
+how: Set the bench to about 45 to 60 degrees and sit back with the dumbbells at your shoulders.
+how: Press up until your arms are straight above your upper chest.
+how: Lower under control back to your shoulders.
+cue: Keep your back on the pad.
+cue: Do not let your lower back arch off the bench.
+cue: Press in a straight line, not forward.
+
+## Decline Bench Press (Barbell) | Chest | barbell | strength | was Decline Barbell Bench Press
+how: Hook your legs into a decline bench and lie back with your eyes under the bar.
+how: Unrack and lower the bar to your lower chest.
+how: Press back up until your arms are straight.
+cue: Have a spotter or use safeties on a decline.
+cue: Bar touches your lower chest.
+cue: Keep your shoulder blades squeezed together.
+
+## Decline Bench Press (Dumbbell) | Chest | dumbbell | strength | was Decline Dumbbell Press
+how: Hook your legs into a decline bench and lie back with the dumbbells at your lower chest.
+how: Press up until your arms are straight.
+how: Lower slowly to the sides of your lower chest.
+cue: Bring the dumbbells to the bench start carefully.
+cue: Elbows about 45 degrees from your body.
+cue: Control every lowering.
+
+## Floor Press (Barbell) | Chest | barbell | strength
+how: Lie on the floor inside a rack with the bar set at arm's length height, knees bent and feet flat.
+how: Lower the bar until your upper arms rest on the floor.
+how: Pause for a moment, then press back up.
+cue: Let your elbows touch down softly, do not bounce.
+cue: Elbows about 45 degrees from your body.
+cue: Press hard from the dead stop.
+
+## Floor Press (Dumbbell) | Chest | dumbbell | strength
+how: Lie on the floor with knees bent, holding the dumbbells over your chest with straight arms.
+how: Lower until your upper arms touch the floor.
+how: Pause, then press back up.
+cue: Elbows land softly.
+cue: Keep your wrists straight.
+cue: Press up and slightly together.
+
+## Close Grip Floor Press (Dumbbell) | Triceps | dumbbell | strength | was Dumbbell Floor Press (Tricep)
+how: Lie on the floor with knees bent, dumbbells held with palms facing each other above your chest.
+how: Lower until your upper arms touch the floor with elbows tucked to your sides.
+how: Press back up to straight arms.
+cue: Palms face each other the whole time.
+cue: Elbows stay close to your ribs.
+cue: Squeeze your triceps at the top.
+
+## Single Arm Bench Press (Dumbbell) | Chest | dumbbell | strength | was Single Arm Dumbbell Press
+how: Lie on a flat bench with one dumbbell at the side of your chest and the other hand holding the bench.
+how: Press the dumbbell up until your arm is straight.
+how: Lower slowly, then do all reps before switching sides.
+cue: Keep both shoulders on the bench.
+cue: Brace your trunk so you do not tip.
+cue: Same speed on both sides.
+
+## Hex Press (Dumbbell) | Chest | dumbbell | strength | was Hex Press
+how: Lie on a flat bench holding two dumbbells pressed together over your chest, palms facing each other.
+how: Lower them to your chest while squeezing them together the whole time.
+how: Press back up, still squeezing.
+cue: Crush the dumbbells into each other.
+cue: Elbows close to your sides.
+cue: Slow lowering.
+
+## Svend Press (Plate) | Chest | plate | strength | was Svend Press | aka plate squeeze press
+how: Stand tall and squeeze a plate between your palms in front of your chest.
+how: Press it straight out in front until your arms are straight, still squeezing.
+how: Bring it back to your chest under control.
+cue: Squeeze the plate as hard as you can.
+cue: Keep your shoulders down.
+cue: Move slowly in both directions.
+
+## merge Plate Squeeze Press > Svend Press
+
+## Landmine Press | Chest | landmine | strength
+how: Stand facing the end of a landmine bar and hold the end with both hands at your chest.
+how: Press up and forward until your arms are straight.
+how: Lower back to your chest under control.
+cue: Stand tall with a braced trunk.
+cue: Press up and away from you.
+cue: Do not lean back.
+
+## Chest Press (Machine) | Chest | machine | strength | was Machine Chest Press
+how: Set the seat so the handles line up with your mid chest and sit with your back flat on the pad.
+how: Press the handles forward until your arms are straight.
+how: Return slowly until you feel a stretch across your chest.
+cue: Shoulder blades back against the pad.
+cue: Do not lock your elbows hard.
+cue: Slow and controlled on the way back.
+
+## Chest Press (Band) | Chest | band | accessory | was Resistance Band Chest Press
+how: Anchor a band behind you at chest height and hold a handle in each hand.
+how: Step forward until there is tension, then press your hands forward until your arms are straight.
+how: Return slowly to your chest.
+cue: Stagger your stance for balance.
+cue: Keep your elbows just below shoulder height.
+cue: Fight the band on the way back.
+
+## Single Arm Chest Press (Cable) | Chest | cable | strength | was Single Arm Cable Press
+how: Set a cable at chest height and stand facing away with the handle in one hand.
+how: Press the handle forward until your arm is straight.
+how: Return slowly, then switch arms after your set.
+cue: Stagger your stance, opposite foot forward.
+cue: Keep your hips and shoulders square.
+cue: Squeeze your chest at the end of the press.
+
+## Chest Fly (Dumbbell) | Chest | dumbbell | strength | was Dumbbell Chest Fly
+how: Lie on a flat bench holding the dumbbells above your chest, palms facing each other and a soft bend in your elbows.
+how: Lower them out to the sides in a wide arc until you feel a stretch across your chest.
+how: Bring them back together over your chest along the same arc.
+cue: Keep the same small bend in your elbows throughout.
+cue: Think about hugging a big tree.
+cue: Only go as low as your shoulders feel good.
+
+## Incline Chest Fly (Dumbbell) | Chest | dumbbell | strength | was Incline Dumbbell Fly
+how: Set the bench to about 30 degrees and hold the dumbbells over your upper chest, palms facing.
+how: Lower them out wide with a soft bend in the elbows.
+how: Squeeze them back together over your chest.
+cue: Soft elbows, fixed angle.
+cue: Feel the stretch, do not chase depth.
+cue: Squeeze at the top for a second.
+
+## Chest Fly (Machine) | Chest | machine | strength | was Pec Deck Machine | aka pec deck
+how: Set the seat so the handles are at chest height and sit with your back flat on the pad.
+how: Bring the handles together in front of your chest.
+how: Let them open slowly until you feel a stretch, then repeat.
+cue: Keep your chest up and shoulders back.
+cue: Squeeze for a second when the handles meet.
+cue: Open slowly, do not let the weight pull you.
+
+## Cable Fly (Mid) | Chest | cable | strength | was Cable Chest Fly (Mid) | aka cable crossover
+how: Set both pulleys at shoulder height and take a handle in each hand with a step forward.
+how: With a soft bend in your elbows, bring your hands together in front of your chest.
+how: Open your arms slowly until you feel a stretch, then repeat.
+cue: Lean slightly forward from the hips.
+cue: Hands meet in front of your chest.
+cue: Same elbow bend from start to finish.
+
+## merge Cable Crossover > Cable Chest Fly (Mid)
+
+## Cable Fly (High to Low) | Chest | cable | strength | was Cable Chest Fly (High to Low)
+how: Set both pulleys high and take a handle in each hand with a step forward.
+how: Sweep your hands down and together in front of your hips.
+how: Return slowly up and out until you feel a stretch.
+cue: Lean slightly forward.
+cue: Finish with your hands in front of your belt.
+cue: Keep a soft bend in your elbows.
+
+## Cable Fly (Low to High) | Chest | cable | strength | was Cable Chest Fly (Low to High)
+how: Set both pulleys low and take a handle in each hand with a step forward.
+how: Sweep your hands up and together until they meet at upper chest height.
+how: Lower slowly back out and down.
+cue: Palms face up slightly.
+cue: Finish at chin height, not above.
+cue: Squeeze your upper chest at the top.
+
+## Chest Fly (TRX) | Chest | trx | accessory | was TRX Chest Fly
+how: Face away from the anchor holding the handles in front of you with straight arms, leaning forward.
+how: Open your arms out wide as your chest lowers between your hands.
+how: Squeeze your arms back together to return.
+cue: Keep a plank position from head to heels.
+cue: Walk your feet back to make it harder.
+cue: Soft bend in the elbows throughout.
+
+## Push Up | Chest | bodyweight | bodyweight
+how: Start in a plank with your hands just wider than your shoulders and your body in a straight line.
+how: Lower your chest towards the floor with elbows about 45 degrees from your body.
+how: Push back up until your arms are straight.
+cue: Squeeze your glutes to keep your hips level.
+cue: Chest touches down before your hips do.
+cue: Drop to your knees if you need to keep good form.
+
+## Wide Grip Push Up | Chest | bodyweight | bodyweight
+how: Start in a plank with your hands a good way wider than your shoulders.
+how: Lower your chest to the floor, keeping your body straight.
+how: Push back up.
+cue: Hands wider, but keep elbows soft at the top.
+cue: Straight line from head to heels.
+cue: Lower slowly.
+
+## Diamond Push Up | Triceps | bodyweight | bodyweight
+how: Start in a plank with your hands together under your chest, thumbs and index fingers making a diamond.
+how: Lower your chest towards your hands with elbows close to your sides.
+how: Push back up to straight arms.
+cue: Elbows travel back, not out.
+cue: Keep your hips in line.
+cue: Use your knees to make it easier.
+
+## Close Grip Push Up | Triceps | bodyweight | bodyweight | was Tricep Pushup | aka tricep push up
+how: Start in a plank with your hands directly under your shoulders.
+how: Lower your chest while keeping your elbows tucked against your sides.
+how: Push back up until your arms are straight.
+cue: Elbows brush your ribs.
+cue: Body moves as one piece.
+cue: Squeeze your triceps at the top.
+
+## Incline Push Up | Chest | bodyweight | bodyweight
+how: Place your hands on a bench or box slightly wider than your shoulders and walk your feet back into a plank.
+how: Lower your chest to the edge of the bench.
+how: Push back up to straight arms.
+cue: The higher the surface, the easier it is.
+cue: Keep your body in a straight line.
+cue: Lower slowly.
+
+## Decline Push Up | Chest | bodyweight | bodyweight
+how: Put your feet on a bench and your hands on the floor just wider than your shoulders.
+how: Lower your chest to the floor.
+how: Push back up, keeping your hips in line.
+cue: Do not let your hips sag.
+cue: Elbows about 45 degrees from your body.
+cue: Control the bottom.
+
+## Push Up (Band) | Chest | band | accessory | was Push Up with Band
+how: Loop a band across your upper back, holding an end under each hand, and set up in a push up position.
+how: Lower your chest to the floor.
+how: Push up against the band until your arms are straight.
+cue: Band sits across your shoulder blades.
+cue: Drive the floor away at the top.
+cue: Same form as a normal push up.
+
+## Push Up (TRX) | Chest | trx | accessory | was TRX Push Up
+how: Face away from the anchor holding the handles at chest height and lean forward into a plank.
+how: Lower your chest between your hands.
+how: Press back up to straight arms.
+cue: Keep the straps from touching your arms.
+cue: Walk your feet back to make it harder.
+cue: Hold a tight plank.
+
+## Chest Dip | Chest | bodyweight | bodyweight | was Dips (Chest Focus) | aka dips
+how: Support yourself on parallel bars with straight arms.
+how: Lean your chest forward and lower until your shoulders are just below your elbows.
+how: Press back up to straight arms.
+cue: Lean forward to work your chest more.
+cue: Only go as deep as your shoulders are comfortable.
+cue: Use an assisted dip machine or band if needed.
