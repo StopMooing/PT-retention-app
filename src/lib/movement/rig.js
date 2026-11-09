@@ -3,7 +3,7 @@
 // (the feet for standing moves, the hands for hanging, the hips for lying). Angles are in
 // degrees: 0 points up, 90 points forward (the figure faces right), 180 down, -90 back.
 
-export const LEN = { foot: 15, shin: 44, thigh: 46, torso: 56, neck: 17, upper: 30, fore: 28 }
+export const LEN = { foot: 15, shin: 44, thigh: 46, torso: 56, neck: 17, upper: 33, fore: 30 }
 
 // parent, child, bone (direction is from parent to child)
 const EDGES = [
@@ -61,23 +61,18 @@ export function blend(A, B, t) {
   const b = fullAngles(B.a)
   const out = {}
   for (const k of Object.keys(a)) out[k] = lerpAngle(a[k], b[k] ?? a[k], t)
-  // Hand and foot targets are made absolute first, so a start pose with a fixed target and
-  // an end pose with one relative to a joint still blend smoothly.
-  const ja = A.reach?.rel || A.plant?.rel ? solve({ ...A, a: fullAngles(A.a) }) : null
-  const jb = B.reach?.rel || B.plant?.rel ? solve({ ...B, a: fullAngles(B.a) }) : null
-  const abs = (spec, pt, j) => (pt && spec?.rel ? [j[spec.rel][0] + pt[0], j[spec.rel][1] + pt[1]] : pt)
+  // Every hand and foot target becomes a function of the joints (fixed points, points
+  // relative to a joint, or points on the body), and the two ends are mixed on the
+  // in-between body, so a bar stays on the back and a hand stays on the bar mid-rep.
+  const fn = (spec, pt) => (typeof pt === 'function' ? pt : pt && spec?.rel ? (j) => [j[spec.rel][0] + pt[0], j[spec.rel][1] + pt[1]] : pt ? () => pt : null)
   const mix = (key) => {
     const x = A[key], y = B[key]
     if (!x && !y) return undefined
     const o = { bend: (t < 0.5 ? x ?? y : y ?? x).bend }
-    if (x?.rel && x.rel === y?.rel) {
-      o.rel = x.rel
-      for (const k of ['near', 'far']) if (x[k] || y[k]) o[k] = lerpPt(x[k], y[k], t)
-      return o
-    }
     for (const k of ['near', 'far']) {
-      const px = abs(x, x?.[k], ja), py = abs(y, y?.[k], jb)
-      if (px || py) o[k] = lerpPt(px, py, t)
+      if (!x?.[k] && !y?.[k]) continue
+      const fx = fn(x, x?.[k] ?? x?.near), fy = fn(y, y?.[k] ?? y?.near)
+      o[k] = (j) => lerpPt(fx?.(j), fy?.(j), t)
     }
     return o
   }
@@ -105,7 +100,7 @@ export function pose(p) {
   const a = fullAngles(p.a)
   const base = solve({ ...p, a })
   // Targets are absolute, or offsets from a joint when rel names one (a bar on the back).
-  const at = (spec, pt) => (pt && spec.rel ? [base[spec.rel][0] + pt[0], base[spec.rel][1] + pt[1]] : pt)
+  const at = (spec, pt) => (typeof pt === 'function' ? pt(base) : pt && spec.rel ? [base[spec.rel][0] + pt[0], base[spec.rel][1] + pt[1]] : pt)
   if (p.reach) {
     const bend = p.reach.bend ?? 1
     const near = at(p.reach, p.reach.near)
