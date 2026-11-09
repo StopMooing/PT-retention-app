@@ -11,6 +11,9 @@ const TONE = {
   body: 'var(--ink)', far: 'var(--faint)', gear: 'var(--dot)', kit: 'var(--line-strong)', cable: 'var(--faint)',
 }
 
+// Off until every drawing has been checked one by one (Luke, 9 Nov: too many were wrong).
+const ON = false
+
 function Shape({ s }) {
   if (s.k === 'line') return <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={TONE[s.tone]} strokeWidth={s.w} strokeLinecap="round" />
   if (s.k === 'circle') return <circle cx={s.cx} cy={s.cy} r={s.r} fill={TONE[s.tone]} />
@@ -34,6 +37,7 @@ function fitBox(shapes) {
 // A still of the movement for lists: the end of the move, small. Muscle group initial
 // when there is no drawing, so every row has something in the same spot.
 export function MovementThumb({ name, fallback = '', size = 44 }) {
+  if (!ON) return null
   const key = matchPattern(name)
   const p = key ? PATTERNS[key] : null
   const box = { width: size, height: size }
@@ -56,7 +60,7 @@ export function MovementThumb({ name, fallback = '', size = 44 }) {
 }
 
 export default function MovementDemo({ name, className = '' }) {
-  const key = matchPattern(name)
+  const key = ON ? matchPattern(name) : null
   const p = key ? PATTERNS[key] : null
   const [t, setT] = useState(0)
   const ref = useRef(null)

@@ -263,7 +263,7 @@ function ExerciseDetailSheet({ exercise, userId, onClose, onSave, onDelete, onVi
     >
       <div className="flex flex-col gap-6">
         <MovementDemo name={exercise.name} />
-        <div className="flex flex-wrap gap-2 -mt-2">
+        <div className="flex flex-wrap gap-2">
           {exercise.muscle_group && <Chip tone="accent">{exercise.muscle_group}</Chip>}
           {exercise.equipment && <Chip>{equipmentLabel(exercise.equipment)}</Chip>}
           {exercise.category && <Chip>{categoryLabel(exercise.category)}</Chip>}
