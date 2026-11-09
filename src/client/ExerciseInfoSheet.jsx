@@ -8,7 +8,6 @@ import { supabase } from '../supabase'
 import { fetchExerciseVideo } from '../lib/exerciseVideo'
 import { ExerciseVideo } from '../lib/ExerciseVideo'
 import { Sheet, Chip } from '../ui'
-import MovementDemo from '../lib/movement/MovementDemo'
 
 export default function ExerciseInfoSheet({ exercise, onClose }) {
   const [info, setInfo] = useState(null) // { instructions, equipment, tips, video }
@@ -47,13 +46,11 @@ export default function ExerciseInfoSheet({ exercise, onClose }) {
           <div className="h-28 rounded-[16px] bg-surface-2 animate-pulse" />
         ) : (
           <>
-            {info.video ? (
+            {info.video && (
               <section>
                 <h4 className="text-[15px] font-bold text-ink mb-1.5">From your coach</h4>
                 <ExerciseVideo media={info.video} />
               </section>
-            ) : (
-              <MovementDemo name={exercise.name} />
             )}
             {info.instructions && (
               <section>

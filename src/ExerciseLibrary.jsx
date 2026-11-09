@@ -7,7 +7,6 @@ import { useToast } from './tools/useToast'
 import { getCoachingTips } from './tools/coachingTips'
 import { fetchExerciseVideo, fetchMyVideoIds, uploadExerciseVideo, saveYoutubeVideo, removeExerciseVideo } from './lib/exerciseVideo'
 import { MAX_SECONDS } from './lib/shrinkVideo'
-import MovementDemo, { MovementThumb } from './lib/movement/MovementDemo'
 
 const stageLabel = (s) => (s?.step === 'shrinking' ? `Preparing ${Math.round((s.p || 0) * 100)}%` : 'Uploading')
 import { ExerciseVideo } from './lib/ExerciseVideo'
@@ -262,7 +261,6 @@ function ExerciseDetailSheet({ exercise, userId, onClose, onSave, onDelete, onVi
       ) : null}
     >
       <div className="flex flex-col gap-6">
-        <MovementDemo name={exercise.name} />
         <div className="flex flex-wrap gap-2">
           {exercise.muscle_group && <Chip tone="accent">{exercise.muscle_group}</Chip>}
           {exercise.equipment && <Chip>{equipmentLabel(exercise.equipment)}</Chip>}
@@ -423,7 +421,6 @@ export default function ExerciseLibrary({ user }) {
                       onClick={() => setSelectedExercise(exercise)}
                       className="w-full min-h-[60px] px-4 py-2.5 flex items-center gap-3 text-left hover:bg-surface-2 transition-colors"
                     >
-                      <MovementThumb name={exercise.name} fallback={exercise.muscle_group} />
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-ink truncate">{exercise.name}</span>

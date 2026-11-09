@@ -52,16 +52,6 @@
   --fats: #C24E33;
   --kcal: #1C1A17;
   --shadow: rgba(28, 26, 23, 0.12);
-  /* Exercise drawings (src/lib/movement): the figure, its far side, working muscles, kit. */
-  --fig-bg: #EFE7DA;
-  --fig-body: #1C1A17;
-  --fig-far: #A39A8C;
-  --fig-muscle: #D4AE6E;
-  --fig-kit: #DCD1BE;
-  --fig-gear: #5C564D;
-  --fig-band: #C24E33;
-  --fig-cable: #8A8377;
-  --fig-shadow: rgba(28, 26, 23, 0.13);
 }
 
 [data-theme=dark] {
@@ -99,15 +89,6 @@
   --fats: #EF9A82;
   --kcal: #E6D3B3;
   --shadow: rgba(0, 0, 0, 0.4);
-  --fig-bg: #191816;
-  --fig-body: #F7F2EA;
-  --fig-far: #77706A;
-  --fig-muscle: #C99A4E;
-  --fig-kit: #3A3631;
-  --fig-gear: #B5ADA0;
-  --fig-band: #EF9A82;
-  --fig-cable: #8A8377;
-  --fig-shadow: rgba(0, 0, 0, 0.45);
 }
 
 @theme inline {
