@@ -1,4 +1,4 @@
-// Progress: body weight trend, consistency, past sessions, strength, photos and weekly check-ins.
+// Progress: body weight trend, measurements, consistency, past sessions, strength, photos and weekly check-ins.
 // Everything comes from data the app already saves. Empty sections are hidden.
 import { useState, useRef } from 'react'
 import { ChevronDown, X, Camera, MessageCircle, Trash2 } from 'lucide-react'
@@ -11,6 +11,8 @@ import {
 } from './metrics'
 import WeightChart from './WeightChart'
 import SessionsList from './SessionsList'
+import Measurements from '../lib/Measurements'
+import { answersOf } from '../lib/checkinQuestions'
 
 function WeightCard({ client, weightLogs, setWeightLogs }) {
   const [period, setPeriod] = useState('90')
@@ -318,6 +320,8 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
 
       <WeightCard client={client} weightLogs={weightLogs} setWeightLogs={setWeightLogs} />
 
+      <Measurements clientId={client.id} variant="client" />
+
       {total > 0 && (
         <Card className="flex items-center gap-4">
           <Ring value={train.scheduled > 0 ? train.done / train.scheduled : 1} size={76} stroke={9} />
@@ -368,6 +372,9 @@ export default function ProgressTab({ client, weightLogs, setWeightLogs, workout
                   <p className="text-[13px] text-muted tabular-nums">Training {c.training_score}/5 · Energy {c.energy_score}/5</p>
                 </div>
                 {(c.blocker || c.notes) && <p className="text-[15px] text-muted whitespace-pre-wrap">{c.blocker || c.notes}</p>}
+                {answersOf(c).map((x, i) => (
+                  <p key={i} className="text-[14px] text-muted"><span className="font-semibold text-ink">{x.q}</span> {x.kind === 'scale' ? `${x.a}/5` : x.a}</p>
+                ))}
                 {c.coach_reply && (
                   <div className="rounded-[16px] bg-accent-soft px-3.5 py-3 flex gap-2.5">
                     <MessageCircle size={17} className="text-accent shrink-0 mt-0.5" />

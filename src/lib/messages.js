@@ -153,7 +153,7 @@ export function useThread({ clientId, userId, active = true }) {
 
 /* ---------- Check-ins in the chat ---------- */
 
-const CHECKIN_COLS = 'id, client_id, submitted_at, training_score, energy_score, mood_score, notes, blocker, coach_reply, replied_at'
+const CHECKIN_COLS = 'id, client_id, submitted_at, training_score, energy_score, mood_score, notes, blocker, answers, coach_reply, replied_at'
 const DAILY_COLS = 'id, client_id, checkin_date, energy, sleep, soreness, note, created_at'
 const EMPTY_NOTE = ['none', 'n/a', 'na', 'nil', 'no', '-', 'nothing']
 

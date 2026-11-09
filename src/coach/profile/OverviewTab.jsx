@@ -5,6 +5,7 @@ import { Button, Ring, EmptyState, Segmented, Card, Hero } from '../../ui'
 import { Panel, CheckinCard, LineChart, UnitInput, Bar } from './parts'
 import { startOfWeekStr, addDays, toLocalDateStr, formatDate, dayNutrition, formatMl, sessionsThisMonth, sessionsThisWeek, completedKeys, awaitingReply, dayOf, firstName, relativeDay, lastDays, feelingFlag, scoreTone, DAILY_SCORES } from '../lib'
 import { weightSeries, weekStreak } from '../../client/metrics'
+import Measurements from '../../lib/Measurements'
 
 const PERIODS = [
   { value: '14', label: '2 wks' },
@@ -296,6 +297,7 @@ export default function OverviewTab(props) {
         )}
         <Feeling {...props} />
         <Weight {...props} />
+        <Measurements clientId={props.client.id} variant="coach" name={firstName(props.client.full_name)} />
         <FoodToday {...props} />
       </div>
     </div>

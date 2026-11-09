@@ -4,7 +4,8 @@
 // Exercises, Nutrition, Habits, with a switcher on top), You (account and appearance).
 import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Users, ClipboardList, Dumbbell, Utensils, Heart, LogOut, Settings, MessageSquare, LibraryBig, CircleUser } from 'lucide-react'
+import { Users, ClipboardList, Dumbbell, Utensils, Heart, LogOut, Settings, MessageSquare, LibraryBig, CircleUser, ListChecks, ChevronRight } from 'lucide-react'
+import CheckinQuestionsSheet from './CheckinQuestionsSheet'
 import { supabase } from '../supabase'
 import { fetchUnreadCounts } from '../lib/messages'
 import { Logo, Avatar, Sheet, ThemeSwitch, Button, TabBar, StatusBarCover } from '../ui'
@@ -36,6 +37,8 @@ function Badge({ count, className = '' }) {
 
 // Account, appearance and sign out. Desktop opens it from the sidebar, phones from "You".
 function SettingsSheet({ open, onClose, name, email, onSignOut }) {
+  const [questionsOpen, setQuestionsOpen] = useState(false)
+  if (questionsOpen) return <CheckinQuestionsSheet open onClose={() => setQuestionsOpen(false)} />
   return (
     <Sheet open={open} onClose={onClose} title="You">
       <div className="flex items-center gap-3 py-2">
@@ -45,6 +48,15 @@ function SettingsSheet({ open, onClose, name, email, onSignOut }) {
           <p className="text-[13px] text-muted truncate">{email}</p>
         </div>
       </div>
+      <p className="text-sm font-semibold text-ink mt-5 mb-2">Coaching</p>
+      <button onClick={() => setQuestionsOpen(true)} className="w-full flex items-center gap-3 px-4 py-3 rounded-[16px] bg-surface-2 text-left hover:brightness-95">
+        <ListChecks size={18} className="text-muted shrink-0" />
+        <span className="flex-1 min-w-0">
+          <span className="block text-[15px] font-bold text-ink">Check-in questions</span>
+          <span className="block text-[13px] text-muted">Add your own to every client's weekly check-in</span>
+        </span>
+        <ChevronRight size={18} className="text-faint shrink-0" />
+      </button>
       <p className="text-sm font-semibold text-ink mt-5 mb-2">Appearance</p>
       <ThemeSwitch />
       <Button variant="secondary" block className="mt-6" onClick={onSignOut}>

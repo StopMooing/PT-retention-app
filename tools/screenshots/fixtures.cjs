@@ -326,3 +326,23 @@ if (process.env.PROGRAM_NEXT_WEEK) {
   t.workout_logs = t.workout_logs.filter((l) => l.client_id !== CLIENT || t.scheduled_workouts.some((sw) => sw.id === l.scheduled_workout_id))
   t.program_assignments.forEach((a) => { if (a.client_id === CLIENT) a.start_date = nextMonday })
 }
+
+// ---- Measurements and the coach's own check-in questions ----
+// NO_MEASUREMENTS=1: Jane has never measured (shows the empty prompt).
+{
+  const t = module.exports.tables
+  t.body_measurements = process.env.NO_MEASUREMENTS ? [] : [
+    [-49, 82, 101, 92, 29.5, 58], [-28, 80.5, 100, 91.5, 29.5, 57.5], [-7, 79, 99.5, 91, 30, 57],
+  ].map(([off, waist_cm, hips_cm, chest_cm, arm_cm, thigh_cm]) => ({ id: id(), client_id: CLIENT, measured_on: day(off), waist_cm, hips_cm, chest_cm, arm_cm, thigh_cm, logged_by: CLIENT_USER, created_at: ts(off, 7) }))
+  t.checkin_questions = [
+    ['How many nights did you get 7 or more hours of sleep?', 'text'],
+    ['How well did you stick to your meal plan?', 'scale'],
+    ['What is one win from this week?', 'text'],
+  ].map(([question, kind], i) => ({ id: id(), coach_id: COACH, question, kind, position: i + 1, created_at: ts(-30) }))
+  const latest = t.checkins.filter((c) => c.client_id === CLIENT).sort((a, b) => (a.submitted_at < b.submitted_at ? 1 : -1))[0]
+  if (latest) latest.answers = [
+    { q: 'How many nights did you get 7 or more hours of sleep?', kind: 'text', a: '5 of 7, two late ones for work.' },
+    { q: 'How well did you stick to your meal plan?', kind: 'scale', a: 4 },
+    { q: 'What is one win from this week?', kind: 'text', a: 'Squatted 75 kg for 5!' },
+  ]
+}

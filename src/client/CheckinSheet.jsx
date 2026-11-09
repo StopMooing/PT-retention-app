@@ -1,8 +1,10 @@
-// The weekly check-in ("Your week in review"), in a sheet. Saves to checkins exactly as
-// before. Scale is shared with the daily check-in.
-import { useState } from 'react'
+// The weekly check-in ("Your week in review"), in a sheet. Saves to checkins. After the
+// built-in questions come the coach's own (if they added any); those answers are saved on
+// the check-in as a snapshot. Scale is shared with the daily check-in.
+import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import { Sheet, Button } from '../ui'
+import { fetchQuestions, toAnswers } from '../lib/checkinQuestions'
 
 export function Scale({ label, low, high, value, onChange }) {
   return (
@@ -35,6 +37,17 @@ export default function CheckinSheet({ open, onClose, client, onSaved }) {
   const [blocker, setBlocker] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [questions, setQuestions] = useState([])
+  const [answers, setAnswers] = useState({})
+  const coachId = client?.pt_id
+
+  // The coach's questions, loaded once (a client without a coach has none).
+  useEffect(() => {
+    if (!coachId) return
+    let live = true
+    fetchQuestions(coachId).then((q) => live && setQuestions(q)).catch((e) => console.error('Check-in questions load error:', e))
+    return () => { live = false }
+  }, [coachId])
 
   async function submit() {
     if (!client || training === 0 || energy === 0) return
@@ -42,7 +55,7 @@ export default function CheckinSheet({ open, onClose, client, onSaved }) {
     setError(null)
     const { data, error: err } = await supabase
       .from('checkins')
-      .insert({ client_id: client.id, training_score: training, energy_score: energy, blocker: blocker.trim() || null })
+      .insert({ client_id: client.id, training_score: training, energy_score: energy, blocker: blocker.trim() || null, answers: toAnswers(questions, answers) })
       .select()
       .single()
     setSaving(false)
@@ -58,6 +71,7 @@ export default function CheckinSheet({ open, onClose, client, onSaved }) {
     setTraining(0)
     setEnergy(0)
     setBlocker('')
+    setAnswers({})
   }
 
   return (
@@ -84,6 +98,22 @@ export default function CheckinSheet({ open, onClose, client, onSaved }) {
             className="mt-2 w-full rounded-[14px] border border-line-strong bg-surface text-ink placeholder:text-faint px-4 py-3 outline-none focus:border-accent resize-none"
           />
         </label>
+        {questions.map((q) => (
+          q.kind === 'scale' ? (
+            <Scale key={q.id} label={q.question} low="Low" high="High" value={answers[q.id] ?? 0} onChange={(n) => setAnswers((a) => ({ ...a, [q.id]: n }))} />
+          ) : (
+            <label key={q.id} className="block">
+              <span className="text-[15px] font-bold text-ink">{q.question}</span>
+              <textarea
+                rows={2}
+                maxLength={1000}
+                value={answers[q.id] ?? ''}
+                onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))}
+                className="mt-2 w-full rounded-[14px] border border-line-strong bg-surface text-ink placeholder:text-faint px-4 py-3 outline-none focus:border-accent resize-none"
+              />
+            </label>
+          )
+        ))}
         {error && <p className="text-sm text-bad">{error}</p>}
       </div>
     </Sheet>

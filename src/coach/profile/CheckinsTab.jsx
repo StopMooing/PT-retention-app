@@ -1,5 +1,7 @@
 // Weekly check-ins (newest first, each with its reply) and the client's daily check-ins.
-import { MessageSquare, Activity } from 'lucide-react'
+import { useState } from 'react'
+import { MessageSquare, Activity, ListChecks } from 'lucide-react'
+import CheckinQuestionsSheet from '../CheckinQuestionsSheet'
 import { Card, EmptyState, Segmented } from '../../ui'
 import { CheckinCard } from './parts'
 import { firstName, formatDate, relativeDay, scoreTone, DAILY_SCORES } from '../lib'
@@ -77,6 +79,7 @@ function Daily({ dailyCheckins, client }) {
 }
 
 export default function CheckinsTab({ checkins, dailyCheckins = [], client, reply, view = 'weekly', onViewChange }) {
+  const [questionsOpen, setQuestionsOpen] = useState(false)
   return (
     <div className="space-y-3 max-w-[760px]">
       <Segmented
@@ -84,6 +87,12 @@ export default function CheckinsTab({ checkins, dailyCheckins = [], client, repl
         onChange={onViewChange}
         options={[{ value: 'weekly', label: 'Weekly check-ins' }, { value: 'daily', label: 'Daily' }]}
       />
+      {view === 'weekly' && (
+        <button onClick={() => setQuestionsOpen(true)} className="inline-flex items-center gap-1.5 px-1 text-[13px] font-semibold text-muted underline underline-offset-2 hover:text-ink">
+          <ListChecks size={15} /> Your check-in questions
+        </button>
+      )}
+      <CheckinQuestionsSheet open={questionsOpen} onClose={() => setQuestionsOpen(false)} />
       {view === 'daily' ? <Daily dailyCheckins={dailyCheckins} client={client} /> : <Weekly checkins={checkins} client={client} reply={reply} />}
     </div>
   )

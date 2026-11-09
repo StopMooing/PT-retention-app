@@ -3,6 +3,7 @@
 // (src/lib/messages.js). mine: the viewer sent it (right side), else left.
 import { ClipboardCheck, Sun } from 'lucide-react'
 import { CHECKIN_SCORES, checkinNote, dailyLine } from './messages'
+import { answersOf } from './checkinQuestions'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 
@@ -10,13 +11,13 @@ function ScoreRow({ label, score }) {
   const s = Number(score) || 0
   return (
     <div className="flex items-center gap-2.5">
-      <span className="w-[62px] text-[13px] text-muted shrink-0">{label}</span>
+      {label && <span className="w-[62px] text-[13px] text-muted shrink-0">{label}</span>}
       <span className="flex gap-1 flex-1 min-w-[80px]" aria-hidden="true">
         {[1, 2, 3, 4, 5].map((n) => (
           <span key={n} className={cx('h-2 flex-1 rounded-full', n <= s ? 'bg-accent' : 'bg-surface-2')} />
         ))}
       </span>
-      <span className="text-[13px] font-bold text-ink tabular-nums w-7 text-right" aria-label={`${label} ${s} out of 5`}>{s || '-'}/5</span>
+      <span className="text-[13px] font-bold text-ink tabular-nums w-7 text-right" aria-label={`${label || 'Answer'} ${s} out of 5`}>{s || '-'}/5</span>
     </div>
   )
 }
@@ -41,6 +42,14 @@ export function CheckinChatCard({ ci, mine, footer }) {
         ))}
       </div>
       {note && <p className="mt-3 text-[15px] text-ink leading-snug whitespace-pre-wrap break-words">{note}</p>}
+      {answersOf(ci).map((x, i) => (
+        <div key={i} className="mt-3">
+          <p className="text-[13px] text-muted leading-snug">{x.q}</p>
+          {x.kind === 'scale'
+            ? <div className="mt-1"><ScoreRow label="" score={x.a} /></div>
+            : <p className="text-[15px] text-ink leading-snug whitespace-pre-wrap break-words">{x.a}</p>}
+        </div>
+      ))}
       {footer && <div className="mt-3">{footer}</div>}
     </div>
   )
