@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, ChevronRight, Utensils, Search, Clock, X, BookOpen, Sparkles } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Plus, ChevronRight, Utensils, Search, Clock, X, BookOpen } from "lucide-react";
 import { supabase } from "./supabase";
 import { PageTitle, SectionLabel, Card, Button, Chip, Ring, Segmented, Sheet, EmptyState, Field } from "./ui";
 import { Loading, Toast, BackLink, Select, MiniField, SearchBox, FilterChips, ConfirmRemove } from "./tools/kit";
 import { useToast } from "./tools/useToast";
 import { searchFoods } from "./client/foods";
-import { fetchPlans } from "./lib/mealLibrary";
+import MealLibrary from "./coach/MealLibrary";
 
 const MEAL_TIMES = ["Breakfast", "Morning Snack", "Lunch", "Afternoon Snack", "Dinner", "Evening Snack", "Pre-Workout", "Post-Workout"];
 const MEAL_TIME_LABEL = {
@@ -82,17 +81,11 @@ function MacroProgress({ label, color, value, target }) {
 }
 
 export default function NutritionPlanner() {
-  const [activeTab, setActiveTab] = useState("plans");
+  const [activeTab, setActiveTab] = useState("ready");
   const [userId, setUserId] = useState(null);
 
   // ── Meal plans ──
   const [clients, setClients] = useState([]);
-  const [pickClientOpen, setPickClientOpen] = useState(false);
-  const [library, setLibrary] = useState(null); // ready-made plans: { plans, styles }
-  useEffect(() => {
-    fetchPlans().then(all => setLibrary({ plans: all.length, styles: new Set(all.map(p => p.family)).size })).catch(() => {});
-  }, []);
-  const navigate = useNavigate();
   const [clientNameMap, setClientNameMap] = useState({});
   const [mealPlans, setMealPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -639,11 +632,12 @@ export default function NutritionPlanner() {
 
   const tabs = (
     <Segmented
-      className="sm:max-w-md"
+      className="sm:max-w-xl"
       value={activeTab}
       onChange={setActiveTab}
       options={[
-        { value: "plans", label: "Meal plans" },
+        { value: "ready", label: "Library" },
+        { value: "plans", label: "Custom plans" },
         { value: "library", label: "Meal ideas" },
         { value: "database", label: "Food lookup" },
       ]}
@@ -657,7 +651,7 @@ export default function NutritionPlanner() {
     return (
       <div className="flex flex-col gap-5">
         <div>
-          <BackLink onClick={() => setSelectedPlan(null)}>Meal plans</BackLink>
+          <BackLink onClick={() => setSelectedPlan(null)}>Custom plans</BackLink>
           <PageTitle
             className="mt-1 items-start [&_h1]:whitespace-normal [&_h1]:break-words"
             eyebrow={clientName ?? "Not assigned to a client"}
@@ -767,27 +761,8 @@ export default function NutritionPlanner() {
       />
       {tabs}
 
-      {/* Ready-made plans live on each client's Nutrition tab: pick a client to go there. */}
-      {activeTab === "plans" && library?.plans > 0 && clients.some(c => !c.archived_at) && (
-        <Card className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Sparkles size={20} /></span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-bold text-ink">{library?.plans} ready-made meal plans</span>
-            <span className="block text-[13px] text-muted">{library?.styles} styles, from Everyday balanced to Vegan, each with recipes and serves. Give one to a client in two taps.</span>
-          </span>
-          <Button variant="secondary" onClick={() => setPickClientOpen(true)} className="shrink-0">Choose a client</Button>
-        </Card>
-      )}
-      <Sheet open={pickClientOpen} onClose={() => setPickClientOpen(false)} title="Which client?">
-        <div className="flex flex-col">
-          {clients.filter(c => !c.archived_at).sort((a, b) => (a.full_name || '').localeCompare(b.full_name || '')).map(c => (
-            <button key={c.id} onClick={() => navigate(`/clients/${c.id}`, { state: { tab: "nutrition" } })} className="flex items-center justify-between gap-3 px-3 py-3 rounded-[14px] text-left hover:bg-surface-2">
-              <span className="font-bold text-ink truncate">{c.full_name}</span>
-              <ChevronRight size={18} className="text-faint shrink-0" />
-            </button>
-          ))}
-        </div>
-      </Sheet>
+      {/* ── Library: the ready-made plans and recipes ── */}
+      {activeTab === "ready" && <MealLibrary clients={clients} showToast={showToast} />}
 
       {/* ── Meal plans ── */}
       {activeTab === "plans" && (
@@ -797,8 +772,8 @@ export default function NutritionPlanner() {
           <Card>
             <EmptyState
               icon={Utensils}
-              title="No meal plans yet"
-              body="Set daily targets for a client, then build their meals."
+              title="No custom plans yet"
+              body="Build a plan meal by meal for one client, or give them a ready-made one from the Library."
               action={<Button onClick={() => setShowNewPlanForm(true)}><Plus size={18} /> New plan</Button>}
             />
           </Card>

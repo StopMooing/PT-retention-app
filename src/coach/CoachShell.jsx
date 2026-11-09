@@ -172,7 +172,7 @@ export default function CoachShell({ user }) {
           items={[
             { key: 'clients', label: CLIENTS.label, icon: Users, active: !settingsOpen && isActive(CLIENTS, pathname), onClick: () => navigate(CLIENTS.path) },
             { key: 'messages', label: MESSAGES.label, icon: MessageSquare, active: !settingsOpen && isActive(MESSAGES, pathname), badge: unread, onClick: () => navigate(MESSAGES.path) },
-            { key: 'library', label: 'Library', icon: LibraryBig, active: !settingsOpen && inLibrary, onClick: () => navigate(inLibrary ? pathname : PROGRAMS.path) },
+            { key: 'library', label: 'Tools', icon: LibraryBig, active: !settingsOpen && inLibrary, onClick: () => navigate(inLibrary ? pathname : PROGRAMS.path) },
             { key: 'you', label: 'You', icon: CircleUser, active: settingsOpen, onClick: () => setSettingsOpen(true) },
           ]}
         />

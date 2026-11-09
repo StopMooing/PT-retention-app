@@ -19,7 +19,7 @@ function planMacros(p) {
 }
 
 // One plan: what it is built on, then each of its 3 days meal by meal.
-function PlanSheet({ plan, recipes, isMine, onClose, onStart, onStop, onOpenRecipe, busy }) {
+function PlanSheet({ plan, recipes, isMine, onClose, onStart, onStop, onOpenRecipe, busy, startLabel = 'Start this plan' }) {
   const [items, setItems] = useState(null)
   const [failed, setFailed] = useState(false)
   const [day, setDay] = useState(() => planDayType(toLocalDateStr()))
@@ -41,7 +41,7 @@ function PlanSheet({ plan, recipes, isMine, onClose, onStart, onStop, onOpenReci
       footer={isMine ? (
         <Button variant="secondary" size="lg" block disabled={busy} onClick={onStop}>{busy ? 'Stopping...' : 'Stop this plan'}</Button>
       ) : (
-        <Button size="lg" block disabled={busy || !items} onClick={onStart}>{busy ? 'Starting...' : 'Start this plan'}</Button>
+        <Button size="lg" block disabled={busy || !items} onClick={onStart}>{busy ? 'Starting...' : startLabel}</Button>
       )}
     >
       <div className="space-y-5">
@@ -88,7 +88,9 @@ function PlanSheet({ plan, recipes, isMine, onClose, onStart, onStop, onOpenReci
   )
 }
 
-export default function PlansView({ plans, recipes, choice, startSex, startGoal, targetKcal, onWorkOut, onStart, onStop, onOpenRecipe, busy }) {
+// The coach's Nutrition library uses this too: no choice or calculator, and startLabel
+// says what the button does there (give the plan to a client).
+export default function PlansView({ plans, recipes, choice, startSex, startGoal, targetKcal, onWorkOut, onStart, onStop, onOpenRecipe, busy, startLabel, audience = 'client' }) {
   const [sex, setSex] = useState(startSex || 'male')
   const [goal, setGoal] = useState(startGoal || 'maintain')
   const [openId, setOpenId] = useState(null)
@@ -114,7 +116,9 @@ export default function PlansView({ plans, recipes, choice, startSex, startGoal,
       <Card>
         <p className="text-[17px] font-bold text-ink">Built for the average Australian</p>
         <p className="text-[15px] text-muted mt-1">
-          These plans are sized for {ref.label}, training 3 to 5 days a week (ABS National Health Survey). If you are bigger or smaller, change the serves on any meal.
+          {audience === 'coach'
+            ? `These plans are sized for ${ref.label}, training 3 to 5 days a week (ABS National Health Survey). Clients who are bigger or smaller change the serves on any meal.`
+            : `These plans are sized for ${ref.label}, training 3 to 5 days a week (ABS National Health Survey). If you are bigger or smaller, change the serves on any meal.`}
         </p>
         <p className="text-[13px] text-muted mt-2">Mon, Wed and Fri share the same meals, so do Tue, Thu and Sat. Sunday is its own day.</p>
       </Card>
@@ -142,7 +146,7 @@ export default function PlansView({ plans, recipes, choice, startSex, startGoal,
       })}
 
       {/* For anyone who is not the average size: their own number, then the nearest plan. */}
-      <Card>
+      {onWorkOut && <Card>
         <p className="text-[17px] font-bold text-ink">Not the average size?</p>
         {targetKcal > 0 ? (() => {
           const near = closestPlan(plans, targetKcal)
@@ -164,7 +168,7 @@ export default function PlansView({ plans, recipes, choice, startSex, startGoal,
             <Button variant="secondary" size="sm" className="mt-3" onClick={onWorkOut}><Calculator size={16} /> Work out my calories</Button>
           </>
         )}
-      </Card>
+      </Card>}
 
       {open && (
         <PlanSheet
@@ -173,6 +177,7 @@ export default function PlansView({ plans, recipes, choice, startSex, startGoal,
           recipes={recipes}
           isMine={mine?.id === open.id}
           busy={busy}
+          startLabel={startLabel}
           onClose={() => setOpenId(null)}
           onStart={async () => { if (await onStart(open)) setOpenId(null) }}
           onStop={async () => { if (await onStop()) setOpenId(null) }}

@@ -14,25 +14,27 @@ const HEALTH = [
   { value: 'Engaged', label: 'Engaged', bar: 'bg-good' },
   { value: 'Drifting', label: 'Drifting', bar: 'bg-warn' },
   { value: 'At Risk', label: 'At risk', bar: 'bg-bad' },
-  { value: 'New', label: 'New', bar: 'bg-tan' },
+  { value: 'New', label: 'New', bar: 'bg-faint' },
 ]
 
 function ClientHealth({ clients, onPick }) {
   const total = clients.length
   if (total === 0) return null
-  const counts = HEALTH.map((h) => ({ ...h, n: clients.filter((c) => c.status === h.value).length })).filter((h) => h.n > 0)
+  // Every status is always listed (0 included), so the card reads the same for every coach.
+  const counts = HEALTH.map((h) => ({ ...h, n: clients.filter((c) => c.status === h.value).length }))
+  const parts = counts.filter((h) => h.n > 0)
   return (
-    <Card className="mt-4">
+    <Card>
       <div className="flex items-baseline justify-between gap-3">
         <p className="text-[15px] font-bold text-ink">Client health</p>
-        <p className="text-[13px] text-muted">Showing up in the last 7 days</p>
+        <p className="text-[13px] text-muted">Last 7 days</p>
       </div>
       <div className="flex h-3 rounded-full overflow-hidden gap-1 mt-3" role="img" aria-label={counts.map((h) => `${h.n} ${h.label.toLowerCase()}`).join(', ')}>
-        {counts.map((h) => <div key={h.value} className={`${h.bar} rounded-full`} style={{ flexGrow: h.n }} />)}
+        {parts.map((h) => <div key={h.value} className={`${h.bar} rounded-full`} style={{ flexGrow: h.n }} />)}
       </div>
-      <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-x-4 gap-y-2 mt-3">
         {counts.map((h) => (
-          <button key={h.value} onClick={() => onPick(h.value)} className="inline-flex items-center gap-2 text-[14px] text-ink hover:underline underline-offset-2">
+          <button key={h.value} onClick={() => onPick(h.value)} disabled={h.n === 0} className="inline-flex items-center gap-2 text-[14px] text-ink hover:underline underline-offset-2 disabled:no-underline disabled:text-muted">
             <span className={`w-2.5 h-2.5 rounded-full ${h.bar}`} />
             <span className="font-bold tabular-nums">{h.n}</span> {h.label.toLowerCase()}
           </button>
@@ -384,7 +386,8 @@ export default function Dashboard({ user }) {
           )}
         </Hero>
 
-        {/* Summary */}
+        {/* Summary, then client health under it */}
+        <div className="flex flex-col gap-4 min-w-0">
         <Card className="!py-2 !px-5 grid grid-cols-4 lg:grid-cols-1 gap-x-3">
           {[
             { label: 'Clients', value: active.length },
@@ -401,9 +404,9 @@ export default function Dashboard({ user }) {
             </div>
           ))}
         </Card>
+        {!showArchived && <ClientHealth clients={active} onPick={(v) => { setFilter(v); document.getElementById('all-clients')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }} />}
+        </div>
       </div>
-
-      {!showArchived && <ClientHealth clients={active} onPick={(v) => { setFilter(v); document.getElementById('all-clients')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }} />}
 
       <NudgeSheet
         open={!!nudge}

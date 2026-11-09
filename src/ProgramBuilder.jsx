@@ -59,8 +59,11 @@ function formatDate(dateStr) {
 export default function ProgramBuilder({ user }) {
   // Programs
   const [programs, setPrograms] = useState([])
-  // Ready-made programs from the UNFNSHD library (on demand, made by someone else): every coach can view, assign and copy them.
+  // The UNFNSHD library: every on-demand program and workout, whoever made it. Every coach
+  // can view, assign and copy them; only the person who made one can edit it.
   const [library, setLibrary] = useState([])
+  // How many of this coach's clients are on each program right now: { programId: n }
+  const [inUse, setInUse] = useState({})
   const [copying, setCopying] = useState(false)
   const [loadingPrograms, setLoadingPrograms] = useState(true)
   const [selectedProgram, setSelectedProgram] = useState(null)
@@ -71,7 +74,7 @@ export default function ProgramBuilder({ user }) {
   // (migration pending_on_demand_library). Until then every on-demand control is hidden and
   // is_on_demand / kind are never sent.
   const [onDemandOK, setOnDemandOK] = useState(false)
-  const [listView, setListView] = useState('coaching')
+  const [listView, setListView] = useState('coaching') // 'coaching' (your programs) | 'library'
   const [savingOnDemand, setSavingOnDemand] = useState(false)
 
   // Workout days and their exercises (exercisesByDay: day id -> ordered rows)
@@ -130,9 +133,8 @@ export default function ProgramBuilder({ user }) {
       .from('programs')
       .select('*, program_workouts(id)')
       .eq('is_on_demand', true)
-      .neq('created_by', user.id)
       .order('name')
-    setLibrary((lib ?? []).filter((p) => p.kind !== 'workout'))
+    setLibrary(lib ?? [])
     setLoadingPrograms(false)
   }, [user.id])
 
@@ -160,7 +162,15 @@ export default function ProgramBuilder({ user }) {
     fetchPrograms()
     fetchAllExercises()
     supabase.from('clients').select('id, full_name').eq('pt_id', user.id).is('archived_at', null).order('full_name')
-      .then(({ data }) => { if (data) setClients(data) })
+      .then(async ({ data }) => {
+        if (!data) return
+        setClients(data)
+        if (!data.length) return
+        const { data: active } = await supabase.from('program_assignments').select('program_id').eq('is_active', true).in('client_id', data.map((c) => c.id))
+        const counts = {}
+        for (const a of active ?? []) counts[a.program_id] = (counts[a.program_id] || 0) + 1
+        setInUse(counts)
+      })
   }, [fetchPrograms, fetchAllExercises, user.id])
 
   function openAssign() {
@@ -262,7 +272,7 @@ export default function ProgramBuilder({ user }) {
 
   function closeProgram() {
     // Land on the list the program now belongs to, so a just-toggled one is easy to find.
-    setListView(selectedProgram?.created_by !== user.id ? 'library' : isOnDemand(selectedProgram) ? 'ondemand' : 'coaching')
+    setListView(isOnDemand(selectedProgram) || selectedProgram?.created_by !== user.id ? 'library' : 'coaching')
     setSelectedProgram(null)
     setEditingExerciseId(null)
   }
@@ -341,7 +351,7 @@ export default function ProgramBuilder({ user }) {
   }
 
   function openNewProgram() {
-    setNewProgram({ ...EMPTY_NEW_PROGRAM, type: onDemandOK && listView === 'ondemand' ? 'workout' : 'coaching' })
+    setNewProgram({ ...EMPTY_NEW_PROGRAM, type: canPublish && listView === 'library' ? 'workout' : 'coaching' })
     setSheet('program')
   }
 
@@ -358,7 +368,7 @@ export default function ProgramBuilder({ user }) {
   async function handleSaveProgram(e) {
     e.preventDefault()
     if (!newProgram.name.trim()) return
-    const type = onDemandOK ? newProgram.type : 'coaching'
+    const type = canPublish ? newProgram.type : 'coaching'
     const row = { name: newProgram.name.trim(), description: newProgram.description.trim() || null, created_by: user.id }
     if (onDemandOK) {
       row.is_on_demand = type !== 'coaching'
@@ -372,9 +382,10 @@ export default function ProgramBuilder({ user }) {
     if (error) { showToast(type === 'workout' ? 'Could not save workout.' : 'Could not save program.', 'bad'); return }
     const withMeta = { ...data, program_workouts: day ? [{ id: day.id }] : [] }
     setPrograms(prev => [withMeta, ...prev])
+    if (type !== 'coaching') setLibrary(prev => [withMeta, ...prev])
     setNewProgram(EMPTY_NEW_PROGRAM)
     setSheet(null)
-    setListView(type === 'coaching' ? 'coaching' : 'ondemand')
+    setListView(type === 'coaching' ? 'coaching' : 'library')
     showToast(type === 'workout' ? 'Workout created' : 'Program created')
     openProgram(withMeta)
   }
@@ -405,6 +416,7 @@ export default function ProgramBuilder({ user }) {
     if (error || !data || data.length === 0) { showToast('Could not change that. Try again.', 'bad'); return }
     setSelectedProgram(p => ({ ...p, is_on_demand: next }))
     setPrograms(prev => prev.map(p => p.id === selectedProgram.id ? { ...p, is_on_demand: next } : p))
+    setLibrary(prev => next ? [{ ...selectedProgram, is_on_demand: true }, ...prev.filter(p => p.id !== selectedProgram.id)] : prev.filter(p => p.id !== selectedProgram.id))
     showToast(next ? 'Added to the on-demand library' : 'Taken out of the on-demand library')
   }
 
@@ -439,6 +451,10 @@ export default function ProgramBuilder({ user }) {
     showToast('Copied to your programs. Change anything you like.')
     openProgram(withMeta)
   }
+
+  // Only whoever runs the library (has published to it) can add to it or change what is in
+  // it. Everyone else builds their own programs and uses the library as it is.
+  const canPublish = onDemandOK && library.some((p) => p.created_by === user.id)
 
   function isOnDemand(program) {
     return onDemandOK && !!program?.is_on_demand
@@ -606,11 +622,11 @@ export default function ProgramBuilder({ user }) {
 
   // ─── Sheets ────────────────────────────────────────────────────────────────
 
-  const newIsWorkout = onDemandOK && newProgram.type === 'workout'
+  const newIsWorkout = canPublish && newProgram.type === 'workout'
   const newProgramSheet = (
-    <Sheet open={sheet === 'program'} onClose={() => setSheet(null)} title={onDemandOK ? 'Create new' : 'New program'}>
+    <Sheet open={sheet === 'program'} onClose={() => setSheet(null)} title={canPublish ? 'Create new' : 'New program'}>
       <form onSubmit={handleSaveProgram} className="flex flex-col gap-4">
-        {onDemandOK && (
+        {canPublish && (
           <div role="radiogroup" aria-label="What are you building?" className="flex flex-col gap-1.5">
             <span className="text-sm font-semibold text-ink mb-0.5">What are you building?</span>
             {NEW_TYPES.map(t => {
@@ -856,67 +872,65 @@ export default function ProgramBuilder({ user }) {
           <span className="min-w-0 flex-1">
             <span className="block text-[17px] font-bold text-ink truncate">{program.name}</span>
             {program.description && <span className="block text-[13px] text-muted truncate">{program.description}</span>}
-            <span className="block text-[13px] text-muted mt-0.5">{single ? 'Single workout' : plural(dayCount(program), 'day')}</span>
+            <span className="flex flex-wrap items-center gap-2 mt-0.5">
+              <span className="text-[13px] text-muted">{single ? 'Single workout' : plural(dayCount(program), 'day')}</span>
+              {inUse[program.id] > 0 && <Chip tone="accent">{plural(inUse[program.id], 'client')}</Chip>}
+            </span>
           </span>
           <ChevronRight size={20} className="text-faint shrink-0" />
         </Card>
       )
     }
     const grid = (list) => <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{list.map(programCard)}</div>
-    const showOnDemand = onDemandOK && listView === 'ondemand'
     const showLibrary = listView === 'library' && library.length > 0
     const coaching = programs.filter(p => !isOnDemand(p))
-    const odWorkouts = programs.filter(p => isOnDemand(p) && p.kind === 'workout')
-    const odPrograms = programs.filter(p => isOnDemand(p) && p.kind !== 'workout')
+    const libWorkouts = library.filter(p => p.kind === 'workout')
+    const libPrograms = library.filter(p => p.kind !== 'workout')
+    const libInUse = libPrograms.reduce((n, p) => n + (inUse[p.id] || 0), 0)
     const newButton = label => <Button onClick={openNewProgram}><Plus size={18} /> {label}</Button>
 
     return (
       <div className="flex flex-col gap-6">
-        <PageTitle title="Programs" action={newButton(showOnDemand ? 'New' : 'New program')} />
-        {(onDemandOK || library.length > 0) && (
+        <PageTitle title="Programs" action={showLibrary ? (canPublish ? newButton('New') : null) : newButton('New program')} />
+        {library.length > 0 && (
           <Segmented
-            className="max-w-[460px] -mt-2"
+            className="max-w-[360px] -mt-2"
             value={listView}
             onChange={setListView}
-            options={[
-              { value: 'coaching', label: 'Your programs' },
-              ...(library.length > 0 ? [{ value: 'library', label: 'Ready-made' }] : []),
-              ...(onDemandOK ? [{ value: 'ondemand', label: 'On demand' }] : []),
-            ]}
+            options={[{ value: 'coaching', label: 'Your programs' }, { value: 'library', label: 'Library' }]}
           />
         )}
         {loadingPrograms ? (
           <Loading />
         ) : showLibrary ? (
-          <section>
-            <p className="text-[15px] text-muted mb-3 max-w-[640px]">{plural(library.length, 'program')} built by UNFNSHD, from beginner to advanced. Assign one to a client as it is, or copy it into your programs and make it your own.</p>
-            {grid(library)}
-          </section>
-        ) : showOnDemand ? (
-          odWorkouts.length === 0 && odPrograms.length === 0 ? (
-            <Card>
-              <EmptyState
-                icon={PlayCircle}
-                title="Nothing on demand yet"
-                body="Build a workout or program that every member can see and start on their own."
-                action={newButton('New on-demand workout')}
-              />
+          <>
+            <Card className="flex items-start gap-3">
+              <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Sparkles size={20} /></span>
+              <span className="min-w-0">
+                <span className="block text-[15px] font-bold text-ink">The UNFNSHD library</span>
+                <span className="block text-[14px] text-muted mt-0.5">
+                  {plural(libPrograms.length, 'program')}{libWorkouts.length ? ` and ${plural(libWorkouts.length, 'single workout')}` : ''}, beginner to advanced.{' '}
+                  {canPublish
+                    ? 'You made these: members without a coach can start them in the app, and every coach can assign them.'
+                    : 'Assign one to a client as it is, or copy it into your programs to change it. Members without a coach can also start these themselves in the app.'}
+                  {libInUse > 0 && ` ${plural(libInUse, 'client')} of yours ${libInUse === 1 ? 'is' : 'are'} on one now.`}
+                </span>
+              </span>
             </Card>
-          ) : (
-            <>
-              {odWorkouts.length > 0 && <section><SectionLabel>Workouts</SectionLabel>{grid(odWorkouts)}</section>}
-              {odPrograms.length > 0 && <section><SectionLabel>Programs</SectionLabel>{grid(odPrograms)}</section>}
-            </>
-          )
+            {libPrograms.length > 0 && <section><SectionLabel>Programs</SectionLabel>{grid(libPrograms)}</section>}
+            {libWorkouts.length > 0 && <section><SectionLabel>Single workouts</SectionLabel>{grid(libWorkouts)}</section>}
+          </>
         ) : coaching.length === 0 ? (
           <Card>
             <EmptyState
               icon={ClipboardList}
-              title="No programs yet"
-              body={library.length > 0 ? `Build your own, or start from one of ${library.length} ready-made programs.` : 'Build a program once, then assign it to as many clients as you like.'}
+              title="No programs of your own yet"
+              body={library.length > 0
+                ? `Build your own, or start from the library of ${plural(library.filter(p => p.kind !== 'workout').length, 'program')}${Object.keys(inUse).length ? '. Your clients on library programs show there.' : '.'}`
+                : 'Build a program once, then assign it to as many clients as you like.'}
               action={library.length > 0 ? (
                 <div className="flex flex-wrap justify-center gap-2">
-                  <Button onClick={() => setListView('library')}><Sparkles size={18} /> See ready-made programs</Button>
+                  <Button onClick={() => setListView('library')}><Sparkles size={18} /> Open the library</Button>
                   <Button variant="secondary" onClick={openNewProgram}><Plus size={18} /> New program</Button>
                 </div>
               ) : newButton('New program')}
@@ -989,13 +1003,13 @@ export default function ProgramBuilder({ user }) {
             <Sparkles size={20} />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-bold text-ink">Ready-made by UNFNSHD</span>
+            <span className="block text-[15px] font-bold text-ink">From the UNFNSHD library</span>
             <span className="block text-[13px] text-muted">Assign it as it is, or copy it to change days, exercises, sets and notes.</span>
           </span>
         </Card>
       )}
 
-      {onDemandOK && !readOnly && (
+      {canPublish && !readOnly && (
         <Card className="flex items-center gap-3">
           <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
             <PlayCircle size={20} />

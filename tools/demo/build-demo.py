@@ -340,17 +340,18 @@ insert('public.pt_notes', ['id', 'client_id', 'pt_id', 'text', 'created_at'],
        [[uid('note', c['n']), c['id'], COACH, c['note'], ts(c['joined'] * 7 - 1, '11:00')] for c in C if c.get('note')])
 
 # ---------------------------------------------------------------- habits, meal plans, food, water
-HABITS = {'steps': ('8,000 steps', '👟'), 'sleep': ('In bed by 10:30', '😴'), 'water': ('3 litres of water', '💧')}
+HABITS = {'steps': ('8,000 steps', '👟'), 'sleep': ('In bed by 10:30', '😴'), 'water': ('3 litres of water', '💧'),
+          'mobility': ('10 minutes of mobility', '🧘'), 'protein': ('Protein at every meal', '🥚')}
+EXTRA_HABITS = {'Josh Nguyen': ['water', 'mobility'], 'Chloe Martin': ['steps'], "Liam O'Brien": ['protein'], 'Noah Patel': ['steps'],
+                'Ethan Clarke': ['sleep'], 'Isabella Garcia': ['mobility'], 'Emma Wilson': ['protein'], 'Sophie Walker': ['steps'], 'Hannah Lee': ['water']}
 habits, hlogs = [], []
 for c in C:
-    h = c.get('habit')
-    if not h:
-        continue
-    hid = uid('habit', c['n'])
-    habits.append([hid, HABITS[h][0], HABITS[h][1], 'Daily', 7, c['id'], COACH, True, ts(21, '09:00')])
-    for n in range(1, 21):
-        if rnd.random() < 0.75:
-            hlogs.append([uid('hl', c['n'], n), hid, c['id'], d(n), True])
+    for h in ([c['habit']] if c.get('habit') else []) + EXTRA_HABITS.get(c['n'], []):
+        hid = uid('habit', c['n'], h)
+        habits.append([hid, HABITS[h][0], HABITS[h][1], 'Daily', 7, c['id'], COACH, True, ts(21, '09:00')])
+        for n in range(c.get('last', 0), 21):
+            if rnd.random() < (0.6 if n == 0 else 0.76):
+                hlogs.append([uid('hl', c['n'], h, n), hid, c['id'], d(n), True])
 insert('public.habits', ['id', 'name', 'icon', 'frequency', 'target_per_week', 'client_id', 'created_by', 'is_active', 'created_at'], habits)
 insert('public.habit_logs', ['id', 'habit_id', 'client_id', 'completed_date', 'completed'], hlogs)
 

@@ -201,7 +201,7 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
           const count = dayCount(p)
           // A heading where each group starts: your programs first, then the ready-made library.
           const heading = (i === 0 || arr[i - 1].readyMade !== p.readyMade) && list.some((x) => x.readyMade)
-            ? <p className="px-3 pt-3 pb-1 text-xs font-bold text-muted uppercase tracking-wide">{p.readyMade ? 'Ready-made programs' : 'Your programs'}</p>
+            ? <p className="px-3 pt-3 pb-1 text-xs font-bold text-muted uppercase tracking-wide">{p.readyMade ? 'UNFNSHD library' : 'Your programs'}</p>
             : null
           return (
             <Fragment key={p.id}>
