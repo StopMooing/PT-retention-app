@@ -1,0 +1,2532 @@
+[
+ {
+  "id": "505d1e78-fb06-4873-af11-5710e1665b9b",
+  "name": "4-Week Beginner Full Body",
+  "days": [
+   {
+    "id": "84bd6cb9-b554-475c-9945-22651b34de47",
+    "name": "Full Body A",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "6f609c0a-4cb8-419d-9727-7d0b814b09cc",
+      "name": "Leg Press",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10-12"
+     },
+     {
+      "eid": "31f7d1ac-03b4-4706-bdb5-41abdb9f147a",
+      "name": "Machine Chest Press",
+      "mg": "Chest",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10-12"
+     },
+     {
+      "eid": "3f6fea34-fb88-4e3f-8c14-a8c83aa2251a",
+      "name": "Lat Pulldown (Wide Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10-12"
+     },
+     {
+      "eid": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+      "name": "Dumbbell Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 2,
+      "reps": "10-12"
+     },
+     {
+      "eid": "64931300-0287-4ae6-b8eb-405b1a36fb69",
+      "name": "Leg Curl (Seated)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 2,
+      "reps": "12"
+     },
+     {
+      "eid": "3dc9edee-7925-4d94-af99-a496781b7331",
+      "name": "Plank",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "30s"
+     }
+    ]
+   },
+   {
+    "id": "9baeedc6-309a-4815-9bea-6500497a0de8",
+    "name": "Full Body B",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "5214f87e-c4fe-44dc-a458-29653d76f025",
+      "name": "Goblet Squat",
+      "mg": "Legs",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "776731a6-70bc-4195-a687-f977d36c2b60",
+      "name": "Dumbbell Bench Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "57df9d2f-1d2d-4a65-a5b8-a9caf86f61e4",
+      "name": "Seated Cable Row (Close Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10-12"
+     },
+     {
+      "eid": "398e5eca-f767-43ed-beb9-c09ad19054e3",
+      "name": "Romanian Deadlift (Dumbbell)",
+      "mg": "Glutes",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "a441fa1b-9f43-4710-b471-eabef4f1474d",
+      "name": "Dumbbell Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 2,
+      "reps": "12-15"
+     },
+     {
+      "eid": "a107a153-671a-443d-8684-6b86d7aeb0a1",
+      "name": "Dead Bug",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8 each side"
+     }
+    ]
+   },
+   {
+    "id": "529b25af-a214-4f2e-8ab8-be1ed26674f8",
+    "name": "Full Body C",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "6f609c0a-4cb8-419d-9727-7d0b814b09cc",
+      "name": "Leg Press",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "e5a86efe-af6f-41ec-bc1b-e808133ac017",
+      "name": "Incline Dumbbell Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "86f7874a-9b57-4be6-bb75-d81761395368",
+      "name": "Machine Row",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "39c0fdbe-2b7f-411e-a9bb-edced9f3278a",
+      "name": "Glute Bridge",
+      "mg": "Glutes",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "1d692ec6-6258-403b-94f8-7dee306765d4",
+      "name": "Tricep Pushdown (Rope)",
+      "mg": "Triceps",
+      "eq": "cable",
+      "sets": 2,
+      "reps": "12"
+     },
+     {
+      "eid": "b2f788b6-e4a4-4402-90d0-83ebd8050df9",
+      "name": "Dumbbell Bicep Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 2,
+      "reps": "12"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "64b2c4c5-bc09-401f-b602-f7b3e3b10c90",
+  "name": "4-Week Beginner Strength Basics",
+  "days": [
+   {
+    "id": "42ad783d-e4b9-4a11-900e-315df9efdf66",
+    "name": "Strength A",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "5214f87e-c4fe-44dc-a458-29653d76f025",
+      "name": "Goblet Squat",
+      "mg": "Legs",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "350f0b1f-d809-424a-ad4d-45a8e9d660dc",
+      "name": "Barbell Bench Press",
+      "mg": "Chest",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "725495fe-015e-44c4-baba-656a8bb4712b",
+      "name": "Barbell Row (Bent Over)",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "6c9b0acc-2185-40f4-b823-0cc231546a9e",
+      "name": "Hip Thrust (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "3dc9edee-7925-4d94-af99-a496781b7331",
+      "name": "Plank",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "30s"
+     }
+    ]
+   },
+   {
+    "id": "741694e7-abaa-445d-bf4f-c4b2ffef067f",
+    "name": "Strength B",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "b6f8ba7e-ccda-4786-b25d-e7c0140ea083",
+      "name": "Trap Bar Deadlift",
+      "mg": "Legs",
+      "eq": "trap_bar",
+      "sets": 3,
+      "reps": "6"
+     },
+     {
+      "eid": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+      "name": "Dumbbell Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "e9952032-a251-4be3-855c-73c96c135104",
+      "name": "Lat Pulldown (Neutral Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "143d08dd-5bbc-4f35-a690-b450650d2476",
+      "name": "Reverse Lunge",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 2,
+      "reps": "8 each leg"
+     },
+     {
+      "eid": "8a7ed1b3-7999-458f-813d-0e67a827e6e5",
+      "name": "Side Plank",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 2,
+      "reps": "20s each side"
+     }
+    ]
+   },
+   {
+    "id": "ed173aef-5c24-4a68-8db8-c13e7c7bc2dd",
+    "name": "Strength C",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "fc69fa1b-5854-4ac5-8762-4680147ba03b",
+      "name": "Back Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "e5a86efe-af6f-41ec-bc1b-e808133ac017",
+      "name": "Incline Dumbbell Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "ef77a6c8-1215-472f-8418-c0a18e0e16d6",
+      "name": "Chest Supported Dumbbell Row",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "a54227ad-380f-4f8b-b4b0-60ce169ddd8d",
+      "name": "Romanian Deadlift (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "3f7d5881-2fdd-4db6-b951-7731612e97dc",
+      "name": "Farmers Walk",
+      "mg": "Full Body",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "30 m"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "36bb30ce-acb0-4cb0-894c-a4439198ac94",
+  "name": "4-Week Beginner Glutes and Legs",
+  "days": [
+   {
+    "id": "27d75fd7-ea2b-4774-8739-c8fe331bfe83",
+    "name": "Glutes and Hamstrings",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "6c9b0acc-2185-40f4-b823-0cc231546a9e",
+      "name": "Hip Thrust (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "5214f87e-c4fe-44dc-a458-29653d76f025",
+      "name": "Goblet Squat",
+      "mg": "Legs",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "398e5eca-f767-43ed-beb9-c09ad19054e3",
+      "name": "Romanian Deadlift (Dumbbell)",
+      "mg": "Glutes",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "6c0e4f1c-63fa-400e-9f10-a89194163090",
+      "name": "Hip Abduction (Machine)",
+      "mg": "Glutes",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "3f6fea34-fb88-4e3f-8c14-a8c83aa2251a",
+      "name": "Lat Pulldown (Wide Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "fef29e74-7122-4e71-80fe-4ecebbc1ba0d",
+    "name": "Legs and Upper",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "6f609c0a-4cb8-419d-9727-7d0b814b09cc",
+      "name": "Leg Press",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "143d08dd-5bbc-4f35-a690-b450650d2476",
+      "name": "Reverse Lunge",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8 each leg"
+     },
+     {
+      "eid": "64931300-0287-4ae6-b8eb-405b1a36fb69",
+      "name": "Leg Curl (Seated)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "cfd78a34-219a-4a78-a2f6-a2e8b81413d3",
+      "name": "Cable Kickback",
+      "mg": "Glutes",
+      "eq": "cable",
+      "sets": 2,
+      "reps": "12 each leg"
+     },
+     {
+      "eid": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+      "name": "Dumbbell Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "57df9d2f-1d2d-4a65-a5b8-a9caf86f61e4",
+      "name": "Seated Cable Row (Close Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "f55a16a8-e3a9-4a98-97bc-fbfe352b18b9",
+    "name": "Glutes and Core",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "39c0fdbe-2b7f-411e-a9bb-edced9f3278a",
+      "name": "Glute Bridge",
+      "mg": "Glutes",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "cf198b69-85c3-4b87-a0bb-c6a37975e12a",
+      "name": "Bulgarian Split Squat",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 2,
+      "reps": "8 each leg"
+     },
+     {
+      "eid": "30bce4d7-172b-4714-9088-9f249b729cd6",
+      "name": "Step Up",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 2,
+      "reps": "10 each leg"
+     },
+     {
+      "eid": "25bdbb9b-d7de-44d5-beef-153e2b7c919b",
+      "name": "Leg Extension",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 2,
+      "reps": "15"
+     },
+     {
+      "eid": "31f7d1ac-03b4-4706-bdb5-41abdb9f147a",
+      "name": "Machine Chest Press",
+      "mg": "Chest",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "a107a153-671a-443d-8684-6b86d7aeb0a1",
+      "name": "Dead Bug",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8 each side"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "c79465cc-e3f5-4092-a2e6-40672652282b",
+  "name": "4-Week Beginner Dumbbell Only",
+  "days": [
+   {
+    "id": "d5cf761c-d6f9-4e12-9b86-4c82487e0827",
+    "name": "Dumbbell A",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "5214f87e-c4fe-44dc-a458-29653d76f025",
+      "name": "Goblet Squat",
+      "mg": "Legs",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "776731a6-70bc-4195-a687-f977d36c2b60",
+      "name": "Dumbbell Bench Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "067338c4-0b2b-4b84-9114-29a360ed9cb1",
+      "name": "Dumbbell Row (Single Arm)",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10 each arm"
+     },
+     {
+      "eid": "398e5eca-f767-43ed-beb9-c09ad19054e3",
+      "name": "Romanian Deadlift (Dumbbell)",
+      "mg": "Glutes",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "a441fa1b-9f43-4710-b471-eabef4f1474d",
+      "name": "Dumbbell Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 2,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "a4a0f323-9efd-4196-8620-fff5b3e0268e",
+    "name": "Dumbbell B",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "143d08dd-5bbc-4f35-a690-b450650d2476",
+      "name": "Reverse Lunge",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8 each leg"
+     },
+     {
+      "eid": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+      "name": "Dumbbell Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "ef77a6c8-1215-472f-8418-c0a18e0e16d6",
+      "name": "Chest Supported Dumbbell Row",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "271637ae-f5cb-4f53-8a45-8705a00a7ed3",
+      "name": "Hip Thrust (Dumbbell)",
+      "mg": "Glutes",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "c6400676-287b-4575-8bae-183af63d4554",
+      "name": "Hammer Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 2,
+      "reps": "12"
+     },
+     {
+      "eid": "a107a153-671a-443d-8684-6b86d7aeb0a1",
+      "name": "Dead Bug",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8 each side"
+     }
+    ]
+   },
+   {
+    "id": "f9456b8e-5036-407e-922c-0059ef12e632",
+    "name": "Dumbbell C",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "ab62b9c6-513a-4c75-9971-9956e7a0d3b8",
+      "name": "Dumbbell Squat",
+      "mg": "Legs",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "e5a86efe-af6f-41ec-bc1b-e808133ac017",
+      "name": "Incline Dumbbell Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "f3c903d9-62c9-46f4-a22d-505ae4a64c2d",
+      "name": "Renegade Row",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8 each arm"
+     },
+     {
+      "eid": "30bce4d7-172b-4714-9088-9f249b729cd6",
+      "name": "Step Up",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 2,
+      "reps": "10 each leg"
+     },
+     {
+      "eid": "13d2bf9e-bb6e-4cda-a37b-0a283ab2122c",
+      "name": "Overhead Tricep Extension (Dumbbell)",
+      "mg": "Triceps",
+      "eq": "dumbbell",
+      "sets": 2,
+      "reps": "12"
+     },
+     {
+      "eid": "3dc9edee-7925-4d94-af99-a496781b7331",
+      "name": "Plank",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "30s"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "33afe1f6-63db-4298-96ae-a22aea2dc191",
+  "name": "6-Week Upper Lower Strength",
+  "days": [
+   {
+    "id": "732483b5-001c-4e14-95f9-e1522c9f394a",
+    "name": "Upper A",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "350f0b1f-d809-424a-ad4d-45a8e9d660dc",
+      "name": "Barbell Bench Press",
+      "mg": "Chest",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6-8"
+     },
+     {
+      "eid": "725495fe-015e-44c4-baba-656a8bb4712b",
+      "name": "Barbell Row (Bent Over)",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6-8"
+     },
+     {
+      "eid": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+      "name": "Dumbbell Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8-10"
+     },
+     {
+      "eid": "3f6fea34-fb88-4e3f-8c14-a8c83aa2251a",
+      "name": "Lat Pulldown (Wide Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "6c1e0e3c-c893-492f-94e8-84fd711cbe2f",
+      "name": "Skull Crusher (EZ Bar)",
+      "mg": "Triceps",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "85f3cce1-2071-4004-a8be-3f7b5a53aacb",
+      "name": "EZ Bar Curl",
+      "mg": "Biceps",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     }
+    ]
+   },
+   {
+    "id": "8150419c-18f3-42a5-9c6f-440e487957c0",
+    "name": "Lower A",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "fc69fa1b-5854-4ac5-8762-4680147ba03b",
+      "name": "Back Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6-8"
+     },
+     {
+      "eid": "a54227ad-380f-4f8b-b4b0-60ce169ddd8d",
+      "name": "Romanian Deadlift (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "6f609c0a-4cb8-419d-9727-7d0b814b09cc",
+      "name": "Leg Press",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10-12"
+     },
+     {
+      "eid": "4f8e23d0-74dd-4613-9bde-076f27854a38",
+      "name": "Leg Curl (Lying)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "7934f543-19a5-4a14-b0a9-8dd5777a8d08",
+      "name": "Standing Calf Raise",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "12-15"
+     },
+     {
+      "eid": "61219bb8-0c55-41b1-a6e4-19f2ecd8093d",
+      "name": "Hanging Knee Raise",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "27c7fd87-9416-4737-afd6-c1e340f1a85c",
+    "name": "Upper B",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "e5a86efe-af6f-41ec-bc1b-e808133ac017",
+      "name": "Incline Dumbbell Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 4,
+      "reps": "8-10"
+     },
+     {
+      "eid": "fc0411a4-3e57-4535-a258-bf9b786a2915",
+      "name": "Chest Supported T-Bar Row",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "8-10"
+     },
+     {
+      "eid": "d91f5d54-acb2-443a-b16f-88dfb84b1361",
+      "name": "Barbell Overhead Press",
+      "mg": "Shoulders",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "6-8"
+     },
+     {
+      "eid": "57df9d2f-1d2d-4a65-a5b8-a9caf86f61e4",
+      "name": "Seated Cable Row (Close Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "a441fa1b-9f43-4710-b471-eabef4f1474d",
+      "name": "Dumbbell Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "12-15"
+     },
+     {
+      "eid": "c6400676-287b-4575-8bae-183af63d4554",
+      "name": "Hammer Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "1d692ec6-6258-403b-94f8-7dee306765d4",
+      "name": "Tricep Pushdown (Rope)",
+      "mg": "Triceps",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "a6e6e4d2-a5e0-4c2e-bd53-70b6a5f95999",
+    "name": "Lower B",
+    "day": 4,
+    "ex": [
+     {
+      "eid": "96b57614-ab21-4940-ba7b-68364e41d565",
+      "name": "Deadlift (Conventional)",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "5"
+     },
+     {
+      "eid": "cf198b69-85c3-4b87-a0bb-c6a37975e12a",
+      "name": "Bulgarian Split Squat",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8 each leg"
+     },
+     {
+      "eid": "6c9b0acc-2185-40f4-b823-0cc231546a9e",
+      "name": "Hip Thrust (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "25bdbb9b-d7de-44d5-beef-153e2b7c919b",
+      "name": "Leg Extension",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12-15"
+     },
+     {
+      "eid": "bfe2632d-b63b-48f4-8a11-8b33fff93b08",
+      "name": "Seated Calf Raise",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "8b348788-ead1-48c6-aba6-f4934b0ae7a1",
+      "name": "Cable Crunch",
+      "mg": "Core",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "9d5ecb27-043c-45c9-a5fa-8f0d5908abe9",
+  "name": "6-Week Push Pull Legs Upper",
+  "days": [
+   {
+    "id": "72790c54-fb1c-4533-84d3-d023afa5c1e4",
+    "name": "Push",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "350f0b1f-d809-424a-ad4d-45a8e9d660dc",
+      "name": "Barbell Bench Press",
+      "mg": "Chest",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "8"
+     },
+     {
+      "eid": "e5a86efe-af6f-41ec-bc1b-e808133ac017",
+      "name": "Incline Dumbbell Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "b929fdc6-3e89-4cb4-826a-9b9d8fb8519f",
+      "name": "Machine Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "411bce2c-c354-4ff6-8355-0df94c2c56f9",
+      "name": "Cable Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "7ebe0401-baea-441f-b403-26ff7329cb1b",
+      "name": "Cable Chest Fly (Mid)",
+      "mg": "Chest",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "1d692ec6-6258-403b-94f8-7dee306765d4",
+      "name": "Tricep Pushdown (Rope)",
+      "mg": "Triceps",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "b52a19d7-390e-4f93-b431-d9f7fbb5c683",
+    "name": "Pull",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "d44727a6-559e-4a61-9007-f92f270544f1",
+      "name": "Pull Up",
+      "mg": "Back",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "6-10"
+     },
+     {
+      "eid": "725495fe-015e-44c4-baba-656a8bb4712b",
+      "name": "Barbell Row (Bent Over)",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "0705d75a-8732-494f-ac45-34fdf70d50ed",
+      "name": "Seated Cable Row (Wide Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "c81bc3ec-b215-40c0-b712-1a9f5edcf609",
+      "name": "Face Pull",
+      "mg": "Back",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "6e196516-9742-4bbc-92a1-424ca508a28a",
+      "name": "Incline Dumbbell Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "c6400676-287b-4575-8bae-183af63d4554",
+      "name": "Hammer Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "e658206b-4ee9-435a-938c-cbe93ad2d54b",
+    "name": "Legs",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "f1d0f9a7-f9b1-4ea2-856c-66e8940c6d56",
+      "name": "Hack Squat (Machine)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 4,
+      "reps": "8-10"
+     },
+     {
+      "eid": "a54227ad-380f-4f8b-b4b0-60ce169ddd8d",
+      "name": "Romanian Deadlift (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "6f609c0a-4cb8-419d-9727-7d0b814b09cc",
+      "name": "Leg Press",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "64931300-0287-4ae6-b8eb-405b1a36fb69",
+      "name": "Leg Curl (Seated)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "25bdbb9b-d7de-44d5-beef-153e2b7c919b",
+      "name": "Leg Extension",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "7934f543-19a5-4a14-b0a9-8dd5777a8d08",
+      "name": "Standing Calf Raise",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "0f7e458c-f662-4a36-802e-3e4790d4e2eb",
+    "name": "Upper",
+    "day": 4,
+    "ex": [
+     {
+      "eid": "776731a6-70bc-4195-a687-f977d36c2b60",
+      "name": "Dumbbell Bench Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "e9952032-a251-4be3-855c-73c96c135104",
+      "name": "Lat Pulldown (Neutral Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "2aec7c6d-5962-4d3a-896b-34e60c03cabf",
+      "name": "Arnold Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "ef77a6c8-1215-472f-8418-c0a18e0e16d6",
+      "name": "Chest Supported Dumbbell Row",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "f2099459-dde4-4c1d-8c24-c19b5f50d7b2",
+      "name": "Reverse Pec Deck",
+      "mg": "Shoulders",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "85f3cce1-2071-4004-a8be-3f7b5a53aacb",
+      "name": "EZ Bar Curl",
+      "mg": "Biceps",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "bca8af09-1b89-4e52-abcb-2579714ea90f",
+      "name": "Overhead Tricep Extension (Cable)",
+      "mg": "Triceps",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "33193f75-e1a5-4697-84a8-3d804c5566e9",
+  "name": "6-Week Glute and Lower Body Builder",
+  "days": [
+   {
+    "id": "5890d01d-aeb7-498a-9084-3a736267478e",
+    "name": "Glutes and Hamstrings",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "6c9b0acc-2185-40f4-b823-0cc231546a9e",
+      "name": "Hip Thrust (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "8-10"
+     },
+     {
+      "eid": "a54227ad-380f-4f8b-b4b0-60ce169ddd8d",
+      "name": "Romanian Deadlift (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "cf198b69-85c3-4b87-a0bb-c6a37975e12a",
+      "name": "Bulgarian Split Squat",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "10 each leg"
+     },
+     {
+      "eid": "cfd78a34-219a-4a78-a2f6-a2e8b81413d3",
+      "name": "Cable Kickback",
+      "mg": "Glutes",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12 each leg"
+     },
+     {
+      "eid": "6c0e4f1c-63fa-400e-9f10-a89194163090",
+      "name": "Hip Abduction (Machine)",
+      "mg": "Glutes",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15-20"
+     }
+    ]
+   },
+   {
+    "id": "1d4bb0ac-f0c1-43d1-95c7-4129ca5e227a",
+    "name": "Upper A",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+      "name": "Dumbbell Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "3f6fea34-fb88-4e3f-8c14-a8c83aa2251a",
+      "name": "Lat Pulldown (Wide Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "e5a86efe-af6f-41ec-bc1b-e808133ac017",
+      "name": "Incline Dumbbell Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "57df9d2f-1d2d-4a65-a5b8-a9caf86f61e4",
+      "name": "Seated Cable Row (Close Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "a441fa1b-9f43-4710-b471-eabef4f1474d",
+      "name": "Dumbbell Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "3dc9edee-7925-4d94-af99-a496781b7331",
+      "name": "Plank",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "40s"
+     }
+    ]
+   },
+   {
+    "id": "57863fc2-56af-4e44-91c9-ad934d90376a",
+    "name": "Quads and Glutes",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "fc69fa1b-5854-4ac5-8762-4680147ba03b",
+      "name": "Back Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "8"
+     },
+     {
+      "eid": "8dd242fc-95a2-4e7a-ad25-a5d976f31a14",
+      "name": "Leg Press (Wide Stance)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "143d08dd-5bbc-4f35-a690-b450650d2476",
+      "name": "Reverse Lunge",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "10 each leg"
+     },
+     {
+      "eid": "25bdbb9b-d7de-44d5-beef-153e2b7c919b",
+      "name": "Leg Extension",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "7aca4971-6dfa-45f3-9261-14dfbd95ee5c",
+      "name": "Frog Pump",
+      "mg": "Glutes",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "20"
+     },
+     {
+      "eid": "bfe2632d-b63b-48f4-8a11-8b33fff93b08",
+      "name": "Seated Calf Raise",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15"
+     }
+    ]
+   },
+   {
+    "id": "a8ddbc0c-4462-4e94-93f2-3b25ec48fbbe",
+    "name": "Upper B",
+    "day": 4,
+    "ex": [
+     {
+      "eid": "31f7d1ac-03b4-4706-bdb5-41abdb9f147a",
+      "name": "Machine Chest Press",
+      "mg": "Chest",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "ef77a6c8-1215-472f-8418-c0a18e0e16d6",
+      "name": "Chest Supported Dumbbell Row",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "411bce2c-c354-4ff6-8355-0df94c2c56f9",
+      "name": "Cable Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "c81bc3ec-b215-40c0-b712-1a9f5edcf609",
+      "name": "Face Pull",
+      "mg": "Back",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "1d692ec6-6258-403b-94f8-7dee306765d4",
+      "name": "Tricep Pushdown (Rope)",
+      "mg": "Triceps",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "b2f788b6-e4a4-4402-90d0-83ebd8050df9",
+      "name": "Dumbbell Bicep Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "5a34d5b2-6cea-416d-a695-31b1ccd7c031",
+  "name": "6-Week Strength and Conditioning",
+  "days": [
+   {
+    "id": "d1ea359d-13c7-4668-a0d8-6e2df91cfab7",
+    "name": "Lower and Engine",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "5214f87e-c4fe-44dc-a458-29653d76f025",
+      "name": "Goblet Squat",
+      "mg": "Legs",
+      "eq": "dumbbell",
+      "sets": 4,
+      "reps": "10"
+     },
+     {
+      "eid": "398e5eca-f767-43ed-beb9-c09ad19054e3",
+      "name": "Romanian Deadlift (Dumbbell)",
+      "mg": "Glutes",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "143d08dd-5bbc-4f35-a690-b450650d2476",
+      "name": "Reverse Lunge",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "10 each leg"
+     },
+     {
+      "eid": "33174b92-8eec-4fd6-84bd-92460b6108ae",
+      "name": "Kettlebell Swing",
+      "mg": "Legs",
+      "eq": "kettlebell",
+      "sets": 4,
+      "reps": "15"
+     },
+     {
+      "eid": "b614f70f-f629-45a2-bd85-4f0a65837e41",
+      "name": "Rowing Machine",
+      "mg": "Cardio",
+      "eq": "machine",
+      "sets": 1,
+      "reps": "10 min"
+     }
+    ]
+   },
+   {
+    "id": "fa36e49c-041d-4041-a0e3-d4b8411bf6d1",
+    "name": "Upper and Ropes",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "776731a6-70bc-4195-a687-f977d36c2b60",
+      "name": "Dumbbell Bench Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 4,
+      "reps": "10"
+     },
+     {
+      "eid": "3f6fea34-fb88-4e3f-8c14-a8c83aa2251a",
+      "name": "Lat Pulldown (Wide Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+      "name": "Dumbbell Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "57df9d2f-1d2d-4a65-a5b8-a9caf86f61e4",
+      "name": "Seated Cable Row (Close Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "97f2805a-ecb3-44be-9126-c8d322ce7839",
+      "name": "Battle Ropes",
+      "mg": "Full Body",
+      "eq": "functional",
+      "sets": 4,
+      "reps": "30s"
+     },
+     {
+      "eid": "626cc7df-5a58-458d-8c61-642a2c022d6e",
+      "name": "Mountain Climber",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "30s"
+     }
+    ]
+   },
+   {
+    "id": "b41ea520-74d5-4d4f-ae12-57696c77764d",
+    "name": "Full Body Circuit",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "45c818e9-167e-40a1-8215-aeb56ad6e074",
+      "name": "Dumbbell Thruster",
+      "mg": "Full Body",
+      "eq": "dumbbell",
+      "sets": 4,
+      "reps": "10"
+     },
+     {
+      "eid": "f3c903d9-62c9-46f4-a22d-505ae4a64c2d",
+      "name": "Renegade Row",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8 each arm"
+     },
+     {
+      "eid": "30bce4d7-172b-4714-9088-9f249b729cd6",
+      "name": "Step Up",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "10 each leg"
+     },
+     {
+      "eid": "37374148-998f-41e7-8182-d6ab6c3e8436",
+      "name": "Push Up",
+      "mg": "Chest",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "As many as you can"
+     },
+     {
+      "eid": "3f7d5881-2fdd-4db6-b951-7731612e97dc",
+      "name": "Farmers Walk",
+      "mg": "Full Body",
+      "eq": "dumbbell",
+      "sets": 4,
+      "reps": "30 m"
+     },
+     {
+      "eid": "5a3db06f-e87f-4313-a6bc-f543b14cc9bf",
+      "name": "Echo Bike",
+      "mg": "Cardio",
+      "eq": "machine",
+      "sets": 6,
+      "reps": "20s hard"
+     }
+    ]
+   },
+   {
+    "id": "309caf28-5957-43a5-8d11-89df3dd76f94",
+    "name": "Conditioning and Core",
+    "day": 4,
+    "ex": [
+     {
+      "eid": "77f1f905-6f81-4be8-a8ee-eb00e7d29400",
+      "name": "Sled Push",
+      "mg": "Full Body",
+      "eq": "sled",
+      "sets": 6,
+      "reps": "20 m"
+     },
+     {
+      "eid": "2558eecc-1bd0-4bde-bcf6-43bec680ed62",
+      "name": "Medicine Ball Slam",
+      "mg": "Full Body",
+      "eq": "functional",
+      "sets": 4,
+      "reps": "12"
+     },
+     {
+      "eid": "8a79e74c-1eff-443b-a79b-52b24864717f",
+      "name": "Burpee",
+      "mg": "Full Body",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "a107a153-671a-443d-8684-6b86d7aeb0a1",
+      "name": "Dead Bug",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "10 each side"
+     },
+     {
+      "eid": "8a7ed1b3-7999-458f-813d-0e67a827e6e5",
+      "name": "Side Plank",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "30s each side"
+     },
+     {
+      "eid": "29a3c55e-0e37-4ada-9755-d35725389cac",
+      "name": "Treadmill Walk (Incline)",
+      "mg": "Cardio",
+      "eq": "machine",
+      "sets": 1,
+      "reps": "20 min"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "d1bf1515-d63b-4195-a0f6-a46bd1fe2f70",
+  "name": "8-Week Powerbuilding",
+  "days": [
+   {
+    "id": "3f7e6d0c-8612-4108-b195-93772e97f8cf",
+    "name": "Squat Day",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "fc69fa1b-5854-4ac5-8762-4680147ba03b",
+      "name": "Back Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "3-5"
+     },
+     {
+      "eid": "f1a49f80-1329-4ab7-8895-7ff4ea3cb912",
+      "name": "Pause Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "5"
+     },
+     {
+      "eid": "a54227ad-380f-4f8b-b4b0-60ce169ddd8d",
+      "name": "Romanian Deadlift (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "6f609c0a-4cb8-419d-9727-7d0b814b09cc",
+      "name": "Leg Press",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "4f8e23d0-74dd-4613-9bde-076f27854a38",
+      "name": "Leg Curl (Lying)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "7934f543-19a5-4a14-b0a9-8dd5777a8d08",
+      "name": "Standing Calf Raise",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "10"
+     }
+    ]
+   },
+   {
+    "id": "8f2f7cd4-6b5a-4076-bb99-fc8742c176e2",
+    "name": "Bench Day",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "350f0b1f-d809-424a-ad4d-45a8e9d660dc",
+      "name": "Barbell Bench Press",
+      "mg": "Chest",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "3-5"
+     },
+     {
+      "eid": "331e2d0a-df10-4219-becb-f8c91f60fe57",
+      "name": "Close Grip Bench Press",
+      "mg": "Triceps",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "6"
+     },
+     {
+      "eid": "e5a86efe-af6f-41ec-bc1b-e808133ac017",
+      "name": "Incline Dumbbell Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "7ebe0401-baea-441f-b403-26ff7329cb1b",
+      "name": "Cable Chest Fly (Mid)",
+      "mg": "Chest",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "a441fa1b-9f43-4710-b471-eabef4f1474d",
+      "name": "Dumbbell Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 4,
+      "reps": "15"
+     },
+     {
+      "eid": "1d692ec6-6258-403b-94f8-7dee306765d4",
+      "name": "Tricep Pushdown (Rope)",
+      "mg": "Triceps",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "79d3df25-c7b1-4e68-86d9-41fc047b695c",
+    "name": "Deadlift Day",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "96b57614-ab21-4940-ba7b-68364e41d565",
+      "name": "Deadlift (Conventional)",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "3"
+     },
+     {
+      "eid": "3a9ee493-b68f-4c6d-bda4-ae7a0827f575",
+      "name": "Pendlay Row",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6"
+     },
+     {
+      "eid": "d44727a6-559e-4a61-9007-f92f270544f1",
+      "name": "Pull Up",
+      "mg": "Back",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "6-8"
+     },
+     {
+      "eid": "fc0411a4-3e57-4535-a258-bf9b786a2915",
+      "name": "Chest Supported T-Bar Row",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "c81bc3ec-b215-40c0-b712-1a9f5edcf609",
+      "name": "Face Pull",
+      "mg": "Back",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "8724af43-0aca-478b-945a-38c71c745cad",
+      "name": "Barbell Bicep Curl",
+      "mg": "Biceps",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     }
+    ]
+   },
+   {
+    "id": "22958f54-907d-46f1-a627-f4283cc3d733",
+    "name": "Press Day",
+    "day": 4,
+    "ex": [
+     {
+      "eid": "d91f5d54-acb2-443a-b16f-88dfb84b1361",
+      "name": "Barbell Overhead Press",
+      "mg": "Shoulders",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "5"
+     },
+     {
+      "eid": "1b529a87-8eab-4327-aa0a-215e0fc8e4d4",
+      "name": "Push Press",
+      "mg": "Shoulders",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "3"
+     },
+     {
+      "eid": "70aae49b-ee2e-4f52-96c6-ac74d42603fd",
+      "name": "Dumbbell Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "411bce2c-c354-4ff6-8355-0df94c2c56f9",
+      "name": "Cable Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "f2099459-dde4-4c1d-8c24-c19b5f50d7b2",
+      "name": "Reverse Pec Deck",
+      "mg": "Shoulders",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "6c1e0e3c-c893-492f-94e8-84fd711cbe2f",
+      "name": "Skull Crusher (EZ Bar)",
+      "mg": "Triceps",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     }
+    ]
+   },
+   {
+    "id": "8fadf08c-3096-42d3-9b5a-bb1cb01cc412",
+    "name": "Size Day",
+    "day": 5,
+    "ex": [
+     {
+      "eid": "f1d0f9a7-f9b1-4ea2-856c-66e8940c6d56",
+      "name": "Hack Squat (Machine)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "6c9b0acc-2185-40f4-b823-0cc231546a9e",
+      "name": "Hip Thrust (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "e9952032-a251-4be3-855c-73c96c135104",
+      "name": "Lat Pulldown (Neutral Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "31f7d1ac-03b4-4706-bdb5-41abdb9f147a",
+      "name": "Machine Chest Press",
+      "mg": "Chest",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "6e196516-9742-4bbc-92a1-424ca508a28a",
+      "name": "Incline Dumbbell Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "4d07c774-2716-4de2-ac42-06952699e0c8",
+      "name": "Hanging Leg Raise",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "12"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "cf15a398-792e-432c-9aca-1f8673da0553",
+  "name": "8-Week Push Pull Legs Upper Lower",
+  "days": [
+   {
+    "id": "c80d125a-5268-40fd-8068-ff791bba4ebb",
+    "name": "Push",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "61117381-4fd6-41a5-b0b2-f00d558e0b9e",
+      "name": "Incline Barbell Bench Press",
+      "mg": "Chest",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6-8"
+     },
+     {
+      "eid": "776731a6-70bc-4195-a687-f977d36c2b60",
+      "name": "Dumbbell Bench Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8-10"
+     },
+     {
+      "eid": "b929fdc6-3e89-4cb4-826a-9b9d8fb8519f",
+      "name": "Machine Shoulder Press",
+      "mg": "Shoulders",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "8-10"
+     },
+     {
+      "eid": "411bce2c-c354-4ff6-8355-0df94c2c56f9",
+      "name": "Cable Lateral Raise",
+      "mg": "Shoulders",
+      "eq": "cable",
+      "sets": 4,
+      "reps": "12-15"
+     },
+     {
+      "eid": "ffd066fb-1b17-47b9-a6fd-61bdd3f7c933",
+      "name": "Pec Deck Machine",
+      "mg": "Chest",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12-15"
+     },
+     {
+      "eid": "bca8af09-1b89-4e52-abcb-2579714ea90f",
+      "name": "Overhead Tricep Extension (Cable)",
+      "mg": "Triceps",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "10-12"
+     }
+    ]
+   },
+   {
+    "id": "d80fac4b-ae67-4665-a66b-98732b3ed715",
+    "name": "Pull",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "d44727a6-559e-4a61-9007-f92f270544f1",
+      "name": "Pull Up",
+      "mg": "Back",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "6-8"
+     },
+     {
+      "eid": "3a9ee493-b68f-4c6d-bda4-ae7a0827f575",
+      "name": "Pendlay Row",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6-8"
+     },
+     {
+      "eid": "8b30b703-5a06-4b6c-b97c-b3493bada16c",
+      "name": "Single Arm Lat Pulldown",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10 each arm"
+     },
+     {
+      "eid": "ef77a6c8-1215-472f-8418-c0a18e0e16d6",
+      "name": "Chest Supported Dumbbell Row",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "f2099459-dde4-4c1d-8c24-c19b5f50d7b2",
+      "name": "Reverse Pec Deck",
+      "mg": "Shoulders",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "15"
+     },
+     {
+      "eid": "7c1ff01f-b6d2-4099-9738-061b6b3ceb1a",
+      "name": "Bayesian Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "c6400676-287b-4575-8bae-183af63d4554",
+      "name": "Hammer Curl",
+      "mg": "Biceps",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     }
+    ]
+   },
+   {
+    "id": "6a14b80d-9a7f-497b-9bae-4067db796a54",
+    "name": "Legs",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "e3f6155d-75cd-4b9c-93c7-185af9d60fd7",
+      "name": "Front Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6"
+     },
+     {
+      "eid": "a54227ad-380f-4f8b-b4b0-60ce169ddd8d",
+      "name": "Romanian Deadlift (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "8"
+     },
+     {
+      "eid": "cf198b69-85c3-4b87-a0bb-c6a37975e12a",
+      "name": "Bulgarian Split Squat",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8 each leg"
+     },
+     {
+      "eid": "25bdbb9b-d7de-44d5-beef-153e2b7c919b",
+      "name": "Leg Extension",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "64931300-0287-4ae6-b8eb-405b1a36fb69",
+      "name": "Leg Curl (Seated)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "12"
+     },
+     {
+      "eid": "bfe2632d-b63b-48f4-8a11-8b33fff93b08",
+      "name": "Seated Calf Raise",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 4,
+      "reps": "12"
+     }
+    ]
+   },
+   {
+    "id": "d1f3e52a-8484-457e-b3ee-938a06c1fb67",
+    "name": "Upper",
+    "day": 4,
+    "ex": [
+     {
+      "eid": "350f0b1f-d809-424a-ad4d-45a8e9d660dc",
+      "name": "Barbell Bench Press",
+      "mg": "Chest",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "5"
+     },
+     {
+      "eid": "725495fe-015e-44c4-baba-656a8bb4712b",
+      "name": "Barbell Row (Bent Over)",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6"
+     },
+     {
+      "eid": "2aec7c6d-5962-4d3a-896b-34e60c03cabf",
+      "name": "Arnold Press",
+      "mg": "Shoulders",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "3f6fea34-fb88-4e3f-8c14-a8c83aa2251a",
+      "name": "Lat Pulldown (Wide Grip)",
+      "mg": "Back",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "30de57d6-8a0a-4a98-a712-aba71bd241a2",
+      "name": "Dips (Chest Focus)",
+      "mg": "Chest",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8-12"
+     },
+     {
+      "eid": "85f3cce1-2071-4004-a8be-3f7b5a53aacb",
+      "name": "EZ Bar Curl",
+      "mg": "Biceps",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "10"
+     }
+    ]
+   },
+   {
+    "id": "0d78e3ca-c429-4336-9856-916cde7d4c3a",
+    "name": "Lower",
+    "day": 5,
+    "ex": [
+     {
+      "eid": "96b57614-ab21-4940-ba7b-68364e41d565",
+      "name": "Deadlift (Conventional)",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "4"
+     },
+     {
+      "eid": "f1d0f9a7-f9b1-4ea2-856c-66e8940c6d56",
+      "name": "Hack Squat (Machine)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "6c9b0acc-2185-40f4-b823-0cc231546a9e",
+      "name": "Hip Thrust (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "1e9d134d-ff1c-4623-8928-2192a06934d2",
+      "name": "Nordic Curl",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "5"
+     },
+     {
+      "eid": "7934f543-19a5-4a14-b0a9-8dd5777a8d08",
+      "name": "Standing Calf Raise",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "10"
+     },
+     {
+      "eid": "dbc505dc-29e9-43ab-9c40-f61ca5df4652",
+      "name": "Ab Wheel Rollout",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "10"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "0727a390-eda8-4958-a2ff-09da4e0a09ae",
+  "name": "8-Week Strength Peak",
+  "days": [
+   {
+    "id": "7bef55df-d3ca-4f58-99ce-f638423ffdb2",
+    "name": "Squat",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "fc69fa1b-5854-4ac5-8762-4680147ba03b",
+      "name": "Back Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "5"
+     },
+     {
+      "eid": "e3f6155d-75cd-4b9c-93c7-185af9d60fd7",
+      "name": "Front Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "5"
+     },
+     {
+      "eid": "6eb31aa4-5a4c-412f-8e92-da3a75acc74f",
+      "name": "Good Morning",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "4f8e23d0-74dd-4613-9bde-076f27854a38",
+      "name": "Leg Curl (Lying)",
+      "mg": "Legs",
+      "eq": "machine",
+      "sets": 3,
+      "reps": "10"
+     },
+     {
+      "eid": "cc63bfdb-a11f-44ee-8785-28e786364377",
+      "name": "Weighted Plank",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "30s"
+     }
+    ]
+   },
+   {
+    "id": "122c93d3-f0a1-4819-ac50-114ae6cff9a1",
+    "name": "Bench",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "350f0b1f-d809-424a-ad4d-45a8e9d660dc",
+      "name": "Barbell Bench Press",
+      "mg": "Chest",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "5"
+     },
+     {
+      "eid": "3f757435-e6e6-402c-8b49-69bbe2ba0611",
+      "name": "Floor Press (Barbell)",
+      "mg": "Chest",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "5"
+     },
+     {
+      "eid": "725495fe-015e-44c4-baba-656a8bb4712b",
+      "name": "Barbell Row (Bent Over)",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "6"
+     },
+     {
+      "eid": "30de57d6-8a0a-4a98-a712-aba71bd241a2",
+      "name": "Dips (Chest Focus)",
+      "mg": "Chest",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "c81bc3ec-b215-40c0-b712-1a9f5edcf609",
+      "name": "Face Pull",
+      "mg": "Back",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "15"
+     }
+    ]
+   },
+   {
+    "id": "3b5cc6a5-8125-422b-baaf-de1dbbec5c8c",
+    "name": "Deadlift",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "96b57614-ab21-4940-ba7b-68364e41d565",
+      "name": "Deadlift (Conventional)",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "3"
+     },
+     {
+      "eid": "b617b892-fb96-4ae9-9749-8309a3ba66e6",
+      "name": "Rack Pull",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "4"
+     },
+     {
+      "eid": "d44727a6-559e-4a61-9007-f92f270544f1",
+      "name": "Pull Up",
+      "mg": "Back",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "6"
+     },
+     {
+      "eid": "6c9b0acc-2185-40f4-b823-0cc231546a9e",
+      "name": "Hip Thrust (Barbell)",
+      "mg": "Glutes",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "4d07c774-2716-4de2-ac42-06952699e0c8",
+      "name": "Hanging Leg Raise",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "10"
+     }
+    ]
+   },
+   {
+    "id": "282a9528-7486-4a1a-87ca-77af3538d1ff",
+    "name": "Press",
+    "day": 4,
+    "ex": [
+     {
+      "eid": "d91f5d54-acb2-443a-b16f-88dfb84b1361",
+      "name": "Barbell Overhead Press",
+      "mg": "Shoulders",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "5"
+     },
+     {
+      "eid": "1b529a87-8eab-4327-aa0a-215e0fc8e4d4",
+      "name": "Push Press",
+      "mg": "Shoulders",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "3"
+     },
+     {
+      "eid": "331e2d0a-df10-4219-becb-f8c91f60fe57",
+      "name": "Close Grip Bench Press",
+      "mg": "Triceps",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "6"
+     },
+     {
+      "eid": "fc0411a4-3e57-4535-a258-bf9b786a2915",
+      "name": "Chest Supported T-Bar Row",
+      "mg": "Back",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "3f7d5881-2fdd-4db6-b951-7731612e97dc",
+      "name": "Farmers Walk",
+      "mg": "Full Body",
+      "eq": "dumbbell",
+      "sets": 4,
+      "reps": "30 m"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "id": "51e4deae-6a97-4ffc-b6e0-d08b0e247466",
+  "name": "8-Week Athletic Performance",
+  "days": [
+   {
+    "id": "97590e27-60ed-4d37-8e51-88023ed20dad",
+    "name": "Lower Power",
+    "day": 1,
+    "ex": [
+     {
+      "eid": "44d5cefd-26a9-47d0-944a-b71812c4df40",
+      "name": "Box Jump",
+      "mg": "Full Body",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "5"
+     },
+     {
+      "eid": "b6f8ba7e-ccda-4786-b25d-e7c0140ea083",
+      "name": "Trap Bar Deadlift",
+      "mg": "Legs",
+      "eq": "trap_bar",
+      "sets": 4,
+      "reps": "4"
+     },
+     {
+      "eid": "e3f6155d-75cd-4b9c-93c7-185af9d60fd7",
+      "name": "Front Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "5"
+     },
+     {
+      "eid": "cf198b69-85c3-4b87-a0bb-c6a37975e12a",
+      "name": "Bulgarian Split Squat",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "6 each leg"
+     },
+     {
+      "eid": "1e9d134d-ff1c-4623-8928-2192a06934d2",
+      "name": "Nordic Curl",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "5"
+     },
+     {
+      "eid": "b31f3f21-ffba-4019-85ea-c21f731538be",
+      "name": "Pallof Press",
+      "mg": "Core",
+      "eq": "cable",
+      "sets": 3,
+      "reps": "10 each side"
+     }
+    ]
+   },
+   {
+    "id": "d855ef4f-aac3-4887-82e7-8ab2da96151f",
+    "name": "Upper Power",
+    "day": 2,
+    "ex": [
+     {
+      "eid": "f78d43a0-3590-4b93-b2c5-5733c3adb024",
+      "name": "Medicine Ball Throw",
+      "mg": "Full Body",
+      "eq": "functional",
+      "sets": 4,
+      "reps": "6"
+     },
+     {
+      "eid": "1b529a87-8eab-4327-aa0a-215e0fc8e4d4",
+      "name": "Push Press",
+      "mg": "Shoulders",
+      "eq": "barbell",
+      "sets": 4,
+      "reps": "4"
+     },
+     {
+      "eid": "d44727a6-559e-4a61-9007-f92f270544f1",
+      "name": "Pull Up",
+      "mg": "Back",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "6"
+     },
+     {
+      "eid": "776731a6-70bc-4195-a687-f977d36c2b60",
+      "name": "Dumbbell Bench Press",
+      "mg": "Chest",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "f3c903d9-62c9-46f4-a22d-505ae4a64c2d",
+      "name": "Renegade Row",
+      "mg": "Back",
+      "eq": "dumbbell",
+      "sets": 3,
+      "reps": "8 each arm"
+     },
+     {
+      "eid": "45c72100-eace-4e5d-a514-8833cb1c533d",
+      "name": "Turkish Get Up",
+      "mg": "Full Body",
+      "eq": "kettlebell",
+      "sets": 2,
+      "reps": "3 each side"
+     }
+    ]
+   },
+   {
+    "id": "01197c9e-6945-4ef4-bf5c-4fba2f645830",
+    "name": "Speed and Conditioning",
+    "day": 3,
+    "ex": [
+     {
+      "eid": "40aebbcd-bcb2-4b50-a634-8a22afa2015c",
+      "name": "Sprints",
+      "mg": "Cardio",
+      "eq": "bodyweight",
+      "sets": 6,
+      "reps": "30 m"
+     },
+     {
+      "eid": "77f1f905-6f81-4be8-a8ee-eb00e7d29400",
+      "name": "Sled Push",
+      "mg": "Full Body",
+      "eq": "sled",
+      "sets": 5,
+      "reps": "20 m"
+     },
+     {
+      "eid": "0d5c3772-4ab8-40a3-952b-8a9f342dfc43",
+      "name": "Broad Jump",
+      "mg": "Full Body",
+      "eq": "bodyweight",
+      "sets": 4,
+      "reps": "4"
+     },
+     {
+      "eid": "33174b92-8eec-4fd6-84bd-92460b6108ae",
+      "name": "Kettlebell Swing",
+      "mg": "Legs",
+      "eq": "kettlebell",
+      "sets": 4,
+      "reps": "15"
+     },
+     {
+      "eid": "97f2805a-ecb3-44be-9126-c8d322ce7839",
+      "name": "Battle Ropes",
+      "mg": "Full Body",
+      "eq": "functional",
+      "sets": 4,
+      "reps": "30s"
+     }
+    ]
+   },
+   {
+    "id": "c7d24f64-1957-4660-ba39-b038ecf6dbe3",
+    "name": "Strength Endurance",
+    "day": 4,
+    "ex": [
+     {
+      "eid": "106e6ec0-8a7e-4a7a-ae33-ccc515cef9ac",
+      "name": "Power Clean",
+      "mg": "Full Body",
+      "eq": "barbell",
+      "sets": 5,
+      "reps": "3"
+     },
+     {
+      "eid": "fc69fa1b-5854-4ac5-8762-4680147ba03b",
+      "name": "Back Squat",
+      "mg": "Legs",
+      "eq": "barbell",
+      "sets": 3,
+      "reps": "8"
+     },
+     {
+      "eid": "b3adbba8-032f-4690-a96a-f85819e428b3",
+      "name": "Chin Up",
+      "mg": "Back",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8-10"
+     },
+     {
+      "eid": "14d539ee-3f92-408a-bc98-f23dbf93f3e8",
+      "name": "Lateral Lunge",
+      "mg": "Legs",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "8 each leg"
+     },
+     {
+      "eid": "3f7d5881-2fdd-4db6-b951-7731612e97dc",
+      "name": "Farmers Walk",
+      "mg": "Full Body",
+      "eq": "dumbbell",
+      "sets": 4,
+      "reps": "40 m"
+     },
+     {
+      "eid": "b2e12775-3a9d-4e12-a060-0dd7a0ed6489",
+      "name": "Copenhagen Plank",
+      "mg": "Core",
+      "eq": "bodyweight",
+      "sets": 3,
+      "reps": "20s each side"
+     }
+    ]
+   }
+  ]
+ }
+]

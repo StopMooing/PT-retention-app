@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, ChevronRight, ChevronUp, ChevronDown, Trash2, ClipboardList, Dumbbell, Check, UserPlus, PlayCircle, Pencil } from 'lucide-react'
+import { Plus, ChevronRight, ChevronUp, ChevronDown, Trash2, ClipboardList, Dumbbell, Check, UserPlus, PlayCircle, Pencil, Copy, Sparkles } from 'lucide-react'
 import { supabase } from './supabase'
 import { PageTitle, Card, Button, Chip, Sheet, EmptyState, Field, Segmented, SectionLabel } from './ui'
 import { Loading, Toast, BackLink, Select, TextArea, MiniField, SearchBox, FilterChips, ConfirmRemove, Toggle } from './tools/kit'
@@ -59,6 +59,9 @@ function formatDate(dateStr) {
 export default function ProgramBuilder({ user }) {
   // Programs
   const [programs, setPrograms] = useState([])
+  // Ready-made programs from the UNFNSHD library (on demand, made by someone else): every coach can view, assign and copy them.
+  const [library, setLibrary] = useState([])
+  const [copying, setCopying] = useState(false)
   const [loadingPrograms, setLoadingPrograms] = useState(true)
   const [selectedProgram, setSelectedProgram] = useState(null)
   const [newProgram, setNewProgram] = useState(EMPTY_NEW_PROGRAM)
@@ -123,6 +126,13 @@ export default function ProgramBuilder({ user }) {
       .eq('created_by', user.id)
       .order('created_at', { ascending: false })
     if (!error && data) setPrograms(data)
+    const { data: lib } = await supabase
+      .from('programs')
+      .select('*, program_workouts(id)')
+      .eq('is_on_demand', true)
+      .neq('created_by', user.id)
+      .order('name')
+    setLibrary((lib ?? []).filter((p) => p.kind !== 'workout'))
     setLoadingPrograms(false)
   }, [user.id])
 
@@ -252,7 +262,7 @@ export default function ProgramBuilder({ user }) {
 
   function closeProgram() {
     // Land on the list the program now belongs to, so a just-toggled one is easy to find.
-    setListView(isOnDemand(selectedProgram) ? 'ondemand' : 'coaching')
+    setListView(selectedProgram?.created_by !== user.id ? 'library' : isOnDemand(selectedProgram) ? 'ondemand' : 'coaching')
     setSelectedProgram(null)
     setEditingExerciseId(null)
   }
@@ -396,6 +406,38 @@ export default function ProgramBuilder({ user }) {
     setSelectedProgram(p => ({ ...p, is_on_demand: next }))
     setPrograms(prev => prev.map(p => p.id === selectedProgram.id ? { ...p, is_on_demand: next } : p))
     showToast(next ? 'Added to the on-demand library' : 'Taken out of the on-demand library')
+  }
+
+  // A ready-made program becomes the coach's own: same days, exercises, sets and notes,
+  // free to change. The original stays as it is.
+  async function handleCopyProgram() {
+    if (copying || !selectedProgram) return
+    setCopying(true)
+    const fail = () => { setCopying(false); showToast('Could not copy that program. Try again.', 'bad') }
+    const { data: prog, error } = await supabase.from('programs')
+      .insert({ name: selectedProgram.name, description: selectedProgram.description, created_by: user.id, ...(onDemandOK ? { is_on_demand: false, kind: 'program' } : {}) })
+      .select().single()
+    if (error) return fail()
+    const days = []
+    for (const day of workoutDays) {
+      const { data: d, error: dErr } = await supabase.from('program_workouts')
+        .insert({ program_id: prog.id, name: day.name, day_number: day.day_number }).select().single()
+      if (dErr) return fail()
+      days.push(d)
+      const rows = (exercisesByDay[day.id] ?? []).map((ex, i) => ({
+        program_workout_id: d.id, exercise_id: ex.exercise_id, sets: ex.sets, reps: ex.reps,
+        rest_seconds: ex.rest_seconds, notes: ex.notes, order_index: ex.order_index ?? i,
+      }))
+      if (rows.length) {
+        const { error: eErr } = await supabase.from('workout_exercises').insert(rows)
+        if (eErr) return fail()
+      }
+    }
+    const withMeta = { ...prog, program_workouts: days.map((d) => ({ id: d.id })) }
+    setPrograms((prev) => [withMeta, ...prev])
+    setCopying(false)
+    showToast('Copied to your programs. Change anything you like.')
+    openProgram(withMeta)
   }
 
   function isOnDemand(program) {
@@ -822,6 +864,7 @@ export default function ProgramBuilder({ user }) {
     }
     const grid = (list) => <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">{list.map(programCard)}</div>
     const showOnDemand = onDemandOK && listView === 'ondemand'
+    const showLibrary = listView === 'library' && library.length > 0
     const coaching = programs.filter(p => !isOnDemand(p))
     const odWorkouts = programs.filter(p => isOnDemand(p) && p.kind === 'workout')
     const odPrograms = programs.filter(p => isOnDemand(p) && p.kind !== 'workout')
@@ -830,16 +873,25 @@ export default function ProgramBuilder({ user }) {
     return (
       <div className="flex flex-col gap-6">
         <PageTitle title="Programs" action={newButton(showOnDemand ? 'New' : 'New program')} />
-        {onDemandOK && (
+        {(onDemandOK || library.length > 0) && (
           <Segmented
-            className="max-w-[320px] -mt-2"
+            className="max-w-[460px] -mt-2"
             value={listView}
             onChange={setListView}
-            options={[{ value: 'coaching', label: 'Coaching' }, { value: 'ondemand', label: 'On demand' }]}
+            options={[
+              { value: 'coaching', label: 'Your programs' },
+              ...(library.length > 0 ? [{ value: 'library', label: 'Ready-made' }] : []),
+              ...(onDemandOK ? [{ value: 'ondemand', label: 'On demand' }] : []),
+            ]}
           />
         )}
         {loadingPrograms ? (
           <Loading />
+        ) : showLibrary ? (
+          <section>
+            <p className="text-[15px] text-muted mb-3 max-w-[640px]">{plural(library.length, 'program')} built by UNFNSHD, from beginner to advanced. Assign one to a client as it is, or copy it into your programs and make it your own.</p>
+            {grid(library)}
+          </section>
         ) : showOnDemand ? (
           odWorkouts.length === 0 && odPrograms.length === 0 ? (
             <Card>
@@ -861,8 +913,13 @@ export default function ProgramBuilder({ user }) {
             <EmptyState
               icon={ClipboardList}
               title="No programs yet"
-              body="Build a program once, then assign it to as many clients as you like."
-              action={newButton('New program')}
+              body={library.length > 0 ? `Build your own, or start from one of ${library.length} ready-made programs.` : 'Build a program once, then assign it to as many clients as you like.'}
+              action={library.length > 0 ? (
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button onClick={() => setListView('library')}><Sparkles size={18} /> See ready-made programs</Button>
+                  <Button variant="secondary" onClick={openNewProgram}><Plus size={18} /> New program</Button>
+                </div>
+              ) : newButton('New program')}
             />
           </Card>
         ) : (
@@ -876,12 +933,20 @@ export default function ProgramBuilder({ user }) {
 
   // ─── One program ───────────────────────────────────────────────────────────
 
+  // A ready-made program (someone else's) is view only: assign it, or copy it to change it.
+  const readOnly = selectedProgram.created_by !== user.id
   // A single on-demand workout hides day management: one list of exercises, no "Day 1".
   const programActions = (cls) => (
     <div className={`flex gap-2 shrink-0 ${cls}`}>
-      <Button variant="secondary" onClick={openEditProgram}>
-        <Pencil size={18} /> Edit
-      </Button>
+      {readOnly ? (
+        <Button variant="secondary" onClick={handleCopyProgram} disabled={copying || loadingDays}>
+          <Copy size={18} /> {copying ? 'Copying' : 'Copy to edit'}
+        </Button>
+      ) : (
+        <Button variant="secondary" onClick={openEditProgram}>
+          <Pencil size={18} /> Edit
+        </Button>
+      )}
       <Button onClick={openAssign} disabled={loadingDays}>
         <UserPlus size={18} /> Assign
       </Button>
@@ -918,7 +983,19 @@ export default function ProgramBuilder({ user }) {
         )}
       </div>
 
-      {onDemandOK && (
+      {readOnly && (
+        <Card className="flex items-center gap-3">
+          <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
+            <Sparkles size={20} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[15px] font-bold text-ink">Ready-made by UNFNSHD</span>
+            <span className="block text-[13px] text-muted">Assign it as it is, or copy it to change days, exercises, sets and notes.</span>
+          </span>
+        </Card>
+      )}
+
+      {onDemandOK && !readOnly && (
         <Card className="flex items-center gap-3">
           <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0">
             <PlayCircle size={20} />
@@ -975,9 +1052,11 @@ export default function ProgramBuilder({ user }) {
                             {plural(list.length, 'exercise')} · about {estimateMinutes(list)} min
                           </span>
                         )}
-                        <button onClick={() => openEditDay(day)} aria-label={`Edit ${day.name}`} className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-surface-2">
-                          <Pencil size={16} />
-                        </button>
+                        {!readOnly && (
+                          <button onClick={() => openEditDay(day)} aria-label={`Edit ${day.name}`} className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-surface-2">
+                            <Pencil size={16} />
+                          </button>
+                        )}
                       </span>
                     )}
                   </div>
@@ -993,8 +1072,8 @@ export default function ProgramBuilder({ user }) {
                             <li key={ex.id}>
                               <button
                                 type="button"
-                                onClick={() => startEditExercise(ex)}
-                                className={`w-full min-h-[60px] px-4 py-2.5 flex items-center gap-3 text-left hover:bg-surface-2 transition-colors ${deletingId === ex.id ? 'opacity-40 pointer-events-none' : ''}`}
+                                onClick={() => !readOnly && startEditExercise(ex)}
+                                className={`w-full min-h-[60px] px-4 py-2.5 flex items-center gap-3 text-left transition-colors ${readOnly ? 'cursor-default' : 'hover:bg-surface-2'} ${deletingId === ex.id ? 'opacity-40 pointer-events-none' : ''}`}
                               >
                                 <span className="w-7 h-7 rounded-full bg-surface-2 text-muted text-xs font-bold flex items-center justify-center shrink-0 tabular-nums">
                                   {index + 1}
@@ -1006,7 +1085,7 @@ export default function ProgramBuilder({ user }) {
                                   </span>
                                   {ex.notes && <span className="block text-[13px] text-faint truncate">{ex.notes}</span>}
                                 </span>
-                                <ChevronRight size={18} className="text-faint shrink-0" />
+                                {!readOnly && <ChevronRight size={18} className="text-faint shrink-0" />}
                               </button>
                             </li>
                           )
@@ -1074,7 +1153,7 @@ export default function ProgramBuilder({ user }) {
                     </ul>
                   )}
 
-                  <div className={list.length > 0 ? 'border-t border-line' : ''}>
+                  {!readOnly && <div className={list.length > 0 ? 'border-t border-line' : ''}>
                     <button
                       type="button"
                       onClick={() => openAddExercise(day)}
@@ -1082,12 +1161,12 @@ export default function ProgramBuilder({ user }) {
                     >
                       <Plus size={18} /> Add exercise
                     </button>
-                  </div>
+                  </div>}
                 </Card>
               )
             })}
           </div>
-          {!single && (
+          {!single && !readOnly && (
             <Button variant="secondary" block onClick={openNewDay} className="sm:w-auto sm:self-start">
               <Plus size={18} /> Add workout day
             </Button>

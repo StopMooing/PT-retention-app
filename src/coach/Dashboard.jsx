@@ -1,12 +1,46 @@
 // Coach home: who needs me today, then the full client list.
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, ChevronRight, Plus, Link2, Check, MessageSquare, MessageCircle, Users } from 'lucide-react'
+import { Search, ChevronRight, Plus, Link2, Check, MessageSquare, MessageCircle, Users, HandHeart, Send } from 'lucide-react'
 import { supabase } from '../supabase'
 import { fetchUnreadCounts, fetchLatestPerThread } from '../lib/messages'
 import { SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, EmptyState, Mark, Hero } from '../ui'
-import { clientStatus, STATUS, relativeDay, sessionsLast7, checkinsThisWeek, checkinNote, firstName, messageTime, toLocalDateStr, addDays, awaitingReply, lastActivity, missedInARow, daysSince } from './lib'
+import { clientStatus, STATUS, relativeDay, sessionsLast7, checkinsThisWeek, checkinNote, firstName, messageTime, toLocalDateStr, addDays, awaitingReply, lastActivity, missedInARow, nudgeReason, nudgedAt } from './lib'
 import { useMessageEvent, READ, INCOMING } from './messages/events'
+import NudgeSheet from './NudgeSheet'
+
+// Where everyone sits, as one bar: tap a part to filter the list below.
+const HEALTH = [
+  { value: 'Engaged', label: 'Engaged', bar: 'bg-good' },
+  { value: 'Drifting', label: 'Drifting', bar: 'bg-warn' },
+  { value: 'At Risk', label: 'At risk', bar: 'bg-bad' },
+  { value: 'New', label: 'New', bar: 'bg-tan' },
+]
+
+function ClientHealth({ clients, onPick }) {
+  const total = clients.length
+  if (total === 0) return null
+  const counts = HEALTH.map((h) => ({ ...h, n: clients.filter((c) => c.status === h.value).length })).filter((h) => h.n > 0)
+  return (
+    <Card className="mt-4">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-[15px] font-bold text-ink">Client health</p>
+        <p className="text-[13px] text-muted">Showing up in the last 7 days</p>
+      </div>
+      <div className="flex h-3 rounded-full overflow-hidden gap-1 mt-3" role="img" aria-label={counts.map((h) => `${h.n} ${h.label.toLowerCase()}`).join(', ')}>
+        {counts.map((h) => <div key={h.value} className={`${h.bar} rounded-full`} style={{ flexGrow: h.n }} />)}
+      </div>
+      <div className="flex flex-wrap gap-x-5 gap-y-2 mt-3">
+        {counts.map((h) => (
+          <button key={h.value} onClick={() => onPick(h.value)} className="inline-flex items-center gap-2 text-[14px] text-ink hover:underline underline-offset-2">
+            <span className={`w-2.5 h-2.5 rounded-full ${h.bar}`} />
+            <span className="font-bold tabular-nums">{h.n}</span> {h.label.toLowerCase()}
+          </button>
+        ))}
+      </div>
+    </Card>
+  )
+}
 
 function greeting() {
   const h = new Date().getHours()
@@ -101,6 +135,7 @@ export default function Dashboard({ user }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   const [showArchived, setShowArchived] = useState(false)
+  const [nudge, setNudge] = useState(null) // clients to reach out to
 
   async function fetchData() {
     const { data: clientData, error } = await supabase
@@ -312,23 +347,29 @@ export default function Dashboard({ user }) {
                   </div>
                 )
               })}
-              {slipping.map((c) => (
-                <button key={c.id} onClick={() => navigate(`/clients/${c.id}`)} className="w-full flex items-center gap-3 py-3 text-left">
-                  <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="font-bold truncate">{c.full_name}</span>
-                      <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>
-                    </span>
-                    <span className="block text-[14px] text-hero-muted">
-                      {c.status === 'Drifting' && c.missed >= 2 && daysSince(c.lastActive) < 7
-                        ? `Last ${c.missed} planned sessions not logged`
-                        : `Last active ${relativeDay(c.lastActive).toLowerCase()}`}
-                    </span>
-                  </span>
-                  <ChevronRight size={20} className="text-hero-muted shrink-0" />
-                </button>
-              ))}
+              {slipping.map((c) => {
+                const nudged = nudgedAt(latestMsg[c.id], user.id, c.lastActive)
+                return (
+                  <div key={c.id} className="flex items-center gap-3 py-3">
+                    <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
+                    <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/clients/${c.id}`)}>
+                      <span className="flex items-center gap-2">
+                        <span className="font-bold truncate">{c.full_name}</span>
+                        <Chip tone={STATUS[c.status].tone}>{STATUS[c.status].label}</Chip>
+                      </span>
+                      <span className="block text-[14px] text-hero-muted">{nudgeReason(c)}</span>
+                      {nudged && <span className="block text-[13px] text-hero-muted">You reached out {relativeDay(nudged).toLowerCase()}, waiting to hear back</span>}
+                    </button>
+                    <button
+                      onClick={() => setNudge([c])}
+                      aria-label={`Reach out to ${c.full_name}`}
+                      className={`h-[38px] max-sm:w-[38px] sm:px-4 rounded-full text-[13px] font-bold flex items-center justify-center gap-1.5 shrink-0 hover:opacity-90 ${nudged ? 'border border-hero-track text-on-hero' : 'bg-on-hero text-hero'}`}
+                    >
+                      <HandHeart size={15} /> <span className="max-sm:hidden">{nudged ? 'Again' : 'Reach out'}</span>
+                    </button>
+                  </div>
+                )
+              })}
               {notStarted.map((c) => (
                 <div key={c.id} className="flex items-center gap-3 py-3">
                   <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
@@ -362,9 +403,27 @@ export default function Dashboard({ user }) {
         </Card>
       </div>
 
+      {!showArchived && <ClientHealth clients={active} onPick={(v) => { setFilter(v); document.getElementById('all-clients')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }} />}
+
+      <NudgeSheet
+        open={!!nudge}
+        clients={nudge ?? []}
+        coachId={user.id}
+        onClose={() => setNudge(null)}
+        onSent={(msgs) => setLatestMsg((prev) => ({ ...prev, ...Object.fromEntries(msgs.map((m) => [m.client_id, m])) }))}
+      />
+
       {/* All clients */}
-      <section className="mt-7">
-        <SectionLabel>{showArchived ? 'Archived clients' : 'All clients'}</SectionLabel>
+      <section className="mt-7 scroll-mt-4" id="all-clients">
+        <SectionLabel
+          action={!showArchived && filtered.length > 1 && (
+            <button onClick={() => setNudge(filtered)} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-ink hover:underline underline-offset-2">
+              <Send size={14} /> Message {filter === 'All' && !q ? `all ${filtered.length}` : `these ${filtered.length}`}
+            </button>
+          )}
+        >
+          {showArchived ? 'Archived clients' : 'All clients'}
+        </SectionLabel>
         <div className="flex flex-col md:flex-row gap-2.5 md:items-center mb-3">
           <label className="relative flex-1 min-w-0">
             <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-faint pointer-events-none" />

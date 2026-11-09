@@ -99,6 +99,63 @@ export const STATUS = {
   New: { tone: 'neutral', label: 'New' },
 }
 
+/* ---------- Nudges: helping a slipping client back ---------- */
+// Why a client is slipping, in one line, and which ready-made messages fit. The
+// dashboard and the profile both use this, so the reason reads the same everywhere.
+//   missed  planned sessions not logged, but they were around this week
+//   quiet   nothing for 7 to 13 days
+//   away    nothing for 14+ days
+//   general everyone else (a group message, a shout-out)
+export function nudgeKind({ status, lastActive, missed }) {
+  if (status === 'At Risk') return 'away'
+  if (status === 'Drifting') return missed >= 2 && daysSince(lastActive) < 7 ? 'missed' : 'quiet'
+  return 'general'
+}
+
+export function nudgeReason({ status, lastActive, missed }) {
+  const kind = nudgeKind({ status, lastActive, missed })
+  if (kind === 'missed') return `Last ${missed} planned sessions not logged`
+  if (kind === 'quiet' || kind === 'away') return lastActive ? `Last active ${relativeDay(lastActive).toLowerCase()}` : 'Not active yet'
+  return null
+}
+
+// {first name} is swapped for each client's first name when it is sent.
+export const NAME_TOKEN = '{first name}'
+export const NUDGES = {
+  missed: [
+    { label: 'Move the days', body: "Hey {first name}, noticed the last couple of sessions didn't happen. No stress, life gets busy. Want me to move this week's sessions to days that suit you better?" },
+    { label: 'Check the plan fits', body: 'Hey {first name}, quick one: are your session days still working for you? Happy to shuffle things around so it fits your week.' },
+    { label: 'Lock in one', body: 'Hey {first name}, even one session this week keeps the momentum going. Which day can you lock in?' },
+  ],
+  quiet: [
+    { label: 'Simple check-in', body: "Hey {first name}, haven't heard from you this week. How are you going?" },
+    { label: 'Offer something short', body: "Hey {first name}, how's the week treating you? Even a short session counts. Want me to set up something quick for you?" },
+    { label: 'Ask what is in the way', body: 'Hey {first name}, checking in. Is anything getting in the way that I can help with?' },
+  ],
+  away: [
+    { label: 'Easy restart', body: "Hey {first name}, it's been a little while and I just wanted to check in. No pressure at all. Want to start back with something short and easy this week?" },
+    { label: 'Lighter week', body: "Hey {first name}, I've been thinking about your goal. I can set up a lighter week to ease you back into it. Keen?" },
+    { label: 'Door is open', body: "Hey {first name}, life happens. Whenever you're ready, I'm here and your program is ready to go." },
+  ],
+  general: [
+    { label: 'Check-in reminder', body: 'Hey {first name}, quick reminder to send your weekly check-in. I read every one.' },
+    { label: 'Shout-out', body: "Hey {first name}, proud of the work you've been putting in. Keep it rolling this week." },
+    { label: 'How are you going', body: 'Hey {first name}, how are you feeling about training at the moment? Anything you want to change?' },
+  ],
+}
+
+export function personalise(body, fullName) {
+  return body.split(NAME_TOKEN).join(firstName(fullName) || 'there')
+}
+
+// When the coach last reached out with no reply since: the coach's latest message is
+// newer than anything the client did. Returns that message's time, or null.
+export function nudgedAt(latestMessage, coachId, lastActive) {
+  if (!latestMessage || latestMessage.sender_id !== coachId) return null
+  if (lastActive && dayOf(latestMessage.created_at) < lastActive) return null
+  return latestMessage.created_at
+}
+
 /* ---------- Counts ---------- */
 // Same functions the client app uses, so coach and client see the same numbers.
 export { sessionsThisMonth, sessionsThisWeek, completedKeys } from '../client/metrics'

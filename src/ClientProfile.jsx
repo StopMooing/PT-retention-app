@@ -2,12 +2,13 @@
 // src/coach/profile/ only draw it. Reply to a check-in is the first thing on Overview.
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList, Pencil } from 'lucide-react'
+import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList, Pencil, HandHeart } from 'lucide-react'
 import { supabase } from './supabase'
 import { FOOD_LOG_SELECT } from './lib/meals'
 import { fetchExercisesFor } from './client/data'
 import { Avatar, Chip, Button, Mark, Card, EmptyState } from './ui'
-import { toLocalDateStr, clientStatus, awaitingReply, STATUS, relativeDay, sessionsLast7, formatDate, startedByClient, firstName } from './coach/lib'
+import { toLocalDateStr, clientStatus, awaitingReply, STATUS, relativeDay, sessionsLast7, formatDate, startedByClient, firstName, lastActivity, missedInARow, nudgeReason } from './coach/lib'
+import NudgeSheet from './coach/NudgeSheet'
 import OverviewTab from './coach/profile/OverviewTab'
 import CheckinsTab from './coach/profile/CheckinsTab'
 import TrainingTab from './coach/profile/TrainingTab'
@@ -73,6 +74,7 @@ export default function ClientProfile({ user }) {
   const [assignOpen, setAssignOpen] = useState(false)
   const [inviteCopied, setInviteCopied] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [nudgeOpen, setNudgeOpen] = useState(false)
   const [restoreError, setRestoreError] = useState(null)
 
   // Check-in replies
@@ -113,10 +115,11 @@ export default function ClientProfile({ user }) {
         const coachIdP = user?.id ? Promise.resolve(user.id) : supabase.auth.getUser().then(({ data }) => data.user?.id)
         const programsP = coachIdP.then((coachId) => supabase
           .from('programs')
-          .select('id, name, description')
-          .eq('created_by', coachId)
+          .select('id, name, description, created_by, is_on_demand, kind')
+          // The coach's own programs plus the ready-made library, which every coach can assign.
+          .or(`created_by.eq.${coachId},is_on_demand.eq.true`)
           .order('created_at', { ascending: false })
-          .then((r) => r.data ?? []))
+          .then((r) => (r.data ?? []).map((p) => ({ ...p, readyMade: p.created_by !== coachId }))))
         const allPWP = programsP.then((progs) => (progs.length > 0
           ? supabase.from('program_workouts').select('id, name, day_number, program_id').in('program_id', progs.map((p) => p.id)).order('day_number', { ascending: true }).then((r) => r.data ?? [])
           : []))
@@ -584,6 +587,9 @@ export default function ClientProfile({ user }) {
   /* ---------------- View ---------------- */
 
   const status = clientStatus({ lastCheckIn: checkins[0]?.submitted_at, workoutLogs, scheduledWorkouts })
+  // Same reason line and ready messages as the dashboard's Needs you list.
+  const slipping = (status === 'Drifting' || status === 'At Risk') && !client?.archived_at
+  const slipInfo = { status, lastActive: lastActivity({ lastCheckIn: checkins[0]?.submitted_at, workoutLogs }), missed: missedInARow({ scheduledWorkouts, workoutLogs }) }
   const awaiting = awaitingReply(checkins) ? 1 : 0
   const week = sessionsLast7(workoutLogs)
   const reply = {
@@ -671,6 +677,16 @@ export default function ClientProfile({ user }) {
           </Button>
         </div>
       </div>
+
+      {slipping && (
+        <div className={`mt-4 flex items-center gap-3 rounded-[16px] px-4 py-3 ${status === 'At Risk' ? 'bg-bad-soft' : 'bg-warn-soft'}`}>
+          <p className="flex-1 min-w-0 text-[15px] text-ink">
+            <span className="font-bold">{STATUS[status].label}.</span> {nudgeReason(slipInfo)}. A quick message now is the best way to bring {firstName(client.full_name)} back.
+          </p>
+          <Button size="sm" onClick={() => setNudgeOpen(true)} className="shrink-0"><HandHeart size={16} /> Reach out</Button>
+        </div>
+      )}
+      <NudgeSheet open={nudgeOpen} clients={[{ ...client, ...slipInfo }]} coachId={user?.id} onClose={() => setNudgeOpen(false)} />
 
       {/* Tabs */}
       {/* On a phone the tabs scroll sideways: the right edge fades so the rest show there's more. */}

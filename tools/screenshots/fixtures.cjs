@@ -253,7 +253,7 @@ if (process.env.CHECKIN_DUE) {
     ] },
   ]
   for (const p of lib) {
-    const prog = { id: id(), name: p.name, description: p.description, created_by: COACH, created_at: ts(-60), is_on_demand: true, kind: p.kind }
+    const prog = { id: id(), name: p.name, description: p.description, created_by: process.env.OTHER_LIBRARY ? '00000000-0000-4000-8000-0000000001ab' : COACH, created_at: ts(-60), is_on_demand: true, kind: p.kind }
     t.programs.push(prog)
     p.days.forEach((d, di) => {
       const row = { id: id(), program_id: prog.id, day_number: di + 1, name: d.name, created_at: ts(-60) }

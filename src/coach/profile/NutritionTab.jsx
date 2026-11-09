@@ -7,6 +7,7 @@ import { Panel, UnitInput, Bar, LineChart } from './parts'
 import { dayNutrition, dayOf, daysSince, addDays, toLocalDateStr, formatDate, formatMl } from '../lib'
 import { mealItems } from '../../lib/meals'
 import { fetchClientPlan, fetchPlans } from '../../lib/mealLibrary'
+import MealPlanPicker from './MealPlanPicker'
 
 const PERIODS = [
   { value: '7', label: '7 days' },
@@ -27,7 +28,7 @@ function band(cal, target) {
   return cal < target * 0.9 ? 'under' : 'over'
 }
 
-// The on-demand meal plan the client picked for themselves in the app, if any.
+// The ready-made meal plan the client is on (picked by them in the app, or by the coach).
 function useChosenPlan(clientId) {
   const [chosen, setChosen] = useState(null)
   useEffect(() => {
@@ -39,7 +40,7 @@ function useChosenPlan(clientId) {
       .catch((e) => console.error('Client meal plan choice load error:', e))
     return () => { live = false }
   }, [clientId])
-  return chosen
+  return [chosen, setChosen]
 }
 
 function Today({ foodLogs, waterLogs, t }) {
@@ -226,7 +227,8 @@ function Water({ waterLogs, waterTarget, onLogWater, onDeleteWater, savingWater 
 export default function NutritionTab(props) {
   const navigate = useNavigate()
   const { foodLogs, waterLogs, tv, mealPlan } = props
-  const chosen = useChosenPlan(props.clientId)
+  const [chosen, setChosen] = useChosenPlan(props.clientId)
+  const [pickOpen, setPickOpen] = useState(false)
   const [period, setPeriod] = useState('30')
   const t = {
     calories: parseInt(tv.calorieTarget) || 0,
@@ -262,17 +264,22 @@ export default function NutritionTab(props) {
         <Panel
           title="Meal plan"
           icon={BookOpen}
-          action={<Button variant="ghost" size="sm" onClick={() => navigate('/nutrition')}>{mealPlan ? 'Change' : 'Assign'}</Button>}
+          action={<Button variant="ghost" size="sm" onClick={() => setPickOpen(true)}>{chosen ? 'Change' : 'Choose a plan'}</Button>}
         >
           {chosen && (
             <div className={mealPlan ? 'pb-3 mb-3 border-b border-line' : ''}>
-              <p className="text-[13px] font-semibold text-muted">Picked in the app on {formatDate(dayOf(chosen.started_at), { day: 'numeric', month: 'short' })}</p>
+              <p className="text-[13px] font-semibold text-muted">Ready-made plan, started {formatDate(dayOf(chosen.started_at), { day: 'numeric', month: 'short' })}</p>
               <p className="font-bold text-ink">{chosen.plan.name}</p>
               <p className="text-[13px] text-muted mt-0.5 tabular-nums">About {chosen.plan.avg_calories.toLocaleString('en-AU')} kcal a day · {chosen.plan.avg_protein_g} g protein · {chosen.plan.avg_carbs_g} g carbs · {chosen.plan.avg_fats_g} g fats</p>
             </div>
           )}
           {!mealPlan ? (
-            !chosen && <p className="text-[15px] text-muted">No meal plan assigned.</p>
+            !chosen && (
+              <div>
+                <p className="text-[15px] text-muted">No meal plan yet. Pick one of the ready-made plans and {props.clientFirst} gets every meal, recipe and shopping amount in the app.</p>
+                <Button size="sm" className="mt-3" onClick={() => setPickOpen(true)}>Choose a plan</Button>
+              </div>
+            )
           ) : (
             <>
               <p className="font-bold text-ink">{mealPlan.name}</p>
@@ -282,7 +289,24 @@ export default function NutritionTab(props) {
               </p>
             </>
           )}
+          <button onClick={() => navigate('/nutrition')} className="mt-3 text-[13px] font-semibold text-muted hover:text-ink underline underline-offset-2">
+            {mealPlan ? 'Edit the custom plan' : 'Or build a custom plan'}
+          </button>
         </Panel>
+        <MealPlanPicker
+          open={pickOpen}
+          onClose={() => setPickOpen(false)}
+          clientId={props.clientId}
+          clientFirst={props.clientFirst}
+          currentPlanId={chosen?.plan_id}
+          calorieTarget={t.calories}
+          hasTargets={t.calories > 0}
+          onPicked={setChosen}
+          onTargets={(nt) => {
+            tv.setCalorieTarget(String(nt.calorie_target)); tv.setProteinTarget(String(nt.protein_target_g))
+            tv.setCarbsTarget(String(nt.carbs_target_g)); tv.setFatsTarget(String(nt.fats_target_g))
+          }}
+        />
       </div>
 
       <div className="space-y-3 lg:space-y-4 min-w-0">

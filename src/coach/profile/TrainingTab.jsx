@@ -1,6 +1,6 @@
 // Training: the assigned program, the schedule (drag to move on desktop), logged
 // sessions and personal bests. All saving happens in ClientProfile.jsx.
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core'
 import { ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Plus, X, CalendarPlus, Trophy, Search, Check, Dumbbell, AlertCircle } from 'lucide-react'
 import { Button, Card, Chip, Segmented, Sheet, EmptyState, Field } from '../../ui'
@@ -158,7 +158,8 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
   const [startDate, setStartDate] = useState(() => defaultStartDate(today))
   const [trainingDays, setTrainingDays] = useState([])
   function close() { setSearch(''); setSelected(null); setError(null); setStartDate(defaultStartDate(today)); onClose() }
-  const list = allPrograms.filter((p) => p.name?.toLowerCase().includes(search.toLowerCase()))
+  // Single ready-made workouts are for one-off sessions, not a whole program.
+  const list = allPrograms.filter((p) => !(p.readyMade && p.kind === 'workout') && p.name?.toLowerCase().includes(search.toLowerCase()))
   const dayCount = (p) => allProgramWorkouts.filter((pw) => pw.program_id === p.id).length
   const n = selected ? dayCount(selected) : 0
   const ready = !!selected && (n === 0 ? !!startDate : planReady({ dayCount: n, startDate, trainingDays, minDate: null }))
@@ -194,13 +195,18 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
       {allPrograms.length === 0 ? (
         <EmptyState icon={ClipboardList} title="No programs yet" body="Build one on the Programs page first." />
       ) : (
-        list.map((p) => {
+        [...list.filter((p) => !p.readyMade), ...list.filter((p) => p.readyMade)].map((p, i, arr) => {
           const current = programAssignment?.programs?.id === p.id
           const isSel = selected?.id === p.id
           const count = dayCount(p)
+          // A heading where each group starts: your programs first, then the ready-made library.
+          const heading = (i === 0 || arr[i - 1].readyMade !== p.readyMade) && list.some((x) => x.readyMade)
+            ? <p className="px-3 pt-3 pb-1 text-xs font-bold text-muted uppercase tracking-wide">{p.readyMade ? 'Ready-made programs' : 'Your programs'}</p>
+            : null
           return (
+            <Fragment key={p.id}>
+            {heading}
             <button
-              key={p.id}
               disabled={current}
               onClick={() => pick(p)}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-[14px] text-left transition-colors disabled:opacity-50 ${isSel ? 'bg-accent-soft' : 'hover:bg-surface-2'}`}
@@ -211,6 +217,7 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
                 <span className="block text-[13px] text-muted truncate">{count} {count === 1 ? 'workout' : 'workouts'}{p.description ? ` · ${p.description}` : ''}</span>
               </span>
             </button>
+            </Fragment>
           )
         })
       )}
