@@ -11,10 +11,12 @@ const DIETS = [
   { id: 'vegetarian', label: 'Vegetarian' },
   { id: 'vegan', label: 'Vegan' },
   { id: 'pescatarian', label: 'Pescatarian' },
+  { id: 'glutenfree', label: 'Gluten free' },
+  { id: 'dairyfree', label: 'Dairy free' },
 ]
 
 // Each recipe's diets come from its ingredients (tools/meal-library), so a vegan recipe is
-// also vegetarian and pescatarian.
+// also vegetarian and pescatarian, and gluten free or dairy free when nothing in it has any.
 const fitsDiet = (r, diet) => diet === 'all' || (r.diets ?? []).includes(diet)
 
 function Pill({ active, onClick, children }) {
@@ -36,7 +38,10 @@ export default function RecipesView({ recipes, onOpen }) {
 
   const list = useMemo(() => {
     const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+    // Some styles share a recipe (the same dish in High protein and Pescatarian, say): list it once.
+    const seen = new Set()
     return recipes
+      .filter((r) => (seen.has(r.name) ? false : seen.add(r.name)))
       .filter((r) => (meal === 'all' || r.meal_type === meal) && fitsDiet(r, diet))
       .filter((r) => {
         if (!words.length) return true

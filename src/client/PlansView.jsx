@@ -1,5 +1,5 @@
-// On-demand meal plans: 6 styles, each in male and female, cutting, maintenance and bulking
-// versions (36 in all). Every plan rotates through 3 days: Mon, Wed and Fri are the same,
+// On-demand meal plans: 9 styles, each in male and female, cutting, maintenance and bulking
+// versions (54 in all). Every plan rotates through 3 days: Mon, Wed and Fri are the same,
 // Tue, Thu and Sat are the same, and Sunday is its own day. Starting a plan puts each
 // day's meals on the food log, ready to tick off.
 import { useEffect, useState } from 'react'

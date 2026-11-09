@@ -124,6 +124,9 @@ export const PLAN_FAMILIES = {
   vegetarian: { name: 'Vegetarian', blurb: 'No meat or fish. Eggs, dairy, beans, lentils, paneer and halloumi carry the protein.' },
   vegan: { name: 'Vegan', blurb: 'Fully plant based. Tofu, lentils, chickpeas, edamame and soy milk.' },
   pescatarian: { name: 'Pescatarian', blurb: 'No meat. Salmon, prawns, tuna and white fish, plus eggs and dairy.' },
+  highprotein: { name: 'High protein', blurb: 'About a third of your calories from protein. Eggs, lean meat, fish and dairy at every meal.' },
+  glutenfree: { name: 'Gluten free', blurb: 'No wheat, barley, rye or oats. Check packaged foods are labelled gluten free.' },
+  dairyfree: { name: 'Dairy free', blurb: 'No milk, cheese, yoghurt or butter. Eggs, meat, fish, tofu and soy milk carry the protein.' },
 }
 
 export const GOALS = {
