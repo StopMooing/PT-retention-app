@@ -1,13 +1,15 @@
-// How to do an exercise: the library's instructions and coaching cues, plus a link to
-// watch it done. Opened by tapping an exercise in a workout or its preview. The
-// instructions and the (large) tips file only load when someone opens it.
+// How to do an exercise: the coach's own video if they added one (Exercises page), the
+// library's instructions and coaching cues, and a link to watch it done. Opened by tapping
+// an exercise in a workout or its preview. Everything loads only when someone opens it.
 import { useEffect, useState } from 'react'
 import { PlayCircle } from 'lucide-react'
 import { supabase } from '../supabase'
+import { fetchExerciseVideo } from '../lib/exerciseVideo'
+import { ExerciseVideo } from '../lib/ExerciseVideo'
 import { Sheet, Chip } from '../ui'
 
 export default function ExerciseInfoSheet({ exercise, onClose }) {
-  const [info, setInfo] = useState(null) // { instructions, equipment, tips }
+  const [info, setInfo] = useState(null) // { instructions, equipment, tips, video }
   const id = exercise?.id
 
   useEffect(() => {
@@ -16,13 +18,14 @@ export default function ExerciseInfoSheet({ exercise, onClose }) {
     Promise.all([
       supabase.from('exercises').select('instructions, equipment').eq('id', id).maybeSingle(),
       import('../tools/coachingTips'),
+      fetchExerciseVideo(id),
     ])
-      .then(([{ data }, mod]) => {
+      .then(([{ data }, mod, video]) => {
         if (!live) return
         const tips = mod.getCoachingTips(exercise.name, exercise.muscle_group) || []
-        setInfo({ instructions: data?.instructions || '', equipment: data?.equipment || '', tips })
+        setInfo({ instructions: data?.instructions || '', equipment: data?.equipment || '', tips, video })
       })
-      .catch((e) => { console.error('Exercise info load error:', e); if (live) setInfo({ instructions: '', equipment: '', tips: [] }) })
+      .catch((e) => { console.error('Exercise info load error:', e); if (live) setInfo({ instructions: '', equipment: '', tips: [], video: null }) })
     return () => { live = false }
   }, [id, exercise?.name, exercise?.muscle_group])
 
@@ -42,6 +45,12 @@ export default function ExerciseInfoSheet({ exercise, onClose }) {
           <div className="h-28 rounded-[16px] bg-surface-2 animate-pulse" />
         ) : (
           <>
+            {info.video && (
+              <section>
+                <h4 className="text-[15px] font-bold text-ink mb-1.5">From your coach</h4>
+                <ExerciseVideo media={info.video} />
+              </section>
+            )}
             {info.instructions && (
               <section>
                 <h4 className="text-[15px] font-bold text-ink mb-1">How to do it</h4>
@@ -64,7 +73,7 @@ export default function ExerciseInfoSheet({ exercise, onClose }) {
           </>
         )}
         <a href={watch} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 h-12 rounded-full border border-line-strong text-ink text-[15px] font-bold hover:bg-surface-2">
-          <PlayCircle size={18} /> Watch how it's done
+          <PlayCircle size={18} /> {info?.video ? 'More videos on YouTube' : "Watch how it's done"}
         </a>
       </div>
     </Sheet>

@@ -632,13 +632,15 @@ export default function NutritionPlanner() {
 
   const tabs = (
     <Segmented
-      className="sm:max-w-xl"
+      className="sm:max-w-xl [&>button]:px-1.5 [&>button]:text-[13px] sm:[&>button]:px-3 sm:[&>button]:text-sm"
       value={activeTab}
       onChange={setActiveTab}
       options={[
-        { value: "ready", label: "Library" },
+        // The old "Meal ideas" (meal_templates) are retired: Recipes is the checked library
+        // every meal plan uses, the same recipes clients see.
+        { value: "ready", label: "Meal plans" },
         { value: "plans", label: "Custom plans" },
-        { value: "library", label: "Meal ideas" },
+        { value: "recipes", label: "Recipes" },
         { value: "database", label: "Food lookup" },
       ]}
     />
@@ -762,7 +764,7 @@ export default function NutritionPlanner() {
       {tabs}
 
       {/* ── Library: the ready-made plans and recipes ── */}
-      {activeTab === "ready" && <MealLibrary clients={clients} showToast={showToast} />}
+      {(activeTab === "ready" || activeTab === "recipes") && <MealLibrary view={activeTab === "ready" ? "plans" : "recipes"} clients={clients} showToast={showToast} />}
 
       {/* ── Meal plans ── */}
       {activeTab === "plans" && (

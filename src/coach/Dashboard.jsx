@@ -1,7 +1,7 @@
 // Coach home: who needs me today, then the full client list.
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, ChevronRight, Plus, Link2, Check, MessageSquare, MessageCircle, Users, HandHeart, Send } from 'lucide-react'
+import { Search, ChevronRight, ChevronLeft, Plus, Link2, Check, MessageSquare, MessageCircle, Users, Send, MessageCircleHeart } from 'lucide-react'
 import { supabase } from '../supabase'
 import { fetchUnreadCounts, fetchLatestPerThread } from '../lib/messages'
 import { SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, EmptyState, Mark, Hero } from '../ui'
@@ -41,6 +41,20 @@ function ClientHealth({ clients, onPick }) {
         ))}
       </div>
     </Card>
+  )
+}
+
+// "1 of 3" with back and forward buttons, for lists shown a page at a time.
+function Pager({ page, pages, onPage, tone }) {
+  const btn = tone === 'hero'
+    ? 'w-9 h-9 rounded-full flex items-center justify-center text-on-hero hover:bg-hero-track disabled:opacity-30'
+    : 'w-9 h-9 rounded-full flex items-center justify-center text-ink hover:bg-surface-2 disabled:opacity-30'
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      <button className={btn} onClick={() => onPage(page - 1)} disabled={page === 0} aria-label="Previous page"><ChevronLeft size={18} /></button>
+      <span className={`text-[13px] font-semibold tabular-nums ${tone === 'hero' ? 'text-hero-muted' : 'text-muted'}`}>{page + 1} of {pages}</span>
+      <button className={btn} onClick={() => onPage(page + 1)} disabled={page >= pages - 1} aria-label="Next page"><ChevronRight size={18} /></button>
+    </div>
   )
 }
 
@@ -138,6 +152,8 @@ export default function Dashboard({ user }) {
   const [filter, setFilter] = useState('All')
   const [showArchived, setShowArchived] = useState(false)
   const [nudge, setNudge] = useState(null) // clients to reach out to
+  const [needPage, setNeedPage] = useState(0)
+  const [listPage, setListPage] = useState(0)
 
   async function fetchData() {
     const { data: clientData, error } = await supabase
@@ -278,6 +294,11 @@ export default function Dashboard({ user }) {
   const filtered = (showArchived ? archived : active)
     .filter((c) => showArchived || filter === 'All' || c.status === filter)
     .filter((c) => !q || c.full_name?.toLowerCase().includes(q) || c.goal?.toLowerCase().includes(q))
+  // Ten to a page so the page stays a sensible length with a big client list.
+  const LIST_PER_PAGE = 10
+  const listPages = Math.max(1, Math.ceil(filtered.length / LIST_PER_PAGE))
+  const listPageSafe = Math.min(listPage, listPages - 1)
+  const pageOfClients = filtered.slice(listPageSafe * LIST_PER_PAGE, listPageSafe * LIST_PER_PAGE + LIST_PER_PAGE)
 
   const coachFirst = firstName(user?.user_metadata?.full_name ?? '')
   const needsCount = replyItems.length + slipping.length + notStarted.length
@@ -290,31 +311,9 @@ export default function Dashboard({ user }) {
     )
   }
 
-  return (
-    <div className="pb-8">
-      <AddClientSheet open={showAdd} onClose={() => setShowAdd(false)} onSave={handleAddClient} />
-
-      <div className="flex items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-[14px] font-semibold text-muted">{new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-          <h1 className="font-display text-[clamp(34px,8vw,44px)] leading-none text-ink mt-1">{greeting()}{coachFirst ? `, ${coachFirst}` : ''}.</h1>
-        </div>
-        <Button onClick={() => setShowAdd(true)} size="md" className="shrink-0 max-sm:h-10 max-sm:px-4">
-          <Plus size={18} /> <span className="max-sm:hidden">Add client</span><span className="sm:hidden">Add</span>
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 mt-6 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
-        {/* Needs you */}
-        <Hero className="min-w-0 !px-5 md:!px-6">
-          <p className="font-display text-[clamp(24px,5vw,30px)] leading-none">
-            {needsCount === 0 ? 'All caught up' : needsCount === 1 ? '1 client needs you' : `${needsCount} clients need you`}
-          </p>
-          {needsCount === 0 ? (
-            <p className="text-[14px] text-hero-muted mt-2">Every check-in and message has a reply, and everyone is showing up.</p>
-          ) : (
-            <div className="mt-3 divide-y divide-hero-track">
-              {replyItems.map((item) => {
+  // Everyone who needs the coach, replies first, five to a page so the card stays short.
+  const needRows = [
+    ...replyItems.map((item) => {
                 const c = item.client
                 const ci = item.ci
                 const note = ci ? checkinNote(ci) : ''
@@ -348,8 +347,8 @@ export default function Dashboard({ user }) {
                     </button>
                   </div>
                 )
-              })}
-              {slipping.map((c) => {
+              }),
+    ...slipping.map((c) => {
                 const nudged = nudgedAt(latestMsg[c.id], user.id, c.lastActive)
                 return (
                   <div key={c.id} className="flex items-center gap-3 py-3">
@@ -364,15 +363,15 @@ export default function Dashboard({ user }) {
                     </button>
                     <button
                       onClick={() => setNudge([c])}
-                      aria-label={`Reach out to ${c.full_name}`}
+                      aria-label={`${nudged ? 'Follow up with' : 'Reach out to'} ${c.full_name}`}
                       className={`h-[38px] max-sm:w-[38px] sm:px-4 rounded-full text-[13px] font-bold flex items-center justify-center gap-1.5 shrink-0 hover:opacity-90 ${nudged ? 'border border-hero-track text-on-hero' : 'bg-on-hero text-hero'}`}
                     >
-                      <HandHeart size={15} /> <span className="max-sm:hidden">{nudged ? 'Again' : 'Reach out'}</span>
+                      <MessageCircleHeart size={15} /> <span className="max-sm:hidden">{nudged ? 'Follow up' : 'Reach out'}</span>
                     </button>
                   </div>
                 )
-              })}
-              {notStarted.map((c) => (
+              }),
+    ...notStarted.map((c) => (
                 <div key={c.id} className="flex items-center gap-3 py-3">
                   <Avatar name={c.full_name} src={c.profile_photo_url} size={40} />
                   <button className="min-w-0 flex-1 text-left" onClick={() => navigate(`/clients/${c.id}`)}>
@@ -381,7 +380,40 @@ export default function Dashboard({ user }) {
                   </button>
                   <InviteButton client={c} compact />
                 </div>
-              ))}
+              )),
+  ]
+  const NEEDS_PER_PAGE = 5
+  const needPages = Math.max(1, Math.ceil(needRows.length / NEEDS_PER_PAGE))
+  const needPageSafe = Math.min(needPage, needPages - 1)
+
+  return (
+    <div className="pb-8">
+      <AddClientSheet open={showAdd} onClose={() => setShowAdd(false)} onSave={handleAddClient} />
+
+      <div className="flex items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[14px] font-semibold text-muted">{new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <h1 className="font-display text-[clamp(34px,8vw,44px)] leading-none text-ink mt-1">{greeting()}{coachFirst ? `, ${coachFirst}` : ''}.</h1>
+        </div>
+        <Button onClick={() => setShowAdd(true)} size="md" className="shrink-0 max-sm:h-10 max-sm:px-4">
+          <Plus size={18} /> <span className="max-sm:hidden">Add client</span><span className="sm:hidden">Add</span>
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 mt-6 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
+        {/* Needs you */}
+        <Hero className="min-w-0 !px-5 md:!px-6">
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-display text-[clamp(24px,5vw,30px)] leading-none">
+              {needsCount === 0 ? 'All caught up' : needsCount === 1 ? '1 client needs you' : `${needsCount} clients need you`}
+            </p>
+            {needPages > 1 && <Pager page={needPageSafe} pages={needPages} onPage={setNeedPage} tone="hero" />}
+          </div>
+          {needsCount === 0 ? (
+            <p className="text-[14px] text-hero-muted mt-2">Every check-in and message has a reply, and everyone is showing up.</p>
+          ) : (
+            <div className="mt-3 divide-y divide-hero-track">
+              {needRows.slice(needPageSafe * NEEDS_PER_PAGE, needPageSafe * NEEDS_PER_PAGE + NEEDS_PER_PAGE)}
             </div>
           )}
         </Hero>
@@ -404,7 +436,7 @@ export default function Dashboard({ user }) {
             </div>
           ))}
         </Card>
-        {!showArchived && <ClientHealth clients={active} onPick={(v) => { setFilter(v); document.getElementById('all-clients')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }} />}
+        {!showArchived && <ClientHealth clients={active} onPick={(v) => { setFilter(v); setListPage(0); document.getElementById('all-clients')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }} />}
         </div>
       </div>
 
@@ -434,7 +466,7 @@ export default function Dashboard({ user }) {
               type="search"
               placeholder="Search by name or goal"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setListPage(0) }}
               className="w-full h-11 pl-11 pr-4 rounded-full border border-line-strong bg-surface text-ink placeholder:text-faint outline-none focus:border-accent transition-colors"
             />
           </label>
@@ -442,7 +474,7 @@ export default function Dashboard({ user }) {
             <Segmented
               className="md:w-[460px] shrink-0"
               value={filter}
-              onChange={setFilter}
+              onChange={(v) => { setFilter(v); setListPage(0) }}
               options={[
                 { value: 'All', label: 'All' },
                 { value: 'Engaged', label: 'Engaged' },
@@ -471,7 +503,7 @@ export default function Dashboard({ user }) {
                 <span>Client</span><span>Status</span><span>Last check-in</span><span className="text-right">Sessions (7 days)</span><span /><span />
               </div>
               <ul className="divide-y divide-line">
-                {filtered.map((c) => (
+                {pageOfClients.map((c) => (
                   <li key={c.id}>
                     <div
                       role="link"
@@ -515,11 +547,17 @@ export default function Dashboard({ user }) {
                   </li>
                 ))}
               </ul>
+              {listPages > 1 && (
+                <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-line">
+                  <span className="text-[13px] text-muted tabular-nums">{listPageSafe * LIST_PER_PAGE + 1} to {Math.min(filtered.length, (listPageSafe + 1) * LIST_PER_PAGE)} of {filtered.length}</span>
+                  <Pager page={listPageSafe} pages={listPages} onPage={setListPage} />
+                </div>
+              )}
             </>
           )}
         </Card>
         {(archived.length > 0 || showArchived) && (
-          <button onClick={() => setShowArchived((v) => !v)} className="mt-3 px-1 text-[13px] font-semibold text-ink underline underline-offset-2">
+          <button onClick={() => { setShowArchived((v) => !v); setListPage(0) }} className="mt-3 px-1 text-[13px] font-semibold text-ink underline underline-offset-2">
             {showArchived ? 'Back to current clients' : `Archived clients (${archived.length})`}
           </button>
         )}

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Check, Sparkles } from 'lucide-react'
 import { supabase } from '../supabase'
-import { Card, Segmented, Sheet, Button, Mark } from '../ui'
+import { Card, Sheet, Button, Mark } from '../ui'
 import PlansView from '../client/PlansView'
 import RecipesView from '../client/RecipesView'
 import RecipeSheet from '../client/RecipeSheet'
@@ -64,10 +64,9 @@ function GiveSheet({ plan, clients, onClose, onGiven }) {
   )
 }
 
-export default function MealLibrary({ clients, showToast }) {
+export default function MealLibrary({ clients, showToast, view = 'plans' }) {
   const [data, setData] = useState(null) // { plans, recipes }
   const [failed, setFailed] = useState(false)
-  const [view, setView] = useState('plans')
   const [give, setGive] = useState(null)
   const [recipe, setRecipe] = useState(null) // { recipe, servings }
 
@@ -91,11 +90,19 @@ export default function MealLibrary({ clients, showToast }) {
       <Card className="flex items-start gap-3">
         <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Sparkles size={20} /></span>
         <span className="min-w-0">
-          <span className="block text-[15px] font-bold text-ink">{data.plans.length} ready-made meal plans, {dishes} recipes</span>
-          <span className="block text-[14px] text-muted mt-0.5">{styles} styles, each for men and women and for cutting, maintenance or bulking. Open one to see every day's meals, then give it to a client. Clients without a coach can pick these themselves in the app.</span>
+          {view === 'plans' ? (
+            <>
+              <span className="block text-[15px] font-bold text-ink">{data.plans.length} ready-made meal plans</span>
+              <span className="block text-[14px] text-muted mt-0.5">{styles} styles, each for men and women and for cutting, maintenance or bulking. Open one to see every day's meals, then give it to a client. It shows in their app straight away, ready to tick off. Clients without a coach can pick these themselves.</span>
+            </>
+          ) : (
+            <>
+              <span className="block text-[15px] font-bold text-ink">{dishes} recipes</span>
+              <span className="block text-[14px] text-muted mt-0.5">Every recipe in the meal plans, with ingredients, method, macros and tips. Clients see the same recipes in their app and can log any of them in one tap.</span>
+            </>
+          )}
         </span>
       </Card>
-      <Segmented className="max-w-[320px]" value={view} onChange={setView} options={[{ value: 'plans', label: 'Meal plans' }, { value: 'recipes', label: 'Recipes' }]} />
       {view === 'plans' ? (
         <PlansView
           audience="coach"

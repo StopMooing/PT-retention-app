@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, ChevronRight, Pencil, Dumbbell, Trash2 } from 'lucide-react'
+import { Plus, ChevronRight, Pencil, Dumbbell, Trash2, Upload, Link2, PlayCircle } from 'lucide-react'
 import { supabase } from './supabase'
 import { PageTitle, SectionLabel, Card, Button, Chip, Sheet, EmptyState, Field } from './ui'
 import { Loading, Toast, Select, TextArea, SearchBox, FilterChips } from './tools/kit'
 import { useToast } from './tools/useToast'
 import { getCoachingTips } from './tools/coachingTips'
+import { fetchExerciseVideo, fetchMyVideoIds, uploadExerciseVideo, saveYoutubeVideo, removeExerciseVideo, MAX_VIDEO_MB } from './lib/exerciseVideo'
+import { ExerciseVideo } from './lib/ExerciseVideo'
 
 const MUSCLE_GROUPS = [
   'All', 'Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps',
@@ -75,7 +77,84 @@ function ExerciseFields({ form, setForm, autoFocus }) {
   )
 }
 
-function ExerciseDetailSheet({ exercise, userId, onClose, onSave, onDelete }) {
+// The coach's own video for this exercise: record it on their phone and upload it, or paste
+// a YouTube link. Their clients see it when they open the exercise in a workout.
+function VideoSection({ exercise, userId, onChange }) {
+  const [media, setMedia] = useState(undefined) // undefined while loading, null when none
+  const [mode, setMode] = useState(null) // 'link' while pasting a link
+  const [link, setLink] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let live = true
+    fetchExerciseVideo(exercise.id).then((m) => { if (live) setMedia(m && m.coach_id === userId ? m : null) })
+    return () => { live = false }
+  }, [exercise.id, userId])
+
+  async function run(fn) {
+    setBusy(true)
+    setError('')
+    const res = await fn()
+    setBusy(false)
+    if (res.error) {
+      const msg = res.error.message
+      setError(msg === 'too_big' ? `That video is over ${MAX_VIDEO_MB} MB. Trim it, or record at 1080p, then try again.`
+        : msg === 'not_youtube' ? "That doesn't look like a YouTube link. Copy it from the Share button on the video."
+        : "Couldn't save the video. Try again.")
+      return
+    }
+    setMedia(res.media ?? null)
+    setMode(null)
+    setLink('')
+    onChange?.(exercise.id, !!res.media)
+  }
+
+  if (media === undefined) return <div className="h-12 rounded-[14px] bg-surface-2 animate-pulse" />
+  return (
+    <div>
+      <SectionLabel>Your video</SectionLabel>
+      {media ? (
+        <div className="space-y-2.5">
+          <ExerciseVideo media={media} />
+          <p className="text-[13px] text-muted px-1">Your clients see this when they open {exercise.name} in a workout.</p>
+          <div className="flex gap-2">
+            <label className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold border border-line-strong text-ink hover:bg-surface-2 cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
+              <Upload size={16} /> Replace
+              <input type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) run(() => uploadExerciseVideo(userId, exercise.id, f, media)) }} />
+            </label>
+            <Button variant="secondary" size="sm" disabled={busy} onClick={() => run(() => removeExerciseVideo(media).then((r) => (r.error ? r : { media: null })))}>
+              <Trash2 size={16} /> Remove
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-[16px] border border-dashed border-line-strong p-4 space-y-3">
+          <p className="text-[14px] text-muted">Show your clients how you want it done. Film yourself on your phone, or use a YouTube video you like.</p>
+          {mode === 'link' ? (
+            <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); run(() => saveYoutubeVideo(userId, exercise.id, link, null)) }}>
+              <input autoFocus value={link} onChange={(e) => setLink(e.target.value)} placeholder="Paste link here" className="flex-1 min-w-0 h-10 px-4 rounded-full border border-line-strong bg-surface text-[15px] text-ink outline-none focus:border-accent" />
+              <Button type="submit" size="sm" disabled={busy || !link.trim()}>{busy ? 'Saving' : 'Save'}</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => { setMode(null); setLink('') }}>Cancel</Button>
+            </form>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <label className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold bg-accent text-on-accent cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
+                <Upload size={16} /> {busy ? 'Uploading' : 'Upload a video'}
+                <input type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) run(() => uploadExerciseVideo(userId, exercise.id, f, null)) }} />
+              </label>
+              <Button variant="secondary" size="sm" onClick={() => setMode('link')}><Link2 size={16} /> YouTube link</Button>
+            </div>
+          )}
+          <p className="text-[12px] text-faint">{mode === 'link' ? 'Any YouTube link works, including Shorts.' : `Up to ${MAX_VIDEO_MB} MB. Short clips of 10 to 30 seconds work best.`}</p>
+        </div>
+      )}
+      {error && <p className="mt-2 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{error}</p>}
+    </div>
+  )
+}
+
+function ExerciseDetailSheet({ exercise, userId, onClose, onSave, onDelete, onVideoChange }) {
   const isOwn = !exercise.is_global && exercise.created_by === userId
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(null)
@@ -183,6 +262,8 @@ function ExerciseDetailSheet({ exercise, userId, onClose, onSave, onDelete }) {
           <Chip>{isOwn ? 'Yours' : 'Library'}</Chip>
         </div>
 
+        <VideoSection exercise={exercise} userId={userId} onChange={onVideoChange} />
+
         {exercise.instructions && (
           <div>
             <SectionLabel>How to do it</SectionLabel>
@@ -227,7 +308,10 @@ export default function ExerciseLibrary({ user }) {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [selectedExercise, setSelectedExercise] = useState(null)
+  const [videoIds, setVideoIds] = useState(() => new Set()) // exercises you have a video for
   const [toast, showToast] = useToast()
+
+  useEffect(() => { fetchMyVideoIds(user.id).then(setVideoIds) }, [user.id])
 
   const fetchExercises = useCallback(async () => {
     const { data, error } = await supabase
@@ -335,6 +419,7 @@ export default function ExerciseLibrary({ user }) {
                         <span className="flex items-center gap-2">
                           <span className="text-[15px] font-semibold text-ink truncate">{exercise.name}</span>
                           {isOwn && <Chip tone="accent" className="shrink-0">Yours</Chip>}
+                          {videoIds.has(exercise.id) && <PlayCircle size={16} className="text-accent shrink-0" aria-label="Has your video" />}
                         </span>
                         <span className="block text-[13px] text-muted truncate">
                           {[exercise.muscle_group, exercise.equipment && equipmentLabel(exercise.equipment)].filter(Boolean).join(' · ')}
@@ -355,6 +440,7 @@ export default function ExerciseLibrary({ user }) {
           key={selectedExercise.id}
           exercise={selectedExercise}
           userId={user.id}
+          onVideoChange={(id, has) => { setVideoIds((prev) => { const next = new Set(prev); if (has) next.add(id); else next.delete(id); return next }); showToast(has ? 'Video saved. Your clients will see it.' : 'Video removed') }}
           onClose={() => setSelectedExercise(null)}
           onSave={handleSaveEdit}
           onDelete={(id) => { setExercises((prev) => prev.filter((x) => x.id !== id)); setSelectedExercise(null); showToast('Exercise deleted') }}

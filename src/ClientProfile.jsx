@@ -2,7 +2,7 @@
 // src/coach/profile/ only draw it. Reply to a check-in is the first thing on Overview.
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
-import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList, Pencil, HandHeart } from 'lucide-react'
+import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList, Pencil, MessageCircleHeart } from 'lucide-react'
 import { supabase } from './supabase'
 import { FOOD_LOG_SELECT } from './lib/meals'
 import { fetchExercisesFor } from './client/data'
@@ -685,7 +685,7 @@ export default function ClientProfile({ user }) {
           <p className="flex-1 min-w-0 text-[15px] text-ink">
             <span className="font-bold">{STATUS[status].label}.</span> {nudgeReason(slipInfo)}. A quick message now is the best way to bring {firstName(client.full_name)} back.
           </p>
-          <Button size="sm" onClick={() => setNudgeOpen(true)} className="shrink-0"><HandHeart size={16} /> Reach out</Button>
+          <Button size="sm" onClick={() => setNudgeOpen(true)} className="shrink-0"><MessageCircleHeart size={16} /> Reach out</Button>
         </div>
       )}
       <NudgeSheet open={nudgeOpen} clients={[{ ...client, ...slipInfo }]} coachId={user?.id} onClose={() => setNudgeOpen(false)} />
