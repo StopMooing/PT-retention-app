@@ -1,7 +1,7 @@
 // Coach view of one client. This file loads the data and owns every save; the tabs in
 // src/coach/profile/ only draw it. Reply to a check-in is the first thing on Overview.
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import { ChevronLeft, Link2, Check, Mail, MessageCircle, MessageSquare, ClipboardList, Pencil, HandHeart } from 'lucide-react'
 import { supabase } from './supabase'
 import { FOOD_LOG_SELECT } from './lib/meals'
@@ -41,7 +41,9 @@ export default function ClientProfile({ user }) {
   const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('overview')
+  // Other screens can open a tab directly (the Nutrition page's ready-made plans link).
+  const location = useLocation()
+  const [activeTab, setActiveTab] = useState(() => location.state?.tab ?? 'overview')
   // Check-ins tab view: 'weekly' or 'daily'. The Overview feeling card opens 'daily'.
   const [checkinsView, setCheckinsView] = useState('weekly')
   const [client, setClient] = useState(null)
