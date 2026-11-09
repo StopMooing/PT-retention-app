@@ -46,7 +46,13 @@ function readActiveWorkout(clientId) {
   } catch { /* storage unavailable */ }
   return null
 }
+// A tab in the address (?tab=train, from a notification) wins, then the last tab used.
 function readTab() {
+  const fromLink = new URLSearchParams(window.location.search).get('tab')
+  if (fromLink && ['home', 'train', 'food', 'progress', 'messages'].includes(fromLink)) {
+    window.history.replaceState(null, '', window.location.pathname)
+    return fromLink
+  }
   try { return sessionStorage.getItem(TAB_KEY) || 'home' } catch { return 'home' }
 }
 
@@ -469,6 +475,7 @@ export default function ClientApp() {
             waterLogs={waterByDate[toLocalDateStr()]}
             resourceCount={resources.length}
             onOpenResources={() => setResourcesOpen(true)}
+            onGoTab={goTab}
           />
         )}
         {tab === 'train' && (

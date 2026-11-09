@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { Trophy, ChevronRight, ChevronLeft, Check, Pencil, BookOpen } from 'lucide-react'
 import { Card, Button, Chip, Avatar, Sheet, Hero, Ring } from '../ui'
+import NotificationBell from '../lib/Notifications'
 import { toLocalDateStr, getGreeting, weekDays, weekdayName, parseDay, formatShortDate, formatDateLabel, addDays, daysBetween } from './dates'
 import {
   isDone, workoutName, groupByDate, nextSession, weekStreak, checkinStatus, sessionExercises,
@@ -216,7 +217,7 @@ export default function HomeTab({
   client, checkins, setCheckins, dailyCheckins, setDailyCheckins, scheduledWorkouts, completedIds, workoutLogs, workoutExercises,
   foodLogs, nutritionTargets, personalBests, coachName,
   onOpenWorkout, onStartWorkout, onOpenProfile, onLogFood, onOpenWater, showToast, waterLogs,
-  resourceCount = 0, onOpenResources,
+  resourceCount = 0, onOpenResources, onGoTab,
 }) {
   const [checkinOpen, setCheckinOpen] = useState(false)
   const [dailyOpen, setDailyOpen] = useState(false)
@@ -287,9 +288,12 @@ export default function HomeTab({
           <p className="text-[14px] font-semibold text-muted">{longDate(today)}</p>
           <h1 className="font-display text-[34px] leading-none text-ink mt-1">{greetWord()}, {firstName}.</h1>
         </div>
-        <button onClick={onOpenProfile} aria-label="Profile and settings" className="rounded-full shrink-0 ring-offset-2 ring-offset-bg focus-visible:ring-2 ring-accent">
-          <Avatar name={client.full_name} src={client.profile_photo_url} size={44} />
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <NotificationBell role="client" onNavigate={(t) => onGoTab?.(t.tab || 'home')} />
+          <button onClick={onOpenProfile} aria-label="Profile and settings" className="rounded-full shrink-0 ring-offset-2 ring-offset-bg focus-visible:ring-2 ring-accent">
+            <Avatar name={client.full_name} src={client.profile_photo_url} size={44} />
+          </button>
+        </div>
       </header>
 
       <WeekHero

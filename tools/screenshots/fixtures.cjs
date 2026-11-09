@@ -348,3 +348,15 @@ if (process.env.PROGRAM_NEXT_WEEK) {
     { q: 'What is one win from this week?', kind: 'text', a: 'Squatted 75 kg for 5!' },
   ]
 }
+
+// ---- Notifications (the bell). The mock does not filter by person, so these are the coach's.
+{
+  const t = module.exports.tables
+  t.notifications = [
+    ['checkin', 'Jane checked in', 'Training 4/5 · Energy 5/5 · Feeling strong, weight is moving.', `/messages/${CLIENT}`, -0.1, null],
+    ['session', 'Jane finished Full Body', '6,840 kg moved', `/clients/${CLIENT}`, -3, ts(-2)],
+    ['checkin', 'Daniel checked in', 'Training 4/5 · Energy 2/5', '/dashboard', -1, null],
+  ].map(([kind, title, body, link, off, read_at]) => ({ id: id(), user_id: COACH, kind, title, body, link, created_at: new Date(Date.now() + off * 86400000).toISOString(), read_at }))
+  t.notification_settings = []
+  t.push_subscriptions = []
+}

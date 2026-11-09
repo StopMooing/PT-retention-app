@@ -8,6 +8,7 @@ import { SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, Empt
 import { clientStatus, STATUS, relativeDay, sessionsLast7, checkinsThisWeek, checkinNote, firstName, messageTime, toLocalDateStr, addDays, awaitingReply, lastActivity, missedInARow, nudgeReason, nudgedAt } from './lib'
 import { useMessageEvent, READ, INCOMING } from './messages/events'
 import NudgeSheet from './NudgeSheet'
+import NotificationBell from '../lib/Notifications'
 
 // Where everyone sits, as one bar: tap a part to filter the list below.
 const HEALTH = [
@@ -430,9 +431,12 @@ export default function Dashboard({ user }) {
           <p className="text-[14px] font-semibold text-muted">{new Date().toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           <h1 className="font-display text-[clamp(34px,8vw,44px)] leading-none text-ink mt-1">{greeting()}{coachFirst ? `, ${coachFirst}` : ''}.</h1>
         </div>
-        <Button onClick={() => setShowAdd(true)} size="md" className="shrink-0 max-sm:h-10 max-sm:px-4">
-          <Plus size={18} /> <span className="max-sm:hidden">Add client</span><span className="sm:hidden">Add</span>
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <NotificationBell role="coach" tone="chip" onNavigate={(t) => navigate(t.path)} />
+          <Button onClick={() => setShowAdd(true)} size="md" className="shrink-0 max-sm:h-10 max-sm:px-4">
+            <Plus size={18} /> <span className="max-sm:hidden">Add client</span><span className="sm:hidden">Add</span>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 mt-6 lg:grid-cols-[minmax(0,1fr)_300px] items-start">

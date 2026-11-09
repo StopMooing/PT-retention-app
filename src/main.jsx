@@ -5,8 +5,10 @@ import './index.css'
 import App from './App.jsx'
 import { initSentry, Sentry } from './sentry.js'
 import { Mark, Button } from './ui'
+import { registerServiceWorker } from './lib/push'
 
 initSentry()
+registerServiceWorker()
 
 // After a new version goes live, a phone with the app already open still runs the old
 // code, which asks for screen files that no longer exist. Reload once to pick up the new

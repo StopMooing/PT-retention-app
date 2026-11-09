@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Users, ClipboardList, Dumbbell, Utensils, Heart, LogOut, Settings, MessageSquare, LibraryBig, CircleUser, ListChecks, ChevronRight } from 'lucide-react'
 import CheckinQuestionsSheet from './CheckinQuestionsSheet'
+import { NotificationSettingsRow } from '../lib/Notifications'
 import { supabase } from '../supabase'
 import { fetchUnreadCounts } from '../lib/messages'
 import { Logo, Avatar, Sheet, ThemeSwitch, Button, TabBar, StatusBarCover } from '../ui'
@@ -57,6 +58,7 @@ function SettingsSheet({ open, onClose, name, email, onSignOut }) {
         </span>
         <ChevronRight size={18} className="text-faint shrink-0" />
       </button>
+      <div className="mt-2"><NotificationSettingsRow role="coach" /></div>
       <p className="text-sm font-semibold text-ink mt-5 mb-2">Appearance</p>
       <ThemeSwitch />
       <Button variant="secondary" block className="mt-6" onClick={onSignOut}>

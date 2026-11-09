@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { Camera, BookOpen, ChevronRight, LogOut } from 'lucide-react'
 import { supabase } from '../supabase'
 import { Sheet, Avatar, ThemeSwitch, Button } from '../ui'
+import { NotificationSettingsRow } from '../lib/Notifications'
 
 export default function ProfileSheet({ open, onClose, client, setClient, hasResources, onOpenResources }) {
   const fileRef = useRef(null)
@@ -55,6 +56,8 @@ export default function ProfileSheet({ open, onClose, client, setClient, hasReso
           <p className="text-sm font-semibold text-ink mb-2">Appearance</p>
           <ThemeSwitch />
         </div>
+
+        <NotificationSettingsRow role="client" />
 
         {hasResources && (
           <button onClick={onOpenResources} className="w-full flex items-center gap-3 px-4 py-3 rounded-[20px] bg-surface-2 hover:brightness-95 text-left">
