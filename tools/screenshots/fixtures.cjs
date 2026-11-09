@@ -128,6 +128,8 @@ const jane = {
 const others = [
   ['Marcus Lee', 'Engaged', -2, 'Build muscle'], ['Priya Shah', 'Engaged', -4, 'Run a half marathon'], ['Tom Nguyen', 'Drifting', -12, 'Lose weight'],
   ['Sophie Brown', 'At Risk', -24, 'Tone up'], ['Daniel Wright', 'Engaged', -1, 'Strength'],
+  // MORE_CLIENTS=1: enough slipping clients for Needs you to page.
+  ...(process.env.MORE_CLIENTS ? [['Ava Hill', 'At Risk', -20, 'Lose 5 kg'], ['Ben Ross', 'Drifting', -10, 'Get fit'], ['Cara Diaz', 'At Risk', -30, 'Tone up'], ['Dev Patel', 'Drifting', -9, 'Bulk'], ['Eli Ward', 'At Risk', -16, 'Run 5 km'], ['Fay Long', 'Drifting', -8, 'Feel better']] : []),
 ].map(([full_name, status, off, goal]) => ({ ...jane, id: id(), user_id: id(), full_name, status, goal, email: full_name.split(' ')[0].toLowerCase() + '@example.com', last_checkin_at: ts(off, 18).slice(0, 19), sessions_this_month: 4 + (off % 5), claim_token: id() }))
 const otherCheckins = others.map((c, i) => ({ id: id(), client_id: c.id, training_score: 3 + (i % 3), energy_score: 2 + (i % 4), mood_score: 3, notes: 'Good week overall.', blocker: null, created_at: c.last_checkin_at, submitted_at: c.last_checkin_at + '+10:30', coach_reply: i % 2 ? 'Nice work.' : null, replied_at: null }))
 

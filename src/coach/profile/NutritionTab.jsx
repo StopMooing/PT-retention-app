@@ -1,12 +1,14 @@
 // Nutrition: today against targets, target editing, water, the last week and the food log.
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Target, Droplets, CalendarCheck, TrendingUp, Utensils, BookOpen, Pencil, X, Check } from 'lucide-react'
+import { Target, Droplets, CalendarCheck, TrendingUp, Utensils, BookOpen, Pencil, X, Check, ChevronRight } from 'lucide-react'
 import { Button, Ring, Segmented, Chip } from '../../ui'
 import { Panel, UnitInput, Bar, LineChart } from './parts'
 import { dayNutrition, dayOf, daysSince, addDays, toLocalDateStr, formatDate, formatMl } from '../lib'
 import { mealItems } from '../../lib/meals'
-import { fetchClientPlan, fetchPlans } from '../../lib/mealLibrary'
+import { fetchClientPlan, fetchPlans, fetchPlanItems, fetchRecipes, planDay } from '../../lib/mealLibrary'
+import { DAY_TYPES, planDayType, formatServes } from '../../lib/recipes'
+import RecipeSheet from '../../client/RecipeSheet'
 import MealPlanPicker from './MealPlanPicker'
 
 const PERIODS = [
@@ -41,6 +43,65 @@ function useChosenPlan(clientId) {
     return () => { live = false }
   }, [clientId])
   return [chosen, setChosen]
+}
+
+// The meals in the client's ready-made plan, day by day, as the client sees them. On
+// today's meals, a tick shows the ones the client has ticked off on their food log.
+function PlanMeals({ planId, foodLogs, clientFirst }) {
+  const today = toLocalDateStr()
+  const [day, setDay] = useState(() => planDayType(today))
+  const [data, setData] = useState(null) // { items, recipes }
+  const [failed, setFailed] = useState(false)
+  const [open, setOpen] = useState(null) // { recipe, servings }
+
+  useEffect(() => {
+    let live = true
+    Promise.all([fetchPlanItems(planId), fetchRecipes()])
+      .then(([items, recipes]) => live && setData({ items, recipes }))
+      .catch((e) => { console.error('Plan meals load error:', e); if (live) setFailed(true) })
+    return () => { live = false }
+  }, [planId])
+
+  if (failed) return <p className="text-[14px] text-muted mt-3">Couldn't load this plan's meals. Refresh to try again.</p>
+  if (!data) return <div className="h-40 rounded-[16px] bg-surface-2 animate-pulse mt-3" />
+
+  const { meals, totals } = planDay(data.items, data.recipes, day)
+  const isToday = day === planDayType(today)
+  const tickedToday = new Set(foodLogs.filter((f) => f.plan_item_id && dayOf(f.logged_at) === today).map((f) => f.plan_item_id))
+  const ticked = meals.filter((m) => tickedToday.has(m.item.id)).length
+
+  return (
+    <div className="mt-3">
+      <Segmented value={day} onChange={setDay} options={DAY_TYPES.map((d) => ({ value: d.id, label: d.label }))} className="[&>button]:px-1.5 [&>button]:text-[13px]" />
+      <div className="flex items-baseline justify-between gap-3 mt-3 mb-1.5">
+        <p className="text-[14px] font-bold text-ink">{isToday ? `Today, ${ticked} of ${meals.length} ticked off` : DAY_TYPES.find((d) => d.id === day)?.label}</p>
+        <p className="text-[13px] text-muted tabular-nums">{Math.round(totals.calories)} kcal · P {Math.round(totals.protein_g)} g</p>
+      </div>
+      <ul className="rounded-[16px] border border-line divide-y divide-line overflow-hidden">
+        {meals.map((m) => {
+          const done = isToday && tickedToday.has(m.item.id)
+          return (
+            <li key={m.item.id}>
+              <button onClick={() => setOpen({ recipe: m.recipe, servings: m.servings })} className="w-full flex items-center gap-3 px-3.5 py-2.5 text-left hover:bg-surface-2">
+                {isToday && (
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${done ? 'bg-accent text-on-accent' : 'border-2 border-line-strong'}`} aria-label={done ? `${clientFirst} ticked this off` : 'Not ticked off yet'}>
+                    {done && <Check size={13} strokeWidth={3} />}
+                  </span>
+                )}
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[12px] font-semibold text-muted capitalize">{m.item.meal_type}</span>
+                  <span className="block text-[15px] font-bold text-ink truncate">{m.recipe.name}</span>
+                  <span className="block text-[12px] text-muted tabular-nums">{formatServes(m.servings)} {m.servings === 1 ? 'serve' : 'serves'} · {Math.round(m.totals.calories)} kcal · P {Math.round(m.totals.protein_g)} g</span>
+                </span>
+                <ChevronRight size={16} className="text-faint shrink-0" />
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+      {open && <RecipeSheet key={open.recipe.id} open recipe={open.recipe} servings={open.servings} onClose={() => setOpen(null)} />}
+    </div>
+  )
 }
 
 function Today({ foodLogs, waterLogs, t }) {
@@ -271,6 +332,7 @@ export default function NutritionTab(props) {
               <p className="text-[13px] font-semibold text-muted">Ready-made plan, started {formatDate(dayOf(chosen.started_at), { day: 'numeric', month: 'short' })}</p>
               <p className="font-bold text-ink">{chosen.plan.name}</p>
               <p className="text-[13px] text-muted mt-0.5 tabular-nums">About {chosen.plan.avg_calories.toLocaleString('en-AU')} kcal a day · {chosen.plan.avg_protein_g} g protein · {chosen.plan.avg_carbs_g} g carbs · {chosen.plan.avg_fats_g} g fats</p>
+              <PlanMeals planId={chosen.plan_id} foodLogs={foodLogs} clientFirst={props.clientFirst} />
             </div>
           )}
           {!mealPlan ? (

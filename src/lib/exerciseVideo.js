@@ -3,6 +3,7 @@
 // exercise in a workout. Row level security returns only the coach's own videos to the
 // coach, and only their coach's videos to a client.
 import { supabase } from '../supabase'
+import { canShrink, shrinkVideo } from './shrinkVideo'
 
 const BUCKET = 'exercise-videos'
 export const MAX_VIDEO_MB = 50
@@ -53,8 +54,22 @@ export async function saveYoutubeVideo(coachId, exerciseId, link, previous) {
   return save(coachId, exerciseId, 'youtube', `https://www.youtube.com/watch?v=${id}`, previous)
 }
 
-export async function uploadExerciseVideo(coachId, exerciseId, file, previous) {
+// Big clips and iPhone .mov files are shrunk first (see shrinkVideo.js), so any normal phone
+// video works and plays on every phone. onStage('shrinking', 0..1) then onStage('uploading').
+export async function uploadExerciseVideo(coachId, exerciseId, original, previous, onStage) {
+  let file = original
+  const mov = /quicktime/.test(original.type) || /\.mov$/i.test(original.name || '')
+  if (canShrink() && (original.size > 15 * 1024 * 1024 || mov)) {
+    try {
+      file = await shrinkVideo(original, (p) => onStage?.('shrinking', p))
+    } catch (e) {
+      if (e.message === 'too_long') return { error: e }
+      if (original.size > MAX_VIDEO_MB * 1024 * 1024) return { error: new Error('too_big') }
+      file = original
+    }
+  }
   if (file.size > MAX_VIDEO_MB * 1024 * 1024) return { error: new Error('too_big') }
+  onStage?.('uploading')
   const ext = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4'
   const path = `${coachId}/${exerciseId}-${Date.now()}.${ext}`
   const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type || 'video/mp4', upsert: false })

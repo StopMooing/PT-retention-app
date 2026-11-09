@@ -5,7 +5,10 @@ import { PageTitle, SectionLabel, Card, Button, Chip, Sheet, EmptyState, Field }
 import { Loading, Toast, Select, TextArea, SearchBox, FilterChips } from './tools/kit'
 import { useToast } from './tools/useToast'
 import { getCoachingTips } from './tools/coachingTips'
-import { fetchExerciseVideo, fetchMyVideoIds, uploadExerciseVideo, saveYoutubeVideo, removeExerciseVideo, MAX_VIDEO_MB } from './lib/exerciseVideo'
+import { fetchExerciseVideo, fetchMyVideoIds, uploadExerciseVideo, saveYoutubeVideo, removeExerciseVideo } from './lib/exerciseVideo'
+import { MAX_SECONDS } from './lib/shrinkVideo'
+
+const stageLabel = (s) => (s?.step === 'shrinking' ? `Preparing ${Math.round((s.p || 0) * 100)}%` : 'Uploading')
 import { ExerciseVideo } from './lib/ExerciseVideo'
 
 const MUSCLE_GROUPS = [
@@ -85,6 +88,7 @@ function VideoSection({ exercise, userId, onChange }) {
   const [link, setLink] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [stage, setStage] = useState(null) // { step: 'shrinking' | 'uploading', p }
 
   useEffect(() => {
     let live = true
@@ -97,9 +101,11 @@ function VideoSection({ exercise, userId, onChange }) {
     setError('')
     const res = await fn()
     setBusy(false)
+    setStage(null)
     if (res.error) {
       const msg = res.error.message
-      setError(msg === 'too_big' ? `That video is over ${MAX_VIDEO_MB} MB. Trim it, or record at 1080p, then try again.`
+      setError(msg === 'too_long' ? `That clip is over ${MAX_SECONDS / 60} minutes. Trim it to the part that shows the movement, then try again.`
+        : msg === 'too_big' ? 'That video is too big for this browser to shrink. Trim it shorter, or try in Safari or Chrome.'
         : msg === 'not_youtube' ? "That doesn't look like a YouTube link. Copy it from the Share button on the video."
         : "Couldn't save the video. Try again.")
       return
@@ -120,8 +126,8 @@ function VideoSection({ exercise, userId, onChange }) {
           <p className="text-[13px] text-muted px-1">Your clients see this when they open {exercise.name} in a workout.</p>
           <div className="flex gap-2">
             <label className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold border border-line-strong text-ink hover:bg-surface-2 cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
-              <Upload size={16} /> Replace
-              <input type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) run(() => uploadExerciseVideo(userId, exercise.id, f, media)) }} />
+              <Upload size={16} /> {busy ? stageLabel(stage) : 'Replace'}
+              <input type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) run(() => uploadExerciseVideo(userId, exercise.id, f, media, (step, p) => setStage({ step, p }))) }} />
             </label>
             <Button variant="secondary" size="sm" disabled={busy} onClick={() => run(() => removeExerciseVideo(media).then((r) => (r.error ? r : { media: null })))}>
               <Trash2 size={16} /> Remove
@@ -140,13 +146,13 @@ function VideoSection({ exercise, userId, onChange }) {
           ) : (
             <div className="flex flex-wrap gap-2">
               <label className={`inline-flex items-center gap-2 h-9 px-3.5 rounded-full text-sm font-bold bg-accent text-on-accent cursor-pointer ${busy ? 'opacity-50 pointer-events-none' : ''}`}>
-                <Upload size={16} /> {busy ? 'Uploading' : 'Upload a video'}
-                <input type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) run(() => uploadExerciseVideo(userId, exercise.id, f, null)) }} />
+                <Upload size={16} /> {busy ? stageLabel(stage) : 'Upload a video'}
+                <input type="file" accept="video/mp4,video/quicktime,video/webm" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) run(() => uploadExerciseVideo(userId, exercise.id, f, null, (step, p) => setStage({ step, p }))) }} />
               </label>
               <Button variant="secondary" size="sm" onClick={() => setMode('link')}><Link2 size={16} /> YouTube link</Button>
             </div>
           )}
-          <p className="text-[12px] text-faint">{mode === 'link' ? 'Any YouTube link works, including Shorts.' : `Up to ${MAX_VIDEO_MB} MB. Short clips of 10 to 30 seconds work best.`}</p>
+          <p className="text-[12px] text-faint">{mode === 'link' ? 'Any YouTube link works, including Shorts.' : `Any clip from your phone, up to ${MAX_SECONDS / 60} minutes. We shrink it for you (sound is not kept). 10 to 30 seconds works best.`}</p>
         </div>
       )}
       {error && <p className="mt-2 text-sm text-bad bg-bad-soft rounded-[14px] px-4 py-3">{error}</p>}

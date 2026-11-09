@@ -1,7 +1,7 @@
 // Coach home: who needs me today, then the full client list.
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, ChevronRight, ChevronLeft, Plus, Link2, Check, MessageSquare, MessageCircle, Users, Send, MessageCircleHeart } from 'lucide-react'
+import { Search, ChevronRight, ChevronLeft, Plus, Link2, Check, MessageSquare, MessageCircle, Users, Send, MessageCircleHeart, Flame } from 'lucide-react'
 import { supabase } from '../supabase'
 import { fetchUnreadCounts, fetchLatestPerThread } from '../lib/messages'
 import { SectionLabel, Card, Button, Chip, Segmented, Avatar, Sheet, Field, EmptyState, Mark, Hero } from '../ui'
@@ -40,6 +40,38 @@ function ClientHealth({ clients, onPick }) {
           </button>
         ))}
       </div>
+    </Card>
+  )
+}
+
+// This week's sessions across every client, and who has trained the most: people worth a
+// well done. Fills the right column so the page reads as one piece next to Needs you.
+function ShowingUp({ clients, onOpen }) {
+  const rows = clients.map((c) => ({ c, n: c.sessions })).filter((r) => r.n > 0).sort((a, b) => b.n - a.n)
+  const total = rows.reduce((s, r) => s + r.n, 0)
+  if (clients.length === 0) return null
+  return (
+    <Card>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-[15px] font-bold text-ink">Showing up</p>
+        <p className="text-[13px] text-muted">Last 7 days</p>
+      </div>
+      <p className="mt-2"><span className="font-display text-[36px] leading-none text-ink tabular-nums">{total}</span> <span className="text-[14px] text-muted">{total === 1 ? 'session' : 'sessions'} by {rows.length} of {clients.length} clients</span></p>
+      {rows.length > 0 ? (
+        <ul className="mt-3 border-t border-line">
+          {rows.slice(0, 3).map(({ c, n }) => (
+            <li key={c.id}>
+              <button onClick={() => onOpen(c)} className="w-full flex items-center gap-2.5 py-2 text-left hover:opacity-80">
+                <Avatar name={c.full_name} src={c.profile_photo_url} size={28} />
+                <span className="flex-1 min-w-0 text-[14px] font-semibold text-ink truncate">{c.full_name}</span>
+                <span className="inline-flex items-center gap-1 text-[13px] font-bold text-ink tabular-nums"><Flame size={14} className="text-accent" />{n}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[13px] text-muted mt-2">Sessions show here as clients finish them, with the most consistent first.</p>
+      )}
     </Card>
   )
 }
@@ -154,6 +186,8 @@ export default function Dashboard({ user }) {
   const [nudge, setNudge] = useState(null) // clients to reach out to
   const [needPage, setNeedPage] = useState(0)
   const [listPage, setListPage] = useState(0)
+  // Needs you keeps the height of its tallest page, so paging never moves the page below.
+  const [needMinH, setNeedMinH] = useState({ key: '', h: 0 })
 
   async function fetchData() {
     const { data: clientData, error } = await supabase
@@ -385,6 +419,7 @@ export default function Dashboard({ user }) {
   const NEEDS_PER_PAGE = 5
   const needPages = Math.max(1, Math.ceil(needRows.length / NEEDS_PER_PAGE))
   const needPageSafe = Math.min(needPage, needPages - 1)
+  const needKey = `${needRows.length}`
 
   return (
     <div className="pb-8">
@@ -412,7 +447,15 @@ export default function Dashboard({ user }) {
           {needsCount === 0 ? (
             <p className="text-[14px] text-hero-muted mt-2">Every check-in and message has a reply, and everyone is showing up.</p>
           ) : (
-            <div className="mt-3 divide-y divide-hero-track">
+            <div
+              className="mt-3 divide-y divide-hero-track"
+              style={needPages > 1 && needMinH.key === needKey ? { minHeight: needMinH.h } : undefined}
+              ref={(el) => {
+                if (!el || needPages < 2) return
+                const h = el.offsetHeight
+                if (needMinH.key !== needKey || h > needMinH.h) setNeedMinH({ key: needKey, h })
+              }}
+            >
               {needRows.slice(needPageSafe * NEEDS_PER_PAGE, needPageSafe * NEEDS_PER_PAGE + NEEDS_PER_PAGE)}
             </div>
           )}
@@ -437,6 +480,7 @@ export default function Dashboard({ user }) {
           ))}
         </Card>
         {!showArchived && <ClientHealth clients={active} onPick={(v) => { setFilter(v); setListPage(0); document.getElementById('all-clients')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }} />}
+        {!showArchived && <ShowingUp clients={active} onOpen={(c) => navigate(`/clients/${c.id}`)} />}
         </div>
       </div>
 
