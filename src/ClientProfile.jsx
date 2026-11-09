@@ -9,7 +9,8 @@ import { fetchExercisesFor } from './client/data'
 import { Avatar, Chip, Button, Mark, Card, EmptyState } from './ui'
 import { toLocalDateStr, clientStatus, awaitingReply, STATUS, relativeDay, sessionsLast7, formatDate, startedByClient, firstName, lastActivity, missedInARow, nudgeReason } from './coach/lib'
 import NudgeSheet from './coach/NudgeSheet'
-import OverviewTab from './coach/profile/OverviewTab'
+import OverviewTab, { Feeling, Weight } from './coach/profile/OverviewTab'
+import Measurements from './lib/Measurements'
 import CheckinsTab from './coach/profile/CheckinsTab'
 import TrainingTab from './coach/profile/TrainingTab'
 import NutritionTab from './coach/profile/NutritionTab'
@@ -720,7 +721,17 @@ export default function ClientProfile({ user }) {
 
       <div className="mt-4 md:mt-5">
         {activeTab === 'overview' && <OverviewTab {...shared} />}
-        {activeTab === 'messages' && <MessagesTab client={client} userId={user?.id} />}
+        {activeTab === 'messages' && (
+          // The chat, with how they have been doing beside it on a wide screen.
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] gap-4 items-start">
+            <MessagesTab client={client} userId={user?.id} />
+            <div className="hidden lg:block space-y-4">
+              <Feeling {...shared} />
+              <Weight {...shared} />
+              <Measurements clientId={client.id} variant="coach" name={firstName(client.full_name)} />
+            </div>
+          </div>
+        )}
         {activeTab === 'checkins' && <CheckinsTab client={client} checkins={checkins} dailyCheckins={dailyCheckins} reply={reply} view={checkinsView} onViewChange={setCheckinsView} />}
         {activeTab === 'training' && (
           <TrainingTab

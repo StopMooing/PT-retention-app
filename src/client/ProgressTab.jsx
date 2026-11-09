@@ -1,7 +1,8 @@
 // Progress: body weight trend, measurements, consistency, past sessions, strength, photos and weekly check-ins.
 // Everything comes from data the app already saves. Empty sections are hidden.
 import { useState, useRef } from 'react'
-import { ChevronDown, X, Camera, MessageCircle, Trash2 } from 'lucide-react'
+import { ChevronDown, X, Camera, MessageCircle, Trash2, Columns2 } from 'lucide-react'
+import PhotoCompare from '../lib/PhotoCompare'
 import { supabase } from '../supabase'
 import { Card, Button, SectionLabel, PhotoViewer, Hero, Ring } from '../ui'
 import { photoPath, usePhotoUrls, PHOTO_BUCKET } from '../lib/photos'
@@ -196,6 +197,7 @@ function PhotosCard({ client, progressPhotos, setProgressPhotos }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [viewError, setViewError] = useState(null)
+  const [comparing, setComparing] = useState(false)
   const urls = usePhotoUrls(progressPhotos)
 
   // Stores the bare storage path, never a public link: the bucket is private.
@@ -252,7 +254,12 @@ function PhotosCard({ client, progressPhotos, setProgressPhotos }) {
 
   return (
     <section>
-      <SectionLabel action={<Button variant="soft" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}><Camera size={16} /> {uploading ? 'Uploading' : 'Add'}</Button>}>
+      <SectionLabel action={
+        <span className="flex gap-2">
+          {progressPhotos.length > 1 && <Button variant="ghost" size="sm" onClick={() => setComparing(true)}><Columns2 size={16} /> Compare</Button>}
+          <Button variant="soft" size="sm" onClick={() => inputRef.current?.click()} disabled={uploading}><Camera size={16} /> {uploading ? 'Uploading' : 'Add'}</Button>
+        </span>
+      }>
         Progress photos
       </SectionLabel>
       <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
@@ -271,6 +278,7 @@ function PhotosCard({ client, progressPhotos, setProgressPhotos }) {
           ))}
         </div>
       )}
+      {comparing && <PhotoCompare photos={progressPhotos} urls={urls} onClose={() => setComparing(false)} />}
       {open && (
         <PhotoViewer
           src={urls[open.id]}

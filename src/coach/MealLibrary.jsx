@@ -86,8 +86,8 @@ export default function MealLibrary({ clients, showToast, view = 'plans' }) {
   if (!data) return <div className="flex justify-center py-12"><Mark size={36} className="animate-pulse" /></div>
 
   return (
-    <div className="space-y-4 max-w-[760px]">
-      <Card className="flex items-start gap-3">
+    <div className="@container space-y-4 max-w-[1100px]">
+      <Card className="flex items-start gap-3 lg:max-w-[760px]">
         <span className="w-11 h-11 rounded-full bg-accent-soft text-accent flex items-center justify-center shrink-0"><Sparkles size={20} /></span>
         <span className="min-w-0">
           {view === 'plans' ? (

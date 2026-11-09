@@ -1,6 +1,7 @@
 // About the client: goal, injuries, private coach notes and progress photos.
 import { useState } from 'react'
-import { Flag, AlertCircle, FileText, Camera, Plus, Pencil } from 'lucide-react'
+import { Flag, AlertCircle, FileText, Camera, Plus, Pencil, Columns2 } from 'lucide-react'
+import PhotoCompare from '../../lib/PhotoCompare'
 import { Button, EmptyState, PhotoViewer } from '../../ui'
 import { usePhotoUrls } from '../../lib/photos'
 import { Panel, TextArea } from './parts'
@@ -56,6 +57,7 @@ export default function NotesTab({ client, clientGoal, onSaveGoal, clientLimitat
   const name = firstName(client.full_name)
   const photoUrls = usePhotoUrls(progressPhotos)
   const [viewing, setViewing] = useState(null)
+  const [comparing, setComparing] = useState(false)
 
   async function saveNote() {
     setSaving(true)
@@ -97,7 +99,7 @@ export default function NotesTab({ client, clientGoal, onSaveGoal, clientLimitat
           )}
         </Panel>
 
-        <Panel title="Progress photos" icon={Camera} sub={progressPhotos.length ? String(progressPhotos.length) : undefined}>
+        <Panel title="Progress photos" icon={Camera} sub={progressPhotos.length ? String(progressPhotos.length) : undefined} action={progressPhotos.length > 1 && <Button variant="ghost" size="sm" onClick={() => setComparing(true)}><Columns2 size={16} /> Compare</Button>}>
           {progressPhotos.length === 0 ? (
             <p className="text-[15px] text-muted">Photos {name} uploads will show here.</p>
           ) : (
@@ -114,6 +116,7 @@ export default function NotesTab({ client, clientGoal, onSaveGoal, clientLimitat
               ))}
             </div>
           )}
+          {comparing && <PhotoCompare photos={progressPhotos} urls={photoUrls} onClose={() => setComparing(false)} />}
           {viewing && (
             <PhotoViewer
               src={photoUrls[viewing.id]}

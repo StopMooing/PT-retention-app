@@ -39,8 +39,8 @@ export default function HabitsTab({ client, habits, habitLogs }) {
   const weekFrom = addDays(today, -6)
 
   return (
-    <div className="space-y-3 max-w-[760px]">
-      <Card className="flex items-center gap-4">
+    <div className="space-y-3">
+      <Card className="flex items-center gap-4 lg:max-w-[760px]">
         <Ring value={doneToday / habits.length} size={64} stroke={7}>
           <span className="font-display text-lg leading-none text-ink">{doneToday}<span className="text-sm text-muted">/{habits.length}</span></span>
         </Ring>
@@ -51,6 +51,7 @@ export default function HabitsTab({ client, habits, habitLogs }) {
         <span className="max-sm:hidden">{manage}</span>
       </Card>
 
+      <div className="grid gap-3 lg:grid-cols-2 items-start">
       {habits.map((habit) => {
         const s = streak(habitLogs, habit.id)
         const week = habitLogs.filter((l) => l.habit_id === habit.id && l.completed && l.completed_date >= weekFrom).length
@@ -101,6 +102,7 @@ export default function HabitsTab({ client, habits, habitLogs }) {
           </Card>
         )
       })}
+      </div>
       <div className="sm:hidden">{manage}</div>
     </div>
   )

@@ -28,7 +28,7 @@ function ThreadCard({ client, userId }) {
     if (!window.matchMedia('(min-width: 768px)').matches) ref.current?.scrollIntoView({ block: 'end' })
   }, [])
   return (
-    <Card ref={ref} padded={false} className="overflow-hidden max-w-[760px] flex flex-col h-[calc(100dvh-var(--tabbar-space)-max(env(safe-area-inset-top),12px)-16px)] min-h-[380px] scroll-mb-[calc(var(--tabbar-space)+8px)] md:scroll-mb-4 md:h-[min(640px,calc(100dvh-300px))]">
+    <Card ref={ref} padded={false} className="overflow-hidden flex flex-col h-[calc(100dvh-var(--tabbar-space)-max(env(safe-area-inset-top),12px)-16px)] min-h-[380px] scroll-mb-[calc(var(--tabbar-space)+8px)] md:scroll-mb-4 md:h-[min(640px,calc(100dvh-300px))]">
       <Thread clientId={client.id} userId={userId} clientName={client.full_name} className="flex-1" autoFocus />
     </Card>
   )

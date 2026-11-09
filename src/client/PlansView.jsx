@@ -113,7 +113,7 @@ export default function PlansView({ plans, recipes, choice, startSex, startGoal,
         </Card>
       )}
 
-      <Card>
+      <Card className="@3xl:max-w-[760px]">
         <p className="text-[17px] font-bold text-ink">Built for the average Australian</p>
         <p className="text-[15px] text-muted mt-1">
           {audience === 'coach'
@@ -123,10 +123,11 @@ export default function PlansView({ plans, recipes, choice, startSex, startGoal,
         <p className="text-[13px] text-muted mt-2">Mon, Wed and Fri share the same meals, so do Tue, Thu and Sat. Sunday is its own day.</p>
       </Card>
 
-      <Segmented value={sex} onChange={setSex} options={SEX} />
-      <Segmented value={goal} onChange={setGoal} options={GOAL_OPTIONS} />
+      <Segmented value={sex} onChange={setSex} options={SEX} className="@3xl:max-w-[760px]" />
+      <Segmented value={goal} onChange={setGoal} options={GOAL_OPTIONS} className="@3xl:max-w-[760px]" />
       <p className="text-[13px] text-muted px-1">{GOALS[goal].blurb}</p>
 
+      <div className="grid gap-3 @3xl:grid-cols-2">
       {shown.map((p) => {
         const isMine = mine?.id === p.id
         return (
@@ -144,6 +145,7 @@ export default function PlansView({ plans, recipes, choice, startSex, startGoal,
           </Card>
         )
       })}
+      </div>
 
       {/* For anyone who is not the average size: their own number, then the nearest plan. */}
       {onWorkOut && <Card>

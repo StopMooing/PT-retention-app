@@ -86,14 +86,17 @@ export function plannedLine(exercises, short) {
 }
 
 // The status line under a scheduled session: "Completed · 6 exercises · 48 min" when done
-// (minutes only when the log has a sensible length), "Not logged yet" for a past day, else null.
+// (minutes only when the log has a sensible length), "Not logged yet" for a past day, else
+// what is planned ("5 exercises · about 40 min").
 export function sessionStatusLine(sw, { completedIds, workoutLogs, exMap, today = toLocalDateStr() }) {
   if (isDone(sw, completedIds)) {
     const count = sessionExercises(sw, exMap).length
     const mins = sessionMinutes(sessionLog(sw, workoutLogs))
     return ['Completed', count ? plural(count, 'exercise') : null, mins ? `${mins} min` : null].filter(Boolean).join(' · ')
   }
-  return sw.scheduled_date < today ? 'Not logged yet' : null
+  if (sw.scheduled_date < today) return 'Not logged yet'
+  // Coming up: what is in it, the same line as the Today card.
+  return plannedLine(sessionExercises(sw, exMap)) || null
 }
 
 // This week (Monday to Sunday): sessions scheduled and sessions done.

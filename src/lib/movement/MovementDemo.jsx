@@ -17,6 +17,44 @@ function Shape({ s }) {
   return <rect x={s.x} y={s.y} width={s.w} height={s.h} rx={s.rx} fill={TONE[s.tone]} />
 }
 
+// A square view around the figure and its kit, so a small still fills its box.
+function fitBox(shapes) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
+  const add = (x, y, r = 0) => { x0 = Math.min(x0, x - r); y0 = Math.min(y0, y - r); x1 = Math.max(x1, x + r); y1 = Math.max(y1, y + r) }
+  for (const s of shapes) {
+    if (s.k === 'line') { add(s.x1, s.y1, s.w / 2); add(s.x2, s.y2, s.w / 2) }
+    else if (s.k === 'circle') add(s.cx, s.cy, s.r)
+    else { add(s.x, s.y); add(s.x + s.w, s.y + s.h) }
+  }
+  const size = Math.max(x1 - x0, y1 - y0) + 16
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2
+  return `${cx - size / 2} ${cy - size / 2} ${size} ${size}`
+}
+
+// A still of the movement for lists: the end of the move, small. Muscle group initial
+// when there is no drawing, so every row has something in the same spot.
+export function MovementThumb({ name, fallback = '', size = 44 }) {
+  const key = matchPattern(name)
+  const p = key ? PATTERNS[key] : null
+  const box = { width: size, height: size }
+  if (!p) {
+    return (
+      <span style={box} className="rounded-[12px] bg-surface-2 text-muted text-[13px] font-bold flex items-center justify-center shrink-0" aria-hidden="true">
+        {String(fallback).slice(0, 2)}
+      </span>
+    )
+  }
+  const j = pose(blend(p.A, p.B, p.thumb ?? 1))
+  const shapes = [...figure(j), ...(p.kit ? p.kit(j) : [])]
+  return (
+    <span style={box} className="rounded-[12px] bg-surface-2 overflow-hidden shrink-0 flex items-center justify-center" aria-hidden="true">
+      <svg viewBox={fitBox(shapes)} className="w-full h-full">
+        {shapes.map((s, i) => <Shape key={i} s={s} />)}
+      </svg>
+    </span>
+  )
+}
+
 export default function MovementDemo({ name, className = '' }) {
   const key = matchPattern(name)
   const p = key ? PATTERNS[key] : null

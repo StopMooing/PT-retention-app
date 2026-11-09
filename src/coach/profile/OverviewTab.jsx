@@ -1,6 +1,6 @@
 // Overview: the latest check-in and reply first, then this week, weight and food.
 import { Fragment, useState } from 'react'
-import { MessageSquare, Scale, Utensils, Plus, ChevronRight, Check, AlertCircle, Activity } from 'lucide-react'
+import { MessageSquare, Scale, Utensils, Plus, ChevronRight, Check, AlertCircle, Activity, Dumbbell } from 'lucide-react'
 import { Button, Ring, EmptyState, Segmented, Card, Hero } from '../../ui'
 import { Panel, CheckinCard, LineChart, UnitInput, Bar } from './parts'
 import { startOfWeekStr, addDays, toLocalDateStr, formatDate, dayNutrition, formatMl, sessionsThisMonth, sessionsThisWeek, completedKeys, awaitingReply, dayOf, firstName, relativeDay, lastDays, feelingFlag, scoreTone, DAILY_SCORES } from '../lib'
@@ -99,11 +99,40 @@ function ThisWeek({ scheduledWorkouts, workoutLogs, onOpenWorkout, onOpenTab }) 
           </ul>
         </Card>
       )}
+      <RecentSessions scheduledWorkouts={scheduledWorkouts} workoutLogs={workoutLogs} onOpenWorkout={onOpenWorkout} onOpenTab={onOpenTab} />
     </div>
   )
 }
 
-function Weight({ weightLogs, onLogWeight }) {
+// The last few finished sessions, newest first, so the coach sees what was actually done.
+function RecentSessions({ scheduledWorkouts, workoutLogs, onOpenWorkout, onOpenTab }) {
+  const done = workoutLogs.filter((l) => l.completed && l.logged_at).sort((a, b) => (a.logged_at < b.logged_at ? 1 : -1)).slice(0, 4)
+  if (done.length === 0) return null
+  return (
+    <Panel title="Recent sessions" icon={Dumbbell} padded={false} action={<Button variant="ghost" size="sm" onClick={() => onOpenTab('training')}>All</Button>}>
+      <ul className="divide-y divide-line border-t border-line mt-2">
+        {done.map((log) => {
+          const sw = scheduledWorkouts.find((x) => x.id === log.scheduled_workout_id) ?? null
+          const vol = Math.round(Number(log.total_volume_kg) || 0)
+          return (
+            <li key={log.id}>
+              <button onClick={() => sw && onOpenWorkout(sw, log)} disabled={!sw} className="w-full flex items-center gap-3 px-4 min-h-[56px] text-left hover:bg-surface-2 disabled:hover:bg-transparent transition-colors">
+                <span className="w-9 h-9 rounded-full bg-accent text-on-accent flex items-center justify-center shrink-0"><Check size={18} /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold text-ink truncate">{sw?._displayName ?? 'Session'}</span>
+                  <span className="block text-[13px] text-muted">{relativeDay(dayOf(log.logged_at))}{vol > 0 ? ` · ${vol.toLocaleString('en-AU')} kg moved` : ''}</span>
+                </span>
+                {sw && <ChevronRight size={18} className="text-faint shrink-0" />}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </Panel>
+  )
+}
+
+export function Weight({ weightLogs, onLogWeight }) {
   const [period, setPeriod] = useState('30')
   const [adding, setAdding] = useState(false)
   const [value, setValue] = useState('')
@@ -202,7 +231,7 @@ function FoodToday({ foodLogs, waterLogs, targets, onOpenTab }) {
 }
 
 // Last 7 days of daily check-ins: energy, sleep and soreness, plus the latest note.
-function Feeling({ dailyCheckins = [], client, onOpenDaily }) {
+export function Feeling({ dailyCheckins = [], client, onOpenDaily }) {
   const today = toLocalDateStr()
   const days = lastDays(7, today)
   const byDay = Object.fromEntries(dailyCheckins.map((d) => [d.checkin_date, d]))

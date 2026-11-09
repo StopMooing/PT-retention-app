@@ -53,7 +53,7 @@ export default function RecipesView({ recipes, onOpen }) {
 
   return (
     <div className="space-y-3">
-      <label className="flex items-center gap-2 h-12 px-4 rounded-[14px] bg-surface border border-line-strong">
+      <label className="flex items-center gap-2 h-12 px-4 rounded-[14px] bg-surface border border-line-strong @3xl:max-w-[560px]">
         <Search size={18} className="text-faint shrink-0" />
         <input
           type="search"
@@ -75,11 +75,11 @@ export default function RecipesView({ recipes, onOpen }) {
       {list.length > 0 ? (
         <>
           <p className="text-[13px] text-muted px-1">{list.length} {list.length === 1 ? 'recipe' : 'recipes'}</p>
-          <Card padded={false} className="divide-y divide-line overflow-hidden">
+          <Card padded={false} className="divide-y divide-line overflow-hidden @3xl:grid @3xl:grid-cols-2 @3xl:divide-y-0">
             {list.map((r) => {
               const t = recipeTotals(r)
               return (
-              <button key={r.id} onClick={() => onOpen(r)} className="w-full flex items-center gap-3 pl-4 pr-3 py-3 min-h-[56px] text-left hover:bg-surface-2">
+              <button key={r.id} onClick={() => onOpen(r)} className="w-full flex items-center gap-3 pl-4 pr-3 py-3 min-h-[56px] text-left hover:bg-surface-2 @3xl:border-b @3xl:border-line @3xl:odd:border-r">
                 <span className="flex-1 min-w-0">
                   <span className="block text-[15px] font-bold text-ink">{r.name}</span>
                   <span className="block text-[13px] text-muted tabular-nums">

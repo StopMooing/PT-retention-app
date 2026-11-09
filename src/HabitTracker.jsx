@@ -76,6 +76,11 @@ export default function HabitTracker() {
           allHabitIds.push(h.id)
         })
         setClientHabitCounts(habitCounts)
+        // On a wide screen the right side shows a client's habits: open the first client with
+        // habits (or the first client) instead of an empty panel. Phones keep the list first.
+        if (window.matchMedia?.('(min-width: 768px)').matches) {
+          setSelectedClient(clientList.find((c) => habitCounts[c.id]) ?? clientList[0])
+        }
 
         if (allHabitIds.length > 0) {
           const { data: todayLogs } = await supabase
