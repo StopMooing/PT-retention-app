@@ -1,6 +1,7 @@
 // Contact sheet of every movement pattern (start, middle, end), to check the drawings.
 // npx esbuild tools/movement/sheet.mjs --bundle --platform=node --format=esm --outfile=/tmp/s.mjs
 // node /tmp/s.mjs sheet.html, then open sheet.html in a browser.
+import { PATTERNS } from '../../src/lib/movement/patterns.js'
 import { pose, blend } from '../../src/lib/movement/rig.js'
 import { figure } from '../../src/lib/movement/draw.js'
 import fs from 'node:fs'
