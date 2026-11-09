@@ -9,6 +9,7 @@ import { DAY_TYPES, GOALS, PLAN_FAMILIES, REFERENCE, formatServes, planDayType }
 import { fetchPlanItems, planDay, closestPlan } from '../lib/mealLibrary'
 import { toLocalDateStr } from './dates'
 import { capitalise } from './foods'
+import { RecipeThumb } from '../lib/RecipePhoto'
 
 const n = (v) => Math.round(Number(v) || 0).toLocaleString('en-AU')
 const SEX = [{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]
@@ -71,6 +72,7 @@ function PlanSheet({ plan, recipes, isMine, onClose, onStart, onStop, onOpenReci
               {meals.map((m) => (
                 <li key={m.item.id}>
                   <button onClick={() => onOpenRecipe(m)} className="w-full flex items-center gap-3 px-3.5 py-3 text-left hover:bg-surface-2">
+                    <RecipeThumb recipe={m.recipe} />
                     <span className="flex-1 min-w-0">
                       <span className="block text-[13px] font-semibold text-muted">{capitalise(m.item.meal_type)}</span>
                       <span className="block text-[15px] font-bold text-ink">{m.recipe.name}</span>

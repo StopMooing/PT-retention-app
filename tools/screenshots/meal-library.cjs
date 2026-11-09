@@ -16,6 +16,15 @@ function load() {
   const files = fs.readdirSync(MIG)
   const foodsById = Object.fromEntries(Object.values(require('../meal-library/foods.json')).map(([id, ...m]) => [id, m]))
   const recipes = []
+  // RECIPE_PHOTOS=1 gives each recipe a stand-in photo (the real ones come from Pexels,
+  // which this sandbox cannot reach), so photo layouts can be checked.
+  const samplePhoto = (name) => {
+    if (!process.env.RECIPE_PHOTOS) return {}
+    const h = [...name].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7)
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'><defs><radialGradient id='g'><stop offset='0' stop-color='hsl(${h},55%,62%)'/><stop offset='1' stop-color='hsl(${(h + 40) % 360},45%,32%)'/></radialGradient></defs><rect width='160' height='100' fill='hsl(${h},30%,85%)'/><ellipse cx='80' cy='52' rx='52' ry='38' fill='url(#g)'/></svg>`
+    const url = 'data:image/svg+xml,' + encodeURIComponent(svg)
+    return { photo_url: url, photo_thumb_url: url, photo_credit: 'Sample Photographer', photo_credit_url: 'https://www.pexels.com' }
+  }
   const recipe_ingredients = []
   // The latest full refresh if there is one, otherwise the first seed.
   const refresh = files.filter((x) => /_meal_library_refresh\.sql$/.test(x)).sort().pop()
@@ -26,7 +35,7 @@ function load() {
     const ids = JSON.parse(idLine.slice(idLine.indexOf("'") + 1, idLine.lastIndexOf("'")))
     for (const r of jsonIn(lines.find((l) => l.startsWith('d(r) as')))) {
       const rid = uuid(r.k)
-      recipes.push({ id: rid, slug: r.k, family: r.f, day_type: r.d, meal_type: r.m, name: r.n, description: r.ds, prep_minutes: r.pr, cook_minutes: r.ck, steps: r.st, tip: r.tp, diets: r.dt, calories: r.c, protein_g: r.p, carbs_g: r.cb, fats_g: r.ft, position: r.ps })
+      recipes.push({ id: rid, slug: r.k, family: r.f, day_type: r.d, meal_type: r.m, name: r.n, description: r.ds, prep_minutes: r.pr, cook_minutes: r.ck, steps: r.st, tip: r.tp, diets: r.dt, calories: r.c, protein_g: r.p, carbs_g: r.cb, fats_g: r.ft, position: r.ps, ...samplePhoto(r.n) })
       r.i.forEach((e, pos) => {
         const foodId = ids[e[1]]
         const [kcal, p, c, fat] = foodsById[foodId] || [0, 0, 0, 0]

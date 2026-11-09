@@ -10,6 +10,7 @@ import { fetchClientPlan, fetchPlans, fetchPlanItems, fetchRecipes, planDay } fr
 import { DAY_TYPES, planDayType, formatServes } from '../../lib/recipes'
 import RecipeSheet from '../../client/RecipeSheet'
 import MealPlanPicker from './MealPlanPicker'
+import { RecipeThumb } from '../../lib/RecipePhoto'
 
 const PERIODS = [
   { value: '7', label: '7 days' },
@@ -88,6 +89,7 @@ function PlanMeals({ planId, foodLogs, clientFirst }) {
                     {done && <Check size={13} strokeWidth={3} />}
                   </span>
                 )}
+                <RecipeThumb recipe={m.recipe} size={48} />
                 <span className="flex-1 min-w-0">
                   <span className="block text-[12px] font-semibold text-muted capitalize">{m.item.meal_type}</span>
                   <span className="block text-[15px] font-bold text-ink truncate">{m.recipe.name}</span>

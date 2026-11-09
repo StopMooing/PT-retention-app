@@ -6,6 +6,7 @@ import { Minus, Plus, Clock } from 'lucide-react'
 import { Sheet, Button } from '../ui'
 import { scaleRecipe, sumMacros, amountText, formatServes, recipeTime, MEAL_TYPES } from '../lib/recipes'
 import { capitalise } from './foods'
+import { RecipeHero } from '../lib/RecipePhoto'
 
 const STEP = 0.25
 const n = (v) => Math.round(Number(v) || 0).toLocaleString('en-AU')
@@ -51,6 +52,7 @@ export default function RecipeSheet({ recipe, open, onClose, servings: startServ
       )}
     >
       <div className="space-y-5">
+        <RecipeHero recipe={recipe} />
         <div className="-mt-1">
           <h2 className="text-[20px] font-bold text-ink leading-snug">{recipe.name}</h2>
           {recipe.description && <p className="text-[15px] text-muted mt-1">{recipe.description}</p>}

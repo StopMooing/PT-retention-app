@@ -5,6 +5,7 @@ import { ChevronRight, Search } from 'lucide-react'
 import { Card } from '../ui'
 import { MEAL_TYPES, recipeTotals, recipeTime } from '../lib/recipes'
 import { capitalise } from './foods'
+import { RecipeThumb } from '../lib/RecipePhoto'
 
 const DIETS = [
   { id: 'all', label: 'Any diet' },
@@ -80,6 +81,7 @@ export default function RecipesView({ recipes, onOpen }) {
               const t = recipeTotals(r)
               return (
               <button key={r.id} onClick={() => onOpen(r)} className="w-full flex items-center gap-3 pl-4 pr-3 py-3 min-h-[56px] text-left hover:bg-surface-2 @3xl:border-b @3xl:border-line @3xl:odd:border-r">
+                <RecipeThumb recipe={r} />
                 <span className="flex-1 min-w-0">
                   <span className="block text-[15px] font-bold text-ink">{r.name}</span>
                   <span className="block text-[13px] text-muted tabular-nums">

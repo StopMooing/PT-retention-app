@@ -5,6 +5,7 @@ import { Check, ChevronRight } from 'lucide-react'
 import { Card } from '../ui'
 import { DAY_TYPES, formatServes } from '../lib/recipes'
 import { capitalise } from './foods'
+import { RecipeThumb } from '../lib/RecipePhoto'
 
 const n = (v) => Math.round(Number(v) || 0).toLocaleString('en-AU')
 
@@ -28,7 +29,8 @@ export default function TodaysPlan({ plan, day, dayType, isToday, dayLogs, busyI
           const busy = busyId === m.item.id
           return (
             <li key={m.item.id} className={`flex items-center gap-1 pr-2 ${log ? 'bg-accent-soft' : ''}`}>
-              <button onClick={() => onOpen(m)} className="flex-1 min-w-0 flex items-center gap-2 pl-4 py-3 text-left">
+              <button onClick={() => onOpen(m)} className="flex-1 min-w-0 flex items-center gap-3 pl-4 py-3 text-left">
+                <RecipeThumb recipe={m.recipe} size={48} />
                 <span className="flex-1 min-w-0">
                   <span className="block text-[13px] font-semibold text-muted">{capitalise(m.item.meal_type)}</span>
                   <span className="block text-[15px] font-bold text-ink truncate">{m.recipe.name}</span>

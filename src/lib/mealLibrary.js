@@ -5,7 +5,7 @@
 import { supabase } from '../supabase'
 import { scaleRecipe, sumMacros, planDayType, MEAL_TYPES } from './recipes'
 
-const RECIPE_SELECT = 'id, slug, family, day_type, meal_type, name, description, prep_minutes, cook_minutes, steps, tip, diets, calories, protein_g, carbs_g, fats_g, position, recipe_ingredients(id, position, label, food_id, grams, measure, each_label, each_grams, calories, protein_g, carbs_g, fats_g)'
+const RECIPE_SELECT = 'id, slug, family, day_type, meal_type, name, description, prep_minutes, cook_minutes, steps, tip, diets, calories, protein_g, carbs_g, fats_g, position, photo_url, photo_thumb_url, photo_credit, photo_credit_url, recipe_ingredients(id, position, label, food_id, grams, measure, each_label, each_grams, calories, protein_g, carbs_g, fats_g)'
 const PLAN_SELECT = 'id, slug, family, family_name, sex, goal, name, description, ref_weight_kg, ref_height_cm, ref_age, activity_factor, maintenance_calories, target_calories, target_protein_g, target_carbs_g, target_fats_g, avg_calories, avg_protein_g, avg_carbs_g, avg_fats_g, position'
 
 // Fetch once, share the answer; a failed fetch is forgotten so the next call retries.
