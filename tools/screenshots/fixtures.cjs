@@ -37,11 +37,25 @@ const pw = [
 const program_workouts = []
 const workout_exercises = []
 for (const w of pw) {
-  const row = { id: id(), program_id: program.id, day_number: w.day_number, name: w.name, created_at: ts(-40) }
+  const row = { id: id(), program_id: program.id, day_number: w.day_number, week_number: 1, name: w.name, created_at: ts(-40) }
   program_workouts.push(row)
   w.items.forEach(([name, sets, reps], i) => workout_exercises.push({
     id: id(), program_workout_id: row.id, exercise_id: ex(name).id, sets, reps, rest_seconds: 90, notes: i === 0 ? 'Control the lowering, 3 seconds down.' : null, order_index: i, created_at: ts(-40),
   }))
+}
+
+// Set rows (one per planned set) for Lower A: the squat has a warm-up and its own kg and
+// RPE per set; the Romanian deadlift and walking lunge are a superset.
+const workout_exercise_sets = []
+{
+  const lower = program_workouts[0].id
+  const rowOf = (name) => workout_exercises.find((we) => we.program_workout_id === lower && we.exercise_id === ex(name).id)
+  const squat = rowOf('Barbell Back Squat')
+  ;[['warmup', '10', 40, null, 60], ['normal', '8', 80, 7, 150], ['normal', '6', 90, 8, 150], ['normal', '6', 90, 8, 150]].forEach(([set_type, reps, weight_kg, rpe, rest_seconds], i) =>
+    workout_exercise_sets.push({ id: id(), workout_exercise_id: squat.id, set_number: i + 1, set_type, reps, weight_kg, rpe, rest_seconds }))
+  Object.assign(squat, { sets: 4, reps: '8/6/6', rest_seconds: 150 })
+  rowOf('Romanian Deadlift').superset_group = 1
+  rowOf('Walking Lunge').superset_group = 1
 }
 
 // Monday/Wednesday/Friday schedule from 4 weeks ago to 2 weeks ahead.
@@ -145,7 +159,7 @@ module.exports = {
       { id: CLIENT_USER, full_name: 'Jane Carter', email: 'jane@example.com', role: 'client', created_at: ts(-40) },
     ],
     clients: [jane, ...others],
-    exercises, exercise_aliases: [], programs: [program], program_workouts, workout_exercises,
+    exercises, exercise_aliases: [], programs: [program], program_workouts, workout_exercises, workout_exercise_sets,
     program_assignments: [{ id: id(), program_id: program.id, client_id: CLIENT, assigned_by: COACH, start_date: day(-28), is_active: true, created_at: ts(-28) }],
     scheduled_workouts, workout_logs, workout_set_logs, body_weight_logs, food_logs, food_log_items,
     checkins: [...checkins, ...otherCheckins], personal_bests, habits, habit_logs,
@@ -258,7 +272,7 @@ if (process.env.CHECKIN_DUE) {
     const prog = { id: id(), name: p.name, description: p.description, created_by: process.env.OTHER_LIBRARY ? '00000000-0000-4000-8000-0000000001ab' : COACH, created_at: ts(-60), is_on_demand: true, kind: p.kind }
     t.programs.push(prog)
     p.days.forEach((d, di) => {
-      const row = { id: id(), program_id: prog.id, day_number: di + 1, name: d.name, created_at: ts(-60) }
+      const row = { id: id(), program_id: prog.id, day_number: di + 1, week_number: 1, name: d.name, created_at: ts(-60) }
       t.program_workouts.push(row)
       d.items.forEach(([name, sets, reps], i) => t.workout_exercises.push({
         id: id(), program_workout_id: row.id, exercise_id: ex(name).id, sets, reps, rest_seconds: 75, notes: null, order_index: i, created_at: ts(-60),
@@ -359,4 +373,20 @@ if (process.env.PROGRAM_NEXT_WEEK) {
   ].map(([kind, title, body, link, off, read_at]) => ({ id: id(), user_id: COACH, kind, title, body, link, created_at: new Date(Date.now() + off * 86400000).toISOString(), read_at }))
   t.notification_settings = []
   t.push_subscriptions = []
+}
+
+// MULTI_WEEK=1: Strength Foundations has a week 2 written out (week 1 plus 2.5 kg).
+if (process.env.MULTI_WEEK) {
+  const t = module.exports.tables
+  for (const d of t.program_workouts.filter((w) => w.program_id === program.id && w.week_number === 1)) {
+    const nd = { ...d, id: id(), week_number: 2 }
+    t.program_workouts.push(nd)
+    for (const we of t.workout_exercises.filter((x) => x.program_workout_id === d.id)) {
+      const ne = { ...we, id: id(), program_workout_id: nd.id }
+      t.workout_exercises.push(ne)
+      for (const st of t.workout_exercise_sets.filter((x) => x.workout_exercise_id === we.id)) {
+        t.workout_exercise_sets.push({ ...st, id: id(), workout_exercise_id: ne.id, weight_kg: st.set_type === 'warmup' || st.weight_kg == null ? st.weight_kg : st.weight_kg + 2.5 })
+      }
+    }
+  }
 }

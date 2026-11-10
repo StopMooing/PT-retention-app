@@ -18,7 +18,7 @@ import { parseAiJson } from './foods'
 import { DayGrid, StepNav, Overlay, BackHeader } from './common'
 import { scheduleOne, startProgram, stopProgram } from './programs'
 import StartPlanFields from '../lib/StartPlanFields'
-import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, clientEarliestStart } from '../lib/schedule.js'
+import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, daysPerWeek, builtWeeks, clientEarliestStart } from '../lib/schedule.js'
 import WorkoutPreview from './WorkoutPreview'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
@@ -51,6 +51,9 @@ function savedItem(w, extra = {}) {
     content: w.content || '', count: exs.length, mins: estMinutes(exs), muscles: muscleGroups(exs), ...extra,
   }
 }
+
+// "Day 2" for a one-week program (it repeats), "Week 3, Day 2" when every week is written out.
+const dayName = (pw, multiWeek) => (multiWeek ? `Week ${pw.week_number || 1}, Day ${pw.day_number}` : `Day ${pw.day_number}`)
 
 const itemMeta = (it, short) => [it.count ? plural(it.count, 'exercise') : null, it.mins ? `${short ? '' : 'about '}${it.mins} min` : null].filter(Boolean).join(' · ')
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -87,12 +90,18 @@ function ItemList({ items, onOpen, short }) {
 function ProgramDetail({
   eyebrow, program, days, exMap, note, footer, onBack, onOpenItem, onStartItem, onAddItem, progress, busy,
 }) {
-  const items = days.map((pw) => programItem(pw, exMap, { eyebrow: `Day ${pw.day_number} of ${program.name}` }))
-  const weeks = programWeeks(program)
+  const multiWeek = builtWeeks(days) > 1
+  const items = days.map((pw) => programItem(pw, exMap, { eyebrow: `${dayName(pw, multiWeek)} of ${program.name}`, week: pw.week_number || 1 }))
+  const weeks = multiWeek ? builtWeeks(days) : programWeeks(program)
+  const perWeek = daysPerWeek(days)
   const avgMins = items.length ? Math.round(items.reduce((s, it) => s + it.mins, 0) / items.length) : 0
+  // One list for a repeating week, a list per week when each week is written out.
+  const groups = multiWeek
+    ? [...new Set(items.map((it) => it.week))].map((w) => [`Week ${w}`, items.filter((it) => it.week === w)])
+    : [['Workouts', items]]
   const stats = [
     weeks ? { label: weeks === 1 ? 'Week' : 'Weeks', value: weeks } : null,
-    { label: items.length === 1 ? 'Day a week' : 'Days a week', value: items.length },
+    { label: perWeek === 1 ? 'Day a week' : 'Days a week', value: perWeek },
     avgMins ? { label: 'Min a session', value: `~${avgMins}` } : null,
   ].filter(Boolean)
   return (
@@ -123,10 +132,11 @@ function ProgramDetail({
           </div>
         )}
         {note && <p className="text-[15px] text-ink bg-accent-soft rounded-[16px] px-4 py-3 leading-relaxed">{note}</p>}
-        <section>
-          <SectionLabel>Workouts</SectionLabel>
+        {groups.map(([label, list]) => (
+        <section key={label}>
+          <SectionLabel>{label}</SectionLabel>
           <Card padded={false} className="divide-y divide-line">
-            {items.map((it) => (
+            {list.map((it) => (
               <div key={it.key} className="flex items-center gap-2 pr-3">
                 <Row onClick={() => onOpenItem(it)} className="flex-1 min-w-0 pr-1">
                   <ItemBadge item={it} />
@@ -143,6 +153,7 @@ function ProgramDetail({
             ))}
           </Card>
         </section>
+        ))}
       </div>
       {footer && (
         <div className="shrink-0 border-t border-line bg-bg px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)] space-y-2">{footer}</div>
@@ -263,7 +274,14 @@ export default function TrainTab({
   /* ----- what's on offer ----- */
   const programDayIds = new Set(programWorkouts.map((pw) => pw.id))
   const programName = assignment?.programs?.name || 'your program'
-  const myProgramItems = programWorkouts.map((pw) => programItem(pw, exMap, { eyebrow: `Day ${pw.day_number} of ${programName}` }))
+  const multiWeek = builtWeeks(programWorkouts) > 1
+  const progress = assignment ? programProgress({ assignment, programWorkouts, workoutLogs, today }) : null
+  // A program with every week written out shows this week's workouts here (all weeks are in
+  // the program page).
+  const shownWeek = multiWeek ? Math.min(progress?.week || 1, builtWeeks(programWorkouts)) : null
+  const myProgramItems = programWorkouts
+    .filter((pw) => !shownWeek || (pw.week_number || 1) === shownWeek)
+    .map((pw) => programItem(pw, exMap, { eyebrow: `${dayName(pw, multiWeek)} of ${programName}` }))
 
   // Sessions the coach put on the calendar that aren't days of the program, one each
   // (offered in the add sheet).
@@ -283,7 +301,6 @@ export default function TrainTab({
   const hasPrograms = !!assignment || onDemand.programs.length > 0
   // No programs to show (no coach program, no on-demand ones): no Programs tab at all.
   const tab = view === 'programs' && hasPrograms ? 'programs' : 'workouts'
-  const progress = assignment ? programProgress({ assignment, programWorkouts, workoutLogs, today }) : null
 
   /* ----- the shown week ----- */
   const days = weekDays(weekStart)
@@ -432,7 +449,7 @@ export default function TrainTab({
   /* ----- programs ----- */
   function openStartSheet(program) {
     setStartDate(defaultStartDate(today))
-    setTrainingDays(defaultTrainingDays(program.days?.length ?? 0))
+    setTrainingDays(defaultTrainingDays(daysPerWeek(program.days)))
     setStartFor(program)
   }
 
@@ -606,7 +623,7 @@ export default function TrainTab({
               <SectionLabel>On demand programs</SectionLabel>
               <div className="space-y-3">
                 {onDemand.programs.map((p) => {
-                  const weeks = programWeeks(p)
+                  const weeks = planWeeks(p, p.days)
                   const current = assignment?.programs?.id === p.id
                   const mins = p.days.map((d) => estMinutes(exMap[d.id])).filter(Boolean)
                   const avg = mins.length ? Math.round(mins.reduce((a, b) => a + b, 0) / mins.length) : 0
@@ -622,7 +639,7 @@ export default function TrainTab({
                       <div className="flex flex-wrap gap-1.5 mt-3">
                         {current && <Chip tone="solid">You're on this</Chip>}
                         {weeks && <Chip>{plural(weeks, 'week')}</Chip>}
-                        <Chip>{plural(p.days.length, 'day')} a week</Chip>
+                        <Chip>{plural(daysPerWeek(p.days), 'day')} a week</Chip>
                         {avg > 0 && <Chip>about {avg} min</Chip>}
                       </div>
                     </Card>
@@ -761,7 +778,7 @@ export default function TrainTab({
           <Button
             size="lg"
             block
-            disabled={busy || !startFor || !planReady({ dayCount: startFor.days?.length ?? 0, startDate, trainingDays, minDate: clientEarliestStart(today) })}
+            disabled={busy || !startFor || !planReady({ dayCount: daysPerWeek(startFor.days), startDate, trainingDays, minDate: clientEarliestStart(today) })}
             onClick={handleStartProgram}
           >
             {busy ? 'Starting...' : 'Start program'}
@@ -772,7 +789,7 @@ export default function TrainTab({
           <>
             <p className="text-[13px] text-muted -mt-1 mb-4">Every week of the program goes on your calendar. You can move any session later.</p>
             <StartPlanFields
-              dayCount={startFor.days?.length ?? 0}
+              dayCount={daysPerWeek(startFor.days)}
               weeks={planWeeks(startFor)}
               startDate={startDate}
               onStartDate={setStartDate}

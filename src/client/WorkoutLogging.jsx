@@ -12,6 +12,7 @@ import ExerciseInfoSheet from './ExerciseInfoSheet'
 import { Overlay, Loading } from './common'
 import { toLocalDateStr } from './dates'
 import { workoutKey, workoutName as nameOf, plural } from './metrics'
+import { plannedSets, prescriptionText, setTypeOf, setLabels, supersets, blocks } from '../lib/setTargets.js'
 
 const EMPTY = []
 const cx = (...c) => c.filter(Boolean).join(' ')
@@ -19,11 +20,12 @@ const fmtTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}
 const SAVE_FAILED = "Couldn't save your session. Check your signal and tap Finish again."
 
 // The numbers saved for a ticked set. Saving and personal bests both use these, so they
-// always agree. Blank reps fall back to the prescribed reps: the first number in it, so
-// "8-10" counts as 8 and "8 each leg" as 8. A timed target ("30s") has no rep count: 0.
-function repsFor(set, ex) {
+// always agree. Blank reps fall back to the prescribed reps for that set: the first number
+// in it, so "8-10" counts as 8 and "8 each leg" as 8. A timed target ("30s") has no rep
+// count: 0.
+function repsFor(set, ex, setNumber) {
   const typed = String(set?.reps ?? '').trim()
-  const target = String(ex?.reps ?? '').trim()
+  const target = String(plannedSets(ex)[setNumber - 1]?.reps ?? ex?.reps ?? '').trim()
   const timed = /^\d+\s*(s|sec|secs|seconds?|min|mins|minutes?)\b/i.test(target)
   const reps = typed !== '' ? parseFloat(typed) || 0 : (!timed && parseInt(target.match(/\d+/)?.[0] ?? '', 10)) || 0
   return Math.min(100, Math.max(0, reps))
@@ -35,8 +37,14 @@ const loggable = (ex) => !!(ex.exercise_id || ex.exercises?.id)
 // saved more last time, when editing).
 function setsOf(ex, exSets) {
   const extra = Object.keys(exSets || {}).map(Number).filter((n) => n > 0)
-  return Math.max(ex.sets || 0, extra.length ? Math.max(...extra) : 0)
+  return Math.max(plannedSets(ex).length, extra.length ? Math.max(...extra) : 0)
 }
+// What the plan says for set n (1 based). An added set beyond the plan copies the last one.
+function targetFor(ex, n) {
+  const plan = plannedSets(ex)
+  return plan[n - 1] ?? { ...plan[plan.length - 1], type: 'normal' }
+}
+const pureNumber = (r) => /^\d+$/.test(String(r ?? '').trim())
 function weightFor(set) {
   return Math.min(500, Math.max(0, parseFloat(set?.weight) || 0))
 }
@@ -391,7 +399,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
   }
   function removeSet(ex) {
     const n = setsOf(ex, setData[ex.id])
-    if (n <= (ex.sets || 0) || setData[ex.id]?.[n]?.done) return
+    if (n <= plannedSets(ex).length || setData[ex.id]?.[n]?.done) return
     setSetData((prev) => {
       const next = { ...(prev[ex.id] || {}) }
       delete next[n]
@@ -399,27 +407,43 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     })
   }
 
-  // Ticking a set with empty boxes copies last session's numbers in.
-  function markSetDone(ex, setNumber, restSeconds) {
+  // Ticking a set with empty boxes fills in the coach's target for that set, or else last
+  // session's numbers. Rest starts after the set, except inside a superset: there the next
+  // exercise comes straight away and the rest waits for the end of the round.
+  function markSetDone(ex, setNumber) {
     const rowKey = ex.id
     const exerciseId = ex.exercise_id ?? ex.exercises?.id ?? null
     const prevSet = (previousSets[exerciseId] || [])[setNumber - 1]
+    const target = targetFor(ex, setNumber)
     const current = setData[rowKey]?.[setNumber] || {}
-    if ((current.weight === undefined || current.weight === '') && prevSet?.weight_kg > 0) updateSet(rowKey, setNumber, 'weight', String(prevSet.weight_kg))
-    if ((current.reps === undefined || current.reps === '') && prevSet?.reps) updateSet(rowKey, setNumber, 'reps', String(prevSet.reps))
+    if (current.weight === undefined || current.weight === '') {
+      const w = target.weight_kg > 0 ? target.weight_kg : prevSet?.weight_kg > 0 ? prevSet.weight_kg : null
+      if (w != null) updateSet(rowKey, setNumber, 'weight', String(w))
+    }
+    if (current.reps === undefined || current.reps === '') {
+      const r = pureNumber(target.reps) ? target.reps : prevSet?.reps || null
+      if (r) updateSet(rowKey, setNumber, 'reps', String(r))
+    }
     updateSet(rowKey, setNumber, 'done', true)
-    if (restSeconds) startRestTimer(restSeconds)
+    const mark = superMarks[ex.id]
+    const rest = mark && !mark.last ? 0 : target.rest_seconds ?? ex.rest_seconds
+    if (rest) startRestTimer(rest)
   }
 
   const totalSetsCount = loggableExercises.reduce((sum, ex) => sum + setsOf(ex, setData[ex.id]), 0)
   const doneSetsCount = loggableExercises.reduce((sum, ex) => sum + Object.values(setData[ex.id] || {}).filter((s) => s.done).length, 0)
   const allDone = hasSetTracking && totalSetsCount > 0 && doneSetsCount >= totalSetsCount
 
-  // The first set not ticked yet, so the screen can say what is next.
+  // The first set not ticked yet, so the screen can say what is next. A superset goes
+  // round its exercises: set 1 of each, then set 2 of each.
+  const superMarks = supersets(trackedExercises)
   let nextUp = null
-  for (const ex of loggableExercises) {
-    for (let s = 1; s <= setsOf(ex, setData[ex.id]); s++) {
-      if (!setData[ex.id]?.[s]?.done) { nextUp = { ex, set: s }; break }
+  for (const block of blocks(loggableExercises)) {
+    const most = Math.max(...block.map((ex) => setsOf(ex, setData[ex.id])))
+    for (let s = 1; s <= most && !nextUp; s++) {
+      for (const ex of block) {
+        if (s <= setsOf(ex, setData[ex.id]) && !setData[ex.id]?.[s]?.done) { nextUp = { ex, set: s }; break }
+      }
     }
     if (nextUp) break
   }
@@ -560,7 +584,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
       // Only ticked sets are saved: a set the client skipped never counts.
       for (let s = 1; s <= setsOf(ex, exSets); s++) {
         if (!exSets[s]?.done) continue
-        const reps = repsFor(exSets[s], ex)
+        const reps = repsFor(exSets[s], ex, s)
         const weight = weightFor(exSets[s])
         totalVolume += reps * weight
         rows.push({ exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight })
@@ -741,7 +765,8 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                     <span>{ex.exercises?.name || 'Exercise'}</span>
                     {ex.exercises?.id && <Info size={20} className="shrink-0 mt-2 opacity-70" />}
                   </button>
-                  <p className="text-[15px] font-semibold mt-1.5">{ex.sets} {ex.sets === 1 ? 'set' : 'sets'} of {ex.reps}{ex.rest_seconds ? `, ${ex.rest_seconds}s rest` : ''}</p>
+                  {superMarks[rowKey] && <p className="text-[13px] font-bold text-hero-muted mt-1">Superset {superMarks[rowKey].letter}: {superMarks[rowKey].last ? 'rest after this one' : 'go straight to the next exercise'}</p>}
+                  {prescriptionText(ex) && <p className="text-[15px] font-semibold mt-1.5">{prescriptionText(ex)}</p>}
                   {last && <p className="text-[14px] text-hero-muted mt-0.5">Last time {last.weight_kg > 0 ? `${last.weight_kg} kg for ${last.reps}` : plural(last.reps, 'rep')}</p>}
                   {ex.notes && <p className="mt-3.5 rounded-[16px] bg-hero-chip px-3.5 py-3 text-[14px] leading-snug">{ex.notes}</p>}
                 </Hero>
@@ -749,16 +774,15 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
               <Card padded={false} className="overflow-hidden">
                 {!isCurrent && <div className="px-4 pt-3.5 pb-2.5 flex items-start gap-3">
                   <span className={cx('w-7 h-7 rounded-full text-[13px] font-bold flex items-center justify-center shrink-0 mt-0.5', exDone ? 'bg-accent text-on-accent' : 'bg-surface-2 text-muted')}>
-                    {exDone ? <Check size={15} strokeWidth={3} /> : idx + 1}
+                    {exDone ? <Check size={15} strokeWidth={3} /> : superMarks[rowKey] ? `${superMarks[rowKey].letter}${trackedExercises.slice(0, idx + 1).filter((x) => superMarks[x.id]?.letter === superMarks[rowKey].letter).length}` : idx + 1}
                   </span>
                   <div className="flex-1 min-w-0">
                     <button onClick={() => ex.exercises?.id && setInfoFor(ex.exercises)} className="text-left text-[17px] font-bold text-ink leading-snug inline-flex items-start gap-1.5">
                       <span>{ex.exercises?.name || 'Exercise'}</span>
                       {ex.exercises?.id && <Info size={15} className="shrink-0 mt-1 text-muted" />}
                     </button>
-                    <p className="text-[13px] text-muted mt-0.5">
-                      {ex.sets} x {ex.reps}{ex.rest_seconds ? ` · ${ex.rest_seconds}s rest` : ''}
-                    </p>
+                    {superMarks[rowKey] && <p className="text-[12px] font-bold text-accent mt-0.5">Superset {superMarks[rowKey].letter}</p>}
+                    {prescriptionText(ex) && <p className="text-[13px] text-muted mt-0.5">{prescriptionText(ex)}</p>}
                     {ex.notes && <p className="text-[13px] text-muted italic mt-1">{ex.notes}</p>}
                   </div>
                   {muscle && <Chip className="mt-0.5">{muscle}</Chip>}
@@ -783,13 +807,20 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                   const prevSet = prevSets[i]
                   const isNext = nextUp?.ex.id === rowKey && nextUp.set === setNum
                   const prevText = prevSet ? (prevSet.weight_kg > 0 ? `${prevSet.weight_kg} x ${prevSet.reps}` : plural(prevSet.reps, 'rep')) : '-'
+                  const target = targetFor(ex, setNum)
+                  const label = setLabels(plannedSets(ex), setNum)[setNum - 1]
+                  const typed = target.type !== 'normal' && setNum <= plannedSets(ex).length
                   return (
                     <div key={setNum} className={cx('grid grid-cols-[28px_1fr_64px_56px_40px] gap-2 items-center px-3 py-1.5 transition-colors', isDone && 'bg-accent-soft')}>
-                      <span className={cx('text-center text-[15px] font-bold tabular-nums', isDone ? 'text-accent' : 'text-ink')}>{setNum}</span>
+                      <span
+                        aria-label={typed ? `${setTypeOf(target.type).label}` : `Set ${label}`}
+                        title={typed ? setTypeOf(target.type).label : undefined}
+                        className={cx('text-center text-[15px] font-bold tabular-nums', isDone ? 'text-accent' : typed ? 'text-muted' : 'text-ink')}
+                      >{label}</span>
                       <span className="text-[13px] text-muted tabular-nums truncate">{prevText}</span>
                       <input
                         type="text" inputMode="decimal" aria-label={`Set ${setNum} kg`}
-                        placeholder={prevSet?.weight_kg > 0 ? `${prevSet.weight_kg}` : ''}
+                        placeholder={target.weight_kg > 0 ? `${target.weight_kg}` : prevSet?.weight_kg > 0 ? `${prevSet.weight_kg}` : ''}
                         value={setInfo.weight || ''}
                         onChange={(e) => { const v = e.target.value; if (v === '' || (parseFloat(v) >= 0 && parseFloat(v) <= 500)) updateSet(rowKey, setNum, 'weight', v) }}
                         disabled={isDone}
@@ -797,14 +828,14 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                       />
                       <input
                         type="text" inputMode="numeric" aria-label={`Set ${setNum} reps`}
-                        placeholder={prevSet?.reps ? `${prevSet.reps}` : ''}
+                        placeholder={target.reps || (prevSet?.reps ? `${prevSet.reps}` : '')}
                         value={setInfo.reps || ''}
                         onChange={(e) => { const v = e.target.value; if (v === '' || (parseInt(v, 10) >= 0 && parseInt(v, 10) <= 100)) updateSet(rowKey, setNum, 'reps', v) }}
                         disabled={isDone}
                         className={inputCls(isDone)}
                       />
                       <button
-                        onClick={() => (isDone ? updateSet(rowKey, setNum, 'done', false) : markSetDone(ex, setNum, ex.rest_seconds))}
+                        onClick={() => (isDone ? updateSet(rowKey, setNum, 'done', false) : markSetDone(ex, setNum))}
                         aria-label={isDone ? `Undo set ${setNum}` : `Set ${setNum} done`}
                         className={cx(
                           'w-10 h-10 rounded-full flex items-center justify-center transition-colors',
@@ -821,7 +852,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                     <button onClick={() => addSet(ex)} className="h-9 px-3.5 rounded-full bg-surface-2 text-ink text-[13px] font-bold inline-flex items-center gap-1.5">
                       <Plus size={15} /> Add set
                     </button>
-                    {setsOf(ex, exSetData) > (ex.sets || 0) && !exSetData[setsOf(ex, exSetData)]?.done && (
+                    {setsOf(ex, exSetData) > plannedSets(ex).length && !exSetData[setsOf(ex, exSetData)]?.done && (
                       <button onClick={() => removeSet(ex)} className="h-9 px-3.5 rounded-full text-muted text-[13px] font-bold inline-flex items-center gap-1.5 hover:bg-surface-2">
                         <Minus size={15} /> Remove set
                       </button>

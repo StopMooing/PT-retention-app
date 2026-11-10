@@ -5,8 +5,9 @@ import { Info } from 'lucide-react'
 import { Chip, Card } from '../ui'
 import ExerciseInfoSheet from './ExerciseInfoSheet'
 import { Overlay, BackHeader } from './common'
-import { estMinutes, totalSets, plural } from './metrics'
+import { estMinutes, totalSets } from './metrics'
 import { parseAiJson } from './foods'
+import { prescriptionText, supersets } from '../lib/setTargets.js'
 
 function StatsRow({ items }) {
   return (
@@ -21,12 +22,13 @@ function StatsRow({ items }) {
   )
 }
 
-function ExerciseRow({ idx, name, muscle, detail, notes, onInfo }) {
+function ExerciseRow({ idx, name, muscle, detail, notes, onInfo, superset }) {
   const Tag = onInfo ? 'button' : 'div'
   return (
     <Tag onClick={onInfo} className="w-full text-left flex items-start gap-3 px-4 py-3.5">
       <span className="w-7 h-7 rounded-full bg-surface-2 text-muted text-[13px] font-bold flex items-center justify-center shrink-0 mt-0.5 tabular-nums">{idx + 1}</span>
       <div className="flex-1 min-w-0">
+        {superset?.first && <p className="text-[12px] font-bold text-accent mb-0.5">Superset {superset.letter} · back to back with the next</p>}
         <p className="text-[15px] font-bold text-ink inline-flex items-start gap-1.5">
           <span>{name}</span>
           {onInfo && <Info size={14} className="shrink-0 mt-1 text-muted" aria-label="How to do it" />}
@@ -39,15 +41,13 @@ function ExerciseRow({ idx, name, muscle, detail, notes, onInfo }) {
   )
 }
 
-const detailFor = (ex) =>
-  [ex.sets > 0 ? `${plural(ex.sets, 'set')} x ${ex.reps}` : ex.reps, ex.rest_seconds > 0 ? `${ex.rest_seconds}s rest` : null].filter(Boolean).join(' · ')
-
 export default function WorkoutPreview({ eyebrow, title, exercises = [], customContent, onBack, footer }) {
   const parsed = customContent ? parseAiJson(customContent) : null
   const aiExercises = parsed?.title && Array.isArray(parsed?.exercises) ? parsed.exercises : null
   const list = customContent ? aiExercises ?? [] : exercises
   const muscles = customContent ? [] : [...new Set(exercises.map((ex) => ex.exercises?.muscle_group).filter(Boolean))]
   const [infoFor, setInfoFor] = useState(null)
+  const marks = supersets(list.map((ex, i) => ({ ...ex, id: ex.id ?? i })))
 
   return (
     <Overlay>
@@ -77,7 +77,8 @@ export default function WorkoutPreview({ eyebrow, title, exercises = [], customC
                 idx={i}
                 name={ex.exercises?.name || ex.name || 'Exercise'}
                 muscle={ex.exercises?.muscle_group}
-                detail={detailFor(ex)}
+                detail={prescriptionText(ex)}
+                superset={marks[ex.id ?? i]}
                 notes={ex.notes}
                 onInfo={ex.exercises?.id ? () => setInfoFor(ex.exercises) : undefined}
               />

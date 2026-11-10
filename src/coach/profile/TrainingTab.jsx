@@ -7,7 +7,8 @@ import { Button, Card, Chip, Segmented, Sheet, EmptyState, Field } from '../../u
 import { Panel } from './parts'
 import { toLocalDateStr, dayOf, formatDate, relativeDay, firstName, startedByClient, sessionFelt } from '../lib'
 import StartPlanFields from '../../lib/StartPlanFields'
-import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, planSessionCount, PAST_START_NOTE } from '../../lib/schedule.js'
+import { prescriptionText } from '../../lib/setTargets.js'
+import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, planSessionCount, daysPerWeek, PAST_START_NOTE } from '../../lib/schedule.js'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -96,7 +97,7 @@ function FindWorkoutSheet({ open, date, onClose, allPrograms, allProgramWorkouts
         {isSel && ex.length > 0 && (
           <ol className="px-4 pb-3 pl-11 space-y-1">
             {ex.map((e) => (
-              <li key={e.id} className="flex justify-between gap-2 text-[13px]"><span className="text-ink truncate">{e.exercises?.name}</span><span className="text-muted shrink-0">{e.sets} × {e.reps}</span></li>
+              <li key={e.id} className="flex justify-between gap-2 text-[13px]"><span className="text-ink truncate">{e.exercises?.name}</span><span className="text-muted shrink-0">{prescriptionText(e)}</span></li>
             ))}
           </ol>
         )}
@@ -160,7 +161,7 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
   function close() { setSearch(''); setSelected(null); setError(null); setStartDate(defaultStartDate(today)); onClose() }
   // Single ready-made workouts are for one-off sessions, not a whole program.
   const list = allPrograms.filter((p) => !(p.readyMade && p.kind === 'workout') && p.name?.toLowerCase().includes(search.toLowerCase()))
-  const dayCount = (p) => allProgramWorkouts.filter((pw) => pw.program_id === p.id).length
+  const dayCount = (p) => daysPerWeek(allProgramWorkouts.filter((pw) => pw.program_id === p.id))
   const n = selected ? dayCount(selected) : 0
   const ready = !!selected && (n === 0 ? !!startDate : planReady({ dayCount: n, startDate, trainingDays, minDate: null }))
   function pick(p) {
@@ -224,7 +225,7 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
       {selected && (
         <div className="mt-4 pt-4 border-t border-line">
           {n > 0 ? (
-            <StartPlanFields dayCount={n} weeks={planWeeks(selected)} startDate={startDate} onStartDate={setStartDate} trainingDays={trainingDays} onTrainingDays={setTrainingDays} today={today} minDate={null} pastNote={PAST_START_NOTE} />
+            <StartPlanFields dayCount={n} weeks={planWeeks(selected, allProgramWorkouts.filter((pw) => pw.program_id === selected.id))} startDate={startDate} onStartDate={setStartDate} trainingDays={trainingDays} onTrainingDays={setTrainingDays} today={today} minDate={null} pastNote={PAST_START_NOTE} />
           ) : (
             <>
               <p className="text-[13px] text-muted mb-3">This program has no workouts yet, so nothing goes on the schedule.</p>
@@ -245,8 +246,8 @@ function AssignProgramSheet({ open, onClose, clientName, allPrograms, allProgram
 
 function AutoScheduleSheet({ open, onClose, programAssignment, programWorkouts, onAutoSchedule }) {
   const today = toLocalDateStr()
-  const n = programWorkouts.length
-  const weeks = planWeeks(programAssignment?.programs)
+  const n = daysPerWeek(programWorkouts)
+  const weeks = planWeeks(programAssignment?.programs, programWorkouts)
   const [start, setStart] = useState(() => (programAssignment?.start_date > today ? programAssignment.start_date : defaultStartDate(today)))
   const [trainingDays, setTrainingDays] = useState(() => defaultTrainingDays(n))
   const [saving, setSaving] = useState(false)

@@ -1,19 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, ChevronRight, ChevronUp, ChevronDown, Trash2, ClipboardList, Dumbbell, Check, UserPlus, PlayCircle, Pencil, Copy, Sparkles } from 'lucide-react'
+import { Plus, ChevronRight, Trash2, ClipboardList, Dumbbell, Check, UserPlus, PlayCircle, Pencil, Copy, Sparkles, Link2 } from 'lucide-react'
 import { supabase } from './supabase'
 import { PageTitle, Card, Button, Chip, Sheet, EmptyState, Field, Segmented, SectionLabel } from './ui'
-import { Loading, Toast, BackLink, Select, TextArea, MiniField, SearchBox, FilterChips, ConfirmRemove, Toggle } from './tools/kit'
+import { Loading, Toast, BackLink, Select, TextArea, Toggle } from './tools/kit'
 import { useToast } from './tools/useToast'
 import { toLocalDateStr } from './tools/dates'
 import StartPlanFields from './lib/StartPlanFields'
-import { programPlan, planWeeks, defaultStartDate, defaultTrainingDays, planReady, PAST_START_NOTE } from './lib/schedule.js'
+import { programPlan, planWeeks, daysPerWeek, builtWeeks, defaultStartDate, defaultTrainingDays, planReady, PAST_START_NOTE } from './lib/schedule.js'
+import { prescriptionText, supersets } from './lib/setTargets.js'
+import { estMinutes } from './client/metrics'
+import WorkoutEditor from './coach/WorkoutEditor'
 import { insertPlannedSessions, clearUpcoming } from './lib/planWrites'
-
-const EQUIPMENT = [
-  ['barbell', 'Barbell'], ['dumbbell', 'Dumbbell'], ['cable', 'Cable'], ['machine', 'Machine'],
-  ['bodyweight', 'Bodyweight'], ['band', 'Band'], ['kettlebell', 'Kettlebell'], ['trx', 'TRX'],
-  ['sled', 'Sled'], ['landmine', 'Landmine'], ['trap_bar', 'Trap bar'], ['functional', 'Functional'], ['plate', 'Plate'],
-]
 
 // What the "New program" sheet can build. On-demand ones only show once the database
 // has the on-demand columns (see onDemandOK below).
@@ -24,30 +21,21 @@ const NEW_TYPES = [
 ]
 const EMPTY_NEW_PROGRAM = { name: '', description: '', type: 'coaching' }
 
-const EMPTY_NEW_EXERCISE = { exercise_id: '', sets: '', reps: '', rest_seconds: '', notes: '' }
+// Each program exercise with its name and its set rows.
+const DAY_EXERCISES = '*, exercises(id, name, muscle_group), workout_exercise_sets(set_number, set_type, reps, weight_kg, rpe, rest_seconds)'
 
-// Rough session length: each set is about 45 seconds of work plus its rest.
-function estimateMinutes(exercises) {
-  return Math.round(
-    (exercises || []).reduce((total, ex) => {
-      const sets = parseInt(ex.sets) || 3
-      const rest = parseInt(ex.rest_seconds) || 90
-      return total + sets * (rest + 45)
-    }, 0) / 60,
-  )
-}
+// Program days in order: week 1 day 1, week 1 day 2, ... then week 2.
+const byWeekDay = (a, b) => (a.week_number || 1) - (b.week_number || 1) || a.day_number - b.day_number
+
+// What "Add week" can add to the working sets of the copied week (warm-ups stay the same).
+const PROGRESSIONS = [
+  { value: 'same', label: 'Same as last week', hint: 'An exact copy to change by hand.', kg: 0, reps: 0 },
+  { value: 'kg', label: '+2.5 kg on every working set', hint: 'Sets with a kg target go up 2.5 kg.', kg: 2.5, reps: 0 },
+  { value: 'reps', label: '+1 rep on every working set', hint: '8 becomes 9, 8-12 becomes 9-13.', kg: 0, reps: 1 },
+]
 
 function plural(n, word) {
   return `${n} ${word}${n === 1 ? '' : 's'}`
-}
-
-function prescription(ex) {
-  const parts = []
-  if (ex.sets != null && ex.reps) parts.push(`${ex.sets} x ${ex.reps}`)
-  else if (ex.sets != null) parts.push(plural(ex.sets, 'set'))
-  else if (ex.reps) parts.push(`${ex.reps} reps`)
-  if (ex.rest_seconds != null) parts.push(`${ex.rest_seconds}s rest`)
-  return parts.join(' · ')
 }
 
 function formatDate(dateStr) {
@@ -84,21 +72,15 @@ export default function ProgramBuilder({ user }) {
   const [newDay, setNewDay] = useState({ name: '', day_number: '' })
   const [savingDay, setSavingDay] = useState(false)
 
-  // Adding an exercise (sheet), searching the library
+  // The exercise library (for the workout editor's picker)
   const [allExercises, setAllExercises] = useState([])
-  const [addToDay, setAddToDay] = useState(null)
-  const [newExercise, setNewExercise] = useState(EMPTY_NEW_EXERCISE)
-  const [exerciseSearch, setExerciseSearch] = useState('')
-  const [equipmentFilter, setEquipmentFilter] = useState('')
-  const [muscleFilter, setMuscleFilter] = useState('')
-  const [savingExercise, setSavingExercise] = useState(false)
 
-  // Inline editing of one exercise row
-  const [editingExerciseId, setEditingExerciseId] = useState(null)
-  const [editExercise, setEditExercise] = useState({ sets: '', reps: '', rest_seconds: '', notes: '' })
-  const [savingEdit, setSavingEdit] = useState(false)
-  const [deletingId, setDeletingId] = useState(null)
-  const [reordering, setReordering] = useState(false)
+  // Which day is open in the workout editor (its id), which week the program page shows,
+  // and the "Add week" sheet's progression choice.
+  const [editingDayId, setEditingDayId] = useState(null)
+  const [week, setWeek] = useState(1)
+  const [progression, setProgression] = useState('same')
+  const [addingWeek, setAddingWeek] = useState(false)
 
   // Assign to a client
   const [clients, setClients] = useState([])
@@ -116,7 +98,7 @@ export default function ProgramBuilder({ user }) {
   const [editDay, setEditDay] = useState(null)
   const [savingEdits, setSavingEdits] = useState(false)
 
-  // Which sheet is open: 'program' | 'day' | 'exercise' | 'assign' | 'editProgram' | 'editDay' | null
+  // Which sheet is open: 'program' | 'day' | 'week' | 'assign' | 'editProgram' | 'editDay' | null
   const [sheet, setSheet] = useState(null)
   const [toast, showToast] = useToast()
 
@@ -125,13 +107,13 @@ export default function ProgramBuilder({ user }) {
     setLoadingPrograms(true)
     const { data, error } = await supabase
       .from('programs')
-      .select('*, program_workouts(id)')
+      .select('*, program_workouts(id, week_number)')
       .eq('created_by', user.id)
       .order('created_at', { ascending: false })
     if (!error && data) setPrograms(data)
     const { data: lib } = await supabase
       .from('programs')
-      .select('*, program_workouts(id)')
+      .select('*, program_workouts(id, week_number)')
       .eq('is_on_demand', true)
       .order('name')
     setLibrary(lib ?? [])
@@ -178,7 +160,7 @@ export default function ProgramBuilder({ user }) {
     setAssignClientId('')
     setAssignCurrent(null)
     setAssignStartDate(defaultStartDate(toLocalDateStr()))
-    setAssignDays(defaultTrainingDays(workoutDays.length))
+    setAssignDays(defaultTrainingDays(daysPerWeek(workoutDays)))
     setSheet('assign')
   }
 
@@ -222,7 +204,7 @@ export default function ProgramBuilder({ user }) {
       setAssignError('Something went wrong. Please try again.')
       return
     }
-    const plan = programPlan({ days: workoutDays, weeks: planWeeks(selectedProgram), startDate: assignStartDate, trainingDays: assignDays })
+    const plan = programPlan({ days: workoutDays, weeks: planWeeks(selectedProgram, workoutDays), startDate: assignStartDate, trainingDays: assignDays })
     const { error: planError } = await insertPlannedSessions({ clientId: assignClientId, createdBy: authUser.id, plan })
     // A failed clear is only logged (inside clearUpcoming); the new program is already on.
     for (const programId of new Set((previous ?? []).map(a => a.program_id))) {
@@ -240,7 +222,7 @@ export default function ProgramBuilder({ user }) {
   async function fetchDayExercises(workoutId) {
     const { data, error } = await supabase
       .from('workout_exercises')
-      .select('*, exercises(id, name, muscle_group)')
+      .select(DAY_EXERCISES)
       .eq('program_workout_id', workoutId)
       .order('order_index')
       .order('created_at')
@@ -251,8 +233,9 @@ export default function ProgramBuilder({ user }) {
     setLoadingDays(true)
     const { data, error } = await supabase
       .from('program_workouts')
-      .select('*, workout_exercises(*)')
+      .select('*')
       .eq('program_id', programId)
+      .order('week_number')
       .order('day_number')
     if (!error && data) {
       setWorkoutDays(data)
@@ -262,11 +245,12 @@ export default function ProgramBuilder({ user }) {
     setLoadingDays(false)
   }
 
-  function openProgram(program) {
+  function openProgram(program, openWeek = 1) {
     setSelectedProgram(program)
     setWorkoutDays([])
     setExercisesByDay({})
-    setEditingExerciseId(null)
+    setEditingDayId(null)
+    setWeek(openWeek)
     fetchWorkoutDays(program.id)
   }
 
@@ -274,7 +258,7 @@ export default function ProgramBuilder({ user }) {
     // Land on the list the program now belongs to, so a just-toggled one is easy to find.
     setListView(isOnDemand(selectedProgram) || selectedProgram?.created_by !== user.id ? 'library' : 'coaching')
     setSelectedProgram(null)
-    setEditingExerciseId(null)
+    setEditingDayId(null)
   }
 
   /* ── Rename and delete. The database refuses to delete anything a client has used
@@ -329,7 +313,7 @@ export default function ProgramBuilder({ user }) {
     const { data, error } = await supabase.from('program_workouts').update(fields).eq('id', editDay.id).select('id')
     setSavingEdits(false)
     if (error || !data?.length) { showToast('Could not save that. Try again.', 'bad'); return }
-    setWorkoutDays(prev => prev.map(d => (d.id === editDay.id ? { ...d, ...fields } : d)).sort((a, b) => a.day_number - b.day_number))
+    setWorkoutDays(prev => prev.map(d => (d.id === editDay.id ? { ...d, ...fields } : d)).sort(byWeekDay))
     setSheet(null)
     showToast('Saved')
   }
@@ -380,7 +364,7 @@ export default function ProgramBuilder({ user }) {
     if (!error && type === 'workout') day = await createWorkoutDay(data)
     setSavingProgram(false)
     if (error) { showToast(type === 'workout' ? 'Could not save workout.' : 'Could not save program.', 'bad'); return }
-    const withMeta = { ...data, program_workouts: day ? [{ id: day.id }] : [] }
+    const withMeta = { ...data, program_workouts: day ? [{ id: day.id, week_number: 1 }] : [] }
     setPrograms(prev => [withMeta, ...prev])
     if (type !== 'coaching') setLibrary(prev => [withMeta, ...prev])
     setNewProgram(EMPTY_NEW_PROGRAM)
@@ -398,9 +382,9 @@ export default function ProgramBuilder({ user }) {
       if (!day) { showToast('Could not set up this workout. Try again.', 'bad'); return }
       setWorkoutDays([{ ...day, workout_exercises: [] }])
       setExercisesByDay(prev => ({ ...prev, [day.id]: [] }))
-      setPrograms(prev => prev.map(p => p.id === selectedProgram.id ? { ...p, program_workouts: [{ id: day.id }] } : p))
+      setPrograms(prev => prev.map(p => p.id === selectedProgram.id ? { ...p, program_workouts: [{ id: day.id, week_number: 1 }] } : p))
     }
-    openAddExercise(day)
+    setEditingDayId(day.id)
   }
 
   async function handleToggleOnDemand(next) {
@@ -420,36 +404,55 @@ export default function ProgramBuilder({ user }) {
     showToast(next ? 'Added to the on-demand library' : 'Taken out of the on-demand library')
   }
 
-  // A ready-made program becomes the coach's own: same days, exercises, sets and notes,
-  // free to change. The original stays as it is.
+  // A ready-made program becomes the coach's own: every week, day, exercise, superset and
+  // set, free to change. One step in the database (copy_program), so it never half copies.
+  // The original stays as it is.
   async function handleCopyProgram() {
     if (copying || !selectedProgram) return
     setCopying(true)
-    const fail = () => { setCopying(false); showToast('Could not copy that program. Try again.', 'bad') }
-    const { data: prog, error } = await supabase.from('programs')
-      .insert({ name: selectedProgram.name, description: selectedProgram.description, created_by: user.id, ...(onDemandOK ? { is_on_demand: false, kind: 'program' } : {}) })
-      .select().single()
-    if (error) return fail()
-    const days = []
-    for (const day of workoutDays) {
-      const { data: d, error: dErr } = await supabase.from('program_workouts')
-        .insert({ program_id: prog.id, name: day.name, day_number: day.day_number }).select().single()
-      if (dErr) return fail()
-      days.push(d)
-      const rows = (exercisesByDay[day.id] ?? []).map((ex, i) => ({
-        program_workout_id: d.id, exercise_id: ex.exercise_id, sets: ex.sets, reps: ex.reps,
-        rest_seconds: ex.rest_seconds, notes: ex.notes, order_index: ex.order_index ?? i,
-      }))
-      if (rows.length) {
-        const { error: eErr } = await supabase.from('workout_exercises').insert(rows)
-        if (eErr) return fail()
-      }
-    }
-    const withMeta = { ...prog, program_workouts: days.map((d) => ({ id: d.id })) }
-    setPrograms((prev) => [withMeta, ...prev])
+    const { data: id, error } = await supabase.rpc('copy_program', { p_program: selectedProgram.id })
+    const { data: prog } = id ? await supabase.from('programs').select('*, program_workouts(id, week_number)').eq('id', id).single() : { data: null }
     setCopying(false)
+    if (error || !prog) { console.error('copy_program', error); showToast('Could not copy that program. Try again.', 'bad'); return }
+    setPrograms((prev) => [prog, ...prev])
     showToast('Copied to your programs. Change anything you like.')
-    openProgram(withMeta)
+    openProgram(prog)
+  }
+
+  // A new week at the end, copied from the last one, with the progression the coach picked
+  // added to the working sets (copy_program_week does it in one step).
+  async function handleAddWeek() {
+    if (addingWeek) return
+    const from = builtWeeks(workoutDays)
+    const step = PROGRESSIONS.find((p) => p.value === progression) ?? PROGRESSIONS[0]
+    setAddingWeek(true)
+    const { data: newWeek, error } = await supabase.rpc('copy_program_week', { p_program: selectedProgram.id, p_from_week: from, p_kg: step.kg, p_reps: step.reps })
+    if (!error) await fetchWorkoutDays(selectedProgram.id)
+    setAddingWeek(false)
+    if (error) { console.error('copy_program_week', error); showToast(error.message?.includes('too_many_weeks') ? 'A program can have up to 52 weeks.' : 'Could not add the week. Try again.', 'bad'); return }
+    const { data: ids } = await supabase.from('program_workouts').select('id, week_number').eq('program_id', selectedProgram.id)
+    if (ids) setPrograms((prev) => prev.map((p) => (p.id === selectedProgram.id ? { ...p, program_workouts: ids } : p)))
+    setSheet(null)
+    setWeek(newWeek)
+    showToast(`Week ${newWeek} added`)
+  }
+
+  // Removing the last week (only the last, so the weeks stay in order). The database keeps
+  // any day a client has already used.
+  async function handleRemoveWeek() {
+    const last = builtWeeks(workoutDays)
+    if (last < 2 || savingEdits) return
+    if (!window.confirm(`Remove week ${last} and its workouts? This can't be undone.`)) return
+    setSavingEdits(true)
+    const { data, error } = await supabase.from('program_workouts').delete().eq('program_id', selectedProgram.id).eq('week_number', last).select('id')
+    setSavingEdits(false)
+    if (error?.message?.includes('in_use')) { showToast(IN_USE_DAY, 'bad'); return }
+    if (error || !data?.length) { showToast('Could not remove that week. Try again.', 'bad'); return }
+    const gone = new Set(data.map((d) => d.id))
+    setWorkoutDays((prev) => prev.filter((d) => !gone.has(d.id)))
+    setPrograms((prev) => prev.map((p) => (p.id === selectedProgram.id ? { ...p, program_workouts: (p.program_workouts ?? []).filter((w) => !gone.has(w.id)) } : p)))
+    setWeek(last - 1)
+    showToast(`Week ${last} removed`)
   }
 
   // Only whoever runs the library (has published to it) can add to it or change what is in
@@ -465,7 +468,7 @@ export default function ProgramBuilder({ user }) {
   }
 
   function openNewDay() {
-    const next = workoutDays.reduce((max, d) => Math.max(max, d.day_number || 0), 0) + 1
+    const next = workoutDays.filter(d => (d.week_number || 1) === week).reduce((max, d) => Math.max(max, d.day_number || 0), 0) + 1
     setNewDay({ name: '', day_number: String(next) })
     setSheet('day')
   }
@@ -476,16 +479,16 @@ export default function ProgramBuilder({ user }) {
     setSavingDay(true)
     const { data, error } = await supabase
       .from('program_workouts')
-      .insert({ program_id: selectedProgram.id, name: newDay.name.trim(), day_number: parseInt(newDay.day_number, 10) })
+      .insert({ program_id: selectedProgram.id, name: newDay.name.trim(), day_number: parseInt(newDay.day_number, 10), week_number: week })
       .select()
       .single()
     setSavingDay(false)
     if (error) { showToast('Could not save day.', 'bad'); return }
-    setWorkoutDays(prev => [...prev, { ...data, workout_exercises: [] }].sort((a, b) => a.day_number - b.day_number))
+    setWorkoutDays(prev => [...prev, data].sort(byWeekDay))
     setExercisesByDay(prev => ({ ...prev, [data.id]: [] }))
     setPrograms(prev => prev.map(p =>
       p.id === selectedProgram.id
-        ? { ...p, program_workouts: [...(p.program_workouts ?? []), { id: data.id }] }
+        ? { ...p, program_workouts: [...(p.program_workouts ?? []), { id: data.id, week_number: data.week_number }] }
         : p
     ))
     setNewDay({ name: '', day_number: '' })
@@ -493,132 +496,13 @@ export default function ProgramBuilder({ user }) {
     showToast(`${data.name} added`)
   }
 
-  function openAddExercise(day) {
-    setAddToDay(day)
-    setNewExercise(EMPTY_NEW_EXERCISE)
-    setExerciseSearch('')
-    setSheet('exercise')
+  // "3 days a week", or "4 weeks · 3 days a week" when each week is written out.
+  function daysLine(program) {
+    const days = selectedProgram?.id === program.id ? workoutDays : program.program_workouts ?? []
+    const weeks = builtWeeks(days)
+    const perWeek = daysPerWeek(days)
+    return weeks > 1 ? `${plural(weeks, 'week')} · ${plural(perWeek, 'day')} a week` : `${plural(perWeek, 'day')} a week`
   }
-
-  async function handleSaveExercise(e) {
-    e.preventDefault()
-    if (!newExercise.exercise_id || savingExercise || !addToDay) return
-    setSavingExercise(true)
-    const dayExercises = exercisesByDay[addToDay.id] ?? []
-    // Next position in this day. Older rows may all be 0; created_at breaks ties when fetching.
-    const nextOrderIndex = dayExercises.reduce((max, ex) => Math.max(max, ex.order_index ?? 0), -1) + 1
-    const { data, error } = await supabase
-      .from('workout_exercises')
-      .insert({
-        program_workout_id: addToDay.id,
-        exercise_id: newExercise.exercise_id,
-        sets: newExercise.sets ? parseInt(newExercise.sets, 10) : null,
-        reps: newExercise.reps.trim() || null,
-        rest_seconds: newExercise.rest_seconds ? parseInt(newExercise.rest_seconds, 10) : null,
-        notes: newExercise.notes.trim() || null,
-        order_index: nextOrderIndex,
-      })
-      .select('*, exercises(id, name, muscle_group)')
-      .single()
-    setSavingExercise(false)
-    if (error) { showToast('Could not add exercise.', 'bad'); return }
-    setExercisesByDay(prev => ({ ...prev, [addToDay.id]: [...(prev[addToDay.id] ?? []), data] }))
-    // The sheet stays open so the coach can add the next exercise straight away.
-    setNewExercise(EMPTY_NEW_EXERCISE)
-    setExerciseSearch('')
-    showToast(`${data.exercises?.name ?? 'Exercise'} added`)
-  }
-
-  async function handleDeleteExercise(dayId, id) {
-    setDeletingId(id)
-    const { error } = await supabase.from('workout_exercises').delete().eq('id', id)
-    if (error) {
-      showToast('Could not delete exercise.', 'bad')
-    } else {
-      setExercisesByDay(prev => ({ ...prev, [dayId]: (prev[dayId] ?? []).filter(e => e.id !== id) }))
-      setEditingExerciseId(null)
-    }
-    setDeletingId(null)
-  }
-
-  function startEditExercise(exercise) {
-    setEditingExerciseId(exercise.id)
-    setEditExercise({
-      sets: exercise.sets != null ? String(exercise.sets) : '',
-      reps: exercise.reps ?? '',
-      rest_seconds: exercise.rest_seconds != null ? String(exercise.rest_seconds) : '',
-      notes: exercise.notes ?? '',
-    })
-  }
-
-  function cancelEditExercise() {
-    setEditingExerciseId(null)
-    setEditExercise({ sets: '', reps: '', rest_seconds: '', notes: '' })
-  }
-
-  async function handleUpdateExercise(dayId, id) {
-    if (savingEdit) return
-    setSavingEdit(true)
-    const updates = {
-      sets: editExercise.sets ? parseInt(editExercise.sets, 10) : null,
-      reps: editExercise.reps.trim() || null,
-      rest_seconds: editExercise.rest_seconds ? parseInt(editExercise.rest_seconds, 10) : null,
-      notes: editExercise.notes.trim() || null,
-    }
-    const { data, error } = await supabase
-      .from('workout_exercises')
-      .update(updates)
-      .eq('id', id)
-      .select('*, exercises(id, name, muscle_group)')
-    setSavingEdit(false)
-    // An update blocked by RLS returns no error and no rows. Treat that as a failure, not a success.
-    if (error || !data || data.length === 0) { showToast('Could not save changes.', 'bad'); return }
-    const updated = data[0]
-    setExercisesByDay(prev => ({ ...prev, [dayId]: (prev[dayId] ?? []).map(e => e.id === id ? updated : e) }))
-    cancelEditExercise()
-    showToast('Saved')
-  }
-
-  // Move one exercise up or down. Rewrites order_index for every row whose position
-  // changed (older rows may all share 0), then re-reads the day if anything fails.
-  async function moveExercise(dayId, index, dir) {
-    const list = [...(exercisesByDay[dayId] ?? [])]
-    const target = index + dir
-    if (reordering || target < 0 || target >= list.length) return
-    ;[list[index], list[target]] = [list[target], list[index]]
-    const changed = list
-      .map((ex, i) => ({ ex, i }))
-      .filter(({ ex, i }) => ex.order_index !== i)
-    setExercisesByDay(prev => ({ ...prev, [dayId]: list.map((ex, i) => ({ ...ex, order_index: i })) }))
-    setReordering(true)
-    const results = await Promise.all(changed.map(({ ex, i }) =>
-      supabase.from('workout_exercises').update({ order_index: i }).eq('id', ex.id).select('id')
-    ))
-    setReordering(false)
-    if (results.some(r => r.error || !r.data || r.data.length === 0)) {
-      showToast('Could not save the new order.', 'bad')
-      fetchDayExercises(dayId)
-    }
-  }
-
-  function dayCount(program) {
-    if (selectedProgram?.id === program.id) return workoutDays.length
-    return program.program_workouts?.length ?? 0
-  }
-
-  const muscleOptions = ['All', ...[...new Set(allExercises.map(e => e.muscle_group).filter(Boolean))].sort()]
-
-  const filteredExercises = allExercises.filter(ex => {
-    const q = exerciseSearch.toLowerCase()
-    const matchesSearch = !q ||
-      ex.name.toLowerCase().includes(q) ||
-      ex.exercise_aliases?.some(a => a.alias.toLowerCase().includes(q))
-    const matchesEquipment = !equipmentFilter || ex.equipment === equipmentFilter
-    const matchesMuscle = !muscleFilter || ex.muscle_group === muscleFilter
-    return matchesSearch && matchesEquipment && matchesMuscle
-  })
-  const pickedExercise = allExercises.find(e => e.id === newExercise.exercise_id)
-  const totalExercises = workoutDays.reduce((t, d) => t + (exercisesByDay[d.id]?.length ?? 0), 0)
 
   // ─── Sheets ────────────────────────────────────────────────────────────────
 
@@ -717,99 +601,41 @@ export default function ProgramBuilder({ user }) {
     </Sheet>
   )
 
-  const addExerciseSheet = (
+  const lastWeek = builtWeeks(workoutDays)
+  const weekSheet = (
     <Sheet
-      open={sheet === 'exercise'}
+      open={sheet === 'week'}
       onClose={() => setSheet(null)}
-      title={addToDay ? `Add to ${addToDay.name}` : 'Add exercise'}
-      footer={pickedExercise ? (
-        <Button type="submit" form="add-exercise-form" size="lg" block disabled={savingExercise}>
-          {savingExercise ? 'Adding…' : 'Add to workout'}
-        </Button>
-      ) : null}
+      title={`Add week ${lastWeek + 1}`}
+      footer={<Button size="lg" block onClick={handleAddWeek} disabled={addingWeek}>{addingWeek ? 'Adding...' : `Add week ${lastWeek + 1}`}</Button>}
     >
-      {pickedExercise ? (
-        <form id="add-exercise-form" onSubmit={handleSaveExercise} className="flex flex-col gap-4">
-          <div className="flex items-center gap-3 p-3 rounded-[14px] bg-accent-soft">
-            <span className="w-9 h-9 rounded-full bg-accent text-on-accent flex items-center justify-center shrink-0">
-              <Check size={18} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-ink truncate">{pickedExercise.name}</p>
-              {pickedExercise.muscle_group && <p className="text-[13px] text-muted">{pickedExercise.muscle_group}</p>}
-            </div>
-            <button
-              type="button"
-              onClick={() => setNewExercise(ex => ({ ...ex, exercise_id: '' }))}
-              className="text-sm font-bold text-accent px-2 h-9"
-            >
-              Change
-            </button>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <MiniField
-              label="Sets" type="number" inputMode="numeric" min="1" placeholder="3" autoFocus
-              value={newExercise.sets} onChange={e => setNewExercise(ex => ({ ...ex, sets: e.target.value }))}
-            />
-            <MiniField
-              label="Reps" type="text" placeholder="8-12"
-              value={newExercise.reps} onChange={e => setNewExercise(ex => ({ ...ex, reps: e.target.value }))}
-            />
-            <MiniField
-              label="Rest (sec)" type="number" inputMode="numeric" min="0" placeholder="90"
-              value={newExercise.rest_seconds} onChange={e => setNewExercise(ex => ({ ...ex, rest_seconds: e.target.value }))}
-            />
-          </div>
-          <TextArea
-            label="Coaching note (optional)" rows={2} placeholder="e.g. Pause at the bottom"
-            value={newExercise.notes} onChange={e => setNewExercise(ex => ({ ...ex, notes: e.target.value }))}
-          />
-        </form>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <SearchBox value={exerciseSearch} onChange={setExerciseSearch} placeholder="Search exercises" autoFocus />
-          <FilterChips
-            options={muscleOptions}
-            value={muscleFilter || 'All'}
-            onChange={v => setMuscleFilter(v === 'All' ? '' : v)}
-          />
-          <Select value={equipmentFilter} onChange={e => setEquipmentFilter(e.target.value)} aria-label="Equipment">
-            <option value="">Any equipment</option>
-            {EQUIPMENT.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </Select>
-          {filteredExercises.length === 0 ? (
-            <p className="text-sm text-muted text-center py-6">
-              {exerciseSearch ? `No exercises match "${exerciseSearch}".` : 'No exercises match these filters.'}
-            </p>
-          ) : (
-            <ul className="divide-y divide-line -mx-1">
-              {filteredExercises.slice(0, 50).map(ex => (
-                <li key={ex.id}>
-                  <button
-                    type="button"
-                    onClick={() => setNewExercise(n => ({ ...n, exercise_id: ex.id }))}
-                    className="w-full min-h-[52px] px-1 py-2 flex items-center justify-between gap-3 text-left hover:bg-surface-2 rounded-xl"
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-[15px] font-semibold text-ink truncate">{ex.name}</span>
-                      {ex.muscle_group && <span className="block text-[13px] text-muted">{ex.muscle_group}</span>}
-                    </span>
-                    <Plus size={18} className="text-accent shrink-0" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          {filteredExercises.length > 50 && (
-            <p className="text-[13px] text-muted text-center">Showing 50 of {filteredExercises.length}. Search to narrow it down.</p>
-          )}
+      <div className="flex flex-col gap-3">
+        <p className="text-[15px] text-muted">Week {lastWeek + 1} starts as a copy of week {lastWeek}: the same days, exercises and sets. Then change anything you like.</p>
+        <div role="radiogroup" aria-label="Progression" className="flex flex-col gap-1.5">
+          {PROGRESSIONS.map(p => {
+            const on = progression === p.value
+            return (
+              <button
+                key={p.value} type="button" role="radio" aria-checked={on} onClick={() => setProgression(p.value)}
+                className={`w-full flex items-center gap-3 px-3 min-h-[56px] py-2 rounded-[14px] border text-left transition-colors ${on ? 'bg-accent-soft border-accent' : 'border-line hover:bg-surface-2'}`}
+              >
+                <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${on ? 'border-accent bg-accent text-on-accent' : 'border-line-strong'}`}>
+                  {on && <Check size={12} strokeWidth={3} />}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[15px] font-bold text-ink">{p.label}</span>
+                  <span className="block text-[13px] text-muted">{p.hint}</span>
+                </span>
+              </button>
+            )
+          })}
         </div>
-      )}
+      </div>
     </Sheet>
   )
 
   const assignReady = workoutDays.length > 0
-    ? planReady({ dayCount: workoutDays.length, startDate: assignStartDate, trainingDays: assignDays, minDate: null })
+    ? planReady({ dayCount: daysPerWeek(workoutDays), startDate: assignStartDate, trainingDays: assignDays, minDate: null })
     : !!assignStartDate
   const assignSheet = (
     <Sheet
@@ -836,8 +662,8 @@ export default function ProgramBuilder({ user }) {
         )}
         {workoutDays.length > 0 ? (
           <StartPlanFields
-            dayCount={workoutDays.length}
-            weeks={planWeeks(selectedProgram)}
+            dayCount={daysPerWeek(workoutDays)}
+            weeks={planWeeks(selectedProgram, workoutDays)}
             startDate={assignStartDate}
             onStartDate={setAssignStartDate}
             trainingDays={assignDays}
@@ -873,7 +699,7 @@ export default function ProgramBuilder({ user }) {
             <span className="block text-[17px] leading-snug font-bold text-ink line-clamp-2">{program.name}</span>
             {program.description && <span className="block text-[13px] text-muted line-clamp-2">{program.description}</span>}
             <span className="flex flex-wrap items-center gap-2 mt-0.5">
-              <span className="text-[13px] text-muted">{single ? 'Single workout' : plural(dayCount(program), 'day')}</span>
+              <span className="text-[13px] text-muted">{single ? 'Single workout' : daysLine(program)}</span>
               {inUse[program.id] > 0 && <Chip tone="accent">{plural(inUse[program.id], 'client')}</Chip>}
             </span>
           </span>
@@ -949,7 +775,34 @@ export default function ProgramBuilder({ user }) {
 
   // A ready-made program (someone else's) is view only: assign it, or copy it to change it.
   const readOnly = selectedProgram.created_by !== user.id
-  // A single on-demand workout hides day management: one list of exercises, no "Day 1".
+  const single = isSingleWorkout(selectedProgram)
+  const weeks = builtWeeks(workoutDays)
+  const shownWeek = Math.min(week, weeks)
+  const weekDays = single ? workoutDays.slice(0, 1) : workoutDays.filter(d => (d.week_number || 1) === shownWeek)
+  const exerciseCount = workoutDays.reduce((t, d) => t + (exercisesByDay[d.id]?.length ?? 0), 0)
+
+  // The workout editor takes over the page while a day is open.
+  const editingDay = editingDayId ? workoutDays.find(d => d.id === editingDayId) : null
+  if (editingDay) {
+    return (
+      <>
+        <WorkoutEditor
+          key={editingDay.id}
+          day={editingDay}
+          dayLabel={single ? 'Single workout' : weeks > 1 ? `Week ${editingDay.week_number || 1} · Day ${editingDay.day_number}` : `Day ${editingDay.day_number}`}
+          title={single ? selectedProgram.name : editingDay.name}
+          rows={exercisesByDay[editingDay.id] ?? []}
+          library={allExercises}
+          readOnly={readOnly}
+          showToast={showToast}
+          onBack={() => setEditingDayId(null)}
+          onSaved={() => fetchDayExercises(editingDay.id)}
+        />
+        <Toast toast={toast} />
+      </>
+    )
+  }
+
   const programActions = (cls) => (
     <div className={`flex gap-2 shrink-0 ${cls}`}>
       {readOnly ? (
@@ -966,9 +819,59 @@ export default function ProgramBuilder({ user }) {
       </Button>
     </div>
   )
-  const single = isSingleWorkout(selectedProgram)
-  const shownDays = single ? workoutDays.slice(0, 1) : workoutDays
-  const singleList = single && shownDays[0] ? (exercisesByDay[shownDays[0].id] ?? []) : []
+
+  // One day as a card: every exercise with its sets written out, tap to open the editor.
+  const dayCard = (day) => {
+    const list = exercisesByDay[day.id] ?? []
+    const marks = supersets(list)
+    return (
+      <Card key={day.id} padded={false} className="overflow-hidden">
+        <div className="px-4 pt-4 pb-3 flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            {!single && <p className="text-[13px] font-semibold text-accent">Day {day.day_number}</p>}
+            <h2 className="text-[17px] font-bold text-ink truncate">{single ? 'Exercises' : day.name}</h2>
+          </div>
+          <span className="flex items-center gap-1 shrink-0">
+            {list.length > 0 && <span className="text-[13px] text-muted">{plural(list.length, 'exercise')} · about {estMinutes(list)} min</span>}
+            {!readOnly && !single && (
+              <button onClick={() => openEditDay(day)} aria-label={`Rename or delete ${day.name}`} className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-surface-2">
+                <Pencil size={16} />
+              </button>
+            )}
+          </span>
+        </div>
+        {list.length > 0 && (
+          <ul className="divide-y divide-line border-t border-line">
+            {list.map((ex, index) => {
+              const mark = marks[ex.id]
+              return (
+                <li key={ex.id} className="px-4 py-2.5 flex items-start gap-3">
+                  <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center shrink-0 tabular-nums ${mark ? 'bg-accent text-on-accent' : 'bg-surface-2 text-muted'}`}>
+                    {mark ? `${mark.letter}${list.slice(0, index + 1).filter(x => marks[x.id]?.letter === mark.letter).length}` : index + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] font-semibold text-ink">{ex.exercises?.name || 'Exercise'}</span>
+                    <span className="block text-[13px] text-muted">{prescriptionText(ex) || 'No sets yet'}</span>
+                    {ex.notes && <span className="block text-[13px] text-faint truncate">{ex.notes}</span>}
+                  </span>
+                  {mark?.first && <Link2 size={16} className="text-accent shrink-0 mt-1" aria-label={`Superset ${mark.letter}`} />}
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        <div className={list.length > 0 ? 'border-t border-line' : ''}>
+          <button
+            type="button"
+            onClick={() => setEditingDayId(day.id)}
+            className="w-full h-12 px-4 flex items-center gap-2 text-[15px] font-bold text-accent hover:bg-surface-2"
+          >
+            {readOnly ? <><ChevronRight size={18} /> See sets and client view</> : list.length ? <><Pencil size={17} /> Edit sets and exercises</> : <><Plus size={18} /> Add exercises</>}
+          </button>
+        </div>
+      </Card>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -982,17 +885,10 @@ export default function ProgramBuilder({ user }) {
         {/* On a phone the buttons sit under the name, so a long name keeps whole words. */}
         {programActions('md:hidden mt-3')}
         {selectedProgram.description && <p className="text-[15px] text-muted mt-1.5">{selectedProgram.description}</p>}
-        {!loadingDays && single && singleList.length > 0 && (
+        {!loadingDays && workoutDays.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-3">
-            <Chip>Single workout</Chip>
-            <Chip>{plural(singleList.length, 'exercise')}</Chip>
-            <Chip>About {estimateMinutes(singleList)} min</Chip>
-          </div>
-        )}
-        {!loadingDays && !single && workoutDays.length > 0 && (
-          <div className="flex gap-2 mt-3">
-            <Chip>{plural(workoutDays.length, 'day')}</Chip>
-            <Chip>{plural(totalExercises, 'exercise')}</Chip>
+            {single ? <Chip>Single workout</Chip> : <Chip>{daysLine(selectedProgram)}</Chip>}
+            <Chip>{plural(exerciseCount, 'exercise')}</Chip>
           </div>
         )}
       </div>
@@ -1004,7 +900,7 @@ export default function ProgramBuilder({ user }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block text-[15px] font-bold text-ink">From the UNFNSHD library</span>
-            <span className="block text-[13px] text-muted">Assign it as it is, or copy it to change days, exercises, sets and notes.</span>
+            <span className="block text-[13px] text-muted">Assign it as it is, or copy it to change weeks, days, exercises and sets.</span>
           </span>
         </Card>
       )}
@@ -1035,7 +931,7 @@ export default function ProgramBuilder({ user }) {
             icon={Dumbbell}
             title="No exercises yet"
             body="Add the exercises for this workout, in the order they're done."
-            action={<Button onClick={addToSingleWorkout}><Plus size={18} /> Add exercise</Button>}
+            action={<Button onClick={addToSingleWorkout}><Plus size={18} /> Add exercises</Button>}
           />
         </Card>
       ) : workoutDays.length === 0 ? (
@@ -1043,147 +939,53 @@ export default function ProgramBuilder({ user }) {
           <EmptyState
             icon={Dumbbell}
             title="No workout days yet"
-            body="Add the first day, then fill it with exercises."
+            body="Add the first day, then fill it with exercises and sets."
             action={<Button onClick={openNewDay}><Plus size={18} /> Add workout day</Button>}
           />
         </Card>
       ) : (
         <>
+          {!single && (
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1" role="tablist" aria-label="Weeks">
+                {Array.from({ length: weeks }, (_, i) => i + 1).map(w => (
+                  <button
+                    key={w} role="tab" aria-selected={w === shownWeek} onClick={() => setWeek(w)}
+                    className={`h-10 px-4 rounded-full text-sm font-bold whitespace-nowrap shrink-0 transition-colors ${w === shownWeek ? 'bg-accent text-on-accent' : 'bg-surface-2 text-muted hover:text-ink'}`}
+                  >
+                    Week {w}
+                  </button>
+                ))}
+                {!readOnly && (
+                  <button
+                    onClick={() => { setProgression('same'); setSheet('week') }}
+                    className="h-10 px-4 rounded-full text-sm font-bold whitespace-nowrap shrink-0 border border-dashed border-line-strong text-ink hover:bg-surface-2 inline-flex items-center gap-1.5"
+                  >
+                    <Plus size={16} /> Add week
+                  </button>
+                )}
+              </div>
+              <p className="text-[13px] text-muted">
+                {weeks === 1
+                  ? `This week repeats for all ${plural(planWeeks(selectedProgram, workoutDays), 'week')} on the client's calendar.${readOnly ? '' : ' Add a week to change sets, weights or reps week by week.'}`
+                  : `Week ${shownWeek} of ${weeks}. Clients do each week once, in order.`}
+              </p>
+            </div>
+          )}
           <div className={`grid gap-3 items-start ${single ? 'max-w-[720px]' : 'lg:grid-cols-2'}`}>
-            {shownDays.map(day => {
-              const list = exercisesByDay[day.id] ?? []
-              return (
-                <Card key={day.id} padded={false} className="overflow-hidden">
-                  <div className="px-4 pt-4 pb-3 flex items-end justify-between gap-3">
-                    <div className="min-w-0">
-                      {!single && <p className="text-[13px] font-semibold text-accent">Day {day.day_number}</p>}
-                      <h2 className="text-[17px] font-bold text-ink truncate">{single ? 'Exercises' : day.name}</h2>
-                    </div>
-                    {!single && (
-                      <span className="flex items-center gap-1 shrink-0">
-                        {list.length > 0 && (
-                          <span className="text-[13px] text-muted">
-                            {plural(list.length, 'exercise')} · about {estimateMinutes(list)} min
-                          </span>
-                        )}
-                        {!readOnly && (
-                          <button onClick={() => openEditDay(day)} aria-label={`Edit ${day.name}`} className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-muted hover:text-ink hover:bg-surface-2">
-                            <Pencil size={16} />
-                          </button>
-                        )}
-                      </span>
-                    )}
-                  </div>
-
-                  {list.length > 0 && (
-                    <ul className="divide-y divide-line border-t border-line">
-                      {list.map((ex, index) => {
-                        const isEditing = editingExerciseId === ex.id
-                        const name = ex.exercises?.name || ex.name
-                        const muscle = ex.exercises?.muscle_group || ex.muscle_group
-                        if (!isEditing) {
-                          return (
-                            <li key={ex.id}>
-                              <button
-                                type="button"
-                                onClick={() => !readOnly && startEditExercise(ex)}
-                                className={`w-full min-h-[60px] px-4 py-2.5 flex items-center gap-3 text-left transition-colors ${readOnly ? 'cursor-default' : 'hover:bg-surface-2'} ${deletingId === ex.id ? 'opacity-40 pointer-events-none' : ''}`}
-                              >
-                                <span className="w-7 h-7 rounded-full bg-surface-2 text-muted text-xs font-bold flex items-center justify-center shrink-0 tabular-nums">
-                                  {index + 1}
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                  <span className="block text-[15px] font-semibold text-ink truncate">{name}</span>
-                                  <span className="block text-[13px] text-muted truncate">
-                                    {[muscle, prescription(ex)].filter(Boolean).join(' · ') || 'Tap to set sets and reps'}
-                                  </span>
-                                  {ex.notes && <span className="block text-[13px] text-faint truncate">{ex.notes}</span>}
-                                </span>
-                                {!readOnly && <ChevronRight size={18} className="text-faint shrink-0" />}
-                              </button>
-                            </li>
-                          )
-                        }
-                        return (
-                          <li key={ex.id} className="bg-accent-soft/40">
-                            <form
-                              onSubmit={e => { e.preventDefault(); handleUpdateExercise(day.id, ex.id) }}
-                              className="px-4 py-3 flex flex-col gap-3"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="w-7 h-7 rounded-full bg-accent text-on-accent text-xs font-bold flex items-center justify-center shrink-0 tabular-nums">
-                                  {index + 1}
-                                </span>
-                                <span className="min-w-0 flex-1">
-                                  <span className="block text-[15px] font-bold text-ink truncate">{name}</span>
-                                  {muscle && <span className="block text-[13px] text-muted">{muscle}</span>}
-                                </span>
-                                <button
-                                  type="button" aria-label="Move up" disabled={index === 0 || reordering}
-                                  onClick={() => moveExercise(day.id, index, -1)}
-                                  className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 disabled:opacity-30"
-                                >
-                                  <ChevronUp size={20} />
-                                </button>
-                                <button
-                                  type="button" aria-label="Move down" disabled={index === list.length - 1 || reordering}
-                                  onClick={() => moveExercise(day.id, index, 1)}
-                                  className="w-9 h-9 rounded-full flex items-center justify-center text-muted hover:bg-surface-2 disabled:opacity-30"
-                                >
-                                  <ChevronDown size={20} />
-                                </button>
-                              </div>
-                              <div className="grid grid-cols-3 gap-2.5">
-                                <MiniField
-                                  label="Sets" type="number" inputMode="numeric" min="1" autoFocus
-                                  value={editExercise.sets} onChange={e => setEditExercise(x => ({ ...x, sets: e.target.value }))}
-                                />
-                                <MiniField
-                                  label="Reps" type="text"
-                                  value={editExercise.reps} onChange={e => setEditExercise(x => ({ ...x, reps: e.target.value }))}
-                                />
-                                <MiniField
-                                  label="Rest (sec)" type="number" inputMode="numeric" min="0"
-                                  value={editExercise.rest_seconds} onChange={e => setEditExercise(x => ({ ...x, rest_seconds: e.target.value }))}
-                                />
-                              </div>
-                              <TextArea
-                                rows={2} placeholder="Coaching note (optional)" aria-label="Coaching note"
-                                value={editExercise.notes} onChange={e => setEditExercise(x => ({ ...x, notes: e.target.value }))}
-                              />
-                              <div className="flex items-center gap-2">
-                                <ConfirmRemove
-                                  icon={Trash2} label="Remove exercise" disabled={deletingId === ex.id}
-                                  onConfirm={() => handleDeleteExercise(day.id, ex.id)}
-                                />
-                                <span className="flex-1" />
-                                <Button type="button" variant="ghost" size="sm" onClick={cancelEditExercise}>Cancel</Button>
-                                <Button type="submit" size="sm" disabled={savingEdit}>{savingEdit ? 'Saving…' : 'Save'}</Button>
-                              </div>
-                            </form>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
-
-                  {!readOnly && <div className={list.length > 0 ? 'border-t border-line' : ''}>
-                    <button
-                      type="button"
-                      onClick={() => openAddExercise(day)}
-                      className="w-full h-12 px-4 flex items-center gap-2 text-[15px] font-bold text-accent hover:bg-surface-2"
-                    >
-                      <Plus size={18} /> Add exercise
-                    </button>
-                  </div>}
-                </Card>
-              )
-            })}
+            {weekDays.map(dayCard)}
           </div>
           {!single && !readOnly && (
-            <Button variant="secondary" block onClick={openNewDay} className="sm:w-auto sm:self-start">
-              <Plus size={18} /> Add workout day
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={openNewDay}>
+                <Plus size={18} /> Add day to week {shownWeek}
+              </Button>
+              {weeks > 1 && shownWeek === weeks && (
+                <Button variant="ghost" onClick={handleRemoveWeek} disabled={savingEdits}>
+                  <Trash2 size={18} /> Remove week {weeks}
+                </Button>
+              )}
+            </div>
           )}
         </>
       )}
@@ -1191,7 +993,7 @@ export default function ProgramBuilder({ user }) {
       {newDaySheet}
       {editProgramSheet}
       {editDaySheet}
-      {addExerciseSheet}
+      {weekSheet}
       {assignSheet}
       <Toast toast={toast} />
     </div>

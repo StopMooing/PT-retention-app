@@ -34,7 +34,7 @@ const TABS = [
   { id: 'notes', label: 'Notes' },
 ]
 
-const SW_SELECT = 'id, scheduled_date, created_at, program_workout_id, custom_workout_id, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
+const SW_SELECT = 'id, scheduled_date, created_at, program_workout_id, custom_workout_id, program_workouts(id, name, day_number, week_number), saved_workouts(id, name, content)'
 const enrichSW = (sw) => ({ ...sw, _displayName: sw.program_workouts?.name || sw.saved_workouts?.name || 'Workout', _isCustom: !!sw.custom_workout_id })
 
 export default function ClientProfile({ user }) {
@@ -124,7 +124,7 @@ export default function ClientProfile({ user }) {
           .order('created_at', { ascending: false })
           .then((r) => (r.data ?? []).map((p) => ({ ...p, readyMade: p.created_by !== coachId }))))
         const allPWP = programsP.then((progs) => (progs.length > 0
-          ? supabase.from('program_workouts').select('id, name, day_number, program_id').in('program_id', progs.map((p) => p.id)).order('day_number', { ascending: true }).then((r) => r.data ?? [])
+          ? supabase.from('program_workouts').select('id, name, day_number, week_number, program_id').in('program_id', progs.map((p) => p.id)).order('day_number', { ascending: true }).then((r) => r.data ?? [])
           : []))
         const allPWExercisesP = allPWP.then((pws) => (pws.length > 0 ? fetchExercisesFor(pws.map((pw) => pw.id)) : {}))
 
@@ -182,8 +182,8 @@ export default function ClientProfile({ user }) {
         const activeProgramId = programRes.data?.[0]?.programs?.id ?? programRes.data?.[0]?.program_id
         const needActive = activeProgramId && !fetchedPrograms.some((p) => p.id === activeProgramId)
         const [extraData, activePW] = await Promise.all([
-          missing.length > 0 ? supabase.from('program_workouts').select('id, name, day_number, program_id').in('id', missing).then((r) => r.data ?? []) : [],
-          needActive ? supabase.from('program_workouts').select('id, name, day_number, program_id').eq('program_id', activeProgramId).order('day_number', { ascending: true }).then((r) => r.data ?? []) : null,
+          missing.length > 0 ? supabase.from('program_workouts').select('id, name, day_number, week_number, program_id').in('id', missing).then((r) => r.data ?? []) : [],
+          needActive ? supabase.from('program_workouts').select('id, name, day_number, week_number, program_id').eq('program_id', activeProgramId).order('day_number', { ascending: true }).then((r) => r.data ?? []) : null,
         ])
         let extraPW = extraData
         if (activePW) {
@@ -506,7 +506,7 @@ export default function ClientProfile({ user }) {
 
       const { data: pwData } = await supabase
         .from('program_workouts')
-        .select('id, name, day_number, program_id')
+        .select('id, name, day_number, week_number, program_id')
         .eq('program_id', program.id)
         .order('day_number', { ascending: true })
       const fetchedPW = pwData ?? []
@@ -516,7 +516,7 @@ export default function ClientProfile({ user }) {
       const exerciseMap = { ...workoutExercises, ...(await fetchExercisesFor(missingEx)) }
       setWorkoutExercises(exerciseMap)
 
-      const plan = programPlan({ days: fetchedPW, weeks: planWeeks(newAssignment.programs ?? program), startDate, trainingDays })
+      const plan = programPlan({ days: fetchedPW, weeks: planWeeks(newAssignment.programs ?? program, fetchedPW), startDate, trainingDays })
       const { error: planError } = await schedulePlan(plan, user.id)
       if (oldProgramId) await clearOldSessions(oldProgramId, plan)
       return { ok: true, scheduleFailed: !!planError }
@@ -547,7 +547,7 @@ export default function ClientProfile({ user }) {
     if (!startDate || programWorkouts.length === 0) return { ok: false }
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      const plan = programPlan({ days: programWorkouts, weeks: planWeeks(programAssignment?.programs), startDate, trainingDays })
+      const plan = programPlan({ days: programWorkouts, weeks: planWeeks(programAssignment?.programs, programWorkouts), startDate, trainingDays })
       const { error, count } = await schedulePlan(plan, user.id)
       if (error) throw error
       return { ok: true, count }

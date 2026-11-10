@@ -132,6 +132,42 @@ async function install(page, role) {
         for (const r of db[tbl] || []) if (ids.includes(r.client_id) && (!best[r.client_id] || r[col] > best[r.client_id][col])) best[r.client_id] = r
         return json(200, Object.values(best))
       }
+      // Program builder saves, done in memory like the database functions.
+      const uid = () => `30000000-0000-4000-8000-${String(Math.floor(Math.random() * 1e12)).padStart(12, '0')}`
+      if (fn === 'save_program_day') {
+        const { p_day, p_items } = req.postDataJSON()
+        const keep = []
+        p_items.forEach((it, idx) => {
+          const fields = { exercise_id: it.exercise_id, sets: it.sets, reps: it.reps, rest_seconds: it.rest_seconds, notes: it.notes?.trim() || null, superset_group: it.superset_group, order_index: idx }
+          let row = it.id && db.workout_exercises.find((r) => r.id === it.id && r.program_workout_id === p_day)
+          if (row) Object.assign(row, fields)
+          else { row = { id: uid(), program_workout_id: p_day, created_at: new Date().toISOString(), ...fields }; db.workout_exercises.push(row) }
+          keep.push(row.id)
+          db.workout_exercise_sets = (db.workout_exercise_sets || []).filter((x) => x.workout_exercise_id !== row.id)
+          it.set_rows.forEach((sr, n) => db.workout_exercise_sets.push({ id: uid(), workout_exercise_id: row.id, set_number: n + 1, set_type: sr.set_type, reps: sr.reps || null, weight_kg: sr.weight_kg === '' ? null : Number(sr.weight_kg), rpe: sr.rpe === '' ? null : Number(sr.rpe), rest_seconds: sr.rest_seconds === '' ? null : Number(sr.rest_seconds) }))
+        })
+        db.workout_exercises = db.workout_exercises.filter((r) => r.program_workout_id !== p_day || keep.includes(r.id))
+        return json(200, null)
+      }
+      if (fn === 'copy_program_week') {
+        const { p_program, p_from_week, p_kg = 0, p_reps = 0 } = req.postDataJSON()
+        const days = db.program_workouts.filter((w) => w.program_id === p_program)
+        const next = Math.max(...days.map((w) => w.week_number || 1)) + 1
+        const bump = (r) => (/^\d+$/.test(r ?? '') ? String(Number(r) + p_reps) : r)
+        for (const d of days.filter((w) => (w.week_number || 1) === p_from_week)) {
+          const nd = { ...d, id: uid(), week_number: next }
+          db.program_workouts.push(nd)
+          for (const we of db.workout_exercises.filter((x) => x.program_workout_id === d.id)) {
+            const ne = { ...we, id: uid(), program_workout_id: nd.id, reps: bump(we.reps) }
+            db.workout_exercises.push(ne)
+            for (const st of (db.workout_exercise_sets || []).filter((x) => x.workout_exercise_id === we.id)) {
+              const warm = st.set_type === 'warmup'
+              db.workout_exercise_sets.push({ ...st, id: uid(), workout_exercise_id: ne.id, reps: warm ? st.reps : bump(st.reps), weight_kg: warm || st.weight_kg == null ? st.weight_kg : st.weight_kg + p_kg })
+            }
+          }
+        }
+        return json(200, next)
+      }
       // A sample invite for the claim page. The token "expired" shows the invalid state.
       if (fn === 'get_claim_client') {
         let tok = ''

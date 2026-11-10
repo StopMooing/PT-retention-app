@@ -52,3 +52,21 @@ const back = programPlan({ days, weeks: 1, startDate: '2026-10-26', trainingDays
 assert.deepEqual(back.map((p) => p.scheduled_date), ['2026-10-26', '2026-10-27', '2026-10-29', '2026-10-30'])
 
 console.log('schedule.test.mjs: all checks passed')
+
+// Programs built week by week: each week runs its own workouts; the plan lasts the weeks built.
+{
+  const { builtWeeks, daysPerWeek, planWeeks } = await import('./schedule.js')
+  const wk = [
+    { id: 'a1', day_number: 1, week_number: 1 }, { id: 'b1', day_number: 2, week_number: 1 },
+    { id: 'b2', day_number: 2, week_number: 2 }, { id: 'a2', day_number: 1, week_number: 2 },
+    { id: 'a3', day_number: 1, week_number: 3 }, { id: 'b3', day_number: 2, week_number: 3 },
+  ]
+  assert.equal(builtWeeks(wk), 3)
+  assert.equal(daysPerWeek(wk), 2)
+  assert.equal(planWeeks({ name: '8 week strength' }, wk), 3)
+  assert.equal(planWeeks({ name: '8 week strength' }, [{ id: 'x' }]), 8)
+  const p = programPlan({ days: wk, weeks: 3, startDate: '2026-11-16', trainingDays: [2, 4] })
+  assert.deepEqual(p.map((r) => r.program_workout_id), ['a1', 'b1', 'a2', 'b2', 'a3', 'b3'])
+  assert.deepEqual(p.map((r) => r.scheduled_date), ['2026-11-17', '2026-11-19', '2026-11-24', '2026-11-26', '2026-12-01', '2026-12-03'])
+}
+console.log('schedule.test.mjs: week-by-week checks passed')

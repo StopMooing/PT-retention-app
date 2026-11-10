@@ -2,7 +2,8 @@
 // than one screen, it is worked out here so the screens always agree.
 import { toLocalDateStr, mondayOf, addDays, weekDays, daysBetween, weekdayName } from './dates'
 import { parseAiJson } from './foods'
-import { programWeeks, planWeeks, planSessionCount, planEndDate } from '../lib/schedule.js'
+import { programWeeks, planWeeks, daysPerWeek, planSessionCount, planEndDate } from '../lib/schedule.js'
+import { plannedSets } from '../lib/setTargets.js'
 
 // "1 exercise", "3 exercises".
 export function plural(n, one, many = `${one}s`) {
@@ -51,11 +52,12 @@ export function groupByDate(scheduledWorkouts) {
 
 // Rough session length: 2.5 minutes per set.
 export function estMinutes(exercises) {
-  return Math.round((exercises ?? []).reduce((sum, ex) => sum + (ex.sets || 0), 0) * 2.5)
+  return Math.round(totalSets(exercises) * 2.5)
 }
 
+// Planned sets across a workout, counted the same way the logging screen lays out rows.
 export function totalSets(exercises) {
-  return (exercises ?? []).reduce((sum, ex) => sum + (ex.sets || 0), 0)
+  return (exercises ?? []).reduce((sum, ex) => sum + plannedSets(ex).length, 0)
 }
 
 // Sessions in the week starting on monday ('YYYY-MM-DD'), Monday to Sunday, in date order.
@@ -341,8 +343,8 @@ export { programWeeks }
 // times weeks, the same plan Start program puts on the calendar), plus its start and end
 // days. upcoming: the start date is still ahead (week is null until then).
 export function programProgress({ assignment, programWorkouts, workoutLogs, today = toLocalDateStr() }) {
-  const perWeek = programWorkouts?.length ?? 0
-  const weeks = planWeeks(assignment?.programs)
+  const perWeek = daysPerWeek(programWorkouts)
+  const weeks = planWeeks(assignment?.programs, programWorkouts)
   const start = assignment?.start_date || null
   const upcoming = !!start && start > today
   const ids = new Set((programWorkouts ?? []).map((pw) => pw.id))

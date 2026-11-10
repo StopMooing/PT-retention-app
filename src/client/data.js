@@ -4,8 +4,12 @@ import { supabase } from '../supabase'
 import { FOOD_LOG_SELECT } from '../lib/meals'
 import { toLocalDateStr, addDays } from './dates'
 
-const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, created_by, created_at, program_workouts(id, name, day_number), saved_workouts(id, name, content)'
-const EX_SELECT = 'id, sets, reps, rest_seconds, notes, order_index, exercises(id, name, muscle_group)'
+const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, created_by, created_at, program_workouts(id, name, day_number, week_number), saved_workouts(id, name, content)'
+// Each program exercise with its set rows (one per planned set) and superset group.
+const EX_SELECT = 'id, sets, reps, rest_seconds, notes, order_index, superset_group, exercises(id, name, muscle_group), workout_exercise_sets(set_number, set_type, reps, weight_kg, rpe, rest_seconds)'
+
+// Program days in order: week 1 day 1, week 1 day 2, ... then week 2.
+const byWeekDay = (a, b) => (a.week_number ?? 1) - (b.week_number ?? 1) || (a.day_number ?? 0) - (b.day_number ?? 0)
 
 // Scheduled sessions from a year back to 13 weeks ahead (an 8-week program started next
 // Monday fits). The Training week arrows stop at the same window (SCHEDULE_WINDOW).
@@ -92,21 +96,21 @@ export async function fetchResources(ptId) {
 export async function fetchAssignment(clientId) {
   const { data, error } = await supabase
     .from('program_assignments')
-    .select(`id, start_date, assigned_by, programs(id, name, description, program_workouts(id, name, day_number, workout_exercises(program_workout_id, ${EX_SELECT})))`)
+    .select(`id, start_date, assigned_by, programs(id, name, description, program_workouts(id, name, day_number, week_number, workout_exercises(program_workout_id, ${EX_SELECT})))`)
     .eq('client_id', clientId)
     .eq('is_active', true)
     .maybeSingle()
   if (error) console.error('Program load error:', error)
   if (!data?.programs) return { assignment: data ?? null, programWorkouts: [], exercises: {} }
   const { program_workouts: days = [], ...program } = data.programs
-  const sorted = [...(days ?? [])].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
+  const sorted = [...(days ?? [])].sort(byWeekDay)
   const exercises = {}
   for (const d of sorted) {
     exercises[d.id] = [...(d.workout_exercises ?? [])].sort((a, b) => (a.order_index ?? Infinity) - (b.order_index ?? Infinity))
   }
   return {
     assignment: { ...data, programs: program },
-    programWorkouts: sorted.map(({ id, name, day_number }) => ({ id, name, day_number })),
+    programWorkouts: sorted.map(({ id, name, day_number, week_number }) => ({ id, name, day_number, week_number })),
     exercises,
   }
 }
@@ -119,15 +123,15 @@ export async function fetchOnDemand() {
   try {
     const { data, error } = await supabase
       .from('programs')
-      .select(`id, name, description, kind, program_workouts(id, name, day_number, workout_exercises(${EX_SELECT}))`)
+      .select(`id, name, description, kind, program_workouts(id, name, day_number, week_number, workout_exercises(${EX_SELECT}))`)
       .eq('is_on_demand', true)
       .order('name', { ascending: true })
     if (error) { console.warn('On-demand library not available:', error.message); return empty }
     const exercises = {}
     const rows = (data ?? []).map((p) => {
-      const days = [...(p.program_workouts ?? [])].sort((a, b) => a.day_number - b.day_number)
+      const days = [...(p.program_workouts ?? [])].sort(byWeekDay)
       for (const d of days) exercises[d.id] = [...(d.workout_exercises ?? [])].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
-      return { id: p.id, name: p.name, description: p.description, kind: p.kind, days: days.map(({ id, name, day_number }) => ({ id, name, day_number })) }
+      return { id: p.id, name: p.name, description: p.description, kind: p.kind, days: days.map(({ id, name, day_number, week_number }) => ({ id, name, day_number, week_number })) }
     })
     return {
       workouts: rows.filter((p) => p.kind === 'workout' && p.days.length > 0),

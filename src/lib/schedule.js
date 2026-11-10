@@ -54,8 +54,25 @@ export function programWeeks(program) {
   return n > 0 && n <= 52 ? n : null
 }
 
-// Weeks the calendar plan covers: the program's length, or DEFAULT_WEEKS when unknown.
-export function planWeeks(program) {
+// Programs built in weeks: each workout has a week_number (1 when the program has a single
+// week that repeats). Weeks built is the highest week number.
+export function builtWeeks(days) {
+  return Math.max(1, ...(days ?? []).map((d) => d.week_number || 1))
+}
+
+// Workouts a week: the most any one week has (all of them for a one-week program).
+export function daysPerWeek(days) {
+  const counts = {}
+  for (const d of days ?? []) counts[d.week_number || 1] = (counts[d.week_number || 1] || 0) + 1
+  return Math.max(0, ...Object.values(counts))
+}
+
+// Weeks the calendar plan covers: a program built week by week runs for the weeks built;
+// otherwise its length from the name or description, or DEFAULT_WEEKS when unknown.
+// days: the program's workouts when known (they carry week_number).
+export function planWeeks(program, days = program?.days) {
+  const built = builtWeeks(days)
+  if (built > 1) return built
   return programWeeks(program) ?? DEFAULT_WEEKS
 }
 
@@ -71,19 +88,28 @@ export function planEndDate(startDate, weeks) {
 }
 
 // The calendar plan: for `weeks` weeks from startDate, each date whose weekday is in
-// trainingDays gets the next program day in order (D1, D2, ... then D1 again), so every
-// week runs the days in order. days: the program's workouts, ordered by day_number.
+// trainingDays gets that week's next workout in order (D1, D2, ...), so every week runs
+// its days in order. days: the program's workouts (with week_number and day_number).
 // Returns [{ program_workout_id, scheduled_date }].
 export function programPlan({ days, weeks, startDate, trainingDays }) {
   if (!days?.length || !startDate || !weeks || !trainingDays?.length) return []
   const on = new Set(trainingDays)
+  // Week by week: week w uses that week's workouts in order (a one-week program repeats
+  // week 1). A week with fewer workouts than training days leaves the extra days free.
+  const byWeek = {}
+  for (const d of days) (byWeek[d.week_number || 1] ||= []).push(d)
+  for (const list of Object.values(byWeek)) list.sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
+  const multi = builtWeeks(days) > 1
   const out = []
-  let next = 0
-  for (let i = 0; i < weeks * 7; i++) {
-    const date = addDays(startDate, i)
-    if (!on.has(isoWeekday(date))) continue
-    out.push({ program_workout_id: days[next % days.length].id, scheduled_date: date })
-    next++
+  for (let w = 0; w < weeks; w++) {
+    const list = multi ? (byWeek[w + 1] ?? []) : byWeek[1] ?? days
+    let next = 0
+    for (let i = 0; i < 7 && next < list.length; i++) {
+      const date = addDays(startDate, w * 7 + i)
+      if (!on.has(isoWeekday(date))) continue
+      out.push({ program_workout_id: list[next].id, scheduled_date: date })
+      next++
+    }
   }
   return out
 }

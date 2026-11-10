@@ -5,6 +5,7 @@ import { Clock, Dumbbell, CheckCircle2 } from 'lucide-react'
 import { supabase } from '../../supabase'
 import { Sheet, Button, Chip, SectionLabel, Field } from '../../ui'
 import { sessionFelt } from '../lib'
+import { plannedSets, prescriptionText } from '../../lib/setTargets.js'
 
 const numCls = 'w-20 h-10 px-2 rounded-[12px] border border-line-strong bg-surface text-ink text-center font-semibold tabular-nums outline-none focus:border-accent'
 
@@ -124,7 +125,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
   if (!selectedDay) return null;
   const { date, workout } = selectedDay;
   const exercises = workout.exercises || workout.workout_exercises || [];
-  const totalSets = exercises.reduce((sum, ex) => sum + (ex.sets || 0), 0);
+  const totalSets = exercises.reduce((sum, ex) => sum + plannedSets(ex).length, 0);
   const estMinutes = Math.round(totalSets * 2.5);
   const dateLabel = date ? new Date(date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : '';
   const hasEdits = Object.keys(editedSets).length > 0
@@ -141,8 +142,9 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
         id: ex.id,
         exercise_id: ex.exercise_id || ex.exercises?.id || null,
         exercises: { name: ex.exercise?.name || ex.exercises?.name || ex.name || 'Exercise' },
-        sets: ex.sets || 1,
+        sets: plannedSets(ex).length,
         reps: String(ex.reps || ''),
+        detail: prescriptionText(ex),
       })))
     : []
 
@@ -433,7 +435,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
               {trackedExercises.map((ex, exIdx) => (
                 <div key={ex.id || exIdx}>
                   <p className="text-[15px] font-bold text-ink">{ex.exercises?.name || 'Exercise'}</p>
-                  <p className="text-[13px] text-muted mb-2">{ex.sets || 1} sets × {ex.reps || '-'} reps</p>
+                  <p className="text-[13px] text-muted mb-2">{ex.detail || prescriptionText(ex)}</p>
                   <div className="space-y-2">
                     {Array.from({ length: ex.sets || 1 }).map((_, setIdx) => {
                       const val = liveSetData[`${exIdx}_${setIdx}`] || {}
@@ -464,7 +466,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
                     key={idx}
                     idx={idx}
                     name={ex.name || 'Exercise'}
-                    detail={`${ex.sets || 0} sets × ${ex.reps || '-'} reps${ex.rest_seconds ? ` · ${ex.rest_seconds}s rest` : ''}`}
+                    detail={prescriptionText(ex)}
                     note={ex.notes}
                   />
                 ))}
@@ -482,7 +484,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
                 key={ex.id || idx}
                 idx={idx}
                 name={ex.exercise?.name || ex.exercises?.name || ex.name || 'Exercise'}
-                detail={`${ex.sets || 0} sets × ${ex.reps || '-'} reps${ex.rest_seconds ? ` · ${ex.rest_seconds}s rest` : ''}`}
+                detail={prescriptionText(ex)}
               />
             ))}
           </div>
