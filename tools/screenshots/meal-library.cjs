@@ -16,14 +16,14 @@ function load() {
   const files = fs.readdirSync(MIG)
   const foodsById = Object.fromEntries(Object.values(require('../meal-library/foods.json')).map(([id, ...m]) => [id, m]))
   const recipes = []
-  // RECIPE_PHOTOS=1 gives each recipe a stand-in photo (the real ones come from Pexels,
+  // RECIPE_PHOTOS=1 gives each recipe a stand-in photo (the real ones come from Unsplash,
   // which this sandbox cannot reach), so photo layouts can be checked.
   const samplePhoto = (name) => {
     if (!process.env.RECIPE_PHOTOS) return {}
     const h = [...name].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7)
     const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'><defs><radialGradient id='g'><stop offset='0' stop-color='hsl(${h},55%,62%)'/><stop offset='1' stop-color='hsl(${(h + 40) % 360},45%,32%)'/></radialGradient></defs><rect width='160' height='100' fill='hsl(${h},30%,85%)'/><ellipse cx='80' cy='52' rx='52' ry='38' fill='url(#g)'/></svg>`
     const url = 'data:image/svg+xml,' + encodeURIComponent(svg)
-    return { photo_url: url, photo_thumb_url: url, photo_credit: 'Sample Photographer', photo_credit_url: 'https://www.pexels.com' }
+    return { photo_url: url, photo_thumb_url: url, photo_credit: 'Sample Photographer', photo_credit_url: 'https://unsplash.com' }
   }
   const recipe_ingredients = []
   // The latest full refresh if there is one, otherwise the first seed.

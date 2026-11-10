@@ -1,4 +1,5 @@
-// Recipe photos (matched from Pexels by the recipe-photos edge function). A recipe with no
+// Recipe photos (matched from Unsplash by the recipe-photos edge function, shown from
+// Unsplash's own address with the photographer credited, as Unsplash asks). A recipe with no
 // photo shows nothing here, so rows and sheets never show an empty box.
 
 // A small square photo for list rows.
@@ -31,7 +32,8 @@ export function RecipeHero({ recipe }) {
         <figcaption className="text-[12px] text-faint mt-1 px-1">
           Photo:{' '}
           <a href={recipe.photo_credit_url} target="_blank" rel="noreferrer" className="underline">{recipe.photo_credit}</a>
-          {' '}on Pexels
+          {' '}on{' '}
+          <a href="https://unsplash.com/?utm_source=unfnshd&utm_medium=referral" target="_blank" rel="noreferrer" className="underline">Unsplash</a>
         </figcaption>
       )}
     </figure>

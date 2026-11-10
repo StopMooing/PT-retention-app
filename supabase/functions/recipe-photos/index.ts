@@ -1,8 +1,12 @@
-// Gives every library recipe a photo from Pexels (free to use, credit the photographer).
-// Each dish has a hand-written search below and the result to use (first by default). The
-// function only searches for dishes whose photo is missing or whose search changed here,
-// so calling it again is safe and costs nothing once every dish has its photo. Needs the
-// PEXELS_API_KEY secret (Edge Functions, Secrets).
+// Gives every library recipe a photo from Unsplash (free to use; credit the photographer
+// and Unsplash, and show the photo from Unsplash's own address, which their rules ask
+// for). Each dish has a hand-written search below and the result to use (first by
+// default). The function only searches for dishes whose photo is missing or whose search
+// changed here, and does at most PER_RUN dishes per call because a new Unsplash app gets
+// 50 requests an hour (each dish uses 2: the search, and the "download" ping Unsplash asks
+// for when a photo is chosen). Call it again an hour later to carry on, by hand or with the
+// hourly job in supabase/migrations/20261110023000_recipe_photos_cron.sql (Luke runs that
+// one in the SQL Editor). Needs the UNSPLASH_ACCESS_KEY secret.
 import { createClient } from 'npm:@supabase/supabase-js@2.45.4'
 
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
@@ -88,28 +92,35 @@ const PHOTO: Record<string, [string, number?]> = {
   'Banana oat smoothie': ['banana oat smoothie'],
 }
 
+const PER_RUN = 22
+const UTM = 'utm_source=unfnshd&utm_medium=referral'
+
 async function search(query: string, index: number, key: string) {
-  const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${Math.max(5, index + 1)}&orientation=landscape`
-  const res = await fetch(url, { headers: { Authorization: key } })
-  if (!res.ok) throw new Error(`pexels ${res.status}`)
+  const auth = { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' } }
+  const url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${Math.max(5, index + 1)}&orientation=landscape&content_filter=high`
+  const res = await fetch(url, auth)
+  if (res.status === 403 || res.status === 429) throw new Error('rate limit')
+  if (!res.ok) throw new Error(`unsplash ${res.status}`)
   const body = await res.json()
-  const p = body.photos?.[index] ?? body.photos?.[0]
+  const p = body.results?.[index] ?? body.results?.[0]
   if (!p) return null
+  // Unsplash asks apps to report when a photo is chosen.
+  await fetch(p.links.download_location, auth).catch(() => {})
   return {
-    photo_url: p.src.large,
-    photo_thumb_url: p.src.medium,
-    photo_credit: p.photographer,
-    photo_credit_url: p.url,
+    photo_url: `${p.urls.raw}&w=1200&h=750&fit=crop&q=75&auto=format`,
+    photo_thumb_url: `${p.urls.raw}&w=160&h=160&fit=crop&q=70&auto=format`,
+    photo_credit: p.user.name,
+    photo_credit_url: `${p.user.links.html}?${UTM}`,
   }
 }
 
 Deno.serve(async () => {
-  const key = Deno.env.get('PEXELS_API_KEY')
-  if (!key) return new Response(JSON.stringify({ error: 'PEXELS_API_KEY not set' }), { status: 503 })
+  const key = Deno.env.get('UNSPLASH_ACCESS_KEY')
+  if (!key) return new Response(JSON.stringify({ error: 'UNSPLASH_ACCESS_KEY not set' }), { status: 503 })
   const { data: recipes, error } = await db.from('recipes').select('name, photo_key')
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 })
 
-  const done: string[] = [], skipped: string[] = [], missing: string[] = [], failed: string[] = []
+  const done: string[] = [], skipped: string[] = [], missing: string[] = [], failed: string[] = [], later: string[] = []
   const names = [...new Set(recipes.map((r) => r.name))]
   for (const name of names) {
     const pick = PHOTO[name]
@@ -117,6 +128,7 @@ Deno.serve(async () => {
     const [query, index = 0] = pick
     const want = `${query}#${index}`
     if (recipes.filter((r) => r.name === name).every((r) => r.photo_key === want)) { skipped.push(name); continue }
+    if (done.length + failed.length >= PER_RUN) { later.push(name); continue }
     try {
       const photo = await search(query, index, key)
       if (!photo) { failed.push(name); continue }
@@ -125,10 +137,11 @@ Deno.serve(async () => {
       done.push(name)
     } catch (e) {
       console.error('recipe photo', name, e)
+      if (String(e).includes('rate limit')) { later.push(name); break }
       failed.push(name)
     }
   }
-  return new Response(JSON.stringify({ done: done.length, skipped: skipped.length, missing, failed }), {
+  return new Response(JSON.stringify({ done: done.length, skipped: skipped.length, later: later.length, missing, failed }), {
     headers: { 'Content-Type': 'application/json' },
   })
 })
