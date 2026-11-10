@@ -15,18 +15,18 @@ const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SE
 
 // Dish name: [search, which result (0 is the first)].
 const PHOTO: Record<string, [string, number?]> = {
-  'Berry overnight oats': ['overnight oats berries jar'],
+  'Berry overnight oats': ['overnight oats berries'],
   'Teriyaki chicken rice bowl': ['teriyaki chicken rice bowl'],
   'Lean beef spaghetti bolognese': ['spaghetti bolognese'],
   'Peanut butter and banana toast': ['peanut butter banana toast'],
-  'Scrambled eggs on toast with spinach and tomatoes': ['scrambled eggs toast spinach'],
+  'Scrambled eggs on toast with spinach and tomatoes': ['scrambled eggs on toast'],
   'Chicken, avocado and salad wrap': ['chicken avocado wrap'],
   'Beef burrito bowl': ['burrito bowl'],
-  'Greek yoghurt with honey and walnuts': ['greek yogurt honey walnuts'],
+  'Greek yoghurt with honey and walnuts': ['yogurt bowl honey nuts'],
   'Banana pancakes with yoghurt': ['banana pancakes'],
   'Ham, cheese and tomato toastie with side salad': ['toasted sandwich ham cheese'],
   'Sunday roast chicken thighs with vegetables': ['roast chicken thighs vegetables tray'],
-  'Banana peanut butter smoothie': ['banana peanut butter smoothie'],
+  'Banana peanut butter smoothie': ['peanut butter smoothie'],
   'Peanut butter banana porridge': ['porridge banana peanut butter'],
   'Tuna, rice and veggie bowl': ['tuna rice bowl vegetables'],
   'Beef and bean chilli with rice': ['chili con carne rice'],
