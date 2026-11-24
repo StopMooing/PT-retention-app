@@ -42,3 +42,6 @@ shots/
 
 # temporary copies used by parallel workers
 .claude/worktrees/
+
+# made at build time from the sample data (tools/demo)
+public/demo-data.json

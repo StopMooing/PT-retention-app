@@ -9,6 +9,35 @@ import { clientStatus, STATUS, relativeDay, sessionsLast7, checkinsThisWeek, che
 import { useMessageEvent, READ, INCOMING } from './messages/events'
 import NudgeSheet from './NudgeSheet'
 import NotificationBell from '../lib/Notifications'
+import CheckinQuestionsSheet from './CheckinQuestionsSheet'
+
+// A coach with no clients yet (just signed up): three steps to their first client training,
+// instead of an empty dashboard full of zeros.
+function StartHere({ onAdd, onPrograms, onQuestions }) {
+  const steps = [
+    { title: 'Add your first client', body: "Their name and email. You'll get an invite link to send them, and they're in within a minute.", action: <Button onClick={onAdd}><Plus size={18} /> Add client</Button> },
+    { title: 'Give them a program', body: 'Build your own set by set, or assign a ready-made one from the library and change it to suit.', action: <Button variant="secondary" onClick={onPrograms}>Open programs</Button> },
+    { title: 'Set your check-in questions', body: 'Ask what you want to know each week, up to five questions. Their answers come with every check-in.', action: <Button variant="secondary" onClick={onQuestions}>Check-in questions</Button> },
+  ]
+  return (
+    <div className="mt-6 space-y-4">
+      <Hero className="!px-5 md:!px-7 !py-6">
+        <p className="font-display text-[clamp(26px,5vw,34px)] leading-none">Welcome to UNFNSHD.</p>
+        <p className="text-[15px] text-hero-muted mt-2 max-w-[560px]">Three steps and your first client is training with you. Once they are, this page shows who needs you each day.</p>
+      </Hero>
+      <div className="grid gap-4 md:grid-cols-3">
+        {steps.map((s, i) => (
+          <Card key={s.title} className="flex flex-col">
+            <p className="font-display text-[30px] leading-none text-faint tabular-nums">{i + 1}</p>
+            <p className="mt-3 text-[17px] font-bold text-ink">{s.title}</p>
+            <p className="mt-1.5 text-[14px] leading-relaxed text-muted flex-1">{s.body}</p>
+            <div className="mt-4">{s.action}</div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 // Where everyone sits, as one bar: tap a part to filter the list below.
 const HEALTH = [
@@ -181,6 +210,7 @@ export default function Dashboard({ user }) {
   const [latestMsg, setLatestMsg] = useState({})
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [questionsOpen, setQuestionsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState('All')
   const [showArchived, setShowArchived] = useState(false)
@@ -439,6 +469,10 @@ export default function Dashboard({ user }) {
         </div>
       </div>
 
+      <CheckinQuestionsSheet open={questionsOpen} onClose={() => setQuestionsOpen(false)} />
+      {!loading && clients.length === 0 ? (
+        <StartHere onAdd={() => setShowAdd(true)} onPrograms={() => navigate('/program-builder')} onQuestions={() => setQuestionsOpen(true)} />
+      ) : (<>
       <div className="grid grid-cols-1 gap-4 mt-6 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
         {/* Needs you */}
         <Hero className="min-w-0 !px-5 md:!px-6">
@@ -610,6 +644,7 @@ export default function Dashboard({ user }) {
           </button>
         )}
       </section>
+      </>)}
     </div>
   )
 }

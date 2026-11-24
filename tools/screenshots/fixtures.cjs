@@ -170,12 +170,12 @@ const otherCheckins = others.map((c, i) => ({ id: id(), client_id: c.id, trainin
 module.exports = {
   ids: { COACH, CLIENT_USER, CLIENT },
   users: {
-    coach: { id: COACH, email: 'coach@example.com', role: 'pt', full_name: 'Luke Coach' },
+    coach: { id: COACH, email: 'sam@example.com', role: 'pt', full_name: 'Sam Taylor' },
     client: { id: CLIENT_USER, email: 'jane@example.com', role: 'client', full_name: 'Jane Carter' },
   },
   tables: {
     profiles: [
-      { id: COACH, full_name: 'Luke Coach', email: 'coach@example.com', role: 'pt', created_at: ts(-100) },
+      { id: COACH, full_name: 'Sam Taylor', email: 'sam@example.com', role: 'pt', created_at: ts(-100) },
       { id: CLIENT_USER, full_name: 'Jane Carter', email: 'jane@example.com', role: 'client', created_at: ts(-40) },
     ],
     clients: [jane, ...others],
@@ -409,4 +409,12 @@ if (process.env.MULTI_WEEK) {
       }
     }
   }
+}
+
+// NEW_COACH=1: a coach who has just signed up: no clients and no programs of their own.
+if (process.env.NEW_COACH) {
+  const t = module.exports.tables
+  t.clients = []
+  t.programs = t.programs.filter((p) => p.created_by !== COACH || p.is_on_demand)
+  for (const k of ['checkins', 'coach_messages', 'daily_checkins', 'scheduled_workouts', 'workout_logs', 'program_assignments', 'habits', 'notifications']) if (t[k]) t[k] = []
 }

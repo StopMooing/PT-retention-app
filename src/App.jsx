@@ -1,10 +1,20 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import { supabase } from './supabase'
 import { prefetchClientRow } from './client/data'
 // Each side loads only its own code: a client never downloads the coach screens.
 const AuthPage = lazy(() => import('./AuthPage'))
 const HomePage = lazy(() => import('./HomePage'))
+const DemoPage = lazy(() => import('./DemoPage'))
+const LegalPage = lazy(() => import('./LegalPage'))
+const DemoBanner = lazy(() => import('./demo/DemoBanner'))
+import { demoRole } from './demo/demo.js'
+
+// Visits are counted on the public pages only (no cookies, nothing personal). Nothing
+// inside the app is ever measured: client pages have ids in their addresses.
+const PUBLIC_PAGES = ['/', '/login', '/signup', '/demo', '/privacy', '/terms']
+const isPublicUrl = (href) => { try { return PUBLIC_PAGES.includes(new URL(href).pathname) } catch { return false } }
 
 // True when UNFNSHD was opened from the phone's home screen rather than a browser tab.
 const installedApp = () => {
@@ -48,6 +58,8 @@ const CONFIRM_AT_LOAD = (() => {
 })()
 
 export default function App() {
+  const { pathname } = useLocation()
+  const inDemo = !!demoRole()
   const [session, setSession] = useState(undefined)
   // Whose role this is, so a role is never used for a different person (see below).
   const [role, setRole] = useState({ uid: undefined, value: null })
@@ -140,8 +152,13 @@ export default function App() {
 
   return (
     <Suspense fallback={splash}>
+    {inDemo && <DemoBanner />}
+    {!inDemo && !session && PUBLIC_PAGES.includes(pathname) && <Analytics beforeSend={(e) => (isPublicUrl(e.url) ? e : null)} />}
     <Routes>
       <Route path="/claim/:token" element={<ClaimPage />} />
+      <Route path="/demo" element={<DemoPage />} />
+      <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+      <Route path="/terms" element={<LegalPage kind="terms" />} />
       {/* Signed out: the website. Opened from the home screen (installed app): sign in. */}
       <Route path="/" element={session ? loggedInRedirect : installedApp() ? <AuthPage defaultMode="login" /> : <HomePage />} />
       <Route path="/auth" element={session ? loggedInRedirect : <AuthPage />} />

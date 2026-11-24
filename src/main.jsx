@@ -6,8 +6,11 @@ import App from './App.jsx'
 import { initSentry, Sentry } from './sentry.js'
 import { Mark, Button } from './ui'
 import { registerServiceWorker } from './lib/push'
+import { demoRole, muteDemoAi } from './demo/demo.js'
 
-initSentry()
+// The demo runs on made-up data: its hiccups are not real errors.
+if (!demoRole()) initSentry()
+else { muteDemoAi(); document.documentElement.dataset.demo = '1' }
 registerServiceWorker()
 
 // After a new version goes live, a phone or browser with the app already open still runs

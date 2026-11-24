@@ -1,35 +1,50 @@
 // unfnshd.app for anyone signed out: what UNFNSHD is, who it's for, what it does and what
 // it costs, in that order. Screens are the real app running on made-up sample data
-// (tools/screenshots), in light and dark to match the visitor's phone. No invented
-// customers, numbers or quotes.
+// (tools/screenshots), in light and dark to match the visitor's phone, with close-ups on
+// small screens. No invented customers, numbers or quotes.
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight, Users, MessageCircleHeart, Activity, ClipboardCheck, MessageSquare, ListChecks,
-  Dumbbell, LayoutGrid, Apple, UtensilsCrossed, CheckCircle2, LineChart, CalendarX, BellOff, Inbox, Check, ChevronDown,
+  Dumbbell, LayoutGrid, Apple, UtensilsCrossed, CheckCircle2, LineChart, CalendarX, BellOff, Inbox, Check, ChevronDown, Eye,
 } from 'lucide-react'
-import { Mark, Button, Chip, Segmented } from './ui'
+import { Mark, Button, Chip } from './ui'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 const WRAP = 'w-full max-w-[1200px] mx-auto px-4 sm:px-6'
 
-// One app screen, in the visitor's light or dark mode (only the shown one loads).
-function Shot({ name, alt, phone, eager, className }) {
-  const img = (theme, show) => (
+// Founding coaches: the full top plan, free for the beta, for the first few coaches.
+const FOUNDING = { clients: 50, places: 20 }
+
+const darkNow = () => typeof document !== 'undefined' && document.documentElement.dataset.theme === 'dark'
+const wideNow = () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches
+
+// One app screen in the visitor's light or dark mode. `close` is a close-up shown on phones
+// instead of a full computer screen. Only the image on show loads.
+function Shot({ name, close, alt, phone, eager, className }) {
+  const dark = darkNow()
+  const wide = wideNow()
+  const img = (file, theme, cls, onShow) => (
     <img
-      src={`/site/${name}-${theme}.webp`}
+      key={`${file}-${theme}`}
+      src={`/site/${file}-${theme}.webp`}
       alt={alt}
-      width={phone ? 780 : 1600}
-      height={phone ? 1688 : 1025}
-      loading={eager ? 'eager' : 'lazy'}
+      loading={eager && onShow ? 'eager' : 'lazy'}
       decoding="async"
-      className={cx('block w-full h-auto', show)}
+      className={cx('block w-full h-auto', cls)}
     />
   )
+  const imgs = close
+    ? [
+        img(name, 'light', 'hidden md:block md:dark:hidden', wide && !dark),
+        img(name, 'dark', 'hidden md:dark:block', wide && dark),
+        img(close, 'light', 'md:hidden dark:hidden', !wide && !dark),
+        img(close, 'dark', 'hidden dark:block md:dark:hidden', !wide && dark),
+      ]
+    : [img(name, 'light', 'dark:hidden', !dark), img(name, 'dark', 'hidden dark:block', dark)]
   return (
     <div className={cx('overflow-hidden border border-line bg-bg shadow-[0_24px_60px_-30px_rgba(0,0,0,0.35)]', phone ? 'rounded-[34px]' : 'rounded-[20px]', className)}>
-      {img('light', 'dark:hidden')}
-      {img('dark', 'hidden dark:block')}
+      {imgs}
     </div>
   )
 }
@@ -51,6 +66,19 @@ function Ticks({ items }) {
   )
 }
 
+function Feature({ eyebrow, title, ticks, shot, flip }) {
+  return (
+    <div className={cx('grid gap-10 items-center', flip ? 'lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]' : 'lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]')}>
+      <div className={flip ? 'lg:order-2' : undefined}>
+        <Eyebrow>{eyebrow}</Eyebrow>
+        <h3 className="mt-3 font-display text-[clamp(30px,5vw,44px)] leading-[1.05]">{title}</h3>
+        <Ticks items={ticks} />
+      </div>
+      <div className={flip ? 'lg:order-1' : undefined}>{shot}</div>
+    </div>
+  )
+}
+
 const SIGNS = [
   { icon: CalendarX, title: 'Missed sessions', body: 'Two planned sessions missed in a row and a client moves to Drifting.' },
   { icon: BellOff, title: 'Gone quiet', body: 'A week without a session or a check-in is Drifting. Two weeks is At risk.' },
@@ -58,9 +86,9 @@ const SIGNS = [
 ]
 
 const STEPS = [
-  { n: '01', title: 'Add your clients', body: 'Add a client and send their invite link. They set a password and they are in, on any phone.' },
+  { n: '01', title: 'Add your clients', body: "Add a client and send their invite link. They set a password and they're in, on any phone." },
   { n: '02', title: 'They train and check in', body: 'Workouts with every set laid out, food, habits and a weekly check-in, with you one message away.' },
-  { n: '03', title: 'You see who needs you', body: 'Your day starts with a short list: who checked in, who is drifting and why. The message is already written.' },
+  { n: '03', title: 'You see who needs you', body: "Your day starts with a short list: who checked in, who's drifting and why. The message is already written." },
 ]
 
 const EVERYTHING = [
@@ -79,25 +107,32 @@ const EVERYTHING = [
 ]
 
 const PLANS = [
-  { key: '8', clients: 8, price: 50 },
-  { key: '16', clients: 16, price: 75 },
-  { key: '50', clients: 50, price: 100 },
+  { clients: 8, price: 50 },
+  { clients: 16, price: 75 },
+  { clients: 50, price: 100 },
+]
+
+const MOVING = [
+  { title: 'Bring your clients', body: "Add each client and send their invite link. They're set up in about a minute, on the phone they already have." },
+  { title: 'Rebuild your programs', body: 'Build them set by set, or start from a ready-made program and change it to suit. A program takes minutes, not an evening.' },
+  { title: 'Move at your own pace', body: "Start with a few clients while you get comfortable, then bring the rest across when you're ready." },
 ]
 
 const FAQ = [
   { q: 'Do my clients pay anything?', a: 'No. Your plan covers your clients. They join through the invite link you send them.' },
-  { q: 'Does it work on iPhone and Android?', a: 'Yes. UNFNSHD runs in the phone\'s browser and adds to the home screen like an app, so there is no app store to go through. On iPhone, notifications need it added to the home screen first.' },
-  { q: 'What does founding coach mean?', a: 'You use UNFNSHD free while we are in beta, and you help shape what gets built next. Before beta ends you will hear from us, and you choose a plan then.' },
+  { q: 'Does it work on iPhone and Android?', a: "Yes. UNFNSHD runs in the phone's browser and adds to the home screen like an app, so there's no app store to go through. On iPhone, notifications need it added to the home screen first." },
+  { q: 'What does founding coach mean?', a: `The first ${FOUNDING.places} coaches use the full plan, for up to ${FOUNDING.clients} clients, free while we're in beta, and get a say in what gets built next. Before beta ends you'll hear from us, and nothing is charged unless you choose a plan.` },
+  { q: 'Can I try it before signing up?', a: 'Yes. The demo runs the real app on made-up clients, both the coach side and the client app. Nothing you do there is saved.' },
   { q: 'Can I use my own programs?', a: 'Yes. Build them set by set in the program builder, or start from a ready-made program and change it to suit.' },
-  { q: 'Who can see my clients\' information?', a: 'Only you and each client. Coaches see their own clients and nobody else\'s, clients see only their own data, and progress photos stay private to the client and their coach.' },
+  { q: "Who can see my clients' information?", a: "Only you and each client. Coaches see their own clients and nobody else's, clients see only their own data, and progress photos stay private to the client and their coach." },
 ]
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const [plan, setPlan] = useState('16')
   const [open, setOpen] = useState(0)
   const join = () => navigate('/signup')
   const signIn = () => navigate('/login')
+  const demo = () => navigate('/demo')
   const go = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   return (
@@ -113,6 +148,7 @@ export default function HomePage() {
             <button onClick={() => go('how')} className="px-3 py-2 rounded-full hover:text-ink">How it works</button>
             <button onClick={() => go('features')} className="px-3 py-2 rounded-full hover:text-ink">Features</button>
             <button onClick={() => go('pricing')} className="px-3 py-2 rounded-full hover:text-ink">Pricing</button>
+            <button onClick={demo} className="px-3 py-2 rounded-full hover:text-ink">Demo</button>
           </nav>
           <div className="ml-auto flex items-center gap-1.5">
             <Button variant="ghost" size="sm" onClick={signIn}>Sign in</Button>
@@ -128,16 +164,19 @@ export default function HomePage() {
             <Chip tone="accent" className="!h-7 !px-3 !text-[13px]">For personal trainers and online coaches</Chip>
             <h1 className="mt-5 font-display text-[clamp(44px,9vw,84px)] leading-[0.95] tracking-[-0.5px]">Keep every client you coach.</h1>
             <p className="mt-5 text-[18px] sm:text-[20px] leading-relaxed text-muted max-w-[640px]">
-              UNFNSHD shows you who is slipping and why, and hands you the message to send. Programs, weekly check-ins, nutrition and the app your clients train from all come with it.
+              UNFNSHD shows you who's slipping and why, and hands you the message to send. Programs, weekly check-ins, nutrition and the app your clients train from all come with it.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Button size="lg" onClick={join}>Join as a founding coach <ArrowRight size={18} /></Button>
-              <Button size="lg" variant="secondary" onClick={() => go('how')}>See how it works</Button>
+              <Button size="lg" variant="secondary" onClick={demo}><Eye size={18} /> Look around a demo</Button>
             </div>
-            <p className="mt-3 text-[14px] text-muted">Free for founding coaches while we are in beta. No card needed.</p>
+            <p className="mt-3 text-[14px] text-muted">Free for the first {FOUNDING.places} coaches while we're in beta. No card needed.</p>
+            <p className="mt-1 text-[14px] text-muted">
+              Here to train with your coach? <button onClick={signIn} className="font-semibold text-ink underline underline-offset-2">Sign in to your app</button>
+            </p>
           </div>
           <div className="relative mt-12 sm:mt-16">
-            <Shot name="dash" alt="The coach dashboard: five clients need you, with the reason for each and a Reply or Reach out button" eager />
+            <Shot name="dash" close="needs" alt="The coach dashboard: five clients need you, with the reason for each and a Reply or Reach out button" eager />
             <div className="hidden md:block absolute -bottom-10 right-6 lg:right-10 w-[210px] lg:w-[240px]">
               <Shot name="home" alt="A client's home screen: this week's sessions, today's plan, calories and water" phone eager />
             </div>
@@ -151,7 +190,7 @@ export default function HomePage() {
               <Eyebrow>Why it matters</Eyebrow>
               <h2 className="mt-3 font-display text-[clamp(32px,6vw,52px)] leading-[1.02]">Clients rarely quit loudly. They go quiet first.</h2>
               <p className="mt-4 text-[17px] leading-relaxed text-muted">
-                A missed session, a skipped check-in, a few days without a word. UNFNSHD watches for those signs on every client, every day, so you can step in while it is still an easy conversation.
+                A missed session, a skipped check-in, a few days without a word. UNFNSHD watches for those signs on every client, every day, so you can step in while it's still an easy conversation.
               </p>
             </div>
             <div className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -184,46 +223,49 @@ export default function HomePage() {
         {/* Features */}
         <section id="features" className="scroll-mt-20">
           <div className={cx(WRAP, 'pb-16 sm:pb-24 space-y-20 sm:space-y-28')}>
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center">
-              <div>
-                <Eyebrow>For you</Eyebrow>
-                <h3 className="mt-3 font-display text-[clamp(30px,5vw,44px)] leading-[1.05]">Every check-in, answered by you.</h3>
-                <Ticks items={[
-                  'A weekly check-in with your own questions, right in their app',
-                  'How they have been feeling all week, next to their answers',
-                  'Reply in a few lines and it lands in their app straight away',
-                  'Engaged, drifting and at risk for every client, worked out for you',
-                ]} />
-              </div>
-              <Shot name="profile" alt="A client's check-in with their answers, how they have been feeling this week, and a reply box" />
-            </div>
-
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] items-center">
-              <Shot name="reach" alt="Reach out to Sophie: a ready-made message to edit, then send in the app or as a text" className="order-2 lg:order-1" />
-              <div className="order-1 lg:order-2">
-                <Eyebrow>For you</Eyebrow>
-                <h3 className="mt-3 font-display text-[clamp(30px,5vw,44px)] leading-[1.05]">The right words, ready to send.</h3>
-                <Ticks items={[
-                  'Ready-made messages for missed sessions, quiet weeks and time away',
-                  'Edit it, then send it in the app or as a text',
-                  'See when you last reached out, so nobody gets forgotten',
-                ]} />
-              </div>
-            </div>
-
-            <div className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] items-center">
-              <div>
-                <Eyebrow>For you</Eyebrow>
-                <h3 className="mt-3 font-display text-[clamp(30px,5vw,44px)] leading-[1.05]">Programs built set by set.</h3>
-                <Ticks items={[
-                  'Every set its own row: reps, kg, RPE and rest',
-                  'Warm-ups, drop sets and supersets',
-                  'Add a week with 2.5 kg or a rep added for you',
-                  'See exactly what your client sees while you build',
-                ]} />
-              </div>
-              <Shot name="builder" alt="The program builder with set rows on the left and the client's view on the right" />
-            </div>
+            <Feature
+              eyebrow="Needs you"
+              title="Know who needs you, and why."
+              ticks={[
+                'One list of who to talk to today, with the reason next to each name',
+                'Engaged, drifting and at risk for every client, worked out for you',
+                "Message a whole group at once, like everyone who's drifting",
+              ]}
+              shot={<Shot name="needs" alt="Five clients need you: check-ins to reply to, one client drifting and one at risk" />}
+            />
+            <Feature
+              flip
+              eyebrow="Reach out"
+              title="The right words, ready to send."
+              ticks={[
+                'Ready-made messages for missed sessions, quiet weeks and time away',
+                'Edit it, then send it in the app or as a text',
+                'See when you last reached out, so nobody gets forgotten',
+              ]}
+              shot={<Shot name="reachcard" alt="Reach out to Sophie: a ready-made message to edit, then send in the app or as a text" className="max-w-[560px] mx-auto" />}
+            />
+            <Feature
+              eyebrow="Check-ins"
+              title="Every check-in, answered by you."
+              ticks={[
+                'A weekly check-in with your own questions, right in their app',
+                "How they've been feeling all week, next to their answers",
+                'Reply in a few lines and it lands in their app straight away',
+              ]}
+              shot={<Shot name="profile" close="checkin" alt="A client's check-in with their answers, how they've been feeling this week, and a reply box" />}
+            />
+            <Feature
+              flip
+              eyebrow="Programs"
+              title="Programs built set by set."
+              ticks={[
+                'Every set its own row: reps, kg, RPE and rest',
+                'Warm-ups, drop sets and supersets',
+                'Add a week with 2.5 kg or a rep added for you',
+                'See exactly what your client sees while you build',
+              ]}
+              shot={<Shot name="builder" alt="The program builder with set rows on the left and the client's view on the right" />}
+            />
 
             <div>
               <div className="max-w-[720px]">
@@ -233,9 +275,9 @@ export default function HomePage() {
               </div>
               <div className="mt-10 grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {[
-                  ['home', 'This week and today', 'Home: this week ring, today\'s plan, calories and water'],
-                  ['log', 'Your targets, set by set', 'Logging a workout with the coach\'s targets and a Swap exercise button'],
-                  ['food', 'Food and meal plans', 'Nutrition: calories and macros left, with today\'s meal plan'],
+                  ['home', 'This week and today', "Home: this week ring, today's plan, calories and water"],
+                  ['log', 'Your targets, set by set', "Logging a workout with the coach's targets and a Swap exercise button"],
+                  ['food', 'Food and meal plans', "Nutrition: calories and macros left, with today's meal plan"],
                   ['msgs', 'Check-ins and messages', 'Messages with the coach, including a daily check-in'],
                 ].map(([name, label, alt]) => (
                   <figure key={name}>
@@ -252,7 +294,8 @@ export default function HomePage() {
         <section className="bg-surface border-y border-line">
           <div className={cx(WRAP, 'py-16 sm:py-24')}>
             <Eyebrow>All one system</Eyebrow>
-            <h2 className="mt-3 font-display text-[clamp(32px,6vw,52px)] leading-[1.02] max-w-[720px]">One app instead of five.</h2>
+            <h2 className="mt-3 font-display text-[clamp(32px,6vw,52px)] leading-[1.02] max-w-[760px]">One app instead of five.</h2>
+            <p className="mt-4 text-[17px] leading-relaxed text-muted max-w-[720px]">No more juggling a training app, a food tracker, a chat app, a check-in form and a spreadsheet of who you haven't heard from.</p>
             <div className="mt-10 grid gap-x-6 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
               {EVERYTHING.map(({ icon: Icon, title, body }) => (
                 <div key={title} className="flex items-start gap-3">
@@ -267,52 +310,58 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Moving across */}
+        <section className={cx(WRAP, 'py-16 sm:py-24')}>
+          <Eyebrow>Switching</Eyebrow>
+          <h2 className="mt-3 font-display text-[clamp(32px,6vw,52px)] leading-[1.02] max-w-[760px]">Moving from another coaching app?</h2>
+          <p className="mt-4 text-[17px] leading-relaxed text-muted max-w-[720px]">There's no big moving day. Start with a few clients and bring the rest across as you go.</p>
+          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+            {MOVING.map((m, i) => (
+              <div key={m.title} className="rounded-[20px] border border-line p-5">
+                <p className="font-display text-[28px] leading-none text-faint tabular-nums">{i + 1}</p>
+                <p className="mt-3 text-[18px] font-bold">{m.title}</p>
+                <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{m.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* Pricing */}
-        <section id="pricing" className={cx(WRAP, 'py-16 sm:py-24 scroll-mt-20')}>
-          <Eyebrow>Pricing</Eyebrow>
-          <h2 className="mt-3 font-display text-[clamp(32px,6vw,52px)] leading-[1.02] max-w-[720px]">Every feature on every plan.</h2>
+        <section id="pricing" className="bg-surface border-y border-line scroll-mt-16">
+          <div className={cx(WRAP, 'py-16 sm:py-24')}>
+            <Eyebrow>Pricing</Eyebrow>
+            <h2 className="mt-3 font-display text-[clamp(32px,6vw,52px)] leading-[1.02] max-w-[720px]">Every feature on every plan.</h2>
 
-          <div className="mt-8 rounded-[28px] bg-hero text-on-hero p-6 sm:p-9 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] items-center">
-            <div>
-              <p className="text-[14px] font-bold text-hero-muted">Founding coaches</p>
-              <p className="mt-1 font-display text-[clamp(30px,5vw,44px)] leading-[1.02]">Free while we are in beta.</p>
-              <p className="mt-3 text-[16px] leading-relaxed text-hero-muted max-w-[620px]">Join now, coach your clients on UNFNSHD at no cost, and help shape what gets built next. You will hear from us before beta ends.</p>
+            <div className="mt-8 rounded-[28px] bg-hero text-on-hero p-6 sm:p-9 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] items-center">
+              <div>
+                <p className="text-[14px] font-bold text-hero-muted">Founding coaches, first {FOUNDING.places} only</p>
+                <p className="mt-1 font-display text-[clamp(30px,5vw,44px)] leading-[1.02]">Free while we're in beta.</p>
+                <ul className="mt-4 space-y-2 text-[16px] text-hero-muted">
+                  {[`The full plan, for up to ${FOUNDING.clients} clients`, 'Every feature, and every new one as it lands', 'A say in what gets built next'].map((t) => (
+                    <li key={t} className="flex items-start gap-2.5"><Check size={18} strokeWidth={3} className="shrink-0 mt-0.5 text-tan" /><span>{t}</span></li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-[14px] text-hero-muted">You'll hear from us before beta ends. Nothing is charged unless you choose a plan.</p>
+              </div>
+              <button onClick={join} className="h-[52px] px-6 rounded-full bg-tan text-on-tan font-bold inline-flex items-center justify-center gap-2 hover:brightness-105">
+                Join as a founding coach <ArrowRight size={18} />
+              </button>
             </div>
-            <button onClick={join} className="h-[52px] px-6 rounded-full bg-tan text-on-tan font-bold inline-flex items-center justify-center gap-2 hover:brightness-105">
-              Join as a founding coach <ArrowRight size={18} />
-            </button>
-          </div>
 
-          <div className="mt-12 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5">
-            <p className="text-[18px] font-bold">How many clients do you coach?</p>
-            <Segmented
-              value={plan}
-              onChange={setPlan}
-              options={PLANS.map((p) => ({ value: p.key, label: `Up to ${p.clients}` }))}
-            />
-          </div>
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-            {PLANS.map((p) => {
-              const on = p.key === plan
-              return (
-                <button
-                  key={p.key}
-                  onClick={() => setPlan(p.key)}
-                  aria-pressed={on}
-                  className={cx('text-left rounded-[24px] border p-6 transition-colors', on ? 'border-ink bg-surface' : 'border-line bg-bg hover:bg-surface')}
-                >
+            <p className="mt-12 text-[18px] font-bold">After beta</p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              {PLANS.map((p) => (
+                <div key={p.clients} className="rounded-[24px] border border-line bg-bg p-6">
                   <p className="text-[15px] font-bold text-muted">Up to {p.clients} clients</p>
                   <p className="mt-2 font-display text-[48px] leading-none tabular-nums">A${p.price}</p>
                   <p className="mt-1 text-[14px] text-muted">a month</p>
                   <p className="mt-4 text-[15px] leading-relaxed">Everything, for you and up to {p.clients} clients. Clients never pay for the app.</p>
-                </button>
-              )
-            })}
-          </div>
-          <p className="mt-4 text-[14px] text-muted">Plan prices apply after beta, in Australian dollars. Founding coaches use UNFNSHD free until then.</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-[14px] text-muted">Prices in Australian dollars. Coaching more than 50 clients, or a team of coaches? Bigger plans are on the way.</p>
 
-          <div className="mt-10 rounded-[24px] border border-line p-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
-            <div className="flex-1">
+            <div className="mt-10 rounded-[24px] border border-line bg-bg p-6">
               <p className="text-[18px] font-bold">Training on your own?</p>
               <p className="mt-1 text-[15px] leading-relaxed text-muted">The UNFNSHD app for one, with workouts, programs, food and progress, will be A$14.99 a month. It opens after the coach beta.</p>
             </div>
@@ -320,45 +369,50 @@ export default function HomePage() {
         </section>
 
         {/* Built by a coach */}
-        <section className="bg-surface border-y border-line">
-          <div className={cx(WRAP, 'py-16 sm:py-24 grid gap-8 lg:grid-cols-[auto_minmax(0,1fr)] items-start')}>
-            <Mark size={56} />
-            <div className="max-w-[720px]">
-              <Eyebrow>Built by a coach</Eyebrow>
-              <p className="mt-3 font-display text-[clamp(26px,4.5vw,38px)] leading-[1.12]">UNFNSHD is built by Luke, a personal trainer in Adelaide, to coach his own clients first.</p>
-              <p className="mt-4 text-[17px] leading-relaxed text-muted">The name means we are never done. There is always a next session, a next step, a next week. Every feature is here because a coach needed it with real clients.</p>
-            </div>
+        <section className={cx(WRAP, 'py-16 sm:py-24 grid gap-8 lg:grid-cols-[auto_minmax(0,1fr)] items-start')}>
+          <Mark size={56} />
+          <div className="max-w-[720px]">
+            <Eyebrow>Built by a coach</Eyebrow>
+            <p className="mt-3 font-display text-[clamp(26px,4.5vw,38px)] leading-[1.12]">UNFNSHD is built by Luke, a personal trainer in Adelaide, to coach his own clients first.</p>
+            <p className="mt-4 text-[17px] leading-relaxed text-muted">The name means we're never done. There's always a next session, a next step, a next week. Every feature is here because a coach needed it with real clients.</p>
           </div>
         </section>
 
         {/* Questions */}
-        <section className={cx(WRAP, 'py-16 sm:py-24')}>
-          <Eyebrow>Questions</Eyebrow>
-          <h2 className="mt-3 font-display text-[clamp(32px,6vw,52px)] leading-[1.02]">Good to know.</h2>
-          <div className="mt-8 max-w-[820px] divide-y divide-line border-y border-line">
-            {FAQ.map((f, i) => {
-              const isOpen = open === i
-              return (
-                <div key={f.q}>
-                  <button onClick={() => setOpen(isOpen ? null : i)} aria-expanded={isOpen} className="w-full flex items-center justify-between gap-4 py-5 text-left">
-                    <span className="text-[18px] font-bold">{f.q}</span>
-                    <ChevronDown size={20} className={cx('shrink-0 text-muted transition-transform', isOpen && 'rotate-180')} />
-                  </button>
-                  {isOpen && <p className="pb-5 -mt-1 text-[16px] leading-relaxed text-muted max-w-[680px]">{f.a}</p>}
-                </div>
-              )
-            })}
+        <section className="bg-surface border-y border-line">
+          <div className={cx(WRAP, 'py-16 sm:py-24')}>
+            <Eyebrow>Questions</Eyebrow>
+            <h2 className="mt-3 font-display text-[clamp(32px,6vw,52px)] leading-[1.02]">Good to know.</h2>
+            <div className="mt-8 max-w-[820px] divide-y divide-line border-y border-line">
+              {FAQ.map((f, i) => {
+                const isOpen = open === i
+                return (
+                  <div key={f.q}>
+                    <button onClick={() => setOpen(isOpen ? null : i)} aria-expanded={isOpen} className="w-full flex items-center justify-between gap-4 py-5 text-left">
+                      <span className="text-[18px] font-bold">{f.q}</span>
+                      <ChevronDown size={20} className={cx('shrink-0 text-muted transition-transform', isOpen && 'rotate-180')} />
+                    </button>
+                    {isOpen && <p className="pb-5 -mt-1 text-[16px] leading-relaxed text-muted max-w-[680px]">{f.a}</p>}
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </section>
 
         {/* Close */}
-        <section className={cx(WRAP, 'pb-20')}>
+        <section className={cx(WRAP, 'py-16 sm:py-20')}>
           <div className="rounded-[32px] bg-hero text-on-hero px-6 py-12 sm:px-12 sm:py-16 text-center">
             <h2 className="font-display text-[clamp(34px,7vw,64px)] leading-[0.98]">Your clients are worth keeping.</h2>
-            <p className="mt-4 text-[17px] text-hero-muted">Free for founding coaches while we are in beta.</p>
-            <button onClick={join} className="mt-8 h-[52px] px-7 rounded-full bg-tan text-on-tan font-bold inline-flex items-center justify-center gap-2 hover:brightness-105">
-              Join as a founding coach <ArrowRight size={18} />
-            </button>
+            <p className="mt-4 text-[17px] text-hero-muted">Free for the first {FOUNDING.places} coaches while we're in beta.</p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <button onClick={join} className="h-[52px] px-7 rounded-full bg-tan text-on-tan font-bold inline-flex items-center justify-center gap-2 hover:brightness-105">
+                Join as a founding coach <ArrowRight size={18} />
+              </button>
+              <button onClick={demo} className="h-[52px] px-7 rounded-full border border-hero-track text-on-hero font-bold inline-flex items-center justify-center gap-2 hover:bg-hero-chip">
+                <Eye size={18} /> Look around a demo
+              </button>
+            </div>
           </div>
         </section>
       </main>
@@ -370,9 +424,11 @@ export default function HomePage() {
             <span className="font-display text-[17px] leading-none pt-0.5">UNFNSHD</span>
           </div>
           <span className="sm:ml-2">We aren't done. Neither are you.</span>
-          <div className="sm:ml-auto flex items-center gap-4">
+          <div className="sm:ml-auto flex flex-wrap items-center gap-x-4 gap-y-2">
             <button onClick={signIn} className="font-semibold text-ink">Sign in</button>
-            <button onClick={join} className="font-semibold text-ink">Join free</button>
+            <button onClick={demo} className="font-semibold text-ink">Demo</button>
+            <a href="/privacy" className="font-semibold text-ink">Privacy</a>
+            <a href="/terms" className="font-semibold text-ink">Terms</a>
             <span>© 2026 UNFNSHD</span>
           </div>
         </div>

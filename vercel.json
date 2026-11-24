@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/demo-api/storage/:path*",
+      "destination": "/demo-photo.svg"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }
