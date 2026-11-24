@@ -42,7 +42,7 @@ function project(db, table, row, select) {
     const target = db[name] || []
     // A hint names the link: a column ("exercise_id") or a constraint ("<table>_<column>_fkey").
     const hinted = hint && (hint in row ? hint : hint.replace(`${table}_`, '').replace(/_fkey$/, ''))
-    let fk = hinted && hinted in row ? hinted : row[singular(name) + '_id'] !== undefined ? singular(name) + '_id' : null
+    let fk = hinted && hinted.endsWith('_id') ? hinted : row[singular(name) + '_id'] !== undefined ? singular(name) + '_id' : null
     if (name === 'saved_workouts') fk = 'custom_workout_id'
     if (fk) {
       const hit = target.find((r) => r.id === row[fk])

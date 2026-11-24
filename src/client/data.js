@@ -6,7 +6,7 @@ import { toLocalDateStr, addDays } from './dates'
 
 const SW_SELECT = 'id, scheduled_date, program_workout_id, custom_workout_id, created_by, created_at, program_workouts(id, name, day_number, week_number), saved_workouts(id, name, content)'
 // Each program exercise with its set rows (one per planned set) and superset group.
-const EX_SELECT = 'id, sets, reps, rest_seconds, notes, order_index, superset_group, exercises(id, name, muscle_group), workout_exercise_sets(set_number, set_type, reps, weight_kg, rpe, rest_seconds)'
+const EX_SELECT = 'id, sets, reps, rest_seconds, notes, order_index, superset_group, exercises(id, name, muscle_group, equipment, category), workout_exercise_sets(set_number, set_type, reps, weight_kg, rpe, rest_seconds)'
 
 // Program days in order: week 1 day 1, week 1 day 2, ... then week 2.
 const byWeekDay = (a, b) => (a.week_number ?? 1) - (b.week_number ?? 1) || (a.day_number ?? 0) - (b.day_number ?? 0)

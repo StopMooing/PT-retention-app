@@ -58,7 +58,7 @@ export default function SessionsList({ client }) {
     try {
       const { data } = await supabase
         .from('workout_set_logs')
-        .select('id, set_number, reps_completed, weight_kg, exercise_id, exercises!workout_set_logs_exercise_id_fkey(name, muscle_group)')
+        .select('id, set_number, reps_completed, weight_kg, exercise_id, exercises!workout_set_logs_exercise_id_fkey(name, muscle_group), swapped_from:exercises!workout_set_logs_swapped_from_exercise_id_fkey(name)')
         .eq('workout_log_id', log.id)
         .order('exercise_id')
         .order('set_number')
@@ -77,7 +77,7 @@ export default function SessionsList({ client }) {
           const open = expandedId === log.id
           const sets = setLogs[log.id] ?? []
           const byEx = {}
-          for (const s of sets) (byEx[s.exercise_id] ||= { name: s.exercises?.name || 'Exercise', sets: [] }).sets.push(s)
+          for (const s of sets) (byEx[s.exercise_id] ||= { name: s.exercises?.name || 'Exercise', swappedFrom: s.swapped_from?.name, sets: [] }).sets.push(s)
           return (
             <div key={log.id}>
               <button onClick={() => toggle(log)} className="w-full text-left flex items-center gap-3 px-4 py-3.5 min-h-[64px] hover:bg-surface-2">
@@ -97,7 +97,8 @@ export default function SessionsList({ client }) {
                     <p className="text-[13px] text-muted">This one was logged without sets.</p>
                   ) : Object.values(byEx).map((ex) => (
                     <div key={ex.name}>
-                      <p className="text-[13px] font-bold text-ink mb-1.5">{ex.name}</p>
+                      <p className={`text-[13px] font-bold text-ink ${ex.swappedFrom ? '' : 'mb-1.5'}`}>{ex.name}</p>
+                      {ex.swappedFrom && <p className="text-[12px] text-muted mb-1.5">Swapped in for {ex.swappedFrom}</p>}
                       <div className="flex flex-wrap gap-1.5">
                         {ex.sets.map((s) => (
                           <span key={s.id} className="h-8 px-3 rounded-full bg-surface-2 text-[13px] font-semibold text-ink inline-flex items-center tabular-nums">

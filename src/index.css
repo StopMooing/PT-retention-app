@@ -269,3 +269,10 @@ body {
     display: none;
   }
 }
+
+/* Search boxes draw their own clear button, so the browser's one is hidden. */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}

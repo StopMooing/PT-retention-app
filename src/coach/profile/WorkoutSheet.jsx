@@ -62,7 +62,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
       setLoadingSets(true)
       const { data } = await supabase
         .from("workout_set_logs")
-        .select("id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises!workout_set_logs_exercise_id_fkey(name)")
+        .select("id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises!workout_set_logs_exercise_id_fkey(name), swapped_from:exercises!workout_set_logs_swapped_from_exercise_id_fkey(name)")
         .eq("workout_log_id", completedLog.id)
         .order("set_number", { ascending: true })
       if (cancelled) return
@@ -132,7 +132,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
 
   const setsByExercise = loggedSets.reduce((acc, s) => {
     const key = s.exercise_id || 'unknown'
-    if (!acc[key]) acc[key] = { name: s.exercises?.name || 'Exercise', sets: [] }
+    if (!acc[key]) acc[key] = { name: s.exercises?.name || 'Exercise', swappedFrom: s.swapped_from?.name, sets: [] }
     acc[key].sets.push(s)
     return acc
   }, {})
@@ -405,7 +405,8 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
               <div className="space-y-5">
                 {Object.entries(setsByExercise).map(([exKey, ex]) => (
                   <div key={exKey}>
-                    <p className="text-[15px] font-bold text-ink mb-2">{ex.name}</p>
+                    <p className={`text-[15px] font-bold text-ink ${ex.swappedFrom ? '' : 'mb-2'}`}>{ex.name}</p>
+                    {ex.swappedFrom && <p className="text-[13px] text-muted mb-2">Swapped in for {ex.swappedFrom}, this session only</p>}
                     <div className="space-y-2">
                       {ex.sets.map((s) => (
                         <SetRow

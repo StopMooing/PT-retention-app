@@ -295,7 +295,7 @@ function History({ clientName = '', workoutLogs, scheduledWorkouts, workoutNames
         const isOpen = openId === log.id
         const note = log.notes?.trim() || ''
         const sets = sessionSetLogs[log.id] || []
-        const byEx = sets.reduce((acc, s) => { const k = s.exercise_id || 'unknown'; (acc[k] ||= { name: s.exercises?.name || 'Exercise', sets: [] }).sets.push(s); return acc }, {})
+        const byEx = sets.reduce((acc, s) => { const k = s.exercise_id || 'unknown'; (acc[k] ||= { name: s.exercises?.name || 'Exercise', swappedFrom: s.swapped_from?.name, sets: [] }).sets.push(s); return acc }, {})
         const pbs = personalBests.reduce((acc, pb) => {
           if (pb.achieved_at && dayOf(pb.achieved_at) === day) (acc[pb.exercise_id] ||= new Set()).add(pb.pb_type)
           return acc
@@ -348,6 +348,7 @@ function History({ clientName = '', workoutLogs, scheduledWorkouts, workoutNames
                             </span>
                             <span className="flex items-center gap-2 shrink-0 text-[13px] text-muted">{ex.sets.length} sets<ChevronDown size={16} className={`text-faint transition-transform ${exOpen ? 'rotate-180' : ''}`} /></span>
                           </button>
+                          {ex.swappedFrom && <p className="px-3 -mt-1.5 pb-2.5 text-[13px] text-muted">Swapped in for {ex.swappedFrom}, this session only</p>}
                           {exOpen && (
                             <div className="px-3 pb-3 flex flex-wrap gap-1.5">
                               {ex.sets.map((s, i) => (

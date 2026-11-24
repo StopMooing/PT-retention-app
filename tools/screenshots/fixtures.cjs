@@ -21,6 +21,8 @@ const exerciseList = [
   ['Lateral Raise', 'Shoulders', 'dumbbell'], ['Face Pull (Cable)', 'Shoulders', 'cable'], ['Dumbbell Curl', 'Biceps', 'dumbbell'],
   ['Triceps Pushdown', 'Triceps', 'cable'], ['Hip Thrust', 'Glutes', 'barbell'], ['Plank', 'Core', 'bodyweight'],
   ['Deadlift', 'Back', 'barbell'], ['Pull Up', 'Back', 'bodyweight'],
+  ['Front Squat (Barbell)', 'Legs', 'barbell'], ['Goblet Squat (Dumbbell)', 'Legs', 'dumbbell'], ['Hack Squat (Machine)', 'Legs', 'machine'],
+  ['Leg Extension (Machine)', 'Legs', 'machine'],
 ]
 const exercises = exerciseList.map(([name, muscle_group, equipment]) => ({
   id: id(), name, muscle_group, equipment, category: 'strength', instructions: null,
@@ -83,6 +85,15 @@ for (let off = -28; off <= 14; off++) {
     })
     log.total_volume_kg = vol
     workout_logs.push(log)
+  }
+}
+
+// The latest Lower A had the squat swapped for the hack squat, that session only.
+{
+  const lowerLogs = workout_logs.filter((l) => l.program_workout_id === program_workouts[0].id)
+  const last = lowerLogs[lowerLogs.length - 1]
+  if (last) for (const r of workout_set_logs) {
+    if (r.workout_log_id === last.id && r.exercise_id === ex('Barbell Back Squat').id) Object.assign(r, { exercise_id: ex('Hack Squat (Machine)').id, swapped_from_exercise_id: ex('Barbell Back Squat').id })
   }
 }
 

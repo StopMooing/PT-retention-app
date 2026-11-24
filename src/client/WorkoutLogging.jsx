@@ -3,16 +3,18 @@
 // personal bests. Nothing is celebrated until the save is confirmed. Editing a finished
 // session updates it in place. AI workouts have their exercise names matched with
 // resolve_exercise_ids. Ticked sets are kept as a draft on the phone until saved.
-import { useState, useEffect } from 'react'
-import { Check, Trophy, Timer, SkipForward, Share2, X, Plus, Minus, Info } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Check, Trophy, Timer, SkipForward, Share2, X, Plus, Minus, Info, ArrowLeftRight } from 'lucide-react'
 import { supabase } from '../supabase'
 import { Button, Card, Chip, Sheet, Hero, Ring } from '../ui'
 import { ShareSheet } from './ShareStory'
 import ExerciseInfoSheet from './ExerciseInfoSheet'
+import SwapSheet from './SwapSheet'
 import { Overlay, Loading } from './common'
 import { toLocalDateStr } from './dates'
 import { workoutKey, workoutName as nameOf, plural } from './metrics'
 import { plannedSets, prescriptionText, setTypeOf, setLabels, supersets, blocks } from '../lib/setTargets.js'
+import { applySwap } from '../lib/swaps.js'
 
 const EMPTY = []
 const cx = (...c) => c.filter(Boolean).join(' ')
@@ -63,9 +65,25 @@ function writeDraft(swId, data) {
   if (!swId) return
   try { localStorage.setItem(draftKey(swId), JSON.stringify(data)) } catch { /* storage unavailable */ }
 }
+// Today's swaps ({ workoutExerciseId: exercise }) are kept the same way, next to the sets.
+const swapsKey = (swId) => `unfnshd-workout-swaps-${swId}`
+function readSwaps(swId) {
+  if (!swId) return null
+  try {
+    const raw = localStorage.getItem(swapsKey(swId))
+    return raw ? JSON.parse(raw) : null
+  } catch { return null }
+}
+function writeSwaps(swId, data) {
+  if (!swId) return
+  try {
+    if (Object.keys(data).length) localStorage.setItem(swapsKey(swId), JSON.stringify(data))
+    else localStorage.removeItem(swapsKey(swId))
+  } catch { /* storage unavailable */ }
+}
 function clearDraft(swId) {
   if (!swId) return
-  try { localStorage.removeItem(draftKey(swId)) } catch { /* storage unavailable */ }
+  try { localStorage.removeItem(draftKey(swId)); localStorage.removeItem(swapsKey(swId)) } catch { /* storage unavailable */ }
 }
 
 /* ---------- Finished screen ---------- */
@@ -220,6 +238,30 @@ export function WorkoutComplete({ workoutName, stats, week, streak = 0, onDone, 
 
 /* ---------- Logging ---------- */
 
+// Under an exercise: what it replaced today (with Undo), or a Swap button.
+function SwapLine({ ex, canSwap, onSwap, onUndo, hero }) {
+  const pill = hero
+    ? 'h-9 px-3.5 rounded-full bg-hero-chip text-[13px] font-bold inline-flex items-center gap-1.5'
+    : 'h-9 px-3.5 rounded-full bg-surface-2 text-ink text-[13px] font-bold inline-flex items-center gap-1.5'
+  if (ex.swappedFrom) {
+    return (
+      <div className="flex items-center gap-2 flex-wrap mt-2">
+        <p className={cx('text-[13px] font-semibold inline-flex items-center gap-1.5', hero ? 'text-hero-muted' : 'text-muted')}>
+          <ArrowLeftRight size={14} className="shrink-0" /> Swapped from {ex.swappedFrom.name || 'the planned exercise'} for today
+        </p>
+        {canSwap && <button type="button" onClick={onUndo} className={cx('text-[13px] font-bold underline underline-offset-2', hero ? '' : 'text-accent')}>Undo</button>}
+      </div>
+    )
+  }
+  if (!canSwap) return null
+  return (
+    <button type="button" onClick={onSwap} className={cx(pill, 'mt-3')}>
+      <ArrowLeftRight size={15} /> Swap exercise
+    </button>
+  )
+}
+
+
 export default function WorkoutLogging({ scheduledWorkout, existingLog, exercises, client, onBack, onComplete }) {
   const isCustom = scheduledWorkout._isCustom || !scheduledWorkout.program_workout_id
   const customContent = scheduledWorkout._customWorkout?.content || scheduledWorkout.saved_workouts?.content || null
@@ -237,8 +279,13 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
   const [restInterval, setRestInterval] = useState(null)
   const [aiExercises, setAiExercises] = useState(null)
   const [aiParseError, setAiParseError] = useState(false)
+  // Exercises swapped for this session only, by program exercise row id. The program
+  // itself never changes.
+  const [swaps, setSwaps] = useState(() => (isEditing ? {} : readSwaps(scheduledWorkout.id) || {}))
+  const [swapFor, setSwapFor] = useState(null) // the program exercise row being swapped
 
-  const trackedExercises = isCustom ? (aiExercises || EMPTY) : exercises
+  const planExercises = useMemo(() => (exercises || EMPTY).map((ex) => applySwap(ex, swaps[ex.id])), [exercises, swaps])
+  const trackedExercises = isCustom ? (aiExercises || EMPTY) : planExercises
   const loggableExercises = trackedExercises.filter(loggable)
   // An AI workout we can't read, or none of whose exercises are in the library, is just
   // marked as done.
@@ -286,22 +333,29 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     ;(async () => {
       const { data: existingSetRows } = await supabase
         .from('workout_set_logs')
-        .select('exercise_id, set_number, weight_kg, reps_completed')
+        .select('exercise_id, set_number, weight_kg, reps_completed, swapped_from_exercise_id, exercises!workout_set_logs_exercise_id_fkey(id, name, muscle_group, equipment, category)')
         .eq('workout_log_id', existingLog.id)
       if (cancelled || !existingSetRows) return
+      // The plan as it was, before today's swaps: a swapped set says which exercise it replaced.
+      const base = isCustom ? (aiExercises || EMPTY) : (exercises || EMPTY)
       const seeded = {}
-      for (const ex of trackedExercises) {
-        const exerciseId = ex.exercise_id ?? ex.exercises?.id
-        if (!exerciseId) continue
+      const restored = {}
+      for (const ex of base) {
+        const planned = ex.exercise_id ?? ex.exercises?.id
+        if (!planned) continue
+        const swapRow = existingSetRows.find((r) => r.swapped_from_exercise_id === planned && r.exercises)
+        if (swapRow) restored[ex.id] = swapRow.exercises
+        const exerciseId = swapRow ? swapRow.exercise_id : planned
         const rowsForEx = existingSetRows.filter((r) => r.exercise_id === exerciseId)
         if (!rowsForEx.length) continue
         seeded[ex.id] = {}
         for (const r of rowsForEx) seeded[ex.id][r.set_number] = { weight: String(r.weight_kg ?? ''), reps: String(r.reps_completed ?? ''), done: true }
       }
+      if (Object.keys(restored).length > 0) setSwaps(restored)
       if (Object.keys(seeded).length > 0) setSetData(seeded)
     })()
     return () => { cancelled = true }
-  }, [existingLog?.id, trackedExercises])
+  }, [existingLog?.id, isCustom, exercises, aiExercises])
 
   // AI workouts: turn the saved JSON into trackable exercises with real exercise ids.
   useEffect(() => {
@@ -367,6 +421,25 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
     if (isEditing || Object.keys(setData).length === 0) return
     writeDraft(scheduledWorkout.id, setData)
   }, [setData, isEditing, scheduledWorkout.id])
+  useEffect(() => {
+    if (!isEditing) writeSwaps(scheduledWorkout.id, swaps)
+  }, [swaps, isEditing, scheduledWorkout.id])
+
+  // A swap is for this session only, and only before any of that exercise's sets are
+  // ticked (a finished session keeps what was done).
+  const canSwap = (ex) => !isCustom && !isEditing && loggable(ex) && !Object.values(setData[ex.id] || {}).some((s) => s.done)
+  function pickSwap(ex, picked) {
+    const planned = ex.swappedFrom ?? ex.exercises
+    setSwaps((prev) => {
+      const next = { ...prev }
+      if (!picked || picked.id === planned?.id) delete next[ex.id]
+      else next[ex.id] = { id: picked.id, name: picked.name, muscle_group: picked.muscle_group, equipment: picked.equipment, category: picked.category }
+      return next
+    })
+    // Numbers typed for the other exercise don't carry over.
+    setSetData((prev) => { const next = { ...prev }; delete next[ex.id]; return next })
+    setSwapFor(null)
+  }
 
   function startRestTimer(seconds) {
     if (restInterval) clearInterval(restInterval)
@@ -587,7 +660,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
         const reps = repsFor(exSets[s], ex, s)
         const weight = weightFor(exSets[s])
         totalVolume += reps * weight
-        rows.push({ exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight })
+        rows.push({ exercise_id: exerciseId, set_number: s, reps_completed: reps, weight_kg: weight, swapped_from_exercise_id: ex.swappedFrom?.id ?? null })
       }
       if (rows.length) byExercise.push({ exerciseId, exerciseName: ex.exercises?.name || 'Exercise', rows })
     }
@@ -769,6 +842,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                   {prescriptionText(ex) && <p className="text-[15px] font-semibold mt-1.5">{prescriptionText(ex)}</p>}
                   {last && <p className="text-[14px] text-hero-muted mt-0.5">Last time {last.weight_kg > 0 ? `${last.weight_kg} kg for ${last.reps}` : plural(last.reps, 'rep')}</p>}
                   {ex.notes && <p className="mt-3.5 rounded-[16px] bg-hero-chip px-3.5 py-3 text-[14px] leading-snug">{ex.notes}</p>}
+                  <SwapLine hero ex={ex} canSwap={canSwap(ex)} onSwap={() => setSwapFor(ex)} onUndo={() => pickSwap(ex, null)} />
                 </Hero>
               )}
               <Card padded={false} className="overflow-hidden">
@@ -784,6 +858,7 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
                     {superMarks[rowKey] && <p className="text-[12px] font-bold text-accent mt-0.5">Superset {superMarks[rowKey].letter}</p>}
                     {prescriptionText(ex) && <p className="text-[13px] text-muted mt-0.5">{prescriptionText(ex)}</p>}
                     {ex.notes && <p className="text-[13px] text-muted italic mt-1">{ex.notes}</p>}
+                    <SwapLine ex={ex} canSwap={canSwap(ex)} onSwap={() => setSwapFor(ex)} onUndo={() => pickSwap(ex, null)} />
                   </div>
                   {muscle && <Chip className="mt-0.5">{muscle}</Chip>}
                 </div>}
@@ -910,6 +985,13 @@ export default function WorkoutLogging({ scheduledWorkout, existingLog, exercise
       >
         <p className="text-[15px] text-muted">{plural(totalSetsCount - doneSetsCount, 'set')} not ticked. Only the sets you ticked are saved, so your history stays true to what you did.</p>
       </Sheet>
+      <SwapSheet
+        open={!!swapFor}
+        from={swapFor ? swapFor.swappedFrom ?? swapFor.exercises : null}
+        exclude={trackedExercises.filter((x) => x.id !== swapFor?.id).map((x) => x.exercise_id ?? x.exercises?.id).filter(Boolean)}
+        onPick={(picked) => pickSwap(swapFor, picked)}
+        onClose={() => setSwapFor(null)}
+      />
       {infoFor && <ExerciseInfoSheet exercise={infoFor} onClose={() => setInfoFor(null)} />}
     </Overlay>
   )
