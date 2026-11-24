@@ -1,9 +1,10 @@
 // Training: the assigned program, the schedule (drag to move on desktop), logged
 // sessions and personal bests. All saving happens in ClientProfile.jsx.
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useEffect } from 'react'
 import { DndContext, DragOverlay, MouseSensor, TouchSensor, useSensor, useSensors, closestCenter, useDraggable, useDroppable } from '@dnd-kit/core'
 import { ClipboardList, ChevronLeft, ChevronRight, ChevronDown, Plus, X, CalendarPlus, Trophy, Search, Check, Dumbbell, AlertCircle } from 'lucide-react'
 import { Button, Card, Chip, Segmented, Sheet, EmptyState, Field } from '../../ui'
+import { supabase } from '../../supabase'
 import { Panel } from './parts'
 import { toLocalDateStr, dayOf, formatDate, relativeDay, firstName, startedByClient, sessionFelt } from '../lib'
 import StartPlanFields from '../../lib/StartPlanFields'
@@ -11,6 +12,68 @@ import { prescriptionText } from '../../lib/setTargets.js'
 import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, planSessionCount, daysPerWeek, PAST_START_NOTE } from '../../lib/schedule.js'
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+/* Programs the client made themselves (from scratch or as their own copy of one). The coach
+   can look but not change them; the coach's program stays the client's main one. Hidden
+   when there are none. */
+const byWeekDay = (a, b) => (a.week_number ?? 1) - (b.week_number ?? 1) || (a.day_number ?? 0) - (b.day_number ?? 0)
+function ClientMadePrograms({ client }) {
+  const [programs, setPrograms] = useState([])
+  const [open, setOpen] = useState(null)
+  useEffect(() => {
+    if (!client?.user_id) return
+    let cancelled = false
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('programs')
+        .select('id, name, created_at, program_workouts(id, name, day_number, week_number, workout_exercises(id, sets, reps, rest_seconds, order_index, superset_group, exercises(name), workout_exercise_sets(set_number, set_type, reps, weight_kg, rpe, rest_seconds)))')
+        .eq('created_by', client.user_id)
+        .order('created_at', { ascending: false })
+      if (error) { console.error('Client programs load error:', error); return }
+      if (!cancelled) setPrograms(data ?? [])
+    })()
+    return () => { cancelled = true }
+  }, [client?.user_id])
+  if (programs.length === 0) return null
+  const name = firstName(client.full_name)
+  return (
+    <Card padded={false} className="overflow-hidden">
+      <p className="px-4 pt-3.5 pb-1 text-[13px] font-bold text-muted">Programs {name} made</p>
+      <ul className="divide-y divide-line">
+        {programs.map((p) => {
+          const days = [...(p.program_workouts ?? [])].sort(byWeekDay)
+          const isOpen = open === p.id
+          return (
+            <li key={p.id}>
+              <button onClick={() => setOpen(isOpen ? null : p.id)} className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-surface-2">
+                <span className="min-w-0">
+                  <span className="block font-semibold text-ink truncate">{p.name}</span>
+                  <span className="block text-[13px] text-muted">{days.length} {days.length === 1 ? 'workout' : 'workouts'} · made {formatDate(p.created_at)}</span>
+                </span>
+                <ChevronDown size={18} className={`text-faint shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {isOpen && (
+                <div className="px-4 pb-4 space-y-3">
+                  {days.map((d) => (
+                    <div key={d.id}>
+                      <p className="text-[14px] font-bold text-ink">{d.name || `Day ${d.day_number}`}</p>
+                      <ul className="mt-1 space-y-0.5">
+                        {[...(d.workout_exercises ?? [])].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0)).map((e) => (
+                          <li key={e.id} className="text-[13px] text-muted"><span className="text-ink font-semibold">{e.exercises?.name || 'Exercise'}</span>{prescriptionText(e) ? ` · ${prescriptionText(e)}` : ''}</li>
+                        ))}
+                        {!d.workout_exercises?.length && <li className="text-[13px] text-muted">No exercises yet</li>}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </Card>
+  )
+}
 
 function mondayOf(date) {
   const d = new Date(date)
@@ -466,7 +529,9 @@ export default function TrainingTab(props) {
               <>
                 <p className="font-bold text-ink truncate">{programAssignment.programs?.name}</p>
                 <p className="text-[13px] text-muted">
-                  {startedByClient(programAssignment, client) ? `Started by ${firstName(client.full_name)} (on demand), ` : programAssignment.start_date > today ? 'Starts ' : 'Started '}
+                  {startedByClient(programAssignment, client)
+                    ? programAssignment.programs?.created_by === client.user_id ? `Made and started by ${firstName(client.full_name)}, ` : `Started by ${firstName(client.full_name)} (on demand), `
+                    : programAssignment.start_date > today ? 'Starts ' : 'Started '}
                   {formatDate(programAssignment.start_date)} · {programWorkouts.length} {programWorkouts.length === 1 ? 'workout' : 'workouts'}
                 </p>
               </>
@@ -485,6 +550,7 @@ export default function TrainingTab(props) {
         </div>
       </Card>
       {notice && <p role="status" className="text-[13px] font-semibold text-warn bg-warn-soft rounded-[14px] px-4 py-3">{notice}</p>}
+      <ClientMadePrograms client={client} />
 
       <Segmented
         className="max-w-[440px]"

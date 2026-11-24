@@ -144,6 +144,27 @@ export async function fetchOnDemand() {
   }
 }
 
+// Programs the client made themselves (from scratch or as their own copy of another),
+// newest first, in the same shape as the on-demand ones.
+export async function fetchMyPrograms(userId) {
+  const empty = { programs: [], exercises: {} }
+  if (!userId) return empty
+  const { data, error } = await supabase
+    .from('programs')
+    .select(`id, name, description, created_at, program_workouts(id, name, day_number, week_number, workout_exercises(${EX_SELECT}))`)
+    .eq('created_by', userId)
+    .eq('is_on_demand', false)
+    .order('created_at', { ascending: false })
+  if (error) { console.error('My programs load error:', error); return empty }
+  const exercises = {}
+  const programs = (data ?? []).map((p) => {
+    const days = [...(p.program_workouts ?? [])].sort(byWeekDay)
+    for (const d of days) exercises[d.id] = [...(d.workout_exercises ?? [])].sort((a, b) => (a.order_index ?? 0) - (b.order_index ?? 0))
+    return { id: p.id, name: p.name, description: p.description, mine: true, days: days.map(({ id, name, day_number, week_number }) => ({ id, name, day_number, week_number })) }
+  })
+  return { programs, exercises }
+}
+
 // The coach's first name for Home. Clients can read it once the on_demand_library
 // migration is applied; until then no row comes back and Home says "your coach".
 export async function fetchCoachName(ptId) {

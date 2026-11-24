@@ -2,25 +2,12 @@
 // then similar moves for the same muscle), and a search of the whole library.
 import { useEffect, useState } from 'react'
 import { ArrowLeftRight } from 'lucide-react'
-import { supabase } from '../supabase'
 import { Sheet, Chip } from '../ui'
 import { SearchBox } from '../tools/kit'
 import { Loading } from './common'
 import { suggestSwaps, swapReason } from '../lib/swaps.js'
 import { equipmentLabel } from '../lib/equipment.js'
-
-// The library is the same for the whole visit, so it is loaded once.
-let libraryCache = null
-async function loadLibrary() {
-  if (libraryCache) return libraryCache
-  const { data, error } = await supabase
-    .from('exercises')
-    .select('id, name, muscle_group, equipment, category, exercise_aliases(alias)')
-    .order('name')
-  if (error) throw error
-  libraryCache = data ?? []
-  return libraryCache
-}
+import { loadExerciseLibrary, cachedExerciseLibrary } from '../lib/exerciseLibrary.js'
 
 function Option({ ex, reason, onPick }) {
   return (
@@ -41,14 +28,14 @@ function Option({ ex, reason, onPick }) {
 }
 
 export default function SwapSheet({ open, from, exclude = [], onPick, onClose }) {
-  const [library, setLibrary] = useState(libraryCache)
+  const [library, setLibrary] = useState(cachedExerciseLibrary)
   const [failed, setFailed] = useState(false)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
     if (!open || library) return
     let cancelled = false
-    loadLibrary()
+    loadExerciseLibrary()
       .then((rows) => { if (!cancelled) setLibrary(rows) })
       .catch((e) => { console.error('Exercise library load error:', e); if (!cancelled) setFailed(true) })
     return () => { cancelled = true }

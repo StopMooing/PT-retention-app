@@ -2,14 +2,14 @@
 // time, back and forward), then on-demand and saved workouts. Programs is the active
 // program with its workouts, then on-demand programs. Adding, moving and copying sessions
 // happen in sheets.
-import { useState } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import {
-  ChevronRight, MoreHorizontal, Plus, Sparkles, CalendarPlus, Check, Dumbbell, Bookmark, Play,
+  ChevronRight, MoreHorizontal, Plus, Sparkles, CalendarPlus, Check, Dumbbell, Bookmark, Play, Copy, Pencil,
 } from 'lucide-react'
 import { supabase } from '../supabase'
-import { Card, Button, Segmented, Sheet, SectionLabel, Chip, Hero } from '../ui'
+import { Card, Button, Segmented, Sheet, SectionLabel, Chip, Hero, Field } from '../ui'
 import { toLocalDateStr, formatShortDate, addDays, mondayOf, weekDays, weekLabel, shortDayLabel, dayMonth, parseDay } from './dates'
-import { SCHEDULE_WINDOW } from './data'
+import { SCHEDULE_WINDOW, fetchMyPrograms } from './data'
 import {
   isDone, workoutName, groupByDate, estMinutes, plural, muscleGroups, programWeeks, programProgress,
   sessionsInWeek, sessionStatusLine,
@@ -20,6 +20,7 @@ import { scheduleOne, startProgram, stopProgram } from './programs'
 import StartPlanFields from '../lib/StartPlanFields'
 import { defaultStartDate, defaultTrainingDays, planReady, planWeeks, daysPerWeek, builtWeeks, clientEarliestStart } from '../lib/schedule.js'
 import WorkoutPreview from './WorkoutPreview'
+import MyProgramEditor from './MyProgramEditor'
 
 const cx = (...c) => c.filter(Boolean).join(' ')
 
@@ -166,7 +167,7 @@ function ProgramDetail({
 
 // Name, who set it, week and dates, progress, description (two lines, then More) and,
 // for a program the client started, stop.
-function ProgramHeader({ assignment, progress, coachProgram, busy, onStop }) {
+function ProgramHeader({ assignment, progress, coachProgram, busy, onStop, onCopy, onEdit }) {
   const [more, setMore] = useState(false)
   const program = assignment.programs ?? {}
   const desc = program.description || ''
@@ -198,11 +199,11 @@ function ProgramHeader({ assignment, progress, coachProgram, busy, onStop }) {
           )}
         </div>
       )}
-      {!coachProgram && (
-        <div className="pt-1">
-          <Button variant="secondary" size="sm" block disabled={busy} onClick={onStop}>Stop program</Button>
-        </div>
-      )}
+      <div className="pt-1 flex gap-2">
+        {onEdit && <Button variant="secondary" size="sm" className="flex-1" disabled={busy} onClick={onEdit}><Pencil size={15} /> Edit</Button>}
+        {onCopy && <Button variant="secondary" size="sm" className="flex-1" disabled={busy} onClick={onCopy}><Copy size={15} /> Make my own copy</Button>}
+        {!coachProgram && <Button variant="secondary" size="sm" className="flex-1" disabled={busy} onClick={onStop}>Stop program</Button>}
+      </div>
     </Card>
   )
 }
@@ -269,7 +270,15 @@ export default function TrainTab({
   const userId = client.user_id
   const coachProgram = !!assignment && assignment.assigned_by !== userId
   const ownProgram = !!assignment && assignment.assigned_by === userId
-  const exMap = workoutExercises
+
+  // Programs the client made (from scratch or as their own copy of another).
+  const [mine, setMine] = useState({ programs: [], exercises: {} })
+  const [editingId, setEditingId] = useState(null) // a program of theirs open in the editor
+  const [naming, setNaming] = useState(null) // name for a new program
+  const reloadMine = useCallback(() => fetchMyPrograms(userId).then(setMine), [userId])
+  useEffect(() => { reloadMine() }, [reloadMine])
+  const exMap = useMemo(() => ({ ...mine.exercises, ...workoutExercises }), [mine.exercises, workoutExercises])
+  const isMine = (programId) => mine.programs.some((p) => p.id === programId)
 
   /* ----- what's on offer ----- */
   const programDayIds = new Set(programWorkouts.map((pw) => pw.id))
@@ -298,9 +307,8 @@ export default function TrainTab({
   }
   const onDemandItems = onDemand.workouts.map((p) => programItem(p.days[0], exMap, { key: `od_${p.id}`, name: p.name, eyebrow: 'On demand', onDemand: true }))
   const savedItems = savedWorkouts.map((w) => savedItem(w))
-  const hasPrograms = !!assignment || onDemand.programs.length > 0
-  // No programs to show (no coach program, no on-demand ones): no Programs tab at all.
-  const tab = view === 'programs' && hasPrograms ? 'programs' : 'workouts'
+  // Programs is always there: a client can make their own even with nothing else to show.
+  const tab = view === 'programs' ? 'programs' : 'workouts'
 
   /* ----- the shown week ----- */
   const days = weekDays(weekStart)
@@ -481,10 +489,45 @@ export default function TrainTab({
     showToast('Program stopped')
   }
 
+  // Their own copy of any program they can see (the coach's, an on-demand one). The
+  // original is never touched; the copy opens straight in the editor.
+  async function copyProgram(program) {
+    if (busy) return
+    setBusy(true)
+    const { data: newId, error } = await supabase.rpc('copy_program', { p_program: program.id })
+    if (error || !newId) {
+      setBusy(false)
+      console.error('Copy program error:', error)
+      showToast("Couldn't copy that program. Try again.", { ms: 4000 })
+      return
+    }
+    const { error: nameErr } = await supabase.from('programs').update({ name: `${program.name} (my version)`.slice(0, 80) }).eq('id', newId)
+    if (nameErr) console.error('Name copy error:', nameErr)
+    await reloadMine()
+    setBusy(false)
+    setOpenProgram(null)
+    setView('programs')
+    setEditingId(newId)
+    showToast('Copied. This one is yours to change.')
+  }
+
+  async function createProgram() {
+    const name = naming?.trim().slice(0, 80)
+    if (!name || busy) return
+    setBusy(true)
+    const { data, error } = await supabase.from('programs').insert({ name, created_by: userId, kind: 'program', is_on_demand: false }).select('id').single()
+    setBusy(false)
+    if (error || !data) { console.error('Create program error:', error); showToast("Couldn't create it. Try again.", { ms: 4000 }); return }
+    setNaming(null)
+    await reloadMine()
+    setEditingId(data.id)
+  }
+
   // Picker groups for adding to a day.
   const pickerGroups = [
     ['Your program', myProgramItems],
     ['From your coach', coachExtras],
+    ...mine.programs.filter((p) => p.id !== assignment?.programs?.id).map((p) => [p.name, p.days.map((d) => programItem(d, exMap, { eyebrow: `${d.name} of ${p.name}` }))]),
     ['On demand', onDemandItems],
     ['Saved workouts', savedItems],
   ].filter(([, list]) => list.length > 0)
@@ -492,27 +535,31 @@ export default function TrainTab({
   /* ----- program detail ----- */
   let programPage = null
   if (openProgram) {
-    const mine = !!assignment && assignment.programs?.id === openProgram.id
-    const program = mine ? { ...assignment.programs, days: programWorkouts } : openProgram
+    const current = !!assignment && assignment.programs?.id === openProgram.id
+    const program = current ? { ...assignment.programs, days: programWorkouts } : openProgram
+    const made = isMine(program.id)
     let note = null
-    let footer = null
-    if (mine && ownProgram) {
-      footer = <Button size="lg" block variant="secondary" disabled={busy} onClick={() => setConfirmStop(true)}>Stop program</Button>
-    } else if (!mine && coachProgram) {
+    const buttons = []
+    if (current && ownProgram) {
+      buttons.push(<Button key="stop" size="lg" block variant="secondary" disabled={busy} onClick={() => setConfirmStop(true)}>Stop program</Button>)
+    } else if (!current && coachProgram) {
       note = "You're on your coach's program. Add any of these workouts to your calendar."
-    } else if (!mine) {
+    } else if (!current) {
       if (ownProgram) note = `Starting this one stops ${assignment.programs?.name} and takes its upcoming sessions off your calendar. Sessions you've done stay in your history.`
-      footer = <Button size="lg" block disabled={busy} onClick={() => openStartSheet(program)}>Start program</Button>
+      if (program.days?.length) buttons.push(<Button key="start" size="lg" block disabled={busy} onClick={() => openStartSheet(program)}>Start program</Button>)
     }
+    if (made) buttons.unshift(<Button key="edit" size="lg" block variant="secondary" disabled={busy} onClick={() => { setOpenProgram(null); setEditingId(program.id) }}><Pencil size={18} /> Edit program</Button>)
+    else buttons.push(<Button key="copy" size="lg" block variant="secondary" disabled={busy} onClick={() => copyProgram(program)}><Copy size={18} /> Make my own copy</Button>)
+    const footer = buttons.length ? <>{buttons}</> : null
     programPage = (
       <ProgramDetail
-        eyebrow={mine ? (coachProgram ? 'From your coach' : 'Your program') : 'On demand program'}
+        eyebrow={made ? 'Made by you' : current ? (coachProgram ? 'From your coach' : 'Your program') : 'On demand program'}
         program={program}
         days={program.days ?? []}
         exMap={exMap}
         note={note}
         footer={footer}
-        progress={mine ? progress : null}
+        progress={current ? progress : null}
         busy={busy}
         onBack={() => setOpenProgram(null)}
         onOpenItem={setPreviewItem}
@@ -526,14 +573,12 @@ export default function TrainTab({
     <div className="px-4 pt-[max(env(safe-area-inset-top),24px)] space-y-4">
       <div className="flex items-center justify-between gap-3 px-1">
         <h1 className="font-display text-[40px] leading-none text-ink">Training</h1>
-        {hasPrograms && (
-          <Segmented
-            className="shrink-0"
-            options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
-            value={tab}
-            onChange={setView}
-          />
-        )}
+        <Segmented
+          className="shrink-0"
+          options={[{ value: 'workouts', label: 'Workouts' }, { value: 'programs', label: 'Programs' }]}
+          value={tab}
+          onChange={setView}
+        />
       </div>
 
       {tab === 'workouts' && (
@@ -614,10 +659,39 @@ export default function TrainTab({
                 coachProgram={coachProgram}
                 busy={busy}
                 onStop={() => setConfirmStop(true)}
+                onEdit={isMine(assignment.programs?.id) ? () => setEditingId(assignment.programs.id) : null}
+                onCopy={isMine(assignment.programs?.id) ? null : () => copyProgram(assignment.programs)}
               />
               {myProgramItems.length > 0 && <ItemList items={myProgramItems} onOpen={setPreviewItem} short />}
             </section>
           )}
+          <section>
+            <SectionLabel>My programs</SectionLabel>
+            <div className="space-y-3">
+              {mine.programs.map((p) => {
+                const current = assignment?.programs?.id === p.id
+                const workouts = p.days.length
+                return (
+                  <Card key={p.id} as="button" onClick={() => setOpenProgram(p)} className="block">
+                    <div className="flex items-start gap-3">
+                      <p className="flex-1 min-w-0 font-display text-[22px] leading-tight text-ink">{p.name}</p>
+                      <ChevronRight size={18} className="text-faint shrink-0 mt-1" />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {current && <Chip tone="solid">You're on this</Chip>}
+                      {workouts > 0 ? <Chip>{plural(daysPerWeek(p.days), 'day')} a week</Chip> : <Chip>No days yet</Chip>}
+                      {builtWeeks(p.days) > 1 && <Chip>{plural(builtWeeks(p.days), 'week')}</Chip>}
+                    </div>
+                  </Card>
+                )
+              })}
+              <Button variant="secondary" block onClick={() => setNaming('')}><Plus size={18} /> Create a program</Button>
+              {mine.programs.length === 0 && (
+                <p className="text-[13px] text-muted px-1">Build your own from the exercise library, or open any program and tap Make my own copy.</p>
+              )}
+            </div>
+          </section>
+
           {onDemand.programs.length > 0 && (
             <section>
               <SectionLabel>On demand programs</SectionLabel>
@@ -800,6 +874,33 @@ export default function TrainTab({
             />
           </>
         )}
+      </Sheet>
+
+      {editingId && (
+        <MyProgramEditor
+          programId={editingId}
+          showToast={showToast}
+          onClose={() => setEditingId(null)}
+          onChanged={() => { reloadMine(); if (assignment?.programs?.id === editingId) reloadAssignment() }}
+        />
+      )}
+
+      {/* Name a new program */}
+      <Sheet
+        open={naming !== null}
+        onClose={() => setNaming(null)}
+        title="Create a program"
+        footer={<Button size="lg" block disabled={busy || !naming?.trim()} onClick={createProgram}>{busy ? 'Creating...' : 'Create and add days'}</Button>}
+      >
+        <Field
+          label="Program name"
+          placeholder="For example Summer strength"
+          value={naming ?? ''}
+          maxLength={80}
+          autoFocus
+          onChange={(e) => setNaming(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') createProgram() }}
+        />
       </Sheet>
 
       {/* Stop a program the client started */}

@@ -170,6 +170,23 @@ async function install(page, role) {
         }
         return json(200, next)
       }
+      if (fn === 'copy_program') {
+        const { p_program } = req.postDataJSON()
+        const src = db.programs.find((p) => p.id === p_program)
+        if (!src) return json(400, { message: 'not_found' })
+        const np = { ...src, id: uid(), created_by: user?.id ?? null, is_on_demand: false, kind: 'program', created_at: new Date().toISOString() }
+        db.programs.push(np)
+        for (const d of db.program_workouts.filter((w) => w.program_id === p_program)) {
+          const nd = { ...d, id: uid(), program_id: np.id }
+          db.program_workouts.push(nd)
+          for (const we of db.workout_exercises.filter((x) => x.program_workout_id === d.id)) {
+            const ne = { ...we, id: uid(), program_workout_id: nd.id }
+            db.workout_exercises.push(ne)
+            for (const st of (db.workout_exercise_sets || []).filter((x) => x.workout_exercise_id === we.id)) db.workout_exercise_sets.push({ ...st, id: uid(), workout_exercise_id: ne.id })
+          }
+        }
+        return json(200, np.id)
+      }
       // A sample invite for the claim page. The token "expired" shows the invalid state.
       if (fn === 'get_claim_client') {
         let tok = ''

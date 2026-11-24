@@ -144,7 +144,8 @@ export function ClientPreview({ rows, title }) {
   )
 }
 
-export default function WorkoutEditor({ dayLabel, title, day, rows, library, readOnly, onBack, onSaved, showToast }) {
+// forClient: a client building their own program (wording speaks to them, not a coach).
+export default function WorkoutEditor({ dayLabel, title, day, rows, library, readOnly, onBack, onSaved, showToast, forClient = false }) {
   const initial = useMemo(() => rows.map((r, i) => toDraft(r, rows[i + 1])), [rows])
   const [items, setItems] = useState(initial)
   const [dirty, setDirty] = useState(false)
@@ -257,7 +258,7 @@ export default function WorkoutEditor({ dayLabel, title, day, rows, library, rea
                     <Plus size={15} /> Add set
                   </button>
                   <textarea
-                    rows={1} maxLength={500} placeholder="Coaching note (optional)"
+                    rows={1} maxLength={500} placeholder={forClient ? "Note (optional)" : "Coaching note (optional)"}
                     value={it.notes} onChange={(e) => setField(i, 'notes', e.target.value)}
                     className="w-full rounded-[12px] border border-line-strong bg-bg text-ink text-[14px] placeholder:text-faint px-3 py-2 outline-none focus:border-accent resize-none"
                   />
@@ -311,13 +312,13 @@ export default function WorkoutEditor({ dayLabel, title, day, rows, library, rea
         className="lg:hidden"
         value={view}
         onChange={setView}
-        options={[{ value: 'edit', label: readOnly ? 'Sets' : 'Build' }, { value: 'preview', label: 'Client view' }]}
+        options={[{ value: 'edit', label: readOnly ? 'Sets' : 'Build' }, { value: 'preview', label: forClient ? 'Preview' : 'Client view' }]}
       />
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px] items-start">
         <div className={cx(view === 'preview' && 'max-lg:hidden')}>{editor}</div>
         <aside className={cx('lg:sticky lg:top-4', view === 'edit' && 'max-lg:hidden')}>
-          <p className="text-[13px] font-bold text-muted mb-2 px-1 max-lg:hidden">What your client sees</p>
+          <p className="text-[13px] font-bold text-muted mb-2 px-1 max-lg:hidden">{forClient ? 'How it looks in your workout' : 'What your client sees'}</p>
           <div className="rounded-[28px] bg-bg border border-line p-3">
             <ClientPreview rows={preview} title={title} />
           </div>

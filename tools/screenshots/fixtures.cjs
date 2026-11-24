@@ -88,6 +88,15 @@ for (let off = -28; off <= 14; off++) {
   }
 }
 
+// A program Jane made herself: one day she does at home.
+const ownProgram = { id: id(), name: 'Home days', description: null, created_by: CLIENT_USER, is_on_demand: false, kind: 'program', created_at: ts(-3) }
+{
+  const d = { id: id(), program_id: ownProgram.id, day_number: 1, week_number: 1, name: 'Dumbbells at home', created_at: ts(-3) }
+  program_workouts.push(d)
+  ;[['Goblet Squat (Dumbbell)', 3, '12'], ['Incline Dumbbell Press', 3, '10'], ['Lateral Raise', 3, '15']].forEach(([name, sets, reps], i) =>
+    workout_exercises.push({ id: id(), program_workout_id: d.id, exercise_id: ex(name).id, sets, reps, rest_seconds: 60, notes: null, order_index: i, created_at: ts(-3) }))
+}
+
 // The latest Lower A had the squat swapped for the hack squat, that session only.
 {
   const lowerLogs = workout_logs.filter((l) => l.program_workout_id === program_workouts[0].id)
@@ -170,7 +179,7 @@ module.exports = {
       { id: CLIENT_USER, full_name: 'Jane Carter', email: 'jane@example.com', role: 'client', created_at: ts(-40) },
     ],
     clients: [jane, ...others],
-    exercises, exercise_aliases: [], programs: [program], program_workouts, workout_exercises, workout_exercise_sets,
+    exercises, exercise_aliases: [], programs: [{ ...program, is_on_demand: false, kind: 'program' }, ownProgram], program_workouts, workout_exercises, workout_exercise_sets,
     program_assignments: [{ id: id(), program_id: program.id, client_id: CLIENT, assigned_by: COACH, start_date: day(-28), is_active: true, created_at: ts(-28) }],
     scheduled_workouts, workout_logs, workout_set_logs, body_weight_logs, food_logs, food_log_items,
     checkins: [...checkins, ...otherCheckins], personal_bests, habits, habit_logs,
