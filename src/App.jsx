@@ -4,6 +4,12 @@ import { supabase } from './supabase'
 import { prefetchClientRow } from './client/data'
 // Each side loads only its own code: a client never downloads the coach screens.
 const AuthPage = lazy(() => import('./AuthPage'))
+const HomePage = lazy(() => import('./HomePage'))
+
+// True when UNFNSHD was opened from the phone's home screen rather than a browser tab.
+const installedApp = () => {
+  try { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true } catch { return false }
+}
 const ClaimPage = lazy(() => import('./ClaimPage'))
 const ExerciseLibrary = lazy(() => import('./ExerciseLibrary'))
 const ProgramBuilder = lazy(() => import('./ProgramBuilder'))
@@ -136,7 +142,8 @@ export default function App() {
     <Suspense fallback={splash}>
     <Routes>
       <Route path="/claim/:token" element={<ClaimPage />} />
-      <Route path="/" element={session ? loggedInRedirect : <AuthPage defaultMode="login" />} />
+      {/* Signed out: the website. Opened from the home screen (installed app): sign in. */}
+      <Route path="/" element={session ? loggedInRedirect : installedApp() ? <AuthPage defaultMode="login" /> : <HomePage />} />
       <Route path="/auth" element={session ? loggedInRedirect : <AuthPage />} />
       <Route path="/login" element={session ? loggedInRedirect : <AuthPage defaultMode="login" />} />
       <Route path="/signup" element={session ? loggedInRedirect : <AuthPage defaultMode="signup" />} />

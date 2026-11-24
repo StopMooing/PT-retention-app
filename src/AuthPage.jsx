@@ -55,15 +55,15 @@ export default function AuthPage({ defaultMode = 'login' }) {
   const heading = mode === 'login' ? 'Pick up where you left off.' : mode === 'forgot' ? 'Reset your password.' : 'Create your coach account.'
   const lede = mode === 'login'
     ? 'Your plan, your food and your coach, all in one place.'
-    : mode === 'forgot' ? "We'll email you a link to set a new one." : 'Coach your clients and keep every check-in in one place.'
+    : mode === 'forgot' ? "We'll email you a link to set a new one." : 'Founding coaches use UNFNSHD free while we are in beta.'
 
   return (
     <div className="min-h-screen flex flex-col px-6 pt-[max(env(safe-area-inset-top),72px)] pb-8 bg-bg text-ink">
       <div className="w-full max-w-sm mx-auto flex-1 flex flex-col">
-        <div className="flex items-center gap-2.5">
+        <a href="/" className="flex items-center gap-2.5 self-start" aria-label="UNFNSHD home">
           <Mark size={34} />
           <span className="font-display text-[28px] leading-none tracking-[0.5px] pt-1">UNFNSHD</span>
-        </div>
+        </a>
         <h1 className="m-0 mt-14 font-display text-[clamp(38px,12vw,46px)] leading-[0.98]">{heading}</h1>
         <p className="m-0 mt-3 text-[16px] leading-relaxed text-muted">{lede}</p>
 
