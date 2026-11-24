@@ -62,7 +62,7 @@ export default function WorkoutSheet({ selectedDay, onClose, clientId, onWorkout
       setLoadingSets(true)
       const { data } = await supabase
         .from("workout_set_logs")
-        .select("id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises(name)")
+        .select("id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises!workout_set_logs_exercise_id_fkey(name)")
         .eq("workout_log_id", completedLog.id)
         .order("set_number", { ascending: true })
       if (cancelled) return

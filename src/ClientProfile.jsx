@@ -429,7 +429,7 @@ export default function ClientProfile({ user }) {
     if (sessionSetLogs[log.id]) return
     const { data } = await supabase
       .from('workout_set_logs')
-      .select('id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises(name)')
+      .select('id, set_number, reps_completed, weight_kg, exercise_id, logged_at, exercises!workout_set_logs_exercise_id_fkey(name)')
       .eq('workout_log_id', log.id)
       .order('set_number', { ascending: true })
     setSessionSetLogs((prev) => ({ ...prev, [log.id]: data ?? [] }))

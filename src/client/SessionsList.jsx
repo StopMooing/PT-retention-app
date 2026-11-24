@@ -58,7 +58,7 @@ export default function SessionsList({ client }) {
     try {
       const { data } = await supabase
         .from('workout_set_logs')
-        .select('id, set_number, reps_completed, weight_kg, exercise_id, exercises(name, muscle_group)')
+        .select('id, set_number, reps_completed, weight_kg, exercise_id, exercises!workout_set_logs_exercise_id_fkey(name, muscle_group)')
         .eq('workout_log_id', log.id)
         .order('exercise_id')
         .order('set_number')

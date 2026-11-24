@@ -76,7 +76,7 @@ export async function fetchWeightLogs(clientId) {
 export async function fetchStrength(clientId) {
   const [{ data: pbs }, { data: sets }] = await Promise.all([
     supabase.from('personal_bests').select('id, exercise_id, pb_type, value, achieved_at, exercises(name)').eq('client_id', clientId),
-    supabase.from('workout_set_logs').select('exercise_id, weight_kg, exercises(name)').eq('client_id', clientId).gt('weight_kg', 0).order('weight_kg', { ascending: false }).limit(1000),
+    supabase.from('workout_set_logs').select('exercise_id, weight_kg, exercises!workout_set_logs_exercise_id_fkey(name)').eq('client_id', clientId).gt('weight_kg', 0).order('weight_kg', { ascending: false }).limit(1000),
   ])
   return { personalBests: pbs ?? [], heavySets: sets ?? [] }
 }

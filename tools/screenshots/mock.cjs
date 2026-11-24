@@ -33,14 +33,16 @@ function project(db, table, row, select) {
     if (part === '*') { Object.assign(out, row); continue }
     const m = part.match(/^(?:(\w+):)?(\w+)(?:!(\w+))?(?:\((.*)\))?$/s)
     if (!m) continue
-    const [, alias, name, , inner] = m
+    const [, alias, name, hint, inner] = m
     if (inner === undefined) {
       if (name === '*') Object.assign(out, row)
       else out[alias || name] = row[name]
       continue
     }
     const target = db[name] || []
-    let fk = row[singular(name) + '_id'] !== undefined ? singular(name) + '_id' : null
+    // A hint names the link: a column ("exercise_id") or a constraint ("<table>_<column>_fkey").
+    const hinted = hint && (hint in row ? hint : hint.replace(`${table}_`, '').replace(/_fkey$/, ''))
+    let fk = hinted && hinted in row ? hinted : row[singular(name) + '_id'] !== undefined ? singular(name) + '_id' : null
     if (name === 'saved_workouts') fk = 'custom_workout_id'
     if (fk) {
       const hit = target.find((r) => r.id === row[fk])
