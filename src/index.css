@@ -281,3 +281,8 @@ input[type='search']::-webkit-search-decoration {
 html[data-demo] body {
   padding-top: calc(env(safe-area-inset-top) + 46px);
 }
+
+/* The public site: no movement for people who ask their phone for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .site *, .site *::before, .site *::after { transition: none !important; animation: none !important; }
+}
