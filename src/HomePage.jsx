@@ -2,7 +2,7 @@
 // real app, so a trainer gets it without reading feature lists. Screens are the app running
 // on made-up sample data (tools/screenshots), in light and dark to match the visitor's phone,
 // with close-ups on small screens. No invented customers, numbers or quotes.
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { Mark, Ring } from './ui'
@@ -50,10 +50,10 @@ function Screen({ name, close, alt, eager, className }) {
 const WEEK = [
   {
     day: 'Mon', time: '6:40am',
-    title: 'See who needs you.',
-    body: "Before your first session you know who checked in, who's drifting and why. Each name comes with the reason, and a Reply or Reach out button.",
-    shot: 'dash', close: 'health', narrow: true,
-    alt: 'The coach dashboard: five clients need you, with the reason for each and a Reply or Reach out button',
+    title: "See how everyone's going.",
+    body: 'Before your first session you can see every client at a glance: engaged, drifting or at risk, and who has trained this week. Worked out for you, every day.',
+    shot: 'health', narrow: true,
+    alt: 'Your clients at a glance: six clients, four engaged, one drifting, one at risk, and who has trained this week',
   },
   {
     day: 'Mon', time: '7:10am',
@@ -80,7 +80,7 @@ const WEEK = [
     day: 'Sun', time: '7:30pm',
     title: 'Build next week in minutes.',
     body: 'Every set is its own row: reps, kg, RPE and rest. Add a week and it adds 2.5 kg or a rep for you. You see what your client will see as you build.',
-    shot: 'builder',
+    shot: 'builder', close: 'buildercard',
     alt: "The program builder with set rows on the left and the client's view on the right",
   },
 ]
@@ -92,19 +92,60 @@ const STATES = [
 ]
 
 const INCLUDED = [
-  ['Needs you', 'Who to talk to today, and why.'],
-  ['Reach out', 'Ready-made messages to change and send.'],
-  ['Client health', 'Engaged, drifting or at risk, for every client.'],
-  ['Weekly check-ins', 'Your questions, their answers, your reply.'],
-  ['Messages', 'Chat in the app, plus a quick daily check-in.'],
-  ['Program builder', 'Set by set, with weeks, warm-ups, drop sets and supersets.'],
-  ['Exercise library', 'Over 300 exercises with cues, and your own videos.'],
-  ['Ready-made programs', 'Assign one in a tap, or copy it and make it yours.'],
-  ['Nutrition', 'Food log with Australian food data and a barcode scanner.'],
-  ['Meal plans', '54 ready-made plans with recipes.'],
-  ['Habits', 'Daily habits your clients tick off.'],
-  ['Progress', 'Weigh-ins, measurements, photos and PBs.'],
+  { tab: 'Keeping clients', items: [
+    ['Needs you', 'Who to talk to today, and why.'],
+    ['Reach out', 'Ready-made messages to change and send.'],
+    ['Client health', 'Engaged, drifting or at risk, for every client.'],
+    ['Weekly check-ins', 'Your questions, their answers, your reply.'],
+    ['Messages', 'Chat in the app, plus a quick daily check-in.'],
+  ] },
+  { tab: 'Training', items: [
+    ['Program builder', 'Set by set, with weeks, warm-ups, drop sets and supersets.'],
+    ['Exercise library', 'Over 300 exercises with cues, and your own videos.'],
+    ['Ready-made programs', 'Assign one in a tap, or copy it and make it yours.'],
+    ['Swaps', 'Rack taken? Clients swap an exercise for that session, and you see it.'],
+  ] },
+  { tab: 'Food', items: [
+    ['Food log', 'Australian food data and a barcode scanner.'],
+    ['Meal plans', '54 ready-made plans with recipes.'],
+    ['Targets', 'Calories, protein, carbs and fats, set by you.'],
+  ] },
+  { tab: 'Progress', items: [
+    ['Habits', 'Daily habits your clients tick off.'],
+    ['Body', 'Weigh-ins, measurements and progress photos.'],
+    ['PBs', 'Personal bests, picked up from their sessions.'],
+  ] },
 ]
+
+// What's included, a group at a time.
+function Included() {
+  const [at, setAt] = useState(0)
+  return (
+    <div className="min-w-0">
+      <div role="tablist" aria-label="What's included" className="-mx-4 px-4 sm:mx-0 sm:px-0 flex gap-2 overflow-x-auto pb-1">
+        {INCLUDED.map((g, i) => (
+          <button
+            key={g.tab}
+            role="tab"
+            aria-selected={i === at}
+            onClick={() => setAt(i)}
+            className={cx('shrink-0 h-11 px-5 rounded-full text-[15px] font-bold transition-colors', i === at ? 'bg-accent text-on-accent' : 'bg-bg text-ink hover:bg-surface-2')}
+          >
+            {g.tab}
+          </button>
+        ))}
+      </div>
+      <dl role="tabpanel" className="mt-6 border-t border-line">
+        {INCLUDED[at].items.map(([name, body]) => (
+          <div key={name} className="border-b border-line py-4 sm:grid sm:grid-cols-[220px_1fr] sm:gap-6">
+            <dt className="text-[17px] font-bold">{name}</dt>
+            <dd className="mt-0.5 sm:mt-0 text-[16px] leading-relaxed text-muted">{body}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
 
 const PLANS = [
   { clients: 8, price: 50 },
@@ -122,12 +163,23 @@ const FAQ = [
   { q: "Who can see my clients' information?", a: "Only you and each client. Coaches see their own clients and nobody else's, clients see only their own information, and progress photos stay private to the client and their coach." },
 ]
 
-// The week, one moment at a time. Big screens: pick a moment and the screen changes, with a
-// ring that fills as the week goes, like the client's week ring in the app. Small screens:
-// the moments in order, each with its own screen.
+// The week, one moment at a time, with a ring that fills as the week goes, like the client's
+// week ring in the app. Big screens: pick a moment and the screen changes. Phones: swipe across.
 function Week() {
   const [at, setAt] = useState(0)
+  const [swiped, setSwiped] = useState(0)
+  const track = useRef(null)
   const m = WEEK[at]
+  const step = () => {
+    const el = track.current
+    const card = el?.firstElementChild
+    return card ? card.offsetWidth + 12 : 1
+  }
+  const onSwipe = () => {
+    const i = Math.round(track.current.scrollLeft / step())
+    setSwiped(Math.max(0, Math.min(WEEK.length - 1, i)))
+  }
+  const swipeTo = (i) => track.current?.scrollTo({ left: i * step(), behavior: calmNow() ? 'auto' : 'smooth' })
   const ring = (i, size, stroke) => (
     <Ring value={(i + 1) / WEEK.length} size={size} stroke={stroke} color="var(--tan)" track="var(--hero-track)" dot="var(--hero-dot)" />
   )
@@ -171,21 +223,31 @@ function Week() {
         </div>
       </div>
 
-      <ol className="lg:hidden mt-10 space-y-14">
-        {WEEK.map((w, i) => (
-          <li key={w.time}>
-            <div className="flex items-center gap-3">
-              {ring(i, 40, 5)}
-              <p className="text-[15px] font-semibold tabular-nums text-hero-muted">{w.day} {w.time}</p>
-            </div>
-            <h3 className="mt-3 font-display text-[30px] leading-[1.05]">{w.title}</h3>
-            <p className="mt-2 text-[16px] leading-relaxed text-hero-muted">{w.body}</p>
-            <div className={cx('mt-5', w.phone && 'max-w-[280px] mx-auto', w.narrow && 'max-w-[320px] mx-auto')}>
-              <Screen name={w.shot} close={w.close} alt={w.alt} className={cx('w-full h-auto', w.phone ? 'rounded-[30px]' : 'rounded-[16px]')} />
-            </div>
-          </li>
-        ))}
-      </ol>
+      <div className="lg:hidden mt-10">
+        <div className="flex items-center gap-3">
+          {ring(swiped, 48, 6)}
+          <p className="font-display text-[26px] leading-none">{WEEK[swiped].day} <span className="text-hero-muted">{WEEK[swiped].time}</span></p>
+          <p className="ml-auto text-[14px] font-semibold text-hero-muted">{swiped + 1} of {WEEK.length}</p>
+        </div>
+        <ol ref={track} onScroll={onSwipe} className="mt-5 -mx-4 px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {WEEK.map((w) => (
+            <li key={w.time} className="snap-start shrink-0 w-[86%] rounded-[24px] bg-hero-chip p-5 flex flex-col">
+              <h3 className="font-display text-[26px] leading-[1.05]">{w.title}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-hero-muted">{w.body}</p>
+              <div className="mt-5 h-[340px] flex items-center justify-center">
+                <Screen name={w.shot} close={w.close} alt={w.alt} className={cx('max-h-full max-w-full w-auto h-auto', w.phone ? 'rounded-[24px]' : 'rounded-[14px]')} />
+              </div>
+            </li>
+          ))}
+        </ol>
+        <div className="mt-5 flex justify-center gap-2">
+          {WEEK.map((w, i) => (
+            <button key={w.time} onClick={() => swipeTo(i)} aria-label={`${w.day} ${w.time}: ${w.title}`} className="p-1.5">
+              <span className={cx('block h-2 rounded-full transition-all', i === swiped ? 'w-6 bg-tan' : 'w-2 bg-hero-track')} />
+            </button>
+          ))}
+        </div>
+      </div>
     </>
   )
 }
@@ -312,14 +374,7 @@ export default function HomePage() {
               <h2 className="font-display text-[clamp(36px,6vw,60px)] leading-[0.98]">One app instead of five.</h2>
               <p className="mt-4 text-[17px] leading-relaxed text-muted">No more juggling a training app, a food tracker, a chat app, a check-in form and a spreadsheet of who you haven't heard from. Every plan has all of it.</p>
             </div>
-            <dl className="grid sm:grid-cols-2 gap-x-10">
-              {INCLUDED.map(([name, body]) => (
-                <div key={name} className="border-t border-line py-4">
-                  <dt className="text-[17px] font-bold">{name}</dt>
-                  <dd className="mt-0.5 text-[15px] leading-relaxed text-muted">{body}</dd>
-                </div>
-              ))}
-            </dl>
+            <Included />
           </div>
         </section>
 
@@ -365,9 +420,8 @@ export default function HomePage() {
             <h2 className="font-display text-[clamp(32px,5vw,48px)] leading-[1]">Why I built it.</h2>
             <div className="mt-6 space-y-4 text-[18px] leading-[1.65] text-ink">
               <p>I'm Luke, a personal trainer in Adelaide. I built UNFNSHD for my own clients first.</p>
-              <p>Writing programs was never the hard part of coaching. Noticing early was: the client who misses a session, then a check-in, then goes quiet for a week. Catch it in the first few days and it's an easy conversation. Leave it a month and they've often moved on.</p>
-              <p>So UNFNSHD keeps an eye on every client for me, every day, and tells me who needs me and why. The rest of it, the programs, check-ins, food and the client app, is there because I needed it with real people.</p>
-              <p>The name is what I believe about training: you're never done. There's always a next session. If you coach, try it, and tell me what's missing.</p>
+              <p>It keeps an eye on every client for me, every day, and tells me who needs me and why. The rest of it, the programs, check-ins, food and the client app, is there because I needed it with real people.</p>
+              <p>The name says it: we aren't done. We can still work and move, and there's always a next session. If you coach, try it, and tell me what's missing.</p>
             </div>
             <div className="mt-8 flex items-center gap-4">
               {FOUNDER_PHOTO && <img src={FOUNDER_PHOTO} alt="Luke" className="w-16 h-16 rounded-full object-cover" />}
