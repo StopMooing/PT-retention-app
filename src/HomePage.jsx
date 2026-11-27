@@ -135,14 +135,14 @@ function Included() {
           </button>
         ))}
       </div>
-      <dl role="tabpanel" className="mt-6 border-t border-line">
+      <div role="tabpanel" aria-label={INCLUDED[at].tab}><dl className="mt-6 border-t border-line">
         {INCLUDED[at].items.map(([name, body]) => (
           <div key={name} className="border-b border-line py-4 sm:grid sm:grid-cols-[220px_1fr] sm:gap-6">
             <dt className="text-[17px] font-bold">{name}</dt>
             <dd className="mt-0.5 sm:mt-0 text-[16px] leading-relaxed text-muted">{body}</dd>
           </div>
         ))}
-      </dl>
+      </dl></div>
     </div>
   )
 }
@@ -229,7 +229,7 @@ function Week() {
           <p className="font-display text-[26px] leading-none">{WEEK[swiped].day} <span className="text-hero-muted">{WEEK[swiped].time}</span></p>
           <p className="ml-auto text-[14px] font-semibold text-hero-muted">{swiped + 1} of {WEEK.length}</p>
         </div>
-        <ol ref={track} onScroll={onSwipe} className="mt-5 -mx-4 px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <ol ref={track} onScroll={onSwipe} tabIndex={0} aria-label="A week with UNFNSHD, swipe for the next moment" className="focus-visible:outline-2 focus-visible:outline-tan mt-5 -mx-4 px-4 flex gap-3 overflow-x-auto snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {WEEK.map((w) => (
             <li key={w.time} className="snap-start shrink-0 w-[86%] rounded-[24px] bg-hero-chip p-5 flex flex-col">
               <h3 className="font-display text-[26px] leading-[1.05]">{w.title}</h3>
@@ -318,17 +318,17 @@ export default function HomePage() {
             <p className="text-[18px] leading-relaxed text-muted max-w-[36em]">
               A missed session, a skipped check-in, a few days without a word. UNFNSHD watches every client for those signs, every day, and sorts them for you, so you can step in while it's still an easy conversation.
             </p>
-            <dl className="mt-8 space-y-6">
+            <ul className="mt-8 space-y-6">
               {STATES.map((s) => (
-                <div key={s.name} className="flex items-start gap-4">
+                <li key={s.name} className="flex items-start gap-4">
                   <Ring value={s.value} size={44} stroke={5} />
                   <div className="pt-1">
-                    <dt className="text-[18px] font-bold">{s.name}</dt>
-                    <dd className="mt-0.5 text-[16px] leading-relaxed text-muted">{s.body}</dd>
+                    <h3 className="text-[18px] font-bold">{s.name}</h3>
+                    <p className="mt-0.5 text-[16px] leading-relaxed text-muted">{s.body}</p>
                   </div>
-                </div>
+                </li>
               ))}
-            </dl>
+            </ul>
           </div>
         </section>
 
@@ -353,7 +353,7 @@ export default function HomePage() {
               Their week, today's session, food, habits and you, on the phone they already have. It celebrates showing up and always points to the next step.
             </p>
           </div>
-          <div className="mt-12 -mx-4 px-4 sm:mx-0 sm:px-0 flex sm:grid sm:grid-cols-3 gap-5 sm:gap-8 overflow-x-auto sm:overflow-visible snap-x snap-mandatory pb-2">
+          <div tabIndex={0} aria-label="Screens from the client app" className="focus-visible:outline-2 focus-visible:outline-ink mt-12 -mx-4 px-4 sm:mx-0 sm:px-0 flex sm:grid sm:grid-cols-3 gap-5 sm:gap-8 overflow-x-auto sm:overflow-visible snap-x snap-mandatory pb-2">
             {[
               ['home', "This week, and what's on today", "Home: this week ring, today's plan, calories and water", ''],
               ['food', 'Food, water and meal plans', "Nutrition: calories and macros left, with today's meal plan", 'sm:mt-16'],
